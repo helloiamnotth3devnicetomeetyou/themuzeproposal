@@ -2,13 +2,88 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { LuLink } from "react-icons/lu";
 import { useLocale } from "../app/context/LocaleContext";
 import { useTheme } from "../app/context/ThemeContext";
+import { SOCIAL_ICONS, SOCIAL_LABELS } from "../lib/social-icons";
+import { supabase } from "../lib/supabase";
+
+type SiteSocialLink = {
+  id: string;
+  platform: string;
+  label: string;
+  url: string;
+};
+
+const isSafeExternalUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const normalizeSiteSocialLinks = (value: unknown): SiteSocialLink[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => {
+      if (!item || typeof item !== "object") return [];
+      const candidate = item as Partial<SiteSocialLink>;
+      const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
+      if (!isSafeExternalUrl(url)) return [];
+
+      const platform = typeof candidate.platform === "string" && candidate.platform
+        ? candidate.platform.toLowerCase()
+        : "other";
+      return [{
+        id: typeof candidate.id === "string" && candidate.id ? candidate.id : `footer-social-${index}`,
+        platform: platform === "twitter" ? "x" : platform,
+        label: typeof candidate.label === "string" ? candidate.label.trim() : "",
+        url,
+      }];
+    });
+  }
+
+  // Keep compatibility with the original { instagram, youtube, ... } setting.
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(([platform, rawUrl], index) => {
+      const url = typeof rawUrl === "string" ? rawUrl.trim() : "";
+      if (!isSafeExternalUrl(url)) return [];
+      return [{
+        id: `footer-social-${platform}-${index}`,
+        platform: platform === "twitter" ? "x" : platform.toLowerCase(),
+        label: "",
+        url,
+      }];
+    });
+  }
+
+  return [];
+};
 
 export default function Footer() {
   const { t } = useLocale();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [socialLinks, setSocialLinks] = useState<SiteSocialLink[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchSocialLinks = async () => {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "social")
+        .maybeSingle();
+
+      if (active && !error) setSocialLinks(normalizeSiteSocialLinks(data?.value));
+    };
+
+    void fetchSocialLinks();
+    return () => { active = false; };
+  }, []);
 
   return (
     <footer
@@ -40,24 +115,32 @@ export default function Footer() {
 
         {/* Right: SNS Social Icons */}
         <div className="flex flex-col items-center md:items-end gap-6">
-          <div className="flex gap-4">
-            {["instagram", "youtube", "twitter", "tiktok"].map((sns) => (
-              <a
-                key={sns}
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:text-brand-pink hover:border-brand-pink"
-                style={{
-                  backgroundColor: "var(--bg-input)",
-                  border: "1px solid var(--border-default)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                <span className="text-xs capitalize font-semibold">{sns.slice(0, 2)}</span>
-              </a>
-            ))}
-          </div>
+          {socialLinks.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-4 md:justify-end">
+              {socialLinks.map((item) => {
+                const SocialIcon = SOCIAL_ICONS[item.platform] || LuLink;
+                const accessibleLabel = item.label || SOCIAL_LABELS[item.platform] || "Official link";
+                return (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={accessibleLabel}
+                    title={accessibleLabel}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:text-brand-pink hover:border-brand-pink"
+                    style={{
+                      backgroundColor: "var(--bg-input)",
+                      border: "1px solid var(--border-default)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <SocialIcon className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                );
+              })}
+            </div>
+          )}
           <div className="flex gap-6 text-xs" style={{ color: "var(--text-faint)" }}>
             <Link href="#" className="hover:text-brand-pink transition-colors">Privacy Policy</Link>
             <Link href="#" className="hover:text-brand-pink transition-colors">Terms of Service</Link>

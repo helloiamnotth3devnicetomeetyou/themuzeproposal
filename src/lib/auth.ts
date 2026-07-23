@@ -38,6 +38,76 @@ export async function getUser() {
   return user;
 }
 
+export async function updateUserName(name: string) {
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error('Name is required.');
+
+  const { data, error } = await supabase.auth.updateUser({
+    data: { name: trimmedName },
+  });
+  if (error) throw error;
+
+  const email = data.user.email;
+  if (!email) throw new Error('The account email could not be found.');
+
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        id: data.user.id,
+        email,
+        name: trimmedName,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    );
+
+  if (profileError) throw profileError;
+  return data.user;
+}
+
+export async function updateUserEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data, error } = await supabase.auth.updateUser({ email: normalizedEmail });
+  if (error) throw error;
+  return data.user;
+}
+
+export class CurrentPasswordError extends Error {
+  constructor() {
+    super('The current password is incorrect.');
+    this.name = 'CurrentPasswordError';
+  }
+}
+
+export async function verifyCurrentPassword(password: string) {
+  const user = await getUser();
+  if (!user?.email) throw new Error('The account email could not be found.');
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password,
+  });
+  if (error) {
+    if (error.code === 'invalid_credentials') throw new CurrentPasswordError();
+    throw error;
+  }
+}
+
+export async function updateUserPassword(currentPassword: string, password: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    current_password: currentPassword,
+    password,
+  });
+  if (error) {
+    if (error.code === 'invalid_credentials' || /current password/i.test(error.message)) {
+      throw new CurrentPasswordError();
+    }
+    throw error;
+  }
+  return data.user;
+}
+
 export async function getUserProfile() {
   const user = await getUser();
   if (!user) return null;

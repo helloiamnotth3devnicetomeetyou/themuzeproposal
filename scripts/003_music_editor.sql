@@ -2,17 +2,20 @@
 -- Run after 001_discography.sql.
 
 alter table public.tracks
-  add column if not exists duration integer check (duration is null or duration >= 0),
   add column if not exists is_title boolean not null default false,
   add column if not exists spotify_url text,
+  add column if not exists youtube_url text,
   add column if not exists audio_url text,
   add column if not exists music_video_url text,
   add column if not exists logo_url text;
 
+alter table public.albums
+  add column if not exists hero_image_url text;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('album-covers', 'album-covers', true, 10485760, array['image/jpeg','image/png','image/webp']),
-  ('track-assets', 'track-assets', true, 524288000, array['audio/mpeg','video/mp4','image/jpeg','image/png','image/webp'])
+  ('album-covers', 'album-covers', true, 31457280, array['image/jpeg','image/png','image/webp']),
+  ('track-assets', 'track-assets', true, 524288000, array['audio/mpeg','video/mp4','image/jpeg','image/png','image/webp','image/svg+xml'])
 on conflict (id) do update set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,
@@ -73,9 +76,8 @@ begin
   end if;
 
   if coalesce(trim(p_album->>'title'), '') = ''
-    or coalesce(trim(p_album->>'type'), '') = ''
-    or coalesce(p_album->>'slug', '') !~ '^[a-z0-9]+(?:-[a-z0-9]+)*$' then
-    raise exception '앨범 제목, 종류, 올바른 URL ID가 필요합니다.' using errcode = '22023';
+    or coalesce(trim(p_album->>'type'), '') = '' then
+    raise exception '앨범 제목과 종류가 필요합니다.' using errcode = '22023';
   end if;
 
   if v_published and (
@@ -94,12 +96,12 @@ begin
   end;
 
   insert into public.albums (
-    id, artist_id, slug, title, type, release_date, cover_url, color,
+    id, artist_id, slug, title, type, release_date, cover_url, hero_image_url, color,
     description_ko, description_en, description_ja, spotify_id, youtube_url,
     sort_order, is_published, published_at
   ) values (
-    v_album_id, v_artist_id, trim(p_album->>'slug'), trim(p_album->>'title'), trim(p_album->>'type'),
-    nullif(p_album->>'release_date', '')::date, nullif(p_album->>'cover_url', ''),
+    v_album_id, v_artist_id, v_album_id::text, trim(p_album->>'title'), trim(p_album->>'type'),
+    nullif(p_album->>'release_date', '')::date, nullif(p_album->>'cover_url', ''), nullif(p_album->>'hero_image_url', ''),
     coalesce(nullif(p_album->>'color', ''), '#FC6FCF'), p_album->>'description_ko',
     p_album->>'description_en', p_album->>'description_ja', nullif(p_album->>'spotify_id', ''),
     nullif(p_album->>'youtube_url', ''),
@@ -108,7 +110,7 @@ begin
   )
   on conflict (id) do update set
     slug = excluded.slug, title = excluded.title, type = excluded.type,
-    release_date = excluded.release_date, cover_url = excluded.cover_url, color = excluded.color,
+    release_date = excluded.release_date, cover_url = excluded.cover_url, hero_image_url = excluded.hero_image_url, color = excluded.color,
     description_ko = excluded.description_ko, description_en = excluded.description_en,
     description_ja = excluded.description_ja, spotify_id = excluded.spotify_id,
     youtube_url = excluded.youtube_url, is_published = excluded.is_published,
@@ -127,17 +129,18 @@ begin
     v_seen_ids := array_append(v_seen_ids, v_track_id);
 
     insert into public.tracks (
-      id, album_id, title, track_number, duration, is_title,
-      spotify_url, audio_url, music_video_url, logo_url
+      id, album_id, title, track_number, is_title,
+      spotify_url, youtube_url, audio_url, music_video_url, logo_url
     ) values (
       v_track_id, v_album_id, trim(v_track->>'title'), v_position,
-      nullif(v_track->>'duration', '')::integer, coalesce((v_track->>'is_title')::boolean, false),
-      nullif(v_track->>'spotify_url', ''), nullif(v_track->>'audio_url', ''),
+      coalesce((v_track->>'is_title')::boolean, false),
+      nullif(v_track->>'spotify_url', ''), nullif(v_track->>'youtube_url', ''), nullif(v_track->>'audio_url', ''),
       nullif(v_track->>'music_video_url', ''), nullif(v_track->>'logo_url', '')
     )
     on conflict (id) do update set
-      title = excluded.title, track_number = excluded.track_number, duration = excluded.duration,
+      title = excluded.title, track_number = excluded.track_number,
       is_title = excluded.is_title, spotify_url = excluded.spotify_url,
+      youtube_url = excluded.youtube_url,
       audio_url = excluded.audio_url, music_video_url = excluded.music_video_url,
       logo_url = excluded.logo_url;
   end loop;

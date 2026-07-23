@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getSession, isAdmin } from "@/lib/auth";
 import Sidebar from "@/components/admin/Sidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminDialogProvider from "@/components/admin/AdminDialogProvider";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import "./admin.css";
+import "./admin-special.css";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,22 +32,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (loading) {
     return (
       <div className="admin-layout min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--text-muted)", borderTopColor: "transparent" }} />
+        <LoadingIndicator label="관리자 화면을 여는 중…" />
       </div>
     );
   }
 
+  const isFullBleed = ["discography", "tracks", "profile", "members", "schedule", "notices", "settings", "hero", "auditions", "protect"].some((segment) => pathname.includes(segment));
+
   return (
-    <div className="admin-layout cms-shell">
-      <Sidebar />
-      <div className="cms-workspace">
-        <AdminHeader />
-        <main className={`cms-content ${pathname.includes("discography") || pathname.includes("tracks") ? "is-full-bleed" : ""}`}>
-          <div className="cms-content-inner">
-          {children}
-          </div>
-        </main>
+    <AdminDialogProvider>
+      <div className="admin-layout cms-shell">
+        <Sidebar />
+        <div className="cms-workspace">
+          <main className={`cms-content ${isFullBleed ? "is-full-bleed" : ""}`}>
+            <div className="cms-content-inner">
+            {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminDialogProvider>
   );
 }

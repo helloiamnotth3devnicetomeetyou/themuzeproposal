@@ -7,8 +7,15 @@ import { useTheme } from "../context/ThemeContext";
 import { useLocale } from "../context/LocaleContext";
 import Image from "next/image";
 import Link from "next/link";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 type Mode = "login" | "signup";
+
+function getSafeRedirect() {
+  if (typeof window === "undefined") return "/";
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
+  return redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+}
 
 const localT = {
   ko: {
@@ -116,7 +123,7 @@ export default function LoginPage() {
   useEffect(() => {
     getSession().then((session) => {
       if (session) {
-        router.replace("/");
+        router.replace(getSafeRedirect());
       } else {
         setCheckingSession(false);
       }
@@ -152,10 +159,10 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push("/");
+      router.push(getSafeRedirect());
       setTimeout(() => window.location.reload(), 100);
-    } catch (err: any) {
-      setError(err.message || t.loginFailed);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t.loginFailed);
     } finally {
       setLoading(false);
     }
@@ -186,8 +193,8 @@ export default function LoginPage() {
       setPassword("");
       setConfirmPassword("");
       setName("");
-    } catch (err: any) {
-      setError(err.message || t.signupFailed);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t.signupFailed);
     } finally {
       setLoading(false);
     }
@@ -196,7 +203,7 @@ export default function LoginPage() {
   if (checkingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-base)" }}>
-        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--text-muted)", borderTopColor: "transparent" }} />
+        <LoadingIndicator label="로그인 상태를 확인하는 중…" />
       </div>
     );
   }

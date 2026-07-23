@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { LuCheck } from "react-icons/lu";
 
 export type WizardStep = {
   title: string;
@@ -55,7 +56,7 @@ export default function Wizard({
           return (
             <li key={item.title} className={state}>
               <button type="button" onClick={() => index <= step && onStepChange(index)} disabled={index > step}>
-                <i>{index < step ? "✓" : index + 1}</i>
+                <i>{index < step ? <LuCheck aria-hidden="true" /> : index + 1}</i>
                 <span><b>{item.title}</b><small>{item.description}</small></span>
               </button>
             </li>

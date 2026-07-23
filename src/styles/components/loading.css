@@ -1,0 +1,48 @@
+.muze-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  text-align: center;
+}
+
+.muze-loading-track {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 1px;
+  overflow: visible;
+  background: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.muze-loading-track::after {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 3px;
+  border-radius: 99px;
+  background: #fc6fcf;
+  content: "";
+  transform: translateY(-50%);
+  animation: muze-loading-playhead 1.05s ease-in-out infinite alternate;
+}
+
+.muze-loading-label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+}
+
+@keyframes muze-loading-playhead {
+  to { transform: translate(31px, -50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .muze-loading-track::after {
+    animation: none;
+    transform: translate(15px, -50%);
+  }
+}

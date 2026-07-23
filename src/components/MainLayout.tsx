@@ -8,6 +8,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isLogin = pathname === "/login";
   const isAdmin = pathname.startsWith("/admin");
+  const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
+  const isImmersiveArtist = /^\/[^/]+\/artist(?:\/[^/]+)?\/?$/.test(pathname);
 
   if (isLogin) {
     return <>{children}</>;
@@ -20,8 +22,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <Navbar />
-      <div className="flex-1 flex flex-col">{children}</div>
-      <Footer />
+      <div className="flex flex-1 flex-col">{children}</div>
+      {!isImmersiveDiscography && !isImmersiveArtist && <Footer />}
     </>
   );
 }

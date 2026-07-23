@@ -1,26 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { LuChevronLeft, LuChevronRight, LuPause, LuPlay } from "react-icons/lu";
+import { SiSpotify, SiYoutube } from "react-icons/si";
 import { useLocale } from "../../context/LocaleContext";
 import { supabase } from "@/lib/supabase";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 interface Track {
   title: string;
-  duration: number | null;
   isTitle: boolean;
   spotifyUrl?: string;
+  youtubeUrl?: string;
   audioUrl?: string;
   videoUrl?: string;
   logoUrl?: string;
 }
 
 interface RawDiscographyAlbum {
-  id: string; title: string; type: string; release_date: string | null; cover_url: string; color: string | null;
+  id: string; title: string; type: string; release_date: string | null; cover_url: string; hero_image_url: string | null; color: string | null;
   description_ko: string | null; description_en: string | null; description_ja: string | null;
   spotify_id: string | null; youtube_url: string | null;
-  tracks: Array<{ title: string; track_number: number; duration: number | null; is_title: boolean; spotify_url: string | null; audio_url: string | null; music_video_url: string | null; logo_url: string | null }>;
+  tracks: Array<{ title: string; track_number: number; is_title: boolean; spotify_url: string | null; youtube_url: string | null; audio_url: string | null; music_video_url: string | null; logo_url: string | null }>;
 }
 
 interface Album {
@@ -32,9 +35,15 @@ interface Album {
   tracks: Track[];
   color: string;
   desc: { ko: string; en: string; ja: string };
-  conceptPhoto?: string;
+  titleImage?: string;
   links?: { youtube?: string; spotify?: string };
 }
+
+type PlaybackMemory = {
+  albumId: string;
+  trackIndex: number;
+  currentTime: number;
+};
 
 export default function Discography() {
   const { locale } = useLocale();
@@ -56,12 +65,24 @@ export default function Discography() {
   const [activeTab, setActiveTab] = useState<"concept" | "intro" | "members">("intro");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const albumRailRef = useRef<HTMLDivElement | null>(null);
+  const restoreTimeRef = useRef(0);
+  const lastSavedSecondRef = useRef(-1);
   const album = albums[albumIndex];
+
+  const savePlayback = useCallback((albumId: string, trackIndex: number, currentTime: number) => {
+    try {
+      localStorage.setItem(`themuze:discography:${artistid}`, JSON.stringify({ albumId, trackIndex, currentTime }));
+    } catch {
+      // Playback memory is optional when storage is unavailable.
+    }
+  }, [artistid]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDiscography() {
+      const requestedAlbumId = new URLSearchParams(window.location.search).get("album");
       setLoading(true);
       setLoadError(null);
       setAlbums([]);
@@ -84,7 +105,7 @@ export default function Discography() {
 
       const albumsResult = await supabase
         .from("albums")
-        .select("id,title,type,release_date,cover_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(title,track_number,duration,is_title,spotify_url,audio_url,music_video_url,logo_url)")
+        .select("id,title,type,release_date,cover_url,hero_image_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(title,track_number,is_title,spotify_url,youtube_url,audio_url,music_video_url,logo_url)")
         .eq("artist_id", artist.id)
         .eq("is_published", true)
         .lte("published_at", new Date().toISOString())
@@ -94,26 +115,51 @@ export default function Discography() {
       if (albumsResult.error) {
         setLoadError("디스코그래피를 불러오지 못했습니다.");
       } else {
-        setArtistName(artist.name || artistid.toUpperCase());
-        setAlbums(((albumsResult.data ?? []) as unknown as RawDiscographyAlbum[]).map((item) => ({
+        const nextAlbums = ((albumsResult.data ?? []) as unknown as RawDiscographyAlbum[]).map((item) => ({
           id: item.id,
           title: item.title,
           type: item.type,
           releaseDate: item.release_date ?? "",
           cover: item.cover_url,
+          titleImage: item.hero_image_url || undefined,
           color: item.color || "#FC6FCF",
-          tracks: (item.tracks || []).sort((a: { track_number: number }, b: { track_number: number }) => a.track_number - b.track_number).map((track: { title: string; duration: number | null; is_title: boolean; spotify_url: string | null; audio_url: string | null; music_video_url: string | null; logo_url: string | null }) => ({
+          tracks: (item.tracks || []).sort((a: { track_number: number }, b: { track_number: number }) => a.track_number - b.track_number).map((track: { title: string; is_title: boolean; spotify_url: string | null; youtube_url: string | null; audio_url: string | null; music_video_url: string | null; logo_url: string | null }) => ({
             title: track.title,
-            duration: track.duration,
             isTitle: track.is_title,
             spotifyUrl: track.spotify_url || undefined,
+            youtubeUrl: track.youtube_url || undefined,
             audioUrl: track.audio_url || undefined,
             videoUrl: track.music_video_url || undefined,
             logoUrl: track.logo_url || undefined,
           })),
           desc: { ko: item.description_ko || "", en: item.description_en || "", ja: item.description_ja || "" },
           links: { spotify: item.spotify_id ? `https://open.spotify.com/album/${item.spotify_id}` : undefined, youtube: item.youtube_url || undefined },
-        })));
+        }));
+        const requestedIndex = requestedAlbumId ? nextAlbums.findIndex((item) => item.id === requestedAlbumId) : -1;
+        let remembered: PlaybackMemory | null = null;
+        try {
+          const stored = localStorage.getItem(`themuze:discography:${artistid}`);
+          if (stored) remembered = JSON.parse(stored) as PlaybackMemory;
+        } catch {
+          remembered = null;
+        }
+        const rememberedIndex = remembered ? nextAlbums.findIndex((item) => item.id === remembered?.albumId) : -1;
+        const nextAlbumIndex = requestedIndex >= 0 ? requestedIndex : rememberedIndex >= 0 ? rememberedIndex : 0;
+        const rememberedAlbumMatches = Boolean(remembered && nextAlbums[nextAlbumIndex]?.id === remembered.albumId);
+        const rememberedTrackIndex = rememberedAlbumMatches
+          ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, (nextAlbums[nextAlbumIndex]?.tracks.length ?? 1) - 1)))
+          : 0;
+
+        setArtistName(artist.name || artistid.toUpperCase());
+        setAlbums(nextAlbums);
+        setAlbumIndex(nextAlbumIndex);
+        setCurrentTrackIndex(rememberedTrackIndex);
+        restoreTimeRef.current = rememberedAlbumMatches ? Math.max(0, remembered?.currentTime ?? 0) : 0;
+        if (nextAlbums[nextAlbumIndex]) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("album", nextAlbums[nextAlbumIndex].id);
+          window.history.replaceState({}, "", url);
+        }
       }
       setLoading(false);
     }
@@ -125,15 +171,23 @@ export default function Discography() {
   // Smooth album switch
   const switchAlbum = useCallback((newIndex: number) => {
     if (newIndex === albumIndex || transitioning) return;
+    const nextAlbum = albums[newIndex];
+    if (!nextAlbum) return;
     setSlideDir(newIndex > albumIndex ? "left" : "right");
     setTransitioning(true);
     setShowDiscs(false);
     setIsPlaying(false);
+    restoreTimeRef.current = 0;
+    savePlayback(nextAlbum.id, 0, 0);
+    const url = new URL(window.location.href);
+    url.searchParams.set("album", nextAlbum.id);
+    window.history.replaceState({}, "", url);
 
     setTimeout(() => {
       setAlbumIndex(newIndex);
       setCurrentTrackIndex(0);
       setProgress(0);
+      setAudioDuration(0);
       setSlideDir(null);
       setActiveTab("intro");
 
@@ -141,36 +195,65 @@ export default function Discography() {
         setTransitioning(false);
       });
     }, 350);
-  }, [albumIndex, transitioning]);
+  }, [albumIndex, albums, savePlayback, transitioning]);
+
+  useEffect(() => {
+    const rail = albumRailRef.current;
+    const current = rail?.querySelector<HTMLElement>(`[data-album-index="${albumIndex}"]`);
+    if (!current) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    current.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest", inline: "center" });
+  }, [albumIndex, albums.length]);
 
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button, a, [contenteditable='true']")) return;
       if (e.key === "ArrowRight") switchAlbum(Math.min(albumIndex + 1, albums.length - 1));
       if (e.key === "ArrowLeft") switchAlbum(Math.max(albumIndex - 1, 0));
-      if (e.key === " " && album?.tracks[currentTrackIndex]?.audioUrl) { e.preventDefault(); setIsPlaying((p) => !p); }
+      if (e.key === " " && album?.tracks[currentTrackIndex]?.audioUrl) {
+        e.preventDefault();
+        if (!isPlaying) setShowDiscs(true);
+        setIsPlaying((playing) => !playing);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [albumIndex, switchAlbum, albums.length, album, currentTrackIndex]);
+  }, [albumIndex, switchAlbum, albums.length, album, currentTrackIndex, isPlaying]);
 
-  // Real MP3 playback with a visual fallback for legacy tracks without audio.
+  // Real MP3 playback from the managed track asset.
   useEffect(() => {
     const audio = audioRef.current;
     const source = album?.tracks[currentTrackIndex]?.audioUrl;
-    if (!audio || !source) return;
+    if (!audio) return;
+    if (!source) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      return;
+    }
     if (audio.src !== source) { audio.src = source; audio.load(); }
     if (isPlaying) void audio.play().catch(() => setIsPlaying(false));
     else audio.pause();
   }, [isPlaying, currentTrackIndex, album]);
 
-  const playTrack = (idx: number) => { setCurrentTrackIndex(idx); setProgress(0); setIsPlaying(Boolean(album.tracks[idx]?.audioUrl)); };
-  const togglePlay = () => { if (album.tracks[currentTrackIndex]?.audioUrl) setIsPlaying(!isPlaying); };
-  const handleNext = () => { const next = (currentTrackIndex + 1) % album.tracks.length; setProgress(0); setCurrentTrackIndex(next); setIsPlaying(Boolean(album.tracks[next]?.audioUrl)); };
-  const handlePrev = () => { const next = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length; setProgress(0); setCurrentTrackIndex(next); setIsPlaying(Boolean(album.tracks[next]?.audioUrl)); };
+  useEffect(() => {
+    const remember = () => {
+      if (!album) return;
+      savePlayback(album.id, currentTrackIndex, audioRef.current?.currentTime || 0);
+    };
+    window.addEventListener("pagehide", remember);
+    return () => window.removeEventListener("pagehide", remember);
+  }, [album, currentTrackIndex, savePlayback]);
+
+  const playTrack = (idx: number) => { const canPlay = Boolean(album.tracks[idx]?.audioUrl); restoreTimeRef.current = 0; setCurrentTrackIndex(idx); setProgress(0); setAudioDuration(0); if (canPlay) setShowDiscs(true); setIsPlaying(canPlay); savePlayback(album.id, idx, 0); };
+  const togglePlay = () => { if (album.tracks[currentTrackIndex]?.audioUrl) { if (!isPlaying) setShowDiscs(true); setIsPlaying(!isPlaying); } };
+  const handleNext = () => { const next = (currentTrackIndex + 1) % album.tracks.length; const canPlay = Boolean(album.tracks[next]?.audioUrl); restoreTimeRef.current = 0; setProgress(0); setAudioDuration(0); setCurrentTrackIndex(next); if (canPlay) setShowDiscs(true); setIsPlaying(canPlay); savePlayback(album.id, next, 0); };
+  const handlePrev = () => { const next = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length; const canPlay = Boolean(album.tracks[next]?.audioUrl); restoreTimeRef.current = 0; setProgress(0); setAudioDuration(0); setCurrentTrackIndex(next); if (canPlay) setShowDiscs(true); setIsPlaying(canPlay); savePlayback(album.id, next, 0); };
 
   const formatTime = (perc: number) => {
-    const total = Math.floor(audioDuration || album?.tracks[currentTrackIndex]?.duration || 0);
+    const total = Math.floor(audioDuration || 0);
     const cur = Math.floor((perc / 100) * total);
     const f = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
     return { current: f(cur), total: f(total) };
@@ -188,7 +271,7 @@ export default function Discography() {
     const message = loadError || (loading ? "디스코그래피를 불러오는 중입니다." : "공개된 앨범이 없습니다.");
     return (
       <main className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: "#050505" }}>
-        <p className="text-sm text-gray-400">{message}</p>
+        {loading ? <LoadingIndicator label={message} className="text-gray-400" /> : <p className="text-sm text-gray-400">{message}</p>}
       </main>
     );
   }
@@ -198,8 +281,26 @@ export default function Discography() {
       <audio
         ref={audioRef}
         preload="metadata"
-        onLoadedMetadata={(event) => setAudioDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
-        onTimeUpdate={(event) => { const audio = event.currentTarget; setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0); setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0); }}
+        onLoadedMetadata={(event) => {
+          const duration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0;
+          setAudioDuration(duration);
+          if (duration && restoreTimeRef.current > 0) {
+            const restoredTime = Math.min(restoreTimeRef.current, Math.max(0, duration - .25));
+            event.currentTarget.currentTime = restoredTime;
+            setProgress((restoredTime / duration) * 100);
+            restoreTimeRef.current = 0;
+          }
+        }}
+        onTimeUpdate={(event) => {
+          const audio = event.currentTarget;
+          setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+          setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
+          const second = Math.floor(audio.currentTime);
+          if (album && second !== lastSavedSecondRef.current && second % 2 === 0) {
+            lastSavedSecondRef.current = second;
+            savePlayback(album.id, currentTrackIndex, audio.currentTime);
+          }
+        }}
         onEnded={handleNext}
       />
 
@@ -212,9 +313,18 @@ export default function Discography() {
             alt=""
             fill
             sizes="100vw"
-            className="object-cover blur-[100px] scale-[1.4] brightness-[0.15] saturate-150 transition-all duration-1000"
+            className="object-cover blur-[100px] scale-[1.4] brightness-[0.1] saturate-150 transition-all duration-1000"
             priority
           />
+        </div>
+        <div
+          className={`discography-ambient-layer ${isPlaying ? "is-playing" : ""}`}
+          style={{ "--album-accent": album.color } as CSSProperties}
+          aria-hidden="true"
+        >
+          <span className="discography-ambient-orb is-primary" />
+          <span className="discography-ambient-orb is-secondary" />
+          <span className="discography-ambient-orb is-glow" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30" />
@@ -276,7 +386,7 @@ export default function Discography() {
                       willChange: "transform",
                     }}
                   >
-                    <Image src={track.logoUrl || album.cover} alt={track.title} fill className={`${track.logoUrl ? "object-contain p-10" : "object-cover brightness-[0.5] group-hover/cd:brightness-[0.7]"} transition-[filter] duration-200`} sizes="300px" />
+                    <Image src={track.logoUrl || album.cover} alt={track.logoUrl ? `${track.title} 타이포 로고` : track.title} fill className={`${track.logoUrl ? "object-contain p-10" : "object-cover brightness-[0.5] group-hover/cd:brightness-[0.7]"} transition-[filter] duration-200`} sizes="300px" />
 
                     <div className="absolute inset-0 rounded-full pointer-events-none"
                       style={{ background: "radial-gradient(circle, transparent 26%, rgba(0,0,0,0.3) 28%, transparent 30%, transparent 46%, rgba(0,0,0,0.2) 48%, transparent 50%, transparent 66%, rgba(0,0,0,0.12) 68%, transparent 70%, transparent 86%, rgba(0,0,0,0.08) 88%, transparent 90%)" }}
@@ -291,8 +401,6 @@ export default function Discography() {
                       </div>
                     </div>
                   </div>
-
-
                 </div>
               );
             })}
@@ -326,11 +434,10 @@ export default function Discography() {
               </div>
 
               <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/8">
-                <svg className={`w-3.5 h-3.5 text-white transition-transform duration-500 ${showDiscs ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
+                <LuChevronRight className={`w-3.5 h-3.5 text-white transition-transform duration-500 ${showDiscs ? "rotate-180" : ""}`} aria-hidden="true" />
               </div>
             </div>
+
           </div>
         </div>
 
@@ -342,11 +449,8 @@ export default function Discography() {
             <div className="flex items-center justify-between mt-1">
               <h2 className="text-4xl md:text-5xl font-black font-display tracking-tight text-white leading-none">{album.title}</h2>
               <div className="flex gap-2">
-                <a href={album.links?.youtube || "#"} target="_blank" className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-white hover:text-gray-200">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
-                </a>
-                <a href={album.links?.spotify || "#"} target="_blank" className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-white hover:text-gray-200">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.62 14.39c-.19.31-.59.41-.9.22-2.46-1.5-5.56-1.84-9.22-1.01-.36.08-.71-.14-.79-.5-.08-.36.14-.71.5-.79 3.99-.89 7.43-.51 10.19 1.18.31.18.41.59.22.9zm1.31-2.91c-.24.39-.75.52-1.14.28-2.82-1.74-7.14-2.27-10.42-1.24-.44.14-.9-.11-1.04-.55-.14-.44.11-.9.55-1.04 3.75-1.18 8.52-.59 11.76 1.41.39.24.52.75.28 1.14zm.12-3.05c-3.38-2.01-8.96-2.19-12.18-1.21-.52.16-1.08-.13-1.24-.65-.16-.52.13-1.08.65-1.24 3.72-1.13 9.9-.92 13.79 1.39.47.28.62.89.34 1.36-.28.47-.89.62-1.36.34z"/></svg>
+                <a href={album.links?.spotify || "#"} target="_blank" aria-label={`${album.title} on Spotify`} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-white hover:text-gray-200">
+                  <SiSpotify className="w-4 h-4" aria-hidden="true" />
                 </a>
               </div>
             </div>
@@ -375,7 +479,7 @@ export default function Discography() {
             {activeTab === "concept" && (
               <div className="absolute inset-0 animate-slideIn flex flex-col">
                 <div className="relative w-full flex-1 rounded-2xl overflow-hidden border border-white/10 shadow-lg group">
-                  <Image src={album.conceptPhoto || album.cover} alt="Concept" fill sizes="(max-width: 1024px) 100vw, 500px" className="object-cover transition-transform duration-1000 group-hover:scale-105" />
+                  <Image src={album.titleImage || album.cover} alt={`${album.title} title image`} fill sizes="(max-width: 1024px) 100vw, 500px" className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-700 pointer-events-none" />
                 </div>
               </div>
@@ -395,33 +499,62 @@ export default function Discography() {
                       <span className="text-[8px] text-gray-600 font-black tracking-[0.15em] block">NOW PLAYING</span>
                       <span className="text-base font-bold text-white block truncate mt-0.5">{album.tracks[currentTrackIndex]?.title}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-gray-500 shrink-0">{time.current} / {time.total}</span>
+                    <span className="text-[10px] text-gray-500 shrink-0">{time.current} / {time.total}</span>
                   </div>
 
-                  <div className="relative w-full group/bar cursor-pointer py-1.5 -my-1.5"
-                    onClick={(e) => { const bar = e.currentTarget.querySelector('[data-bar]') as HTMLElement; if (!bar) return; const r = bar.getBoundingClientRect(); const next = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)); setProgress(next); if (audioRef.current?.duration) audioRef.current.currentTime = (next / 100) * audioRef.current.duration; }}
-                  >
-                    <div data-bar className="relative w-full h-[3px] bg-white/8 rounded-full overflow-visible group-hover/bar:h-[5px] transition-all duration-200">
-                      <div className="h-full rounded-full relative" style={{ width: `${progress}%`, backgroundColor: album.color, transition: "width 75ms linear" }}>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover/bar:opacity-100 transition-opacity duration-200 shadow-md" style={{ backgroundColor: album.color, boxShadow: `0 0 8px ${album.color}60` }} />
-                      </div>
+                  <label className="discography-progress-wrap">
+                    <span className="sr-only">{album.tracks[currentTrackIndex]?.title} 재생 위치</span>
+                    <input
+                      className="discography-progress"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={progress}
+                      disabled={!album.tracks[currentTrackIndex]?.audioUrl || !audioDuration}
+                      aria-valuetext={`${time.current} / ${time.total}`}
+                      style={{ "--progress": `${progress}%`, "--album-accent": album.color } as CSSProperties}
+                      onChange={(event) => {
+                        const next = Number(event.currentTarget.value);
+                        setProgress(next);
+                        const audio = audioRef.current;
+                        if (audio?.duration) {
+                          audio.currentTime = (next / 100) * audio.duration;
+                          savePlayback(album.id, currentTrackIndex, audio.currentTime);
+                        }
+                      }}
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center mt-1">
+                    <span aria-hidden="true" />
+                    <div className="flex items-center justify-center gap-6">
+                      <button onClick={handlePrev} className="text-gray-500 hover:text-white transition-colors duration-200" aria-label="이전 트랙">
+                        <LuChevronLeft className="w-5 h-5" aria-hidden="true" />
+                      </button>
+                      <button onClick={togglePlay} disabled={!album.tracks[currentTrackIndex]?.audioUrl} title={album.tracks[currentTrackIndex]?.audioUrl ? "재생" : "등록된 MP3가 없습니다"} className="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100" style={{ backgroundColor: album.color, color: "#000", transition: "background-color 0.5s, transform 0.2s" }}>
+                        {isPlaying ? (
+                          <LuPause className="w-5 h-5" aria-hidden="true" />
+                        ) : (
+                          <LuPlay className="w-5 h-5 pl-0.5" aria-hidden="true" />
+                        )}
+                      </button>
+                      <button onClick={handleNext} className="text-gray-500 hover:text-white transition-colors duration-200" aria-label="다음 트랙">
+                        <LuChevronRight className="w-5 h-5" aria-hidden="true" />
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-6 mt-1">
-                    <button onClick={handlePrev} className="text-gray-500 hover:text-white transition-colors duration-200">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-                    </button>
-                    <button onClick={togglePlay} disabled={!album.tracks[currentTrackIndex]?.audioUrl} title={album.tracks[currentTrackIndex]?.audioUrl ? "재생" : "등록된 MP3가 없습니다"} className="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100" style={{ backgroundColor: album.color, color: "#000", transition: "background-color 0.5s, transform 0.2s" }}>
-                      {isPlaying ? (
-                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                      ) : (
-                        <svg className="w-5 h-5 fill-current pl-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                      )}
-                    </button>
-                    <button onClick={handleNext} className="text-gray-500 hover:text-white transition-colors duration-200">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                    </button>
+                    {album.tracks[currentTrackIndex]?.youtubeUrl ? (
+                      <a
+                        href={album.tracks[currentTrackIndex].youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${album.tracks[currentTrackIndex].title} 뮤직비디오 보기`}
+                        className="discography-youtube-button justify-self-end"
+                      >
+                        <SiYoutube aria-hidden="true" />
+                        <span>MV</span>
+                      </a>
+                    ) : <span aria-hidden="true" />}
                   </div>
                 </div>
 
@@ -440,7 +573,7 @@ export default function Discography() {
                         }}
                       >
                         <button type="button" onClick={() => playTrack(idx)} className="flex flex-1 items-center gap-3 min-w-0 p-2.5 text-left cursor-pointer">
-                          <span className="text-[10px] font-mono shrink-0 transition-colors duration-200" style={{ color: isActive || isHovered ? album.color : "#4b5563" }}>{(idx + 1).toString().padStart(2, "0")}</span>
+                          <span className="text-[10px] shrink-0 transition-colors duration-200" style={{ color: isActive || isHovered ? album.color : "#4b5563" }}>{(idx + 1).toString().padStart(2, "0")}</span>
                           {track.logoUrl && <span className="relative w-7 h-7 shrink-0 rounded bg-white/5 overflow-hidden"><Image src={track.logoUrl} alt="" fill sizes="28px" className="object-contain p-1" /></span>}
                           <span className={`text-sm font-semibold truncate transition-colors duration-200 ${isActive || isHovered ? "text-white" : "text-gray-500 group-hover/track:text-gray-300"}`}>{track.title}</span>
                           {track.isTitle && <span className="text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded" style={{ color: album.color, border: `1px solid ${album.color}45` }}>TITLE</span>}
@@ -483,19 +616,22 @@ export default function Discography() {
           <button
             onClick={() => switchAlbum(Math.max(albumIndex - 1, 0))}
             disabled={albumIndex === 0}
+            aria-label="이전 앨범"
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 hover:border-white/20 disabled:opacity-20 disabled:cursor-default"
             style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}
           >
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            <LuChevronLeft className="w-4 h-4 text-white" aria-hidden="true" />
           </button>
 
-          <div className="flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1">
+          <div ref={albumRailRef} className="discography-album-rail flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1">
               {albums.map((a, idx) => {
               const isCurrent = idx === albumIndex;
               return (
                 <button
                   key={a.id}
                   onClick={() => switchAlbum(idx)}
+                  data-album-index={idx}
+                  aria-pressed={isCurrent}
                   className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-white/[0.04] active:scale-[0.97]"
                   style={{
                     backgroundColor: isCurrent ? "rgba(255,255,255,0.06)" : undefined,
@@ -518,10 +654,11 @@ export default function Discography() {
           <button
             onClick={() => switchAlbum(Math.min(albumIndex + 1, albums.length - 1))}
             disabled={albumIndex === albums.length - 1}
+            aria-label="다음 앨범"
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 hover:border-white/20 disabled:opacity-20 disabled:cursor-default"
             style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}
           >
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            <LuChevronRight className="w-4 h-4 text-white" aria-hidden="true" />
           </button>
         </div>
       </div>

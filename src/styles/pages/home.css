@@ -1,0 +1,69 @@
+.home-stream-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.home-stream-platforms {
+  display: flex;
+  max-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
+}
+
+.home-stream-platforms.is-open {
+  max-width: 94px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home-stream-platforms a {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  background: rgba(8, 8, 8, 0.68);
+  color: #fff;
+  opacity: 0;
+  transform: translateX(-18px) rotate(-145deg) scale(0.72);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, border-color 0.2s, background-color 0.2s;
+}
+
+.home-stream-platforms.is-open a {
+  opacity: 1;
+  transform: translateX(0) rotate(0) scale(1);
+}
+
+.home-stream-platforms.is-open a:nth-child(2) {
+  transition-delay: 55ms;
+}
+
+.home-stream-platforms a svg {
+  width: 17px;
+  height: 17px;
+}
+
+.home-stream-platforms a.is-youtube:hover {
+  border-color: #ff0033;
+  background: #ff0033;
+}
+
+.home-stream-platforms a.is-spotify:hover {
+  border-color: #1db954;
+  background: #1db954;
+  color: #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-stream-platforms,
+  .home-stream-platforms a {
+    transition: none;
+  }
+}

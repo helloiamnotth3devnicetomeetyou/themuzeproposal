@@ -28,46 +28,46 @@ export default function FormField({
   const [activeLang, setActiveLang] = useState<"ko" | "en" | "ja">("ko");
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-bold uppercase text-gray-400">{label}</label>
-        <div className="flex gap-1 bg-white/5 p-1 rounded-md">
+    <div className="desk-translatable-field">
+      <div className="desk-translatable-heading">
+        <label>{label}{required && <span>*</span>}</label>
+        <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
           <button 
             type="button"
             onClick={() => setActiveLang("ko")}
-            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${activeLang === "ko" ? "bg-brand-pink text-black" : "text-gray-400 hover:text-white"}`}
+            className={activeLang === "ko" ? "is-active" : ""}
           >
-            KO
-          </button>
-          <button 
-            type="button"
-            onClick={() => setActiveLang("en")}
-            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${activeLang === "en" ? "bg-brand-pink text-black" : "text-gray-400 hover:text-white"}`}
-          >
-            EN
+            KR
           </button>
           <button 
             type="button"
             onClick={() => setActiveLang("ja")}
-            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${activeLang === "ja" ? "bg-brand-pink text-black" : "text-gray-400 hover:text-white"}`}
+            className={activeLang === "ja" ? "is-active" : ""}
           >
-            JA
+            JP
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveLang("en")}
+            className={activeLang === "en" ? "is-active" : ""}
+          >
+            EN
           </button>
         </div>
       </div>
 
-      <div className="relative">
+      <div className="desk-translatable-control">
         {type === "textarea" ? (
           <>
             <textarea required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} rows={4} />
-            <textarea required={required && activeLang === "en"} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />
-            <textarea required={required && activeLang === "ja"} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} rows={4} />
+            <textarea value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />
+            <textarea value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} rows={4} />
           </>
         ) : (
           <>
             <input type={type} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} />
-            <input type={type} required={required && activeLang === "en"} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} />
-            <input type={type} required={required && activeLang === "ja"} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} />
+            <input type={type} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} />
+            <input type={type} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} />
           </>
         )}
       </div>

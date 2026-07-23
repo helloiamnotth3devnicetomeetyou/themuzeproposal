@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { LuArrowUpRight, LuSearch, LuX } from "react-icons/lu";
 import { useLocale } from "@/app/context/LocaleContext";
+import CustomSelect from "@/components/ui/CustomSelect";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import { supabase } from "@/lib/supabase";
+import styles from "./NoticeBoard.module.css";
 
 type Notice = {
   id: string;
@@ -12,18 +17,94 @@ type Notice = {
   category: { ko: string; en: string; ja: string };
 };
 
+type Locale = "ko" | "en" | "ja";
+
+const pageCopy: Record<Locale, {
+  description: string;
+  search: string;
+  closeSearch: string;
+  loading: string;
+  all: string;
+  empty: string;
+  error: string;
+  count: string;
+  category: string;
+}> = {
+  ko: {
+    description: "더뮤즈의 새로운 소식과 안내를 확인하세요.",
+    search: "공지 검색",
+    closeSearch: "검색 닫기",
+    loading: "공지를 불러오는 중…",
+    all: "전체",
+    empty: "조건에 맞는 공지가 없습니다.",
+    error: "공지를 불러오지 못했습니다.",
+    count: "개의 공지",
+    category: "카테고리",
+  },
+  en: {
+    description: "Find the latest news and updates from THE MUZE.",
+    search: "Search notices",
+    closeSearch: "Close search",
+    loading: "Loading notices…",
+    all: "All",
+    empty: "No notices match your search.",
+    error: "Notices could not be loaded.",
+    count: " notices",
+    category: "Category",
+  },
+  ja: {
+    description: "THE MUZEの最新ニュースとお知らせをご確認ください。",
+    search: "お知らせを検索",
+    closeSearch: "検索を閉じる",
+    loading: "お知らせを読み込み中…",
+    all: "すべて",
+    empty: "条件に一致するお知らせはありません。",
+    error: "お知らせを読み込めませんでした。",
+    count: "件のお知らせ",
+    category: "カテゴリー",
+  },
+};
+
+const localized = (value: Notice["title"], locale: Locale) => value[locale] || value.ko || value.en || value.ja;
+
 export default function NoticeBoard({ artistSlug }: { artistSlug?: string }) {
-  const { locale } = useLocale();
+  const { locale: activeLocale } = useLocale();
+  const locale = activeLocale as Locale;
+  const copy = pageCopy[locale] || pageCopy.ko;
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [scopeName, setScopeName] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [category, setCategory] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  useEffect(() => {
+    let active = true;
+
     async function loadNotices() {
+      setLoading(true);
+      setError("");
       let artistId: string | null = null;
+
       if (artistSlug) {
-        const { data: artist } = await supabase.from("artists").select("id").eq("slug", artistSlug).single();
-        if (!artist) return;
+        const { data: artist, error: artistError } = await supabase.from("artists").select("id,name,eng_name").eq("slug", artistSlug).single();
+        if (!active) return;
+        if (artistError || !artist) {
+          setNotices([]);
+          setError(copy.error);
+          setLoading(false);
+          return;
+        }
         artistId = artist.id;
+        setScopeName(artist.eng_name || artist.name || artistSlug);
+      } else {
+        setScopeName("");
       }
 
       let query = supabase
@@ -33,7 +114,14 @@ export default function NoticeBoard({ artistSlug }: { artistSlug?: string }) {
         .order("published_at", { ascending: false });
       query = artistId ? query.eq("artist_id", artistId) : query.is("artist_id", null);
 
-      const { data } = await query;
+      const { data, error: noticeError } = await query;
+      if (!active) return;
+      if (noticeError) {
+        setError(copy.error);
+        setLoading(false);
+        return;
+      }
+
       setNotices((data ?? []).map((notice) => ({
         id: notice.id,
         date: notice.date ?? "",
@@ -41,28 +129,90 @@ export default function NoticeBoard({ artistSlug }: { artistSlug?: string }) {
         content: { ko: notice.content_ko ?? "", en: notice.content_en ?? "", ja: notice.content_ja ?? "" },
         category: { ko: notice.category_ko ?? "", en: notice.category_en ?? "", ja: notice.category_ja ?? "" },
       })));
+      setLoading(false);
     }
+
     void loadNotices();
-  }, [artistSlug]);
+    return () => { active = false; };
+  }, [artistSlug, copy.error]);
+
+  const categories = useMemo(
+    () => Array.from(new Set(notices.map((notice) => localized(notice.category, locale)).filter(Boolean))),
+    [notices, locale],
+  );
+  const selectedCategory = category === "all" || categories.includes(category) ? category : "all";
+  const visibleNotices = useMemo(() => {
+    const keyword = search.trim().toLocaleLowerCase();
+    return notices
+      .map((notice, index) => ({ notice, number: notices.length - index }))
+      .filter(({ notice }) => {
+        const noticeCategory = localized(notice.category, locale);
+        const matchesCategory = selectedCategory === "all" || noticeCategory === selectedCategory;
+        const matchesSearch = !keyword || `${localized(notice.title, locale)} ${localized(notice.content, locale)} ${noticeCategory}`.toLocaleLowerCase().includes(keyword);
+        return matchesCategory && matchesSearch;
+      });
+  }, [locale, notices, search, selectedCategory]);
+
+  const heading = scopeName ? `${scopeName.toUpperCase()} NOTICE` : "NOTICE";
+  const detailHref = (noticeId: string) => artistSlug ? `/${artistSlug}/notice/${noticeId}` : `/notice/${noticeId}`;
+  const closeSearch = () => {
+    setSearch("");
+    setSearchOpen(false);
+  };
 
   return (
-    <div className="flex flex-col" style={{ borderTop: "1px solid var(--border-default)" }}>
-      {notices.map((notice) => {
-        const isExpanded = expandedId === notice.id;
-        return (
-          <div key={notice.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <button onClick={() => setExpandedId(isExpanded ? null : notice.id)} className="w-full px-4 py-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between text-left hover:bg-[var(--bg-subtle)]" style={{ color: "var(--text-primary)" }}>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-pink/15 text-brand-pink uppercase">{notice.category[locale]}</span>
-                <h3 className="text-sm md:text-base font-semibold">{notice.title[locale]}</h3>
-              </div>
-              <span className="text-xs shrink-0" style={{ color: "var(--text-faint)" }}>{notice.date}</span>
-            </button>
-            {isExpanded && <div className="px-8 py-6 text-sm leading-relaxed" style={{ backgroundColor: "var(--bg-surface)", color: "var(--text-secondary)" }}>{notice.content[locale]}</div>}
+    <div className={styles.pageFrame}>
+      <section className={styles.board} aria-labelledby="notice-heading">
+        <header className={styles.titleColumn}>
+          <div className={styles.titleSticky}>
+            <h1 id="notice-heading" className={artistSlug ? styles.artistHeading : undefined}>
+              {artistSlug && scopeName ? <><span className={styles.artistNameLine}>{scopeName.toUpperCase()}</span><span className={styles.noticeLine}>NOTICE</span></> : heading}
+            </h1>
+            <p>{copy.description}</p>
+            <span className={styles.total}>{String(notices.length).padStart(2, "0")} {copy.count}</span>
           </div>
-        );
-      })}
-      {!notices.length && <p className="py-16 text-center text-sm" style={{ color: "var(--text-muted)" }}>등록된 공지가 없습니다.</p>}
+        </header>
+
+        <div className={styles.listColumn}>
+          <div className={styles.toolbar}>
+            <CustomSelect
+              className={styles.categorySelect}
+              variant="line"
+              ariaLabel={copy.category}
+              value={selectedCategory}
+              onChange={setCategory}
+              options={[{ value: "all", label: copy.all }, ...categories.map((item) => ({ value: item, label: item }))]}
+            />
+            <div className={`${styles.searchControl} ${searchOpen ? styles.searchOpen : ""}`}>
+              <label className={styles.searchField}>
+                <span className="sr-only">{copy.search}</span>
+                <input ref={searchInputRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={copy.search} tabIndex={searchOpen ? 0 : -1} />
+              </label>
+              {searchOpen && search ? <button type="button" onClick={closeSearch} aria-label={copy.closeSearch}><LuX aria-hidden="true" /></button> : <button type="button" onClick={() => setSearchOpen((open) => !open)} aria-label={searchOpen ? copy.closeSearch : copy.search}><LuSearch aria-hidden="true" /></button>}
+            </div>
+          </div>
+
+          <div className={styles.list} aria-live="polite">
+            {loading && <LoadingIndicator label={copy.loading} className="min-h-[360px]" />}
+
+            {!loading && error && <div className={`${styles.state} ${styles.error}`} role="alert"><b>!</b><p>{error}</p></div>}
+
+            {!loading && !error && visibleNotices.map(({ notice, number }) => (
+              <Link key={notice.id} href={detailHref(notice.id)} className={styles.item}>
+                <span className={styles.number}>{String(number).padStart(4, "0")}</span>
+                <span className={styles.itemCopy}>
+                  <span className={styles.itemCategory}>{localized(notice.category, locale) || copy.all}</span>
+                  <strong>{localized(notice.title, locale)}</strong>
+                  <time dateTime={notice.date}>{notice.date || "—"}</time>
+                </span>
+                <LuArrowUpRight className={styles.itemArrow} aria-hidden="true" />
+              </Link>
+            ))}
+
+            {!loading && !error && !visibleNotices.length && <div className={styles.state}><p>{copy.empty}</p></div>}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

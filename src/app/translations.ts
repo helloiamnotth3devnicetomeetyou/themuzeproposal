@@ -12,34 +12,7 @@ export const translations = {
     hero: {
       slogan: "YOU ARE MY MUZE",
       exploreBtn: "자세히 보기",
-      listenBtn: "음원 감상하기",
-      slides: [
-        {
-          title: "PRETTY GIRL",
-          subtitle: "RESCENE Special Single",
-          desc: "시원하고 톡 쏘는 탄산처럼 상큼한 에너지를 선사하는 리센느의 스페셜 싱글"
-        },
-        {
-          title: "RUNAWAY",
-          subtitle: "RESCENE Digital Single",
-          desc: "몽환적이면서도 파워풀한 보컬과 딥 그린 비주얼이 어우러진 디지털 싱글"
-        },
-        {
-          title: "LIP BOMB",
-          subtitle: "RESCENE 3rd Mini Album",
-          desc: "달콤하고 강렬한 향기로 리센느만의 독창적 세계를 보여주는 미니 3집"
-        },
-        {
-          title: "GLOW UP",
-          subtitle: "RESCENE 2nd Mini Album",
-          desc: "더 당당하고 빛나는 매력으로 글로벌 팬심을 사로잡는 미니 2집"
-        },
-        {
-          title: "SCENEDROME",
-          subtitle: "RESCENE 1st Mini Album",
-          desc: "독보적인 콘셉트와 다채로운 음악적 스펙트럼의 정수를 담은 첫 번째 미니 앨범"
-        }
-      ]
+      listenBtn: "음원 감상하기"
     },
     sections: {
       latestRelease: "최신 릴리즈",
@@ -65,34 +38,7 @@ export const translations = {
     hero: {
       slogan: "YOU ARE MY MUZE",
       exploreBtn: "EXPLORE DETAILS",
-      listenBtn: "STREAM NOW",
-      slides: [
-        {
-          title: "PRETTY GIRL",
-          subtitle: "RESCENE Special Single",
-          desc: "A refreshing special single from RESCENE, offering a sparkling and energetic summer vibe."
-        },
-        {
-          title: "RUNAWAY",
-          subtitle: "RESCENE Digital Single",
-          desc: "A dreamy yet powerful digital single combining unique vocals with deep green aesthetics."
-        },
-        {
-          title: "LIP BOMB",
-          subtitle: "RESCENE 3rd Mini Album",
-          desc: "The 3rd mini album presenting RESCENE's sweet and explosive musical presence."
-        },
-        {
-          title: "GLOW UP",
-          subtitle: "RESCENE 2nd Mini Album",
-          desc: "Highlighting their confident, shining charm that captures global hearts."
-        },
-        {
-          title: "SCENEDROME",
-          subtitle: "RESCENE 1st Mini Album",
-          desc: "The first mini album capturing the essence of their unique concept and colorful musical spectrum."
-        }
-      ]
+      listenBtn: "STREAM NOW"
     },
     sections: {
       latestRelease: "LATEST RELEASE",
@@ -118,34 +64,7 @@ export const translations = {
     hero: {
       slogan: "YOU ARE MY MUZE",
       exploreBtn: "詳細を見る",
-      listenBtn: "今すぐ聴く",
-      slides: [
-        {
-          title: "PRETTY GIRL",
-          subtitle: "RESCENE Special Single",
-          desc: "炭酸のように爽やかで弾けるようなエネルギーを届ける、RESCENEのスペシャルシングル"
-        },
-        {
-          title: "RUNAWAY",
-          subtitle: "RESCENE Digital Single",
-          desc: "幻想的でありながらパワフルなボーカルとディープグリーンが調和したデジタルシングル"
-        },
-        {
-          title: "LIP BOMB",
-          subtitle: "RESCENE 3rd Mini Album",
-          desc: "甘く強烈な香りでRESCENEならではの独創的な世界を描く3rdミニアルバム"
-        },
-        {
-          title: "GLOW UP",
-          subtitle: "RESCENE 2nd Mini Album",
-          desc: "より堂々と輝く魅力で、世界中のファンの心を魅료する2ndミニアルバム"
-        },
-        {
-          title: "SCENEDROME",
-          subtitle: "RESCENE 1st Mini Album",
-          desc: "独自のコンセプトと多彩な音楽的スペクトルの真髄を詰め込んだ1stミニアルバム"
-        }
-      ]
+      listenBtn: "今すぐ聴く"
     },
     sections: {
       latestRelease: "最新リリース",

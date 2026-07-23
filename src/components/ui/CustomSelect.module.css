@@ -1,0 +1,149 @@
+.root {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.open {
+  z-index: 80;
+}
+
+.trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 13px;
+  border: 1px solid var(--bg-input-border);
+  border-radius: 7px;
+  outline: 0;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font: 650 10px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.trigger:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+}
+
+.trigger:focus-visible,
+.open .trigger {
+  border-color: rgba(252, 111, 207, 0.72);
+  box-shadow: 0 0 0 1px rgba(252, 111, 207, 0.08);
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: var(--text-faint);
+  transition: color 150ms ease, transform 170ms ease;
+}
+
+.open .trigger svg {
+  color: #fc6fcf;
+  transform: rotate(180deg);
+}
+
+.placeholder {
+  color: var(--text-faint);
+}
+
+.listbox {
+  position: fixed;
+  z-index: 1000;
+  overflow: auto;
+  padding: 5px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--bg-elevated);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.option {
+  display: flex;
+  min-height: 37px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.option + .option {
+  margin-top: 2px;
+}
+
+.option.active {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.option.selected {
+  border-color: rgba(252, 111, 207, 0.2);
+  background: rgba(252, 111, 207, 0.07);
+  color: #fc6fcf;
+}
+
+.option[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.option svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+
+.root[data-variant="line"] .trigger {
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 11px;
+}
+
+.root[data-variant="line"] .trigger:hover,
+.root[data-variant="line"] .trigger:focus-visible,
+.root[data-variant="line"].open .trigger {
+  border-bottom-color: #fc6fcf;
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .trigger svg {
+    transition: none;
+  }
+}

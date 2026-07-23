@@ -1,0 +1,135 @@
+@font-face {
+  font-family: "Monument Extended";
+  src: url("/fonts/MonumentExtended-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-brand-green: #2c4b43;
+  --color-brand-pink: #fc6fcf;
+  --color-brand-dark: #121212;
+  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: "Monument Extended", "Montserrat", sans-serif;
+}
+
+:root,
+[data-theme="dark"] {
+  --bg-base: #0a0a0a;
+  --bg-surface: #121212;
+  --bg-elevated: #1a1a1a;
+  --bg-overlay: rgba(10, 10, 10, 0.9);
+  --bg-card: #121212;
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-input-border: rgba(255, 255, 255, 0.1);
+  --bg-subtle: rgba(255, 255, 255, 0.03);
+
+  --text-primary: #ffffff;
+  --text-secondary: #d4d4d4;
+  --text-muted: #6b7280;
+  --text-faint: #4b5563;
+
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --nav-bg-scrolled: rgba(10, 10, 10, 0.9);
+  --nav-bg-gradient: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  --mobile-menu-bg: rgba(10, 10, 10, 0.97);
+
+  --footer-bg: #000000;
+
+  --lang-pill-bg: rgba(255, 255, 255, 0.05);
+  --lang-pill-border: rgba(255, 255, 255, 0.1);
+  --lang-inactive-text: #9ca3af;
+  --lang-inactive-hover: #ffffff;
+
+  --hero-overlay-gradient: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
+  --hero-overlay-top: linear-gradient(to top, #000 0%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+  --hero-text: #ffffff;
+  --hero-desc-text: #d1d5db;
+  --hero-btn-secondary: rgba(255, 255, 255, 0.05);
+  --hero-btn-secondary-border: rgba(255, 255, 255, 0.3);
+  --hero-btn-secondary-hover: rgba(255, 255, 255, 0.1);
+
+  --selection-bg: #fc6fcf;
+  --selection-text: #000000;
+}
+
+[data-theme="light"] {
+  --bg-base: #f7f8fa;
+  --bg-surface: #f0f2f5;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(247, 248, 250, 0.92);
+  --bg-card: #ffffff;
+  --bg-input: rgba(15, 23, 42, 0.04);
+  --bg-input-border: rgba(15, 23, 42, 0.12);
+  --bg-subtle: rgba(15, 23, 42, 0.03);
+
+  --text-primary: #15171a;
+  --text-secondary: #34383f;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.24);
+
+  --nav-bg-scrolled: rgba(247, 248, 250, 0.92);
+  --nav-bg-gradient: linear-gradient(to bottom, rgba(247, 248, 250, 0.86), transparent);
+  --mobile-menu-bg: rgba(247, 248, 250, 0.98);
+
+  --footer-bg: #eceff3;
+
+  --lang-pill-bg: rgba(0, 0, 0, 0.05);
+  --lang-pill-border: rgba(0, 0, 0, 0.12);
+  --lang-inactive-text: #6b7280;
+  --lang-inactive-hover: #111111;
+
+  --hero-overlay-gradient: linear-gradient(to right, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.55));
+  --hero-overlay-top: linear-gradient(to top, #000 0%, transparent 50%, rgba(0, 0, 0, 0.35) 100%);
+  --hero-text: #ffffff;
+  --hero-desc-text: #e5e7eb;
+  --hero-btn-secondary: rgba(255, 255, 255, 0.08);
+  --hero-btn-secondary-border: rgba(255, 255, 255, 0.35);
+  --hero-btn-secondary-hover: rgba(255, 255, 255, 0.15);
+
+  --selection-bg: #fc6fcf;
+  --selection-text: #000000;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+.theme-toggle-track {
+  border: 1px solid var(--lang-pill-border);
+  background-color: var(--lang-pill-bg);
+}
+
+input,
+textarea,
+select {
+  border-color: var(--bg-input-border) !important;
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+select option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}

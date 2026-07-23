@@ -2,8 +2,23 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { LuMail, LuMapPin } from "react-icons/lu";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
+import { supabase } from "@/lib/supabase";
+import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/lib/siteContent";
+
+type NoticePreview = {
+  id: string;
+  date: string;
+  title_ko: string;
+  title_en: string;
+  title_ja: string;
+  category_ko: string;
+  category_en: string;
+  category_ja: string;
+};
 
 export default function About() {
   const { locale } = useLocale();
@@ -12,6 +27,9 @@ export default function About() {
 
   // 기본적으로 첫 번째 질문(0: ABOUT)이 열려있도록 초기값 설정
   const [activeTab, setActiveTab] = useState<number>(0);
+  const [history, setHistory] = useState<HistoryEntry[]>(DEFAULT_HISTORY);
+  const [notices, setNotices] = useState<NoticePreview[]>([]);
+  const [noticesLoading, setNoticesLoading] = useState(true);
 
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -26,6 +44,31 @@ export default function About() {
       return () => clearTimeout(timer);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadAboutContent = async () => {
+      const [historyResult, noticesResult] = await Promise.all([
+        supabase.from("site_settings").select("value").eq("key", "history").maybeSingle(),
+        supabase
+          .from("notices")
+          .select("id,date,title_ko,title_en,title_ja,category_ko,category_en,category_ja")
+          .eq("is_published", true)
+          .is("artist_id", null)
+          .order("published_at", { ascending: false })
+          .limit(3),
+      ]);
+      if (!active) return;
+
+      if (historyResult.data?.value !== undefined) setHistory(normalizeHistory(historyResult.data.value));
+      setNotices((noticesResult.data ?? []) as NoticePreview[]);
+      setNoticesLoading(false);
+    };
+
+    void loadAboutContent();
+    return () => { active = false; };
+  }, []);
 
   const companyDesc = {
     ko: "더뮤즈엔터테인먼트는 'YOU ARE MY MUZE'라는 슬로건 아래, 대중의 영감이 되는 독창적이고 가치 있는 대중문화를 선도하는 글로벌 연예 기획사입니다. 음악 본연의 깊이와 예술성, 그리고 트렌디한 비주얼을 결합하여 전 세계 팬들의 마음을 움직이는 글로벌 아티스트를 육성하고 있습니다.",
@@ -51,53 +94,17 @@ export default function About() {
     ]
   }[locale];
 
-  const historyList = {
-    ko: [
-      { year: "2026. 07", event: "이넷투자파트너스 등으로부터 20억 신규 투자 유치 및 신사동 신사옥 이전" },
-      { year: "2026. 07", event: "RESCENE 스페셜 싱글 《Pretty Girl》 발매" },
-      { year: "2025. 11", event: "RESCENE 미니 3집 《lip bomb》 발매" },
-      { year: "2025. 02", event: "RESCENE 미니 2집 《Glow Up》 발매" },
-      { year: "2024. 08", event: "RESCENE 미니 1집 《SCENEDROME》 발매" },
-      { year: "2024. 03", event: "더뮤즈 첫 5인조 걸그룹 리센느(RESCENE) 공식 데뷔 (싱글 1집 《Re:Scene》)" },
-      { year: "2020. 12", event: "더뮤즈엔터테인먼트 법인 설립" }
-    ],
-    en: [
-      { year: "2026. 07", event: "Secured 2B KRW investment & Moved to Sinsa-dong headquarters" },
-      { year: "2026. 07", event: "Released RESCENE Special Single 《Pretty Girl》" },
-      { year: "2025. 11", event: "Released RESCENE 3rd Mini Album 《lip bomb》" },
-      { year: "2025. 02", event: "Released RESCENE 2nd Mini Album 《Glow Up》" },
-      { year: "2024. 08", event: "Released RESCENE 1st Mini Album 《SCENEDROME》" },
-      { year: "2024. 03", event: "RESCENE Officially Debuted (1st Single Album 《Re:Scene》)" },
-      { year: "2020. 12", event: "THE MUZE Entertainment Co., Ltd. Founded" }
-    ],
-    ja: [
-      { year: "2026. 07", event: "20億ウォンの新規投資誘致および新沙洞の新社屋へ移転" },
-      { year: "2026. 07", event: "RESCENE スペシャルシングル 《Pretty Girl》 リリース" },
-      { year: "2025. 11", event: "RESCENE 3rdミニアルバム 《lip bomb》 リリース" },
-      { year: "2025. 02", event: "RESCENE 2ndミニアルバム 《Glow Up》 リリース" },
-      { year: "2024. 08", event: "RESCENE 1stミニアルバム 《SCENEDROME》 リリース" },
-      { year: "2024. 03", event: "初の5人組ガールズグループRESCENEが正式デビュー (1stシングル 《Re:Scene》)" },
-      { year: "2020. 12", event: "THE MUZE Entertainment 法인設立" }
-    ]
-  }[locale];
+  const historyList = sortHistoryNewestFirst(history).map((item) => ({
+    year: item.date,
+    event: locale === "en" ? item.event_en || item.event_ko : locale === "ja" ? item.event_ja || item.event_ko : item.event_ko,
+  }));
 
-  const noticeList = {
-    ko: [
-      { date: "2026-07-16", title: "더뮤즈엔터테인먼트 공식 홈페이지 리뉴얼 안내", category: "공지" },
-      { date: "2026-07-10", title: "RESCENE Special Single 'Pretty Girl' 음원 발매 및 팬이벤트 안내", category: "이벤트" },
-      { date: "2026-07-01", title: "신사동 사옥 이전 완료에 따른 본사 주소지 변경 안내", category: "안내" }
-    ],
-    en: [
-      { date: "2026-07-16", title: "Official Website Renewal Announcement", category: "Notice" },
-      { date: "2026-07-10", title: "RESCENE Special Single 'Pretty Girl' Release & Fan Event Details", category: "Event" },
-      { date: "2026-07-01", title: "Headquarters Address Change (Relocation to Sinsa-dong)", category: "Info" }
-    ],
-    ja: [
-      { date: "2026-07-16", title: "公式ウェブサイトリニューアルのご案内", category: "告知" },
-      { date: "2026-07-10", title: "RESCENE スペシャルシングル 'Pretty Girl' リリースおよびファンイベント案内", category: "イベント" },
-      { date: "2026-07-01", title: "新沙洞社屋移転完了に伴う本社住所変更のご案内", category: "案内" }
-    ]
-  }[locale];
+  const noticeList = notices.map((notice) => ({
+    id: notice.id,
+    date: notice.date,
+    title: locale === "en" ? notice.title_en || notice.title_ko : locale === "ja" ? notice.title_ja || notice.title_ko : notice.title_ko,
+    category: locale === "en" ? notice.category_en || notice.category_ko : locale === "ja" ? notice.category_ja || notice.category_ko : notice.category_ko,
+  }));
 
   const stackItems = [
     {
@@ -201,15 +208,17 @@ export default function About() {
       }[locale],
       content: (
         <div className="flex flex-col gap-3 pt-4">
-          {noticeList.map((n, idx) => (
-            <div key={idx} className="flex items-center justify-between p-4 rounded-xl border transition-all hover:translate-x-1" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-subtle)" }}>
+          {noticesLoading && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{locale === "ko" ? "공지를 불러오는 중…" : locale === "ja" ? "お知らせを読み込んでいます…" : "Loading notices…"}</div>}
+          {!noticesLoading && noticeList.map((n) => (
+            <Link key={n.id} href={`/notice/${n.id}`} className="flex items-center justify-between p-4 rounded-xl border transition-all hover:translate-x-1" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-subtle)" }}>
               <div className="flex items-center gap-3 min-w-0">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink shrink-0">{n.category}</span>
                 <span className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{n.title}</span>
               </div>
               <span className="text-xs shrink-0 pl-4" style={{ color: "var(--text-muted)" }}>{n.date}</span>
-            </div>
+            </Link>
           ))}
+          {!noticesLoading && !noticeList.length && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{locale === "ko" ? "등록된 공지가 없습니다." : locale === "ja" ? "登録されたお知らせはありません。" : "No notices have been published."}</div>}
         </div>
       )
     },
@@ -235,17 +244,12 @@ export default function About() {
             
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-                <svg className="w-4 h-4 text-brand-pink shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
+                <LuMapPin className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
                 <span>{locale === "ko" ? "서울특별시 강남구 신사동 논현로 사옥" : locale === "ja" ? "大韓民국소울特別市江南区新沙洞ノンヒョン路" : "Nonhyeon-ro, Sinsa-dong, Gangnam-gu, Seoul, Korea"}</span>
               </div>
               
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-                <svg className="w-4 h-4 text-brand-pink shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
+                <LuMail className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
                 <a href="mailto:contact@themuze.kr" className="hover:text-brand-pink transition-colors">
                   contact@themuze.kr
                 </a>
@@ -321,7 +325,7 @@ export default function About() {
                         className="inline-block text-2xl md:text-4xl font-semibold tracking-tight line-through opacity-25 group-hover:opacity-45 transition-all duration-300"
                         style={{ color: "var(--text-primary)" }}
                       >
-                        "{item.label}"
+                        &quot;{item.label}&quot;
                       </span>
                     )}
                   </div>
