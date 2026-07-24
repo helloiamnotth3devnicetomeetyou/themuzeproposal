@@ -402,7 +402,62 @@
   color: var(--text-secondary);
   font-size: clamp(14px, 1.1vw, 17px);
   line-height: 1.95;
-  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.articleContent p {
+  margin: 0 0 1.15em;
+}
+
+.articleContent p:last-child {
+  margin-bottom: 0;
+}
+
+.articleContent h2,
+.articleContent h3 {
+  color: var(--text-primary);
+  letter-spacing: -0.035em;
+}
+
+.articleContent h2 {
+  margin: 1.7em 0 0.65em;
+  font-size: 1.75em;
+  line-height: 1.32;
+}
+
+.articleContent h3 {
+  margin: 1.55em 0 0.6em;
+  font-size: 1.35em;
+  line-height: 1.4;
+}
+
+.articleContent blockquote {
+  margin: 1.6em 0;
+  padding: 5px 0 5px 22px;
+  border-left: 3px solid var(--color-brand-pink);
+  color: var(--text-muted);
+}
+
+.articleContent ul,
+.articleContent ol {
+  margin: 1.2em 0;
+  padding-left: 1.7em;
+}
+
+.articleContent li {
+  margin: 0.35em 0;
+}
+
+.articleContent a {
+  color: var(--color-brand-pink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.articleContent a:hover {
+  color: var(--text-primary);
 }
 
 .articleBack {

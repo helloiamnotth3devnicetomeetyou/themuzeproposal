@@ -5,7 +5,10 @@ import { LuFileText, LuPlus } from "react-icons/lu";
 import { useAdminConfirm } from "@/components/admin/AdminDialogProvider";
 import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
 import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
+import NoticeCategoryInput from "@/components/admin/NoticeCategoryInput";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import LoadingIndicator from "@/components/LoadingIndicator";
+import { hasRichTextContent, sanitizeRichText } from "@/lib/rich-text";
 import { supabase } from "@/lib/supabase";
 
 type Notice = {
@@ -46,7 +49,7 @@ const emptyNotice = (): NoticeDraft => ({
 const fromNotice = (notice: Notice): NoticeDraft => ({
   id: notice.id,
   title: notice.title_ko,
-  content: notice.content_ko || "",
+  content: sanitizeRichText(notice.content_ko || ""),
   category: notice.category_ko,
   date: notice.date,
   published: notice.is_published,
@@ -71,7 +74,19 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
 
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
   const dirty = Boolean(draft && serializedDraft !== snapshot);
-  const canSave = Boolean(draft?.title.trim() && draft.content.trim() && draft.category.trim() && draft.date);
+  const canSave = Boolean(draft?.title.trim() && hasRichTextContent(draft.content) && draft.category.trim() && draft.date);
+  const categoryOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return ["공지", ...notices.map((notice) => notice.category_ko)]
+      .map((category) => category.trim())
+      .filter((category) => {
+        const key = category.toLocaleLowerCase("ko");
+        if (!category || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      ;
+  }, [notices]);
   const patchDraft = (patch: Partial<NoticeDraft>) => setDraft((current) => current ? { ...current, ...patch } : current);
 
   const loadNotices = useCallback(async (preferredId?: string) => {
@@ -171,8 +186,8 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     const payload = {
       artist_id: artistId,
       title_ko: draft.title,
-      content_ko: draft.content,
-      category_ko: draft.category,
+      content_ko: sanitizeRichText(draft.content),
+      category_ko: draft.category.trim(),
       date: draft.date,
       is_published: draft.published,
       published_at: draft.published ? new Date().toISOString() : null,
@@ -228,13 +243,19 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     {!draft ? <div className="content-no-selection"><span><LuFileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">
       {tab === "content" && <>
         <div className="content-section-heading"><h3>공지 내용</h3><span>독자가 목록에서 찾고 본문에서 읽게 될 제목과 내용을 작성합니다.</span></div>
-        <div className="music-field-grid two"><label className="music-field"><span>분류 <b>*</b></span><input className="admin-input" value={draft.category} onChange={(event) => patchDraft({ category: event.target.value })} /></label><label className="music-field"><span>등록일 <b>*</b></span><input type="date" className="admin-input" value={draft.date} onChange={(event) => patchDraft({ date: event.target.value })} /></label></div>
+        <div className="music-field-grid two">
+          <div className="music-field">
+            <span>분류 <b>*</b></span>
+            <NoticeCategoryInput value={draft.category} options={categoryOptions} onChange={(category) => patchDraft({ category })} />
+          </div>
+          <label className="music-field"><span>등록일 <b>*</b></span><input type="date" className="admin-input" value={draft.date} onChange={(event) => patchDraft({ date: event.target.value })} /></label>
+        </div>
         <label className="music-field"><span>제목 <b>*</b></span><input className="admin-input content-title-input" value={draft.title} onChange={(event) => patchDraft({ title: event.target.value })} autoFocus /></label>
-        <label className="music-field"><span>내용 <b>*</b></span><textarea className="admin-input content-notice-textarea" value={draft.content} onChange={(event) => patchDraft({ content: event.target.value })} /></label>
+        <RichTextEditor key={draft.id ?? "new"} value={draft.content} onChange={(content) => patchDraft({ content })} />
       </>}
       {tab === "publish" && <>
         <div className="content-section-heading"><h3>발행 설정</h3><span>공지의 노출 범위와 공개 상태를 마지막으로 확인합니다.</span></div>
-        <div className="notice-preview-card"><p>{draft.category || "분류"}</p><h3>{draft.title || "공지 제목"}</h3><small>{draft.date || "등록일 미설정"} · {scopeArtistId ? `${scopeName} 아티스트` : "전체 공지"}</small><span>{draft.content || "공지 내용을 입력하면 여기에 미리 표시됩니다."}</span></div>
+        <div className="notice-preview-card"><p>{draft.category || "분류"}</p><h3>{draft.title || "공지 제목"}</h3><small>{draft.date || "등록일 미설정"} · {scopeArtistId ? `${scopeName} 아티스트` : "전체 공지"}</small>{hasRichTextContent(draft.content) ? <div className="notice-preview-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(draft.content) }} /> : <div className="notice-preview-content is-empty">공지 내용을 입력하면 여기에 미리 표시됩니다.</div>}</div>
         <div className="content-choice-grid"><label className="content-choice"><input type="radio" checked={draft.published} onChange={() => patchDraft({ published: true })} /><span><b>공개</b><small>저장 즉시 사이트 공지 목록에 표시합니다.</small></span></label><label className="content-choice"><input type="radio" checked={!draft.published} onChange={() => patchDraft({ published: false })} /><span><b>비공개</b><small>관리자에만 저장하고 사이트에는 표시하지 않습니다.</small></span></label></div>
       </>}
     </div>}

@@ -26,6 +26,21 @@ export async function signIn(email: string, password: string) {
   }
 }
 
+export async function signInWithGoogle(redirectTo = '/') {
+  const callbackUrl = new URL('/auth/callback', window.location.origin);
+  callbackUrl.searchParams.set('next', redirectTo);
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: callbackUrl.toString(),
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+
+  if (error) throw new AuthUserError('SERVICE_UNAVAILABLE');
+}
+
 export async function signUp(email: string, password: string, name?: string) {
   const { data, error } = await supabase.auth.signUp({
     email,

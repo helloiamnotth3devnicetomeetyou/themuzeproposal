@@ -214,7 +214,7 @@ export default function ProtectAdminPage() {
 
       <section className={styles.inbox}>
         <header className={styles.toolbar}>
-          <div><span>PROTECT INBOX</span><h1>권익 보호 접수함</h1><p>{filteredReports.length}건의 제보</p></div>
+          <div><h1>권익 보호 접수함</h1><p>{filteredReports.length}건의 제보</p></div>
           <div className={styles.filters}>
             <label className={styles.search}><LuSearch aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
             <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={setFilter} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />

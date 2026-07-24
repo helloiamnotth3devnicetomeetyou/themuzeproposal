@@ -81,13 +81,13 @@
 .sceneStrip::-webkit-scrollbar { display:none; }
 .sceneCards { display:flex; min-width:0; flex:1; align-items:center; gap:9px; overflow-x:auto; padding:3px; scrollbar-width:none; }
 .sceneCards::-webkit-scrollbar { display:none; }
-.sceneStrip button { position:relative; width:190px; height:104px; flex:0 0 190px; overflow:hidden; border:1px solid var(--alpha-ffffff-18); background:var(--palette-111111); color:var(--color-static-white); cursor:pointer; opacity:.62; box-shadow:0 8px 25px var(--alpha-000000-2); transition:opacity .3s,border-color .3s,transform .3s,box-shadow .3s; }
+.sceneStrip button { position:relative; width:190px; height:104px; flex:0 0 190px; overflow:hidden; border:1px solid var(--alpha-ffffff-18); background:var(--palette-111111); color:var(--color-static-white); cursor:pointer; --target-opacity:.62; opacity:.62; box-shadow:0 8px 25px var(--alpha-000000-2); transition:opacity .3s,border-color .3s,transform .3s,box-shadow .3s; animation:card-pop-enter .42s cubic-bezier(.16,1,.3,1) both; }
 .sceneStrip button img { width:100%; height:100%; object-fit:cover; transition:transform .45s; }
 .sceneStrip button::after { content:""; position:absolute; inset:0; background:linear-gradient(to top,var(--alpha-000000-86),var(--alpha-000000-05) 72%); }
 .sceneCardIndex { position:absolute; z-index:1; top:9px; left:10px; color:var(--artist-accent); font-family:var(--font-display); font-size:13px; letter-spacing:.04em; text-shadow:0 2px 8px var(--alpha-000000-7); }
 .sceneCardTitle { position:absolute; z-index:1; right:10px; bottom:9px; left:10px; overflow:hidden; color:var(--color-static-white); font-family:var(--font-sans); font-size:9px; font-weight:800; letter-spacing:.09em; text-align:left; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
 .sceneStrip button:hover,.sceneStrip button:focus-visible,.sceneStrip .isActiveScene { border-color:color-mix(in srgb,var(--artist-accent) 72%,var(--color-static-white)); opacity:1; outline:none; }
-.sceneStrip .isActiveScene { width:212px; flex-basis:212px; border-width:2px; box-shadow:0 0 0 1px color-mix(in srgb,var(--artist-accent) 36%,transparent),0 12px 32px var(--alpha-000000-42); }
+.sceneStrip .isActiveScene { --target-opacity:1; width:212px; flex-basis:212px; border-width:2px; box-shadow:0 0 0 1px color-mix(in srgb,var(--artist-accent) 36%,transparent),0 12px 32px var(--alpha-000000-42); }
 .sceneStrip button:hover { transform:translateY(-4px); }
 .sceneStrip button:hover img,.sceneStrip .isActiveScene img { transform:scale(1.06); }
 .discographyLink,.resetButton { display:flex; height:44px; align-items:center; gap:8px; padding:0 14px; border:1px solid var(--alpha-ffffff-16); background:var(--alpha-050505-54); color:var(--color-static-white); font-size:7px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; backdrop-filter:blur(10px); white-space:nowrap; }
@@ -105,6 +105,7 @@
 @keyframes backdrop-enter { from { opacity:0; } to { opacity:.72; } }
 @keyframes focus-reveal { from { opacity:0; filter:brightness(1.4) blur(4px); } to { opacity:1; filter:brightness(1) blur(0); } }
 @keyframes panel-enter { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes card-pop-enter { from { opacity:0; transform:translateY(28px) scale(0.92); } to { opacity:var(--target-opacity, .62); transform:translateY(0) scale(1); } }
 @keyframes scene-sweep { 0% { left:-22vw; opacity:0; } 36% { opacity:.5; } 100% { left:105vw; opacity:0; } }
 
 @media (max-width:900px) {

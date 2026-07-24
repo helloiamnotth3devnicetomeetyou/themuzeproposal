@@ -367,10 +367,6 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
         </div>
       </section>
 
-      <header className={styles.sceneHeader}>
-        <div><span>ARTIST SCENE</span><b>{activeScene.title || `SCENE ${String(activeScene.sort_order + 1).padStart(2, "0")}`}</b></div>
-        <p>{String(Math.max(1, scenes.findIndex((scene) => scene.id === activeScene.id) + 1)).padStart(2, "0")} / {String(scenes.length).padStart(2, "0")}</p>
-      </header>
 
       {!selectedMember && (
         <div className={`${styles.artistIdentity} ${isGroupFocused ? styles.identityHidden : ""}`} aria-hidden={isGroupFocused}>
@@ -384,10 +380,9 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
       {selectedMember && (
         <aside key={selectedMember.id} className={`${styles.profilePanel} ${panelSide}`} aria-live="polite">
           <button type="button" className={styles.closeButton} onClick={closeMember} aria-label={copy.close}><LuX aria-hidden="true" /></button>
-          <div className={styles.profileIndex}><b>{String(selectedMember.sort_order).padStart(2, "0")}</b></div>
           <h1>{selectedMember.eng_name || selectedMember.name}</h1>
           <p className={styles.nativeName}>{selectedMember.name}</p>
-          <div className={styles.memberBio}><span>{memberRole || copy.profile}</span><p>{memberBio || memberRole}</p></div>
+          <div className={styles.memberBio}><p>{memberBio || memberRole}</p></div>
           {activeSceneMembers.length > 1 && (
             <div className={styles.memberArrows}>
               <button type="button" onClick={() => navigateMembers(-1)} aria-label={copy.previous}><LuArrowLeft aria-hidden="true" /></button>
@@ -415,10 +410,16 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
       )}
       <div className={styles.bottomDock}>
         {selectedMember && (
-          <div className={styles.sceneStrip} aria-label={`${selectedMember.eng_name || selectedMember.name} ${copy.scene}`}>
+          <div key={selectedMember.id} className={styles.sceneStrip} aria-label={`${selectedMember.eng_name || selectedMember.name} ${copy.scene}`}>
             <div className={styles.sceneCards}>
               {memberScenes.map((scene, index) => (
-                <button key={scene.id} type="button" className={scene.id === activeScene.id ? styles.isActiveScene : ""} onClick={() => changeScene(scene.id)}>
+                <button
+                  key={scene.id}
+                  type="button"
+                  className={scene.id === activeScene.id ? styles.isActiveScene : ""}
+                  style={{ animationDelay: `${index * 75}ms` }}
+                  onClick={() => changeScene(scene.id)}
+                >
                   <img src={scene.image_url} alt="" />
                   <span className={styles.sceneCardIndex}>{String(index + 1).padStart(2, "0")}</span>
                   <span className={styles.sceneCardTitle}>{scene.title || `SCENE ${String(index + 1).padStart(2, "0")}`}</span>

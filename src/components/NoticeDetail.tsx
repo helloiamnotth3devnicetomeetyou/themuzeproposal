@@ -5,6 +5,7 @@ import { LuArrowLeft } from "react-icons/lu";
 import { useLocale } from "@/app/context/LocaleContext";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import type { LocalizedTextDTO, NoticeDetailDTO } from "@/features/notices/types";
+import { sanitizeRichText } from "@/lib/rich-text";
 import styles from "./NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";
@@ -49,7 +50,11 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
               </div>
               <h1 id="notice-detail-title">{localized(notice.title, locale)}</h1>
               <div className={styles.articleRule} />
-              <div className={styles.articleContent} aria-label={pageCopy.article}>{localized(notice.content, locale)}</div>
+              <div
+                className={styles.articleContent}
+                aria-label={pageCopy.article}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(localized(notice.content, locale)) }}
+              />
               <Link href={listHref} className={styles.articleBack}><LuArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
             </article>
           )}

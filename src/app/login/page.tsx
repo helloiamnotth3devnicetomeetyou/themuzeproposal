@@ -10,12 +10,20 @@ function safeRedirect(value: string | string[] | undefined) {
   return target?.startsWith("/") && !target.startsWith("//") ? target : "/";
 }
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ redirect?: string | string[] }> }) {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    redirect?: string | string[];
+    error?: string | string[];
+  }>;
+}) {
   const params = await searchParams;
   const redirectTo = safeRedirect(params.redirect);
+  const authError = Array.isArray(params.error) ? params.error[0] : params.error;
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect(redirectTo);
 
-  return <LoginClient redirectTo={redirectTo} />;
+  return <LoginClient redirectTo={redirectTo} oauthFailed={authError === "oauth"} />;
 }
