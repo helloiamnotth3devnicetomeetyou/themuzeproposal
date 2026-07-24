@@ -288,7 +288,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
 
   return (
     <main className={`${styles.experience} ${selectedMember || isGroupFocused ? styles.hasSelection : ""}`} style={{ "--artist-accent": accent } as CSSProperties}>
-      <div className={styles.sceneBackdrop} key={`backdrop-${activeScene.id}`} aria-hidden="true"><img src={activeScene.image_url} alt="" /></div>
+      <div className={styles.sceneBackdrop} key={`backdrop-${activeScene.id}`} aria-hidden="true"><img src={activeScene.image_url} alt="" draggable="false" /></div>
       <section className={styles.sceneViewport} aria-label={`${artistName} ${activeScene.title || copy.scene}`}>
         <div ref={sceneStageRef} className={styles.sceneStage}>
         <div
@@ -309,11 +309,13 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
             src={activeScene.image_url}
             alt={`${artistName} ${activeScene.title || copy.scene}`}
             className={styles.sceneImage}
+            draggable="false"
             onLoad={(event) => {
               const image = event.currentTarget;
               setDimensions((current) => ({ ...current, [activeScene.id]: { width: image.naturalWidth, height: image.naturalHeight } }));
             }}
           />
+
           {focusRegions.map((region) => {
             const path = outlineToPath(region.outline);
             if (!path) return null;

@@ -59,6 +59,21 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     };
   }, [pathname, isLogin, isAdmin]);
 
+  // Get a normalized key for page transitions to avoid unmounting when switching members or tabs on the same view.
+  const getLayoutKey = (path: string) => {
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length >= 2) {
+      if (parts[1] === "artist") {
+        return `/${parts[0]}/artist`;
+      }
+      if (parts[1] === "discography") {
+        return `/${parts[0]}/discography`;
+      }
+    }
+    return path;
+  };
+  const layoutKey = getLayoutKey(pathname);
+
   if (isLogin) {
     return <>{children}</>;
   }
@@ -70,10 +85,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <Navbar />
-      <div key={pathname} className="flex flex-1 flex-col animate-page-fade">{children}</div>
+      <div key={layoutKey} className="flex flex-1 flex-col animate-page-fade">{children}</div>
       {!isImmersiveDiscography && !isImmersiveArtist && <Footer />}
     </>
   );
 }
+
 
 

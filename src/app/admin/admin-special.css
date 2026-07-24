@@ -60,3 +60,163 @@
 /* Artist identity is carried into the CMS navigation without competing with its hierarchy. */
 .cms-artist-logo{display:grid;width:20px;height:20px;flex:0 0 20px;place-items:center;overflow:hidden;padding:3px;border:1px solid var(--border-default);border-radius:5px;background:var(--bg-card)}
 .cms-artist-logo img{display:block;width:100%;height:100%;object-fit:contain}.cms-artist-heading .cms-artist-logo i{width:6px;height:6px;box-shadow:0 0 0 3px var(--alpha-fc6fcf-08)}
+
+/* Inline Sidebar Search */
+.cms-search-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: -16px; /* compensates for flex gap to bring workspace label closer */
+}
+
+.cms-search-inline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: calc(100% - 18px);
+  margin: 4px 9px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-faint);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cms-search-inline:focus-within {
+  border-color: var(--color-brand-pink);
+  box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08);
+}
+
+.cms-search-inline svg {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.cms-search-inline-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 28px 0 32px;
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  font-size: 11px;
+  outline: none;
+}
+
+.cms-search-inline-input::placeholder {
+  color: var(--text-faint);
+}
+
+.cms-search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cms-search-clear:hover {
+  color: var(--text-muted);
+}
+
+/* Sidebar Search Suggestions Dropdown Overlay */
+.cms-search-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 9px;
+  right: 9px;
+  z-index: 100;
+  max-height: 280px;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--bg-surface) 96%, var(--bg-card));
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px var(--alpha-000000-28), 0 0 0 1px var(--border-subtle);
+  scrollbar-width: thin;
+  transform-origin: top;
+  animation: cms-popover-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cms-popover-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+.cms-search-result-group {
+  margin-bottom: 8px;
+  padding: 6px;
+}
+
+.cms-search-result-group:last-child {
+  margin-bottom: 0;
+}
+
+.cms-search-result-group-label {
+  padding: 4px 6px;
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--color-brand-pink);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cms-search-result-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+  cursor: pointer;
+}
+
+.cms-search-result-item:hover, .cms-search-result-item.is-active, .cms-search-result-item.is-highlighted {
+  background: var(--alpha-fc6fcf-07);
+  color: var(--text-primary);
+}
+
+.cms-search-result-item.is-highlighted {
+  outline: none;
+  box-shadow: inset 2px 0 0 var(--color-brand-pink);
+}
+
+.cms-search-empty {
+  padding: 16px;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.cms-search-artist-tag {
+  color: var(--color-brand-pink);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+
+

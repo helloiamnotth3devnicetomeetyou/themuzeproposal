@@ -17,13 +17,14 @@
 
 .sceneBackdrop { position:absolute; z-index:-3; inset:-4%; overflow:hidden; background:var(--palette-090909); }
 .sceneBackdrop::after { content:""; position:absolute; inset:0; background:var(--alpha-040404-48); }
-.sceneBackdrop img { width:100%; height:100%; object-fit:cover; filter:blur(28px) saturate(.68); opacity:.72; transform:scale(1.08); animation:backdrop-enter .7s ease both; }
+.sceneBackdrop img { width:100%; height:100%; object-fit:cover; filter:blur(28px) saturate(.68); opacity:.72; transform:scale(1.08); animation:backdrop-enter .7s ease both; user-select:none; -webkit-user-drag:none; pointer-events:none; }
 
 .sceneViewport { position:absolute; z-index:0; inset:0; padding:0; }
 .sceneStage { display:flex; width:100%; height:100%; align-items:center; justify-content:center; }
 .sceneFrame { position:relative; width:100%; aspect-ratio:var(--scene-ratio); flex:0 0 auto; overflow:hidden; box-shadow:0 0 100px var(--alpha-000000-28); transition:transform 1.05s cubic-bezier(.22,.68,.24,1),filter .7s ease; will-change:transform; }
-.sceneImage { display:block; width:100%; height:100%; object-fit:cover; background:var(--palette-080808); filter:saturate(.94) contrast(1.02); animation:scene-enter .7s cubic-bezier(.2,.75,.25,1) both; transition:filter .7s cubic-bezier(.22,.68,.24,1),opacity .7s ease; }
+.sceneImage { display:block; width:100%; height:100%; object-fit:cover; background:var(--palette-080808); filter:saturate(.94) contrast(1.02); animation:scene-enter .7s cubic-bezier(.2,.75,.25,1) both; transition:filter .7s cubic-bezier(.22,.68,.24,1),opacity .7s ease; user-select:none; -webkit-user-drag:none; pointer-events:none; }
 .hasSelection .sceneImage { filter:brightness(.35) saturate(.34) contrast(1.08); }
+
 
 .focusExposure,.hitMap { position:absolute; inset:0; width:100%; height:100%; }
 .focusExposure { z-index:2; overflow:visible; animation:focus-reveal .45s cubic-bezier(.2,.8,.2,1) both; pointer-events:none; }

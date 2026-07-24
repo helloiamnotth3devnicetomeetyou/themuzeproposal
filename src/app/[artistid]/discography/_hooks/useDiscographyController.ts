@@ -191,16 +191,22 @@ export function useDiscographyController(
     const current = rail?.querySelector<HTMLElement>(
       `[data-album-index="${albumIndex}"]`,
     );
-    if (!current) return;
+    if (!rail || !current) return;
+
+    // Calculate centering position inside the rail container without scrolling the body/viewport
+    const targetScrollLeft =
+      current.offsetLeft - rail.clientWidth / 2 + current.offsetWidth / 2;
+
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    current.scrollIntoView({
+
+    rail.scrollTo({
+      left: targetScrollLeft,
       behavior: reducedMotion ? "auto" : "smooth",
-      block: "nearest",
-      inline: "center",
     });
   }, [albumIndex, albumRailRef, sortedAlbums.length]);
+
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {

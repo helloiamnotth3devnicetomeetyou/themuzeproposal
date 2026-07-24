@@ -120,6 +120,30 @@ export default function SettingsAdmin() {
   }, []);
 
   useEffect(() => {
+    const handleUrlTab = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as SettingsTab;
+      if (tabParam && ["company", "history", "footer", "social"].includes(tabParam)) {
+        setTab(tabParam);
+      }
+    };
+
+    handleUrlTab();
+
+    const handleCustomEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail as SettingsTab;
+      if (detail && ["company", "history", "footer", "social"].includes(detail)) {
+        setTab(detail);
+      }
+    };
+
+    window.addEventListener("admin-settings-tab-change", handleCustomEvent);
+    return () => {
+      window.removeEventListener("admin-settings-tab-change", handleCustomEvent);
+    };
+  }, []);
+
+  useEffect(() => {
     const confirmLeave = (event: BeforeUnloadEvent) => {
       if (!dirty) return;
       event.preventDefault();
