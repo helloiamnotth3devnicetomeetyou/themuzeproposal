@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
@@ -62,7 +64,7 @@ const EMPTY_MEMBER: MemberDraft = {
   birth: "",
   mbti: "",
   imageUrl: "",
-  color: "#FC6FCF",
+  color: BRAND_PINK_HEX,
   bioKo: "",
   bioEn: "",
   bioJa: "",
@@ -93,7 +95,7 @@ const fromMember = (member: Member): MemberDraft => ({
   birth: member.birth || "",
   mbti: member.mbti || "",
   imageUrl: member.image_url || "",
-  color: member.color || "#FC6FCF",
+  color: member.color || BRAND_PINK_HEX,
   bioKo: member.bio_ko || "",
   bioEn: member.bio_en || "",
   bioJa: member.bio_ja || "",
@@ -322,7 +324,7 @@ export default function ArtistMembersAdmin() {
         className={`content-library-item ${draft?.id === member.id ? "is-selected" : ""} ${sorting ? "is-sorting" : ""}`}
       >
         <span className="content-library-index">{sorting ? "↕" : String(index + 1).padStart(2, "0")}</span>
-        <span className="content-library-thumb">{member.image_url ? <img src={member.image_url} alt="" /> : <i style={{ background: member.color || "#FC6FCF" }} />}</span>
+        <span className="content-library-thumb">{member.image_url ? <img src={member.image_url} alt="" /> : <i style={{ background: member.color || BRAND_PINK_HEX }} />}</span>
         <span className="content-library-copy"><b>{member.name}</b><small>{member.role_ko || member.eng_name || "역할 미설정"}</small></span>
       </button>)}
       {!members.length && !draft && <div className="content-library-empty"><b>등록된 멤버가 없습니다.</b><span>첫 멤버를 추가해 아티스트 라인업을 구성하세요.</span></div>}

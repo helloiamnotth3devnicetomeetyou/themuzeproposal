@@ -1,7 +1,7 @@
 -- Production security hardening:
 -- 1) persistent login failure rate limits
 -- 2) storage MIME/extension enforcement
--- 3) SVG uploads and public delivery disabled (use PNG/WebP instead)
+-- 3) SVG logos are readable only from the server-sanitized storage path
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -128,8 +128,12 @@ grant execute on function public.check_login_rate_limit(text, text) to anon, aut
 grant execute on function public.record_login_attempt(text, text, boolean) to anon, authenticated;
 
 update storage.buckets
+set allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+where id = 'artist-assets';
+
+update storage.buckets
 set allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
-where id in ('artist-assets', 'album-covers');
+where id = 'album-covers';
 
 update storage.buckets
 set allowed_mime_types = array['audio/mpeg', 'image/jpeg', 'image/png', 'image/webp']
@@ -144,7 +148,13 @@ create policy "public read artist assets"
 on storage.objects for select
 using (
   bucket_id = 'artist-assets'
-  and lower(storage.extension(name)) in ('jpg', 'jpeg', 'png', 'webp')
+  and (
+    lower(storage.extension(name)) in ('jpg', 'jpeg', 'png', 'webp')
+    or (
+      lower(storage.extension(name)) = 'svg'
+      and (storage.foldername(name))[2] = 'artist-logo-sanitized'
+    )
+  )
 );
 
 drop policy if exists "public read music assets" on storage.objects;

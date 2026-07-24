@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { type DragEvent, useId, useState } from "react";
 import { LuImage, LuMusic, LuX } from "react-icons/lu";
@@ -48,7 +50,7 @@ async function getSuggestedColor(file: File) {
       if (pixels[index + 3] < 128) continue;
       r += pixels[index]; g += pixels[index + 1]; b += pixels[index + 2]; count += 1;
     }
-    return count ? `#${hex(r / count)}${hex(g / count)}${hex(b / count)}`.toUpperCase() : "#FC6FCF";
+    return count ? `#${hex(r / count)}${hex(g / count)}${hex(b / count)}`.toUpperCase() : BRAND_PINK_HEX;
   } finally {
     URL.revokeObjectURL(source);
   }

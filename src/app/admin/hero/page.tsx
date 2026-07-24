@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
@@ -274,13 +276,13 @@ export default function HeroAdminPage() {
               {slides.map((slide, index) => {
                 const album = albumById.get(slide.album_id);
                 const artist = album ? artistById.get(album.artist_id) : undefined;
-                return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || "#FC6FCF"} disabled={Boolean(savingId)} onRemove={() => void removeSlide(slide)} />;
+                return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => void removeSlide(slide)} />;
               })}
               {!slides.length && <div className="hero-admin-empty"><LuImage aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>
           </SortableContext>
           <DragOverlay adjustScale={false} dropAnimation={{ duration: 220, easing: "cubic-bezier(.18,.86,.28,1)" }}>
-            {activeSlide ? <SlideDragOverlay index={slides.findIndex((slide) => slide.id === activeSlide.id)} album={activeAlbum} artist={activeArtist} accent={activeAlbum?.color || activeArtist?.color || "#FC6FCF"} /> : null}
+            {activeSlide ? <SlideDragOverlay index={slides.findIndex((slide) => slide.id === activeSlide.id)} album={activeAlbum} artist={activeArtist} accent={activeAlbum?.color || activeArtist?.color || BRAND_PINK_HEX} /> : null}
           </DragOverlay>
         </DndContext>
       </section>
@@ -301,7 +303,7 @@ export default function HeroAdminPage() {
             const selected = selectedAlbumIds.has(album.id);
             return (
               <article key={album.id} className={`hero-admin-catalog-item ${selected ? "is-selected" : ""}`}>
-                <span className="hero-admin-catalog-cover" style={{ "--album-color": album.color || artist?.color || "#FC6FCF" } as CSSProperties}>
+                <span className="hero-admin-catalog-cover" style={{ "--album-color": album.color || artist?.color || BRAND_PINK_HEX } as CSSProperties}>
                   {album.cover_url ? <img src={album.cover_url} alt="" /> : <i />}
                 </span>
                 <div><b>{album.title}</b><small>{artist?.name || "THE MUZE"} · {album.type}</small><em>{album.release_date || "발매일 미지정"}</em></div>

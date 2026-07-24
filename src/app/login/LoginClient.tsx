@@ -241,9 +241,9 @@ export default function LoginClient({ redirectTo }: { redirectTo: string }) {
             <div
               className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
               style={{
-                backgroundColor: "rgba(239, 68, 68, 0.03)",
-                color: "#ef4444",
-                borderColor: "rgba(239, 68, 68, 0.15)",
+                backgroundColor: "var(--alpha-ef4444-03)",
+                color: "var(--palette-ef4444)",
+                borderColor: "var(--alpha-ef4444-15)",
               }}
             >
               {error}
@@ -254,9 +254,9 @@ export default function LoginClient({ redirectTo }: { redirectTo: string }) {
             <div
               className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
               style={{
-                backgroundColor: "rgba(34, 197, 94, 0.03)",
-                color: "#22c55e",
-                borderColor: "rgba(34, 197, 94, 0.15)",
+                backgroundColor: "var(--alpha-22c55e-03)",
+                color: "var(--palette-22c55e)",
+                borderColor: "var(--alpha-22c55e-15)",
               }}
             >
               {success}
@@ -398,7 +398,7 @@ export default function LoginClient({ redirectTo }: { redirectTo: string }) {
       </div>
 
       {/* Right Column (Simplified Visual Slideshow) */}
-      <div className="hidden md:block md:w-[55%] relative overflow-hidden h-screen bg-black">
+      <div className="hidden md:block md:w-[55%] relative overflow-hidden h-screen bg-[var(--color-static-black)]">
         {SLIDES.map((slide, index) => {
           const isActive = index === currentSlide;
           return (

@@ -1,5 +1,9 @@
 "use client";
 
+import { SCHEDULE_CATEGORY_COLORS } from "@/lib/design-tokens";
+
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import type { IconType } from "react-icons";
@@ -26,11 +30,11 @@ type ScheduleRow = {
 };
 
 const CATEGORIES: Record<Category, { label: string; icon: IconType; color: string }> = {
-  show: { label: "Show", icon: LuRadio, color: "#e878ae" },
-  release: { label: "Release", icon: LuDisc3, color: "#e58d78" },
-  anniversary: { label: "Anniversary", icon: LuCake, color: "#a8c94f" },
-  event: { label: "Event", icon: LuPartyPopper, color: "#4ec2ab" },
-  etc: { label: "ETC", icon: LuCalendarPlus, color: "#e5ad34" },
+  show: { label: "Show", icon: LuRadio, color: SCHEDULE_CATEGORY_COLORS.show },
+  release: { label: "Release", icon: LuDisc3, color: SCHEDULE_CATEGORY_COLORS.release },
+  anniversary: { label: "Anniversary", icon: LuCake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
+  event: { label: "Event", icon: LuPartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
+  etc: { label: "ETC", icon: LuCalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
 };
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -42,7 +46,7 @@ export default function ArtistSchedulePage() {
   const { locale } = useLocale();
   const now = new Date();
   const [cursor, setCursor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const [artistColor, setArtistColor] = useState("#FC6FCF");
+  const [artistColor, setArtistColor] = useState(BRAND_PINK_HEX);
   const [events, setEvents] = useState<ScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,7 +63,7 @@ export default function ArtistSchedulePage() {
         setLoading(false);
         return;
       }
-      setArtistColor(artistResult.data.color || "#FC6FCF");
+      setArtistColor(artistResult.data.color || BRAND_PINK_HEX);
       const result = await supabase
         .from("artist_schedules")
         .select("id,event_date,start_time,category,title_ko,title_en,title_ja,description_ko,description_en,description_ja,location,link_url")

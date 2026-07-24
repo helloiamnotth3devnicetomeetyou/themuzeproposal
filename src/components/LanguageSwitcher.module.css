@@ -27,7 +27,7 @@
   border-color: var(--color-brand-pink);
   background: color-mix(in srgb, var(--lang-pill-bg) 80%, var(--color-brand-pink) 20%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px -2px rgba(252, 111, 207, 0.15);
+  box-shadow: 0 4px 20px -2px var(--alpha-fc6fcf-15);
 }
 
 .trigger:active {
@@ -77,17 +77,17 @@
   list-style: none;
   border: 1px solid var(--border-default);
   border-radius: 16px;
-  background: rgba(18, 18, 18, 0.85);
+  background: var(--alpha-121212-85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px var(--alpha-000000-3);
   animation: slideDownIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Light mode support */
 :global([data-theme="light"]) .dropdown {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  background: var(--alpha-ffffff-85);
+  box-shadow: 0 10px 30px var(--alpha-0f172a-08);
 }
 
 @keyframes slideDownIn {
@@ -121,18 +121,18 @@
 
 .optionButton:hover,
 .optionButton:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--alpha-ffffff-08);
   color: var(--text-primary);
 }
 
 :global([data-theme="light"]) .optionButton:hover,
 :global([data-theme="light"]) .optionButton:focus-visible {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--alpha-000000-04);
 }
 
 .optionSelected {
   color: var(--color-brand-pink) !important;
-  background: rgba(252, 111, 207, 0.08) !important;
+  background: var(--alpha-fc6fcf-08) !important;
 }
 
 .indicator {

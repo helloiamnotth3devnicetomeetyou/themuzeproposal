@@ -1,17 +1,17 @@
 .page {
-  --schedule-muted: var(--text-muted, #929297);
-  --schedule-line: var(--border-default, #d9d9dc);
-  --schedule-panel: var(--bg-card, #fff);
+  --schedule-muted: var(--text-muted, var(--palette-929297));
+  --schedule-line: var(--border-default, var(--palette-d9d9dc));
+  --schedule-panel: var(--bg-card, var(--color-static-white));
   min-height: 100vh;
   padding: clamp(132px, 15vh, 190px) clamp(22px, 7vw, 118px) 90px;
-  background: var(--bg-base, #fff);
-  color: var(--text-primary, #171719);
+  background: var(--bg-base, var(--color-static-white));
+  color: var(--text-primary, var(--palette-171719));
   transition: background-color .3s ease, color .3s ease;
 }
 
 :global([data-theme="dark"]) .page {
-  --schedule-muted: #8d9199;
-  --schedule-line: rgba(255, 255, 255, .13);
+  --schedule-muted: var(--palette-8d9199);
+  --schedule-line: var(--alpha-ffffff-13);
   background: var(--bg-base);
 }
 
@@ -37,7 +37,7 @@
   min-height: 484px;
   margin-top: clamp(82px, 12vh, 142px);
   padding-top: 27px;
-  border-top: 1px solid color-mix(in srgb, var(--text-primary, #171719) 54%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-primary, var(--palette-171719)) 54%, transparent);
 }
 
 .event {
@@ -73,7 +73,7 @@
 
 .empty { display: grid; min-height: 330px; place-items: center; color: var(--schedule-muted); font-size: 13px; text-align: center; }
 .pager { display: flex; align-items: center; justify-content: flex-end; gap: 30px; margin-top: 12px; }
-.pager button { display: grid; width: 38px; height: 38px; place-items: center; border: 0; background: transparent; color: var(--text-primary, #171719); font-size: 27px; font-weight: 200; cursor: pointer; }
+.pager button { display: grid; width: 38px; height: 38px; place-items: center; border: 0; background: transparent; color: var(--text-primary, var(--palette-171719)); font-size: 27px; font-weight: 200; cursor: pointer; }
 .pager button:disabled { opacity: .2; cursor: default; }
 .pager span { min-width: 44px; text-align: center; font-size: 13px; font-weight: 650; }
 
@@ -83,10 +83,10 @@
 .yearControl button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 20px; line-height: 1; }
 .yearControl strong { min-width: 74px; text-align: center; font-size: 21px; letter-spacing: -.025em; }
 .todayButton { border: 1px solid var(--schedule-line); border-radius: 999px; background: transparent; color: var(--schedule-muted); padding: 7px 13px; font-size: 9px; font-weight: 750; letter-spacing: .08em; cursor: pointer; }
-.todayButton:hover { border-color: #fc6fcf; color: #fc6fcf; }
+.todayButton:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
 .months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 32px; }
 .months button { position: relative; height: 29px; padding: 0; border: 0; background: transparent; color: var(--schedule-muted); font-size: 11px; font-weight: 760; cursor: pointer; }
-.months button[aria-current="true"] { color: var(--text-primary, #171719); }
+.months button[aria-current="true"] { color: var(--text-primary, var(--palette-171719)); }
 .months button[aria-current="true"]::after { content: ""; position: absolute; right: 20%; bottom: -1px; left: 20%; height: 2px; background: currentColor; }
 
 .weekdays, .days { display: grid; grid-template-columns: repeat(7, 1fr); }
@@ -95,16 +95,16 @@
 .days { grid-auto-rows: minmax(74px, 1fr); }
 .day { position: relative; display: grid; width: 100%; min-height: 74px; place-items: center; border: 0; background: transparent; color: inherit; cursor: default; }
 .dayNumber { position: relative; z-index: 1; display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; font-size: 13px; }
-.day.sunday .dayNumber { color: #ef5d67; }
+.day.sunday .dayNumber { color: var(--palette-ef5d67); }
 .day.hasEvents { cursor: pointer; }
-.day.hasEvents .dayNumber { background: color-mix(in srgb, var(--artist-color, #fc6fcf) 17%, var(--schedule-panel)); font-weight: 720; }
-.day.isToday .dayNumber { box-shadow: inset 0 0 0 1px var(--artist-color, #fc6fcf); }
+.day.hasEvents .dayNumber { background: color-mix(in srgb, var(--artist-color, var(--color-brand-pink)) 17%, var(--schedule-panel)); font-weight: 720; }
+.day.isToday .dayNumber { box-shadow: inset 0 0 0 1px var(--artist-color, var(--color-brand-pink)); }
 .dots { position: absolute; bottom: 7px; display: flex; gap: 3px; }
 .dots i { display: block; width: 8px; height: 2px; border-radius: 2px; background: var(--dot-color); }
 .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 33px; color: var(--schedule-muted); font-size: 10px; font-weight: 700; }
 .legend span { display: inline-flex; min-height: 31px; align-items: center; gap: 7px; padding: 3px 10px 3px 4px; border: 1px solid var(--schedule-line); border-radius: 8px; background: color-mix(in srgb, var(--schedule-panel) 88%, transparent); }
 .legend i { width: 23px; height: 23px; border: 0; border-radius: 5px; background: color-mix(in srgb, var(--event-color) 15%, var(--schedule-panel)); box-shadow: inset 2px 0 var(--event-color); font-size: 11px; }
-.error { margin-top: 30px; color: #d65162; font-size: 13px; }
+.error { margin-top: 30px; color: var(--palette-d65162); font-size: 13px; }
 
 @media (max-width: 980px) {
   .page { padding-top: 120px; }

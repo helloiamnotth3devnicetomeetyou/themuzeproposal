@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { LuImagePlus, LuMousePointer2, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
@@ -360,7 +362,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
             <span>외곽선을 그릴 멤버</span>
             <div>{members.map((member) => {
               const hasRegion = selectedScene.artist_scene_members.some((region) => region.member_id === member.id);
-              return <button type="button" key={member.id} className={member.id === selectedMemberId ? styles.isSelected : ""} onClick={() => setSelectedMemberId(member.id)}><i style={{ background: member.color || "#FC6FCF" }} />{member.eng_name || member.name}{hasRegion && <small>완료</small>}</button>;
+              return <button type="button" key={member.id} className={member.id === selectedMemberId ? styles.isSelected : ""} onClick={() => setSelectedMemberId(member.id)}><i style={{ background: member.color || BRAND_PINK_HEX }} />{member.eng_name || member.name}{hasRegion && <small>완료</small>}</button>;
             })}</div>
           </div>
 

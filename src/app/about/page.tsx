@@ -133,19 +133,19 @@ export default function About() {
             </div>
             <div className="flex flex-col gap-3 pl-4 border-l-4 border-brand-pink w-full">
               <span className="text-brand-pink text-xs font-black tracking-widest uppercase">COMPANY SLOGAN</span>
-              <div className="relative py-1 min-h-[44px] flex items-center overflow-hidden w-full max-w-md">
-                <svg viewBox="0 0 350 40" className="w-full h-auto overflow-visible" key={`${activeTab}-${activeTab === 0}`}>
+              <div className="relative py-1 min-h-[56px] flex items-center overflow-hidden w-full max-w-xl">
+                <svg viewBox="0 0 520 48" className="w-full h-auto overflow-visible" key={`${activeTab}-${activeTab === 0}`}>
                   <text
                     x="2"
-                    y="28"
+                    y="34"
                     fill="transparent"
                     stroke="currentColor"
-                    strokeWidth="0.8"
+                    strokeWidth="1"
                     style={{
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 900,
-                      fontSize: "22px",
-                      letterSpacing: "1px"
+                      fontFamily: "var(--font-hero)",
+                      fontWeight: 700,
+                      fontSize: "25px",
+                      letterSpacing: "1.5px"
                     }}
                     className="animate-stroke-draw select-none"
                   >
@@ -184,7 +184,7 @@ export default function About() {
         <div className="pl-6 md:pl-16 border-l py-4" style={{ borderColor: "var(--border-default)" }}>
           {historyList.map((item, idx) => (
             <div key={idx} className="mb-10 relative last:mb-0 group">
-              <span className="absolute -left-[31px] md:-left-[21px] top-1.5 w-3.5 h-3.5 border-2 border-brand-pink rounded-full bg-base shadow-[0_0_8px_rgba(252,111,207,0.4)] group-hover:bg-brand-pink transition-colors duration-300" style={{ backgroundColor: "var(--bg-base)" }} />
+              <span className="absolute -left-[31px] md:-left-[21px] top-1.5 w-3.5 h-3.5 border-2 border-brand-pink rounded-full bg-base shadow-[0_0_8px_var(--alpha-fc6fcf-4)] group-hover:bg-brand-pink transition-colors duration-300" style={{ backgroundColor: "var(--bg-base)" }} />
               <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-6">
                 <span className="text-brand-pink font-display font-black text-base sm:w-28 shrink-0">{item.year}</span>
                 <p className="text-sm font-light flex-1" style={{ color: "var(--text-secondary)" }}>{item.event}</p>
@@ -313,7 +313,7 @@ export default function About() {
                       <span
                         className="inline-block text-2xl md:text-4xl font-extrabold tracking-tight px-3.5 py-1 rounded-xl transition-all duration-300 transform scale-102"
                         style={{
-                          backgroundColor: "rgba(252, 111, 207, 0.15)",
+                          backgroundColor: "var(--alpha-fc6fcf-15)",
                           color: "var(--color-brand-pink)"
                         }}
                       >

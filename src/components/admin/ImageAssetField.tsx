@@ -54,8 +54,9 @@ export default function ImageAssetField({
   const uploadFile = async (file?: File) => {
     if (!file) return;
     const fileType = file.type;
-    if (!IMAGE_TYPES.includes(fileType)) {
-      onError(`${label}은 JPG, PNG, WebP 파일만 올릴 수 있습니다.`);
+    const isSvg = kind === "artist-logo" && file.name.toLowerCase().endsWith(".svg");
+    if (!IMAGE_TYPES.includes(fileType) && !isSvg) {
+      onError(`${label}은 ${kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} 파일만 올릴 수 있습니다.`);
       return;
     }
     if (file.size > maxBytes) {
@@ -64,17 +65,37 @@ export default function ImageAssetField({
     }
     setBusy(true);
     try {
-      const extension = fileType === "image/png" ? "png" : fileType === "image/webp" ? "webp" : "jpg";
-      const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.${extension}`;
-      const { error } = await supabase.storage.from("artist-assets").upload(path, file, { contentType: fileType, upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from("artist-assets").getPublicUrl(path);
-      const asset: UploadedImageAsset = { bucket: "artist-assets", path, url: data.publicUrl };
+      let asset: UploadedImageAsset;
+      if (isSvg) {
+        const formData = new FormData();
+        formData.set("file", file);
+        formData.set("artistKey", artistKey);
+        formData.set("entityKey", entityKey);
+        const response = await fetch("/api/uploads/artist-logo", {
+          method: "POST",
+          body: formData,
+        });
+        const payload = await response.json().catch(() => ({})) as {
+          asset?: UploadedImageAsset;
+          code?: string;
+        };
+        if (!response.ok || !payload.asset) throw new Error(payload.code || "UPLOAD_FAILED");
+        asset = payload.asset;
+      } else {
+        const extension = fileType === "image/png" ? "png" : fileType === "image/webp" ? "webp" : "jpg";
+        const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.${extension}`;
+        const { error } = await supabase.storage.from("artist-assets").upload(path, file, { contentType: fileType, upsert: false });
+        if (error) throw new Error("UPLOAD_FAILED");
+        const { data } = supabase.storage.from("artist-assets").getPublicUrl(path);
+        asset = { bucket: "artist-assets", path, url: data.publicUrl };
+      }
       await onChange(asset.url);
       onUploaded?.(asset);
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : `${label} 업로드에 실패했습니다.`;
-      onError(message.includes("Bucket not found") ? "아티스트 자산 버킷이 없습니다. 004_artist_assets.sql을 먼저 적용하세요." : message);
+      const code = cause instanceof Error ? cause.message : "UPLOAD_FAILED";
+      onError(code === "UNSAFE_SVG"
+        ? "스크립트, 외부 리소스 또는 허용되지 않은 SVG 요소가 포함되어 있습니다."
+        : `${label} 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.`);
     } finally {
       setBusy(false);
       setDragging(false);
@@ -96,7 +117,7 @@ export default function ImageAssetField({
         <div className="content-asset-copy">
           <span>{label}{required && <b>*</b>}</span>
           <p>{busy ? "업로드 중…" : hint}</p>
-          <small>JPG, PNG, WebP · 최대 {maxMegabytes}MB</small>
+          <small>{kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} · 최대 {maxMegabytes}MB</small>
         </div>
         <div className="content-asset-actions">
           <label htmlFor={inputId}>{busy ? "업로드 중" : value ? "파일 교체" : "파일 선택"}</label>
@@ -106,7 +127,7 @@ export default function ImageAssetField({
           id={inputId}
           className="sr-only"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={kind === "artist-logo" ? "image/jpeg,image/png,image/webp,image/svg+xml,.svg" : "image/jpeg,image/png,image/webp"}
           disabled={busy}
           onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }}
         />

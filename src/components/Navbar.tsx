@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LuMoon, LuSun, LuUser, LuShieldCheck, LuLogIn } from "react-icons/lu";
+import { LuMoon, LuSun, LuUser, LuLogIn, LuChevronDown } from "react-icons/lu";
 import { useLocale } from "../app/context/LocaleContext";
 import { useTheme } from "../app/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -16,6 +16,7 @@ type ArtistNavigationItem = {
   id: string;
   slug: string;
   name: string;
+  logo_url: string | null;
 };
 
 export default function Navbar() {
@@ -29,6 +30,7 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [artists, setArtists] = useState<ArtistNavigationItem[]>([]);
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
+  const [mobileOpenArtist, setMobileOpenArtist] = useState<string | null>(null);
   const pathname = usePathname();
   const isDark = theme === "dark";
   const isAdminRoute = pathname.startsWith("/admin");
@@ -52,7 +54,7 @@ export default function Navbar() {
   useEffect(() => {
     let active = true;
     const loadArtists = async () => {
-      const { data } = await supabase.from("artists").select("id, slug, name").order("name", { ascending: true });
+      const { data } = await supabase.from("artists").select("id, slug, name, logo_url").order("name", { ascending: true });
       if (active && data) setArtists(data);
     };
     void loadArtists();
@@ -188,6 +190,20 @@ export default function Navbar() {
                 }`}
                 aria-expanded={expandedArtist === artist.slug}
               >
+                <span className={styles.artistLogoBadge}>
+                  {artist.logo_url ? (
+                    <Image
+                      src={artist.logo_url}
+                      alt=""
+                      width={16}
+                      height={16}
+                      unoptimized={/\.svg(?:$|\?)/i.test(artist.logo_url)}
+                      className={/\.svg(?:$|\?)/i.test(artist.logo_url) ? "is-theme-svg" : undefined}
+                    />
+                  ) : (
+                    <i />
+                  )}
+                </span>
                 {artist.name}
               </button>
 
@@ -279,93 +295,13 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* ── Mobile hamburger ──────────────────────────────────────── */}
-        <button
-          ref={menuButtonRef}
-          type="button"
-          onClick={() => setIsMobileMenuOpen((open) => !open)}
-          aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="mobile-menu"
-          className="grid size-11 place-items-center text-[var(--text-primary)] md:hidden"
-        >
-          <span className="sr-only">{isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}</span>
-          <span className="relative block h-4 w-6" aria-hidden="true">
-            <span
-              className={`absolute left-0 top-1/2 h-px w-6 bg-current transition-transform duration-200 ${
-                isMobileMenuOpen ? "rotate-45" : "-translate-y-1.5"
-              }`}
-            />
-            <span
-              className={`absolute left-0 top-1/2 h-px bg-current transition-all duration-200 ${
-                isMobileMenuOpen ? "w-6 -rotate-45" : "w-4 translate-y-1.5"
-              }`}
-            />
-          </span>
-        </button>
-      </div>
-
-      {/* ── Mobile menu ───────────────────────────────────────────────── */}
-      {isMobileMenuOpen && (
-        <div
-          ref={mobileMenuRef}
-          id="mobile-menu"
-          role="dialog"
-          tabIndex={-1}
-          aria-modal="true"
-          aria-label="전체 메뉴"
-          className={styles.mobileMenu}
-        >
-          <div className="flex min-h-full flex-col px-6 pb-[max(24px,env(safe-area-inset-bottom))] pt-5">
-            <nav aria-label="모바일 주 메뉴" className="text-[var(--text-primary)]">
-              <Link href="/about" onClick={closeMobileMenu} className={mobileLinkClass("/about")}>
-                {t.nav.about}
-              </Link>
-
-              {artists.map((artist) => (
-                <div key={artist.id} className="border-b border-[var(--border-default)] py-4">
-                  <p className="mb-3 font-display text-[11px] font-bold tracking-[0.18em] text-[var(--text-muted)]">
-                    {artist.name}
-                  </p>
-                  <div className="flex flex-col gap-1 pl-3 font-display text-sm font-semibold tracking-[0.06em]">
-                    {[
-                      { href: `/${artist.slug}/artist`, label: "ABOUT" },
-                      { href: `/${artist.slug}/discography`, label: "DISCOGRAPHY" },
-                      { href: `/${artist.slug}/schedule`, label: "SCHEDULE" },
-                      { href: `/${artist.slug}/notice`, label: "NOTICE" },
-                    ].map(({ href, label }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={closeMobileMenu}
-                        className={`flex min-h-11 items-center transition-colors hover:text-brand-pink ${
-                          pathname === href ? "text-brand-pink" : ""
-                        }`}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              <Link href="/notice" onClick={closeMobileMenu} className={mobileLinkClass("/notice")}>
-                {t.nav.notice}
-              </Link>
-              <Link href="/protect" onClick={closeMobileMenu} className={mobileLinkClass("/protect")}>
-                PROTECT
-              </Link>
-              {isAdmin && (
-                <Link href="/admin" onClick={closeMobileMenu} className={mobileLinkClass("/admin")}>
-                  ADMIN
-                </Link>
-              )}
-            </nav>
-
-            {/* Mobile bottom bar */}
-            <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-default)] pt-5">
+        {/* ── Mobile right utilities & hamburger ────────────────────── */}
+        <div className="flex items-center gap-2 md:hidden">
+          {isMobileMenuOpen && (
+            <>
               <LanguageSwitcher />
 
+              {/* Theme toggle */}
               <button
                 type="button"
                 onClick={toggleTheme}
@@ -385,28 +321,137 @@ export default function Navbar() {
                 </div>
               </button>
 
-              <div className="flex items-center gap-3">
-                <Link
-                  href={isLoggedIn ? "/account" : "/login"}
-                  onClick={closeMobileMenu}
-                  className={`${styles.accountBtn} ${
-                    isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut
-                  }`}
-                >
-                  {isLoggedIn ? (
-                    <>
-                      <LuUser className={styles.accountBtnIcon} />
-                      <span>ACCOUNT</span>
-                    </>
-                  ) : (
-                    <>
-                      <LuLogIn className={styles.accountBtnIcon} />
-                      <span>LOGIN</span>
-                    </>
-                  )}
+              {/* Account / Login */}
+              <Link
+                href={isLoggedIn ? "/account" : "/login"}
+                onClick={closeMobileMenu}
+                className={`${styles.accountBtn} ${
+                  isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut
+                }`}
+                title={isLoggedIn ? "ACCOUNT" : "LOGIN"}
+              >
+                {isLoggedIn ? (
+                  <LuUser className={styles.accountBtnIcon} />
+                ) : (
+                  <LuLogIn className={styles.accountBtnIcon} />
+                )}
+              </Link>
+            </>
+          )}
+
+          {/* Mobile hamburger */}
+          <button
+            ref={menuButtonRef}
+            type="button"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+            className="grid size-9 place-items-center text-[var(--text-primary)]"
+          >
+            <span className="sr-only">{isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}</span>
+            <span className="relative block h-4 w-5" aria-hidden="true">
+              <span
+                className={`absolute left-0 top-1/2 h-px w-5 bg-current transition-transform duration-200 ${
+                  isMobileMenuOpen ? "rotate-45" : "-translate-y-1.5"
+                }`}
+              />
+              <span
+                className={`absolute left-0 top-1/2 h-px bg-current transition-all duration-200 ${
+                  isMobileMenuOpen ? "w-5 -rotate-45" : "w-3 translate-y-1.5"
+                }`}
+              />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile menu ───────────────────────────────────────────────── */}
+      {isMobileMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          id="mobile-menu"
+          role="dialog"
+          tabIndex={-1}
+          aria-modal="true"
+          aria-label="전체 메뉴"
+          className={styles.mobileMenu}
+        >
+          <div className="flex min-h-full flex-col px-6 pb-[max(24px,env(safe-area-inset-bottom))] pt-5">
+            <nav aria-label="모바일 주 메뉴" className="text-[var(--text-primary)]">
+              <Link href="/about" onClick={closeMobileMenu} className={mobileLinkClass("/about")}>
+                {t.nav.about}
+              </Link>
+
+              {artists.map((artist) => {
+                const isOpen = mobileOpenArtist === artist.slug;
+                return (
+                  <div key={artist.id} className={styles.mobileArtistAccordion}>
+                    <button
+                      type="button"
+                      onClick={() => setMobileOpenArtist(isOpen ? null : artist.slug)}
+                      className={styles.mobileArtistTrigger}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span className={styles.artistLogoBadge}>
+                          {artist.logo_url ? (
+                            <Image
+                              src={artist.logo_url}
+                              alt=""
+                              width={16}
+                              height={16}
+                              unoptimized={/\.svg(?:$|\?)/i.test(artist.logo_url)}
+                              className={/\.svg(?:$|\?)/i.test(artist.logo_url) ? "is-theme-svg" : undefined}
+                            />
+                          ) : (
+                            <i />
+                          )}
+                        </span>
+                        {artist.name}
+                      </span>
+                      <LuChevronDown
+                        className={`${styles.mobileArtistChevron} ${
+                          isOpen ? styles.mobileArtistChevronOpen : ""
+                        }`}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className={styles.mobileArtistSublist}>
+                        {[
+                          { href: `/${artist.slug}/artist`, label: "ABOUT" },
+                          { href: `/${artist.slug}/discography`, label: "DISCOGRAPHY" },
+                          { href: `/${artist.slug}/schedule`, label: "SCHEDULE" },
+                          { href: `/${artist.slug}/notice`, label: "NOTICE" },
+                        ].map(({ href, label }) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={closeMobileMenu}
+                            className={`flex min-h-10 items-center font-display text-xs font-bold tracking-[0.1em] transition-colors hover:text-brand-pink ${
+                              pathname === href ? "text-brand-pink" : "text-[var(--text-secondary)]"
+                            }`}
+                          >
+                            {label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <Link href="/notice" onClick={closeMobileMenu} className={mobileLinkClass("/notice")}>
+                {t.nav.notice}
+              </Link>
+              <Link href="/protect" onClick={closeMobileMenu} className={mobileLinkClass("/protect")}>
+                PROTECT
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" onClick={closeMobileMenu} className={mobileLinkClass("/admin")}>
+                  ADMIN
                 </Link>
-              </div>
-            </div>
+              )}
+            </nav>
           </div>
         </div>
       )}

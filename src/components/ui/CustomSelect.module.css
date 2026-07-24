@@ -39,8 +39,8 @@
 
 .trigger:focus-visible,
 .open .trigger {
-  border-color: rgba(252, 111, 207, 0.72);
-  box-shadow: 0 0 0 1px rgba(252, 111, 207, 0.08);
+  border-color: var(--alpha-fc6fcf-72);
+  box-shadow: 0 0 0 1px var(--alpha-fc6fcf-08);
 }
 
 .trigger:disabled {
@@ -63,7 +63,7 @@
 }
 
 .open .trigger svg {
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
   transform: rotate(180deg);
 }
 
@@ -80,7 +80,7 @@
   border-radius: 8px;
   outline: 0;
   background: var(--bg-elevated);
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 20px 44px var(--alpha-000000-34);
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
@@ -111,9 +111,9 @@
 }
 
 .option.selected {
-  border-color: rgba(252, 111, 207, 0.2);
-  background: rgba(252, 111, 207, 0.07);
-  color: #fc6fcf;
+  border-color: var(--alpha-fc6fcf-2);
+  background: var(--alpha-fc6fcf-07);
+  color: var(--color-brand-pink);
 }
 
 .option[aria-disabled="true"] {
@@ -141,7 +141,7 @@
 .root[data-variant="line"] .trigger:hover,
 .root[data-variant="line"] .trigger:focus-visible,
 .root[data-variant="line"].open .trigger {
-  border-bottom-color: #fc6fcf;
+  border-bottom-color: var(--color-brand-pink);
   background: transparent;
 }
 

@@ -159,7 +159,7 @@
   left: 4%;
   width: 62%;
   height: 68%;
-  background: radial-gradient(circle at 42% 46%, color-mix(in srgb, var(--album-accent) 88%, white 12%) 0%, color-mix(in srgb, var(--album-accent) 42%, transparent) 42%, transparent 72%);
+  background: radial-gradient(circle at 42% 46%, color-mix(in srgb, var(--album-accent) 88%, var(--color-static-white) 12%) 0%, color-mix(in srgb, var(--album-accent) 42%, transparent) 42%, transparent 72%);
   animation: discographyAmbientPrimary 24s cubic-bezier(.45, 0, .55, 1) infinite;
 }
 
@@ -168,7 +168,7 @@
   bottom: 0;
   width: 68%;
   height: 72%;
-  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--album-accent) 58%, #725cff 42%) 0%, color-mix(in srgb, var(--album-accent) 34%, transparent) 48%, transparent 74%);
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--album-accent) 58%, var(--palette-725cff) 42%) 0%, color-mix(in srgb, var(--album-accent) 34%, transparent) 48%, transparent 74%);
   animation: discographyAmbientSecondary 30s cubic-bezier(.45, 0, .55, 1) infinite;
 }
 
@@ -177,7 +177,7 @@
   left: 34%;
   width: 42%;
   height: 42%;
-  background: radial-gradient(circle, rgba(255, 255, 255, .38) 0%, color-mix(in srgb, var(--album-accent) 24%, transparent) 38%, transparent 70%);
+  background: radial-gradient(circle, var(--alpha-ffffff-38) 0%, color-mix(in srgb, var(--album-accent) 24%, transparent) 38%, transparent 70%);
   animation: discographyAmbientGlow 18s ease-in-out infinite;
 }
 
@@ -191,10 +191,10 @@
   align-items: center;
   gap: 6px;
   padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, .1);
+  border: 1px solid var(--alpha-ffffff-1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .025);
-  color: #737373;
+  background: var(--alpha-ffffff-025);
+  color: var(--palette-737373);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: .04em;
@@ -210,14 +210,14 @@
 }
 
 .discography-youtube-button:hover {
-  border-color: rgba(255, 0, 51, .5);
-  background: rgba(255, 0, 51, .12);
-  color: #ff3355;
+  border-color: var(--alpha-ff0033-5);
+  background: var(--alpha-ff0033-12);
+  color: var(--palette-ff3355);
   transform: translateY(-1px);
 }
 
 .discography-youtube-button:focus-visible {
-  outline: 2px solid #fc6fcf;
+  outline: 2px solid var(--color-brand-pink);
   outline-offset: 3px;
 }
 
@@ -243,7 +243,7 @@
 .discography-progress::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--album-accent) 0 var(--progress), rgba(255, 255, 255, .1) var(--progress) 100%);
+  background: linear-gradient(to right, var(--album-accent) 0 var(--progress), var(--alpha-ffffff-1) var(--progress) 100%);
   transition: height .16s ease;
 }
 
@@ -253,7 +253,7 @@
   margin-top: -4.5px;
   appearance: none;
   -webkit-appearance: none;
-  border: 2px solid #0a0a0a;
+  border: 2px solid var(--palette-0a0a0a);
   border-radius: 50%;
   background: var(--album-accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--album-accent) 45%, transparent), 0 0 14px color-mix(in srgb, var(--album-accent) 48%, transparent);
@@ -264,7 +264,7 @@
 .discography-progress::-moz-range-track {
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .1);
+  background: var(--alpha-ffffff-1);
 }
 
 .discography-progress::-moz-range-progress {
@@ -276,7 +276,7 @@
 .discography-progress::-moz-range-thumb {
   width: 11px;
   height: 11px;
-  border: 2px solid #0a0a0a;
+  border: 2px solid var(--palette-0a0a0a);
   border-radius: 50%;
   background: var(--album-accent);
   box-shadow: 0 0 14px color-mix(in srgb, var(--album-accent) 48%, transparent);
@@ -285,15 +285,15 @@
 .discography-progress:hover::-webkit-slider-runnable-track { height: 6px; }
 .discography-progress:hover::-webkit-slider-thumb,
 .discography-progress:focus-visible::-webkit-slider-thumb { opacity: 1; transform: scale(1.12); }
-.discography-progress:focus-visible { outline: 2px solid color-mix(in srgb, var(--album-accent) 70%, white); outline-offset: 3px; border-radius: 999px; }
+.discography-progress:focus-visible { outline: 2px solid color-mix(in srgb, var(--album-accent) 70%, var(--color-static-white)); outline-offset: 3px; border-radius: 999px; }
 .discography-progress:disabled { cursor: default; opacity: .35; }
 
 .discography-album-rail {
   scroll-behavior: smooth;
   scroll-padding-inline: 18px;
   scroll-snap-type: x proximity;
-  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, var(--color-static-black) 18px, var(--color-static-black) calc(100% - 18px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, var(--color-static-black) 18px, var(--color-static-black) calc(100% - 18px), transparent 100%);
 }
 
 .discography-album-rail > button { scroll-snap-align: center; }

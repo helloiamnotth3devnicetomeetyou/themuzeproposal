@@ -138,7 +138,7 @@ export default function Audition() {
             <div className={styles.sideInfoBlock}>
               <div className={styles.sideInfoItem}>
                 <span className={styles.sideInfoLabel}>{copy.statusLabel}</span>
-                <span className={styles.sideInfoValue} style={{ color: "#fc6fcf" }}>
+                <span className={styles.sideInfoValue} style={{ color: "var(--color-brand-pink)" }}>
                   {copy.statusValue}
                 </span>
               </div>

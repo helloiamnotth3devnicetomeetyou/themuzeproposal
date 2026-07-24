@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
@@ -42,7 +44,7 @@ const albumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_u
 function fromRaw(album: RawAlbum): AlbumEditorDraft {
   return {
     id: album.id, artist_id: album.artist_id, title: album.title, type: album.type,
-    release_date: album.release_date ?? "", cover_url: album.cover_url ?? "", hero_image_url: album.hero_image_url ?? "", color: album.color || "#FC6FCF",
+    release_date: album.release_date ?? "", cover_url: album.cover_url ?? "", hero_image_url: album.hero_image_url ?? "", color: album.color || BRAND_PINK_HEX,
     spotify_id: album.spotify_id ?? "", youtube_url: album.youtube_url ?? "",
     description_ko: album.description_ko ?? "", description_en: album.description_en ?? "", description_ja: album.description_ja ?? "",
     is_published: album.is_published, published_at: album.published_at, sort_order: album.sort_order,
@@ -58,7 +60,7 @@ function newAlbum(artistId: string, sortOrder: number): AlbumEditorDraft {
   const id = crypto.randomUUID();
   return {
     id, artist_id: artistId, title: "", type: "Mini Album", release_date: "",
-    cover_url: "", hero_image_url: "", color: "#FC6FCF", spotify_id: "", youtube_url: "", description_ko: "", description_en: "",
+    cover_url: "", hero_image_url: "", color: BRAND_PINK_HEX, spotify_id: "", youtube_url: "", description_ko: "", description_en: "",
     description_ja: "", is_published: false, published_at: null, sort_order: sortOrder, tracks: [],
   };
 }

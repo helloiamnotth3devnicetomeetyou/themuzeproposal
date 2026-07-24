@@ -11,11 +11,11 @@
   align-items: center;
   gap: 10px;
   padding: 5px 14px 5px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--alpha-ffffff-28);
   border-radius: 999px;
-  background: rgba(8, 8, 8, 0.56);
-  color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--alpha-080808-56);
+  color: var(--color-static-white);
+  box-shadow: inset 0 1px 0 var(--alpha-ffffff-08);
   backdrop-filter: blur(14px);
   font-size: 11px;
   font-weight: 800;
@@ -26,8 +26,8 @@
 
 .home-listen-trigger:hover,
 .home-listen-trigger.is-open {
-  border-color: rgba(252, 111, 207, 0.88);
-  background: rgba(252, 111, 207, 0.12);
+  border-color: var(--alpha-fc6fcf-88);
+  background: var(--alpha-fc6fcf-12);
 }
 
 .home-listen-icon {
@@ -36,8 +36,8 @@
   height: 32px;
   place-items: center;
   border-radius: 50%;
-  background: #fc6fcf;
-  color: #0a0a0a;
+  background: var(--color-brand-pink);
+  color: var(--palette-0a0a0a);
 }
 
 .home-listen-icon svg {
@@ -48,7 +48,7 @@
 .home-listen-chevron {
   width: 14px;
   height: 14px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--alpha-ffffff-62);
   transition: transform 180ms ease;
 }
 
@@ -83,10 +83,10 @@
   justify-content: center;
   gap: 7px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--alpha-ffffff-2);
   border-radius: 999px;
-  background: rgba(8, 8, 8, 0.68);
-  color: #fff;
+  background: var(--alpha-080808-68);
+  color: var(--color-static-white);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.02em;
@@ -101,14 +101,14 @@
 }
 
 .home-stream-platforms a.is-youtube:hover {
-  border-color: #ff0033;
-  background: #ff0033;
+  border-color: var(--color-platform-youtube);
+  background: var(--color-platform-youtube);
 }
 
 .home-stream-platforms a.is-spotify:hover {
-  border-color: #1db954;
-  background: #1db954;
-  color: #061b0d;
+  border-color: var(--color-platform-spotify);
+  background: var(--color-platform-spotify);
+  color: var(--palette-061b0d);
 }
 
 @media (max-width: 639px) {

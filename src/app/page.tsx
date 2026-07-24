@@ -110,10 +110,10 @@ export default function Home() {
 
   if (loading || slides.length === 0) {
     return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black">
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[var(--bg-base)] transition-colors duration-300">
         {loading
-          ? <LoadingIndicator label="YOU ARE MY MUZE" className="text-white/50" />
-          : <div className="text-center"><p className="font-display text-sm font-black text-white/60">YOU ARE MY MUZE</p>{loadError && <p className="mt-4 text-xs text-white/35">Unable to load albums.</p>}</div>}
+          ? <LoadingIndicator label="YOU ARE MY MUZE" />
+          : <div className="text-center"><p className="font-display text-sm font-black text-[var(--text-muted)]">YOU ARE MY MUZE</p>{loadError && <p className="mt-4 text-xs text-[var(--text-faint)]">Unable to load albums.</p>}</div>}
       </main>
     );
   }
@@ -121,7 +121,7 @@ export default function Home() {
   return (
     <main
       className="relative h-screen w-full overflow-hidden"
-      style={{ backgroundColor: "#000" }}
+      style={{ backgroundColor: "var(--color-static-black)" }}
     >
       <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
       {slides.map((slide, index) => {
@@ -142,9 +142,9 @@ export default function Home() {
                   : undefined,
             }}
           >
-            <div className="absolute inset-x-0 bottom-0 z-10 h-2/5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)" }} />
-            <div className="absolute inset-x-0 top-0 z-10 h-32" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)" }} />
-            <div className="absolute inset-y-0 left-0 z-10 w-1/3" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 100%)" }} />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-2/5" style={{ background: "linear-gradient(to top, var(--alpha-000000-85) 0%, var(--alpha-000000-2) 60%, transparent 100%)" }} />
+            <div className="absolute inset-x-0 top-0 z-10 h-32" style={{ background: "linear-gradient(to bottom, var(--alpha-000000-45) 0%, transparent 100%)" }} />
+            <div className="absolute inset-y-0 left-0 z-10 w-1/3" style={{ background: "linear-gradient(to right, var(--alpha-000000-55) 0%, transparent 100%)" }} />
 
             {slide.imageUrl && (
               <Image
@@ -176,7 +176,7 @@ export default function Home() {
                 <h2
                   className="font-hero text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"
                   style={{
-                    color: "#ffffff",
+                    color: "var(--color-static-white)",
                     opacity: isActive ? undefined : 0,
                     animation: isActive ? "textShimmer 1s 0.25s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                   }}
@@ -187,7 +187,7 @@ export default function Home() {
                   <p
                     className="max-w-lg text-sm font-light leading-relaxed drop-shadow-md md:text-base"
                     style={{
-                      color: "rgba(255,255,255,0.80)",
+                      color: "var(--alpha-ffffff-8)",
                       opacity: isActive ? undefined : 0,
                       animation: isActive ? "fadeInUp 0.9s 0.5s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                     }}
@@ -204,7 +204,7 @@ export default function Home() {
                 >
                   <a
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-black shadow-lg shadow-brand-pink/20 transition-transform duration-300 hover:scale-105 hover:bg-brand-pink/90"
+                    className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-[var(--color-static-black)] shadow-lg shadow-brand-pink/20 transition-transform duration-300 hover:scale-105 hover:bg-brand-pink/90"
                   >
                     {t.hero.exploreBtn}
                   </a>
@@ -255,8 +255,8 @@ export default function Home() {
             type="button"
             onClick={() => goToSlide(currentSlide - 1)}
             aria-label="Previous album"
-            className="absolute left-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-black"
-            style={{ backgroundColor: "rgba(0,0,0,0.30)", borderColor: "rgba(255,255,255,0.10)", color: "white" }}
+            className="absolute left-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-[var(--color-static-black)]"
+            style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
           >
             <LuChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -264,8 +264,8 @@ export default function Home() {
             type="button"
             onClick={() => goToSlide(currentSlide + 1)}
             aria-label="Next album"
-            className="absolute right-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-black"
-            style={{ backgroundColor: "rgba(0,0,0,0.30)", borderColor: "rgba(255,255,255,0.10)", color: "white" }}
+            className="absolute right-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-[var(--color-static-black)]"
+            style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
           >
             <LuChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -281,8 +281,8 @@ export default function Home() {
                 className="group grid h-11 min-w-11 place-items-center"
               >
                 <span
-                  className={`h-[3px] rounded-full transition-all duration-500 ${index === currentSlide ? "w-8 bg-brand-pink" : "w-3 group-hover:bg-white/50"}`}
-                  style={index !== currentSlide ? { backgroundColor: "rgba(255,255,255,0.30)" } : {}}
+                  className={`h-[3px] rounded-full transition-all duration-500 ${index === currentSlide ? "w-8 bg-brand-pink" : "w-3 group-hover:bg-[var(--alpha-ffffff-5)]"}`}
+                  style={index !== currentSlide ? { backgroundColor: "var(--alpha-ffffff-3)" } : {}}
                   aria-hidden="true"
                 />
               </button>

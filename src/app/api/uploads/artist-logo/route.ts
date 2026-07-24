@@ -1,0 +1,91 @@
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse, type NextRequest } from "next/server";
+import { isAdmin } from "@/lib/admin-auth";
+import { getPublicSupabaseConfig } from "@/lib/public-env";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { sanitizeSvg, UnsafeSvgError } from "@/lib/svg-sanitizer";
+
+export const runtime = "nodejs";
+
+const MAX_SVG_BYTES = 10 * 1024 * 1024;
+
+function safePathPart(value: FormDataEntryValue | null, fallback: string) {
+  const normalized = typeof value === "string"
+    ? value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "")
+    : "";
+  return normalized || fallback;
+}
+
+function errorResponse(code: string, status: number) {
+  const response = NextResponse.json({ code }, { status });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
+export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== request.nextUrl.origin) {
+    return errorResponse("FORBIDDEN", 403);
+  }
+
+  const contentLength = Number(request.headers.get("content-length") || "0");
+  if (contentLength > MAX_SVG_BYTES + 64 * 1024) return errorResponse("FILE_TOO_LARGE", 413);
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return errorResponse("INVALID_FILE", 400);
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File)
+    || file.size < 1
+    || file.size > MAX_SVG_BYTES
+    || !file.name.toLowerCase().endsWith(".svg")
+    || !["image/svg+xml", "text/xml", "application/xml", ""].includes(file.type)) {
+    return errorResponse("INVALID_FILE", 400);
+  }
+
+  let sanitized: string;
+  try {
+    sanitized = sanitizeSvg(await file.text());
+  } catch (error) {
+    if (error instanceof UnsafeSvgError) return errorResponse("UNSAFE_SVG", 400);
+    return errorResponse("INVALID_FILE", 400);
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!serviceRoleKey) return errorResponse("SERVICE_UNAVAILABLE", 503);
+
+  const { url, storageUrl } = getPublicSupabaseConfig();
+  const adminClient = createClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const artistKey = safePathPart(formData.get("artistKey"), "draft");
+  const entityKey = safePathPart(formData.get("entityKey"), "asset");
+  const path = `${artistKey}/artist-logo-sanitized/${entityKey}/${crypto.randomUUID()}.svg`;
+  const { error: uploadError } = await adminClient.storage
+    .from("artist-assets")
+    .upload(path, new Blob([sanitized], { type: "image/svg+xml" }), {
+      contentType: "image/svg+xml",
+      upsert: false,
+    });
+
+  if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
+
+  const response = NextResponse.json({
+    asset: {
+      bucket: "artist-assets",
+      path,
+      url: `${storageUrl}/artist-assets/${path}`,
+    },
+  });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}

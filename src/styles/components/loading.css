@@ -4,7 +4,7 @@
   justify-content: center;
   flex-direction: column;
   gap: 14px;
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -14,25 +14,27 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--selection-bg, #fc6fcf);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--selection-bg, #fc6fcf) 45%, transparent);
+  background: var(--selection-bg, var(--color-brand-pink));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--selection-bg, var(--color-brand-pink)) 45%, transparent);
   animation: muze-loading-breathe 1.6s ease-in-out infinite;
 }
 
 .muze-loading-pulse::after {
   position: absolute;
   inset: -1px;
-  border: 1px solid var(--selection-bg, #fc6fcf);
+  border: 1px solid var(--selection-bg, var(--color-brand-pink));
   border-radius: inherit;
   content: "";
   animation: muze-loading-fade 1.6s cubic-bezier(0.2, 0.65, 0.3, 1) infinite;
 }
 
 .muze-loading-label {
-  font-size: 10px;
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 750;
   line-height: 1.4;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 @keyframes muze-loading-breathe {

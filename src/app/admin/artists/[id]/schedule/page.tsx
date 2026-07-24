@@ -1,5 +1,7 @@
 "use client";
 
+import { SCHEDULE_CATEGORY_COLORS } from "@/lib/design-tokens";
+
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { LuCake, LuCalendarDays, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuClock3, LuDisc3, LuMapPin, LuPartyPopper, LuPlus, LuRadio } from "react-icons/lu";
@@ -48,11 +50,11 @@ type Draft = {
 };
 
 const CATEGORY: Record<Category, { label: string; icon: IconType; color: string }> = {
-  show: { label: "방송 / 공연", icon: LuRadio, color: "#e878ae" },
-  release: { label: "발매", icon: LuDisc3, color: "#e58d78" },
-  anniversary: { label: "기념일", icon: LuCake, color: "#a8c94f" },
-  event: { label: "이벤트", icon: LuPartyPopper, color: "#4ec2ab" },
-  etc: { label: "기타", icon: LuCalendarPlus, color: "#e5ad34" },
+  show: { label: "방송 / 공연", icon: LuRadio, color: SCHEDULE_CATEGORY_COLORS.show },
+  release: { label: "발매", icon: LuDisc3, color: SCHEDULE_CATEGORY_COLORS.release },
+  anniversary: { label: "기념일", icon: LuCake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
+  event: { label: "이벤트", icon: LuPartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
+  etc: { label: "기타", icon: LuCalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
 };
 const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
 const tabs: WorkbenchTab<Tab>[] = [

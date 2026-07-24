@@ -15,13 +15,15 @@
 
 .headerTransparent {
   background: var(--nav-bg-gradient);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .headerScrolled {
   background-color: var(--nav-bg-scrolled);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .container {
@@ -57,8 +59,8 @@
   align-items: center;
   font-family: var(--font-display);
   font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-weight: 750;
+  letter-spacing: 0.04em;
   color: var(--text-secondary);
   transition: color 0.2s ease;
 }
@@ -68,10 +70,42 @@
   color: var(--color-brand-pink);
 }
 
+.artistLogoBadge {
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  color: currentColor;
+}
+
+.artistLogoBadge img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  transition: filter 0.2s ease;
+}
+
+.navLink:hover .artistLogoBadge :global(.is-theme-svg),
+.navLinkActive .artistLogoBadge :global(.is-theme-svg) {
+  filter: invert(61%) sepia(85%) saturate(3015%) hue-rotate(291deg) brightness(101%) contrast(98%) !important;
+}
+
+.artistLogoBadge i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .dropdownCard {
   border: 1px solid var(--border-default);
   padding: 0.375rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 30px var(--alpha-000000-35);
   background-color: var(--nav-bg-scrolled);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -86,8 +120,8 @@
   padding-right: 0.75rem;
   font-family: var(--font-display);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 750;
+  letter-spacing: 0.04em;
   color: var(--text-secondary);
   border-radius: 6px;
   transition: color 0.15s ease, background-color 0.15s ease;
@@ -139,8 +173,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000000;
-  box-shadow: 0 2px 8px rgba(252, 111, 207, 0.35);
+  color: var(--color-static-black);
+  box-shadow: 0 2px 8px var(--alpha-fc6fcf-35);
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -205,14 +239,14 @@
 
 .accountBtnLoggedIn {
   color: var(--color-brand-pink);
-  border: 1px solid rgba(252, 111, 207, 0.4);
-  background-color: rgba(252, 111, 207, 0.1);
-  box-shadow: 0 2px 10px rgba(252, 111, 207, 0.15);
+  border: 1px solid var(--alpha-fc6fcf-4);
+  background-color: var(--alpha-fc6fcf-1);
+  box-shadow: 0 2px 10px var(--alpha-fc6fcf-15);
 }
 
 .accountBtnLoggedIn:hover {
-  background-color: rgba(252, 111, 207, 0.18);
-  border-color: rgba(252, 111, 207, 0.6);
+  background-color: var(--alpha-fc6fcf-18);
+  border-color: var(--alpha-fc6fcf-6);
 }
 
 .accountBtnLoggedOut {
@@ -232,6 +266,12 @@
   height: 14px;
 }
 
+.mobileHeaderControls {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 .mobileMenu {
   position: absolute;
   left: 0;
@@ -239,8 +279,77 @@
   top: 100%;
   height: calc(100dvh - 64px);
   overflow-y: auto;
-  border-top: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-subtle);
   background-color: var(--mobile-menu-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  animation: mobileMenuFadeDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes mobileMenuFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobileArtistAccordion {
+  border-bottom: 1px solid var(--border-default);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.mobileArtistTrigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.mobileArtistChevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform 0.25s ease;
+}
+
+.mobileArtistChevronOpen {
+  transform: rotate(180deg);
+  color: var(--color-brand-pink);
+}
+
+.mobileArtistSublist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-left: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  animation: mobileSublistSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes mobileSublistSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -40,7 +42,7 @@ const EMPTY_PROFILE: ProfileDraft = {
   debutDate: "",
   imageUrl: "",
   logoUrl: "",
-  color: "#FC6FCF",
+  color: BRAND_PINK_HEX,
   descKo: "",
   descEn: "",
   descJa: "",
@@ -116,7 +118,7 @@ export default function ArtistProfileAdmin() {
         debutDate: data.debut_date || "",
         imageUrl: data.image_url || "",
         logoUrl: data.logo_url || "",
-        color: data.color || "#FC6FCF",
+        color: data.color || BRAND_PINK_HEX,
         descKo: data.description_ko || "",
         descEn: data.description_en || "",
         descJa: data.description_ja || "",
@@ -321,7 +323,7 @@ export default function ArtistProfileAdmin() {
           <div className="content-section-heading"><h3>대표 비주얼</h3><span>아티스트를 식별하는 이미지와 테마 컬러를 설정합니다.</span></div>
           <div className="content-asset-grid">
             <ImageAssetField label="프로필 이미지" hint="드래그앤드롭하거나 파일을 선택하세요. 공개 프로필에서는 원본 비율을 유지해 표시됩니다." value={draft.imageUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-profile" shape="portrait" onChange={(imageUrl) => handleProfileAssetChange("imageUrl", imageUrl)} onError={setError} />
-            <ImageAssetField label="아티스트 로고" hint="투명 배경 PNG·WebP를 권장합니다. 원본 비율을 유지해 표시됩니다." value={draft.logoUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-logo" shape="logo" onChange={(logoUrl) => handleProfileAssetChange("logoUrl", logoUrl)} onError={setError} />
+            <ImageAssetField label="아티스트 로고" hint="SVG 또는 투명 배경 PNG·WebP를 권장합니다. SVG는 서버에서 안전성 검사 후 저장됩니다." value={draft.logoUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-logo" shape="logo" onChange={(logoUrl) => handleProfileAssetChange("logoUrl", logoUrl)} onError={setError} />
           </div>
           <label className="music-field content-field-short"><span>테마 컬러 <b>*</b></span><div className="content-color-row"><input type="color" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /><input className="admin-input" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /></div></label>
         </>}

@@ -31,7 +31,7 @@
 .eyebrow {
   display: block;
   margin-bottom: 20px;
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
   font-family: var(--font-sans);
   font-size: 9px;
   font-weight: 750;
@@ -109,7 +109,7 @@
 }
 
 .sectionLabel {
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
   font-family: var(--font-sans);
   font-size: 9px;
   font-weight: 750;
@@ -176,7 +176,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #fc6fcf;
+  background: var(--color-brand-pink);
   opacity: 0.5;
 }
 
@@ -247,8 +247,8 @@
 }
 
 .fieldInput:focus {
-  border-color: #fc6fcf !important;
-  box-shadow: 0 0 0 3px rgba(252, 111, 207, 0.08);
+  border-color: var(--color-brand-pink) !important;
+  box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08);
 }
 
 .fieldInput::placeholder {
@@ -269,8 +269,8 @@
   padding: 0 24px;
   border: none;
   border-radius: 2px;
-  background: #fc6fcf;
-  color: #000;
+  background: var(--color-brand-pink);
+  color: var(--color-static-black);
   cursor: pointer;
   font-family: var(--font-sans);
   font-size: 11px;
@@ -281,7 +281,7 @@
 }
 
 .submitBtn:hover {
-  background: #e455b5;
+  background: var(--palette-e455b5);
   transform: translateY(-1px);
 }
 
@@ -302,7 +302,7 @@
 .successIcon {
   width: 32px;
   height: 32px;
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
 }
 
 .successTitle {
@@ -343,7 +343,7 @@
 }
 
 .backBtn:hover {
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
 }
 
 @keyframes fadeUp {

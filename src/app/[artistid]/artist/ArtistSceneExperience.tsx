@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
@@ -163,7 +165,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const groupBio = artist
     ? ((locale === "ko" ? artist.description_ko : locale === "ja" ? artist.description_ja : artist.description_en) || artist.description_ko || artist.description_en || artist.description_ja || "")
     : "";
-  const accent = selectedMember?.color || artist?.color || "#FC6FCF";
+  const accent = selectedMember?.color || artist?.color || BRAND_PINK_HEX;
   const currentDimensions = activeScene ? dimensions[activeScene.id] : undefined;
   const sceneWidth = currentDimensions?.width || activeScene?.image_width || 16;
   const sceneHeight = currentDimensions?.height || activeScene?.image_height || 9;
@@ -324,7 +326,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
                 <mask id={`mask-${region.id}`} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100" className={styles.alphaMask}>
                   {region.mask_url
                     ? <image href={region.mask_url} x="0" y="0" width="100" height="100" preserveAspectRatio="none" filter={`url(#feather-${region.id})`} />
-                    : <path d={path} fill="white" filter={`url(#feather-${region.id})`} />}
+                    : <path d={path} fill="var(--color-static-white)" filter={`url(#feather-${region.id})`} />}
                 </mask>
               </defs>
               <image

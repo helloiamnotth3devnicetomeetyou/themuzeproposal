@@ -88,7 +88,7 @@
 }
 
 .tabs .activeTab::after {
-  background: #fc6fcf;
+  background: var(--color-brand-pink);
 }
 
 .accountMeta {
@@ -105,7 +105,7 @@
   width: 14px;
   height: 14px;
   grid-row: 1 / span 2;
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
 }
 
 .accountMeta span,
@@ -150,7 +150,7 @@
 }
 
 .contentHeader span {
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
   font-size: 9px;
   font-weight: 750;
   letter-spacing: .08em;
@@ -222,8 +222,8 @@
 }
 
 .formRow > input:focus {
-  border-color: #fc6fcf !important;
-  box-shadow: 0 0 0 3px rgba(252, 111, 207, .08);
+  border-color: var(--color-brand-pink) !important;
+  box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08);
 }
 
 .formRow > input:disabled {
@@ -260,13 +260,13 @@
 }
 
 .success {
-  color: #58b38c;
-  background: rgba(88, 179, 140, .05);
+  color: var(--palette-58b38c);
+  background: var(--alpha-58b38c-05);
 }
 
 .error {
-  color: #e47777;
-  background: rgba(228, 119, 119, .05);
+  color: var(--palette-e47777);
+  background: var(--alpha-e47777-05);
 }
 
 .checking {
@@ -294,9 +294,9 @@
 }
 
 .submit:hover:not(:disabled) {
-  border-color: #fc6fcf;
-  background: #fc6fcf;
-  color: #171017;
+  border-color: var(--color-brand-pink);
+  background: var(--color-brand-pink);
+  color: var(--palette-171017);
 }
 
 .submit:disabled,
@@ -320,7 +320,7 @@
 }
 
 .session span {
-  color: #fc6fcf;
+  color: var(--color-brand-pink);
   font-size: 9px;
   font-weight: 750;
   letter-spacing: .08em;
@@ -351,12 +351,12 @@
   justify-content: center;
   gap: 9px;
   margin: 0;
-  border: 1px solid rgba(228, 119, 119, .48);
-  color: #e47777;
+  border: 1px solid var(--alpha-e47777-48);
+  color: var(--palette-e47777);
 }
 
 .signOut:hover:not(:disabled) {
-  background: rgba(228, 119, 119, .08);
+  background: var(--alpha-e47777-08);
 }
 
 .signOut svg {
@@ -368,7 +368,7 @@
 .formRow > input:focus-visible,
 .submit:focus-visible,
 .signOut:focus-visible {
-  outline: 2px solid #fc6fcf;
+  outline: 2px solid var(--color-brand-pink);
   outline-offset: 2px;
 }
 
