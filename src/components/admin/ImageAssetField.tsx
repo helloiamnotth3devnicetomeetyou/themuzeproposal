@@ -26,7 +26,6 @@ type ImageAssetFieldProps = {
 };
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const LOGO_TYPES = [...IMAGE_TYPES, "image/svg+xml"];
 
 const safePathPart = (value: string, fallback: string) => {
   const safe = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
@@ -54,10 +53,9 @@ export default function ImageAssetField({
 
   const uploadFile = async (file?: File) => {
     if (!file) return;
-    const allowedTypes = kind === "artist-logo" ? LOGO_TYPES : IMAGE_TYPES;
-    const fileType = kind === "artist-logo" && file.name.toLowerCase().endsWith(".svg") ? "image/svg+xml" : file.type;
-    if (!allowedTypes.includes(fileType)) {
-      onError(`${label}은 ${kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} 파일만 올릴 수 있습니다.`);
+    const fileType = file.type;
+    if (!IMAGE_TYPES.includes(fileType)) {
+      onError(`${label}은 JPG, PNG, WebP 파일만 올릴 수 있습니다.`);
       return;
     }
     if (file.size > maxBytes) {
@@ -66,7 +64,7 @@ export default function ImageAssetField({
     }
     setBusy(true);
     try {
-      const extension = fileType === "image/svg+xml" ? "svg" : fileType === "image/png" ? "png" : fileType === "image/webp" ? "webp" : "jpg";
+      const extension = fileType === "image/png" ? "png" : fileType === "image/webp" ? "webp" : "jpg";
       const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.${extension}`;
       const { error } = await supabase.storage.from("artist-assets").upload(path, file, { contentType: fileType, upsert: false });
       if (error) throw error;
@@ -98,7 +96,7 @@ export default function ImageAssetField({
         <div className="content-asset-copy">
           <span>{label}{required && <b>*</b>}</span>
           <p>{busy ? "업로드 중…" : hint}</p>
-          <small>{kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} · 최대 {maxMegabytes}MB</small>
+          <small>JPG, PNG, WebP · 최대 {maxMegabytes}MB</small>
         </div>
         <div className="content-asset-actions">
           <label htmlFor={inputId}>{busy ? "업로드 중" : value ? "파일 교체" : "파일 선택"}</label>
@@ -108,7 +106,7 @@ export default function ImageAssetField({
           id={inputId}
           className="sr-only"
           type="file"
-          accept={kind === "artist-logo" ? "image/jpeg,image/png,image/webp,image/svg+xml,.svg" : "image/jpeg,image/png,image/webp"}
+          accept="image/jpeg,image/png,image/webp"
           disabled={busy}
           onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }}
         />

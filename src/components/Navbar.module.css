@@ -1,0 +1,246 @@
+/* Navbar CSS module */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: background-color 0.4s ease, backdrop-filter 0.4s ease, height 0.4s ease;
+}
+
+.headerAdmin {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.headerTransparent {
+  background: var(--nav-bg-gradient);
+}
+
+.headerScrolled {
+  background-color: var(--nav-bg-scrolled);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  max-width: 1440px;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  height: 72px;
+  transition: height 0.4s ease;
+}
+
+.containerScrolled {
+  height: 64px;
+}
+
+.logoImage {
+  object-fit: contain;
+  transition: filter 0.3s ease;
+}
+
+.logoDark {
+  filter: invert(1);
+}
+
+.navLink {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.navLink:hover,
+.navLinkActive {
+  color: var(--color-brand-pink);
+}
+
+.dropdownCard {
+  border: 1px solid var(--border-default);
+  padding: 0.375rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  background-color: var(--nav-bg-scrolled);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 8px;
+}
+
+.dropdownItem {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.dropdownItem:hover,
+.dropdownItemActive {
+  color: var(--color-brand-pink);
+  background-color: var(--bg-subtle);
+}
+
+/* Utlity Group Styling */
+.utilityGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Unified Pill Base for Theme Toggle */
+.themeToggleBtn {
+  position: relative;
+  display: flex;
+  height: 36px;
+  width: 64px;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 9999px;
+  padding: 3px 7px;
+  background-color: var(--lang-pill-bg);
+  border: 1px solid var(--lang-pill-border);
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.themeToggleBtn:hover {
+  border-color: var(--color-brand-pink);
+  background-color: color-mix(in srgb, var(--lang-pill-bg) 80%, var(--color-brand-pink) 20%);
+}
+
+.themeToggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background-color: var(--color-brand-pink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(252, 111, 207, 0.35);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.themeToggleThumbDark {
+  transform: translateX(28px);
+}
+
+.themeToggleIcons {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  pointer-events: none;
+  user-select: none;
+  color: var(--text-faint);
+}
+
+/* Icon Text Link (Admin) */
+.iconLink {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--lang-pill-border);
+  background-color: var(--lang-pill-bg);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.iconLink:hover,
+.iconLinkActive {
+  color: var(--color-brand-pink);
+  border-color: var(--color-brand-pink);
+  background-color: color-mix(in srgb, var(--lang-pill-bg) 80%, var(--color-brand-pink) 20%);
+}
+
+.iconLinkIcon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Account Button */
+.accountBtn {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.accountBtnLoggedIn {
+  color: var(--color-brand-pink);
+  border: 1px solid rgba(252, 111, 207, 0.4);
+  background-color: rgba(252, 111, 207, 0.1);
+  box-shadow: 0 2px 10px rgba(252, 111, 207, 0.15);
+}
+
+.accountBtnLoggedIn:hover {
+  background-color: rgba(252, 111, 207, 0.18);
+  border-color: rgba(252, 111, 207, 0.6);
+}
+
+.accountBtnLoggedOut {
+  color: var(--text-primary);
+  border: 1px solid var(--lang-pill-border);
+  background-color: var(--lang-pill-bg);
+}
+
+.accountBtnLoggedOut:hover {
+  border-color: var(--color-brand-pink);
+  color: var(--color-brand-pink);
+  background-color: color-mix(in srgb, var(--lang-pill-bg) 80%, var(--color-brand-pink) 20%);
+}
+
+.accountBtnIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.mobileMenu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: calc(100dvh - 64px);
+  overflow-y: auto;
+  border-top: 1px solid var(--border-default);
+  background-color: var(--mobile-menu-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

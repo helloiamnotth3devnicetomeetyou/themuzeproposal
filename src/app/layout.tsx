@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
-import { LocaleProvider } from "./context/LocaleContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { LocaleProvider, type Locale } from "./context/LocaleContext";
+import { ThemeProvider, type Theme } from "./context/ThemeContext";
 import MainLayout from "../components/MainLayout";
+import { getSiteUrl } from "@/lib/public-env";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -12,20 +14,34 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "THE MUZE ENTERTAINMENT",
+  title: {
+    default: "THE MUZE ENTERTAINMENT",
+    template: "%s · THE MUZE",
+  },
   description: "THE MUZE Entertainment - Artists, Music, Auditions & News.",
+  metadataBase: new URL(getSiteUrl()),
+  openGraph: {
+    title: "THE MUZE ENTERTAINMENT",
+    description: "Artists, music, auditions and news from THE MUZE Entertainment.",
+    images: ["/images/og_image.png"],
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+const isLocale = (value?: string): value is Locale => value === "ko" || value === "en" || value === "ja";
+const isTheme = (value?: string): value is Theme => value === "dark" || value === "light";
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get("muze-locale")?.value;
+  const themeCookie = cookieStore.get("muze-theme")?.value;
+  const initialLocale: Locale = isLocale(localeCookie) ? localeCookie : "ko";
+  const initialTheme: Theme = isTheme(themeCookie) ? themeCookie : "dark";
+
   return (
-    <html lang="ko" className={`${montserrat.variable} h-full antialiased`}>
-      <body id="dummybodyid" className="min-h-full flex flex-col" style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }} suppressHydrationWarning>
-        <ThemeProvider>
-          <LocaleProvider>
+    <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider initialTheme={initialTheme}>
+          <LocaleProvider initialLocale={initialLocale}>
             <MainLayout>{children}</MainLayout>
           </LocaleProvider>
         </ThemeProvider>

@@ -175,9 +175,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
         ? "mp3"
         : file.type === "image/png"
           ? "png"
-          : file.type === "image/svg+xml"
-            ? "svg"
-            : "webp";
+          : "webp";
       const path = `${artistId}/${albumId}/${trackId}/${kind}-${crypto.randomUUID()}.${extension}`;
       onUploaded(await upload("track-assets", path, file, kind === "audio" ? "audio/mpeg" : file.type));
     } catch (cause) {

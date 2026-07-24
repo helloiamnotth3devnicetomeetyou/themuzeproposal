@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark" | "light";
+export type Theme = "dark" | "light";
 
 interface ThemeContextProps {
   theme: Theme;
@@ -10,38 +10,38 @@ interface ThemeContextProps {
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
+const THEME_COOKIE = "muze-theme";
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+function persistTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.cookie = `${THEME_COOKIE}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  localStorage.setItem("theme", theme);
+}
+
+export function ThemeProvider({ children, initialTheme }: { children: React.ReactNode; initialTheme: Theme }) {
+  const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme;
-    if (saved === "dark" || saved === "light") {
+    document.documentElement.setAttribute("data-theme", initialTheme);
+    const hasThemeCookie = document.cookie.split("; ").some((item) => item.startsWith(`${THEME_COOKIE}=`));
+    const saved = localStorage.getItem("theme");
+    if (!hasThemeCookie && (saved === "dark" || saved === "light") && saved !== initialTheme) {
+      persistTheme(saved);
       void Promise.resolve().then(() => setTheme(saved));
-      document.documentElement.setAttribute("data-theme", saved);
-    } else {
-      document.documentElement.setAttribute("data-theme", "dark");
     }
-  }, []);
+  }, [initialTheme]);
 
   const toggleTheme = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem("theme", next);
-    document.documentElement.setAttribute("data-theme", next);
+    persistTheme(next);
   };
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used within a ThemeProvider");
   return context;
 }

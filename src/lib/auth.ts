@@ -1,12 +1,29 @@
 import { supabase } from './supabase';
 
+export type AuthErrorCode =
+  | 'INVALID_CREDENTIALS'
+  | 'RATE_LIMITED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'SIGNUP_FAILED'
+  | 'UPDATE_FAILED';
+
+export class AuthUserError extends Error {
+  constructor(public readonly code: AuthErrorCode) {
+    super(code);
+    this.name = 'AuthUserError';
+  }
+}
+
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
   });
-  if (error) throw error;
-  return data;
+  const payload = await response.json().catch(() => ({})) as { code?: AuthErrorCode };
+  if (!response.ok) {
+    throw new AuthUserError(payload.code || 'SERVICE_UNAVAILABLE');
+  }
 }
 
 export async function signUp(email: string, password: string, name?: string) {
@@ -19,18 +36,13 @@ export async function signUp(email: string, password: string, name?: string) {
       },
     },
   });
-  if (error) throw error;
+  if (error) throw new AuthUserError('SIGNUP_FAILED');
   return data;
 }
 
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-}
-
-export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  if (error) throw new AuthUserError('SERVICE_UNAVAILABLE');
 }
 
 export async function getUser() {
@@ -45,7 +57,7 @@ export async function updateUserName(name: string) {
   const { data, error } = await supabase.auth.updateUser({
     data: { name: trimmedName },
   });
-  if (error) throw error;
+  if (error) throw new AuthUserError('UPDATE_FAILED');
 
   const email = data.user.email;
   if (!email) throw new Error('The account email could not be found.');
@@ -62,14 +74,14 @@ export async function updateUserName(name: string) {
       { onConflict: 'id' },
     );
 
-  if (profileError) throw profileError;
+  if (profileError) throw new AuthUserError('UPDATE_FAILED');
   return data.user;
 }
 
 export async function updateUserEmail(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const { data, error } = await supabase.auth.updateUser({ email: normalizedEmail });
-  if (error) throw error;
+  if (error) throw new AuthUserError('UPDATE_FAILED');
   return data.user;
 }
 
@@ -90,7 +102,7 @@ export async function verifyCurrentPassword(password: string) {
   });
   if (error) {
     if (error.code === 'invalid_credentials') throw new CurrentPasswordError();
-    throw error;
+    throw new AuthUserError('SERVICE_UNAVAILABLE');
   }
 }
 
@@ -103,7 +115,7 @@ export async function updateUserPassword(currentPassword: string, password: stri
     if (error.code === 'invalid_credentials' || /current password/i.test(error.message)) {
       throw new CurrentPasswordError();
     }
-    throw error;
+    throw new AuthUserError('UPDATE_FAILED');
   }
   return data.user;
 }

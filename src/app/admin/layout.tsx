@@ -1,56 +1,20 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { getSession, isAdmin } from "@/lib/auth";
-import Sidebar from "@/components/admin/Sidebar";
-import AdminDialogProvider from "@/components/admin/AdminDialogProvider";
-import LoadingIndicator from "@/components/LoadingIndicator";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import AdminShell from "@/components/admin/AdminShell";
+import { isAdmin } from "@/lib/admin-auth";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import "./admin.css";
 import "./admin-special.css";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-  useEffect(() => {
-    getSession().then(async (session) => {
-      if (!session) {
-        router.replace("/login");
-      } else {
-        const admin = await isAdmin();
-        if (!admin) {
-          router.replace("/");
-        } else {
-          setLoading(false);
-        }
-      }
-    });
-  }, [pathname, router]);
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getClaims();
+  const userId = error ? undefined : data?.claims?.sub;
 
-  if (loading) {
-    return (
-      <div className="admin-layout min-h-screen flex items-center justify-center">
-        <LoadingIndicator label="관리자 화면을 여는 중…" />
-      </div>
-    );
-  }
+  if (!userId) redirect("/login?redirect=/admin");
+  if (!(await isAdmin(supabase, userId))) redirect("/");
 
-  const isFullBleed = ["discography", "tracks", "profile", "members", "schedule", "notices", "settings", "hero", "auditions", "protect"].some((segment) => pathname.includes(segment));
-
-  return (
-    <AdminDialogProvider>
-      <div className="admin-layout cms-shell">
-        <Sidebar />
-        <div className="cms-workspace">
-          <main className={`cms-content ${isFullBleed ? "is-full-bleed" : ""}`}>
-            <div className="cms-content-inner">
-            {children}
-            </div>
-          </main>
-        </div>
-      </div>
-    </AdminDialogProvider>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }

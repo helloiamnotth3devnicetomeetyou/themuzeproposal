@@ -3,46 +3,70 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   color: var(--text-muted, rgba(255, 255, 255, 0.5));
   text-align: center;
 }
 
-.muze-loading-track {
+.muze-loading-pulse {
   position: relative;
   display: block;
-  width: 38px;
-  height: 1px;
-  overflow: visible;
-  background: color-mix(in srgb, currentColor 28%, transparent);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--selection-bg, #fc6fcf);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--selection-bg, #fc6fcf) 45%, transparent);
+  animation: muze-loading-breathe 1.6s ease-in-out infinite;
 }
 
-.muze-loading-track::after {
+.muze-loading-pulse::after {
   position: absolute;
-  top: 50%;
-  left: 0;
-  width: 7px;
-  height: 3px;
-  border-radius: 99px;
-  background: #fc6fcf;
+  inset: -1px;
+  border: 1px solid var(--selection-bg, #fc6fcf);
+  border-radius: inherit;
   content: "";
-  transform: translateY(-50%);
-  animation: muze-loading-playhead 1.05s ease-in-out infinite alternate;
+  animation: muze-loading-fade 1.6s cubic-bezier(0.2, 0.65, 0.3, 1) infinite;
 }
 
 .muze-loading-label {
   font-size: 10px;
   font-weight: 650;
-  letter-spacing: 0.06em;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
 }
 
-@keyframes muze-loading-playhead {
-  to { transform: translate(31px, -50%); }
+@keyframes muze-loading-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.9);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes muze-loading-fade {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(4.2);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .muze-loading-track::after {
+  .muze-loading-pulse,
+  .muze-loading-pulse::after {
     animation: none;
-    transform: translate(15px, -50%);
+  }
+
+  .muze-loading-pulse::after {
+    opacity: 0.28;
+    transform: scale(2.2);
   }
 }

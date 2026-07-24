@@ -2,66 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
 import { SiSpotify, SiYoutube } from "react-icons/si";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { useLocale } from "./context/LocaleContext";
+import { getPublicHomeSlides } from "@/features/home/repository";
 import { supabase } from "@/lib/supabase";
+import type { HomeSlideDTO } from "@/features/home/types";
 
-type HomeSlide = {
-  id: string;
-  artistName: string;
-  artistSlug: string;
-  title: string;
-  type: string;
-  imageUrl: string;
-  spotifyId: string | null;
-  youtubeUrl: string | null;
-  descriptions: {
-    ko: string;
-    en: string;
-    ja: string;
-  };
-};
-
-type AlbumRow = {
-  id: string;
-  artist_id: string;
-  title: string;
-  type: string;
-  cover_url: string | null;
-  hero_image_url: string | null;
-  spotify_id: string | null;
-  youtube_url: string | null;
-  description_ko: string | null;
-  description_en: string | null;
-  description_ja: string | null;
-};
-
-type ArtistRow = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
-type HeroSlideRow = {
-  id: string;
-  album_id: string;
-  sort_order: number;
-};
-
-const HOME_SLIDE_LIMIT = 5;
 const TRANSITION_DURATION = 1100;
 
 export default function Home() {
   const { locale, t } = useLocale();
-  const [slides, setSlides] = useState<HomeSlide[]>([]);
+  const [slides, setSlides] = useState<HomeSlideDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
+
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -71,90 +33,21 @@ export default function Home() {
       setLoading(true);
       setLoadError(false);
 
-      const { data: heroSlides, error: heroError } = await supabase
-        .from("home_hero_slides")
-        .select("id, album_id, sort_order")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .limit(HOME_SLIDE_LIMIT);
-
-      if (cancelled) return;
-
-      if (heroError) {
-        setSlides([]);
-        setLoadError(true);
-        setLoading(false);
-        return;
-      }
-
-      const configuredSlides = (heroSlides ?? []) as HeroSlideRow[];
-      const albumIds = configuredSlides.map((slide) => slide.album_id);
-
-      if (!albumIds.length) {
-        setSlides([]);
-        setCurrentSlide(0);
-        setPrevSlide(null);
-        setIsTransitioning(false);
-        setOpenStreamingSlideId(null);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("albums")
-        .select("id, artist_id, title, type, cover_url, hero_image_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
-        .in("id", albumIds)
-        .eq("is_published", true)
-        .lte("published_at", new Date().toISOString());
-
-      if (cancelled) return;
-
-      if (error) {
-        setSlides([]);
-        setLoadError(true);
-      } else {
-        const albumsById = new Map(((data ?? []) as AlbumRow[]).map((album) => [album.id, album]));
-        const artistIds = [...new Set((data ?? []).map((album) => (album as AlbumRow).artist_id))];
-        const { data: artistData, error: artistError } = artistIds.length
-          ? await supabase.from("artists").select("id, name, slug").in("id", artistIds).eq("is_active", true)
-          : { data: [], error: null };
-
+      try {
+        const nextSlides = await getPublicHomeSlides(supabase);
         if (cancelled) return;
-        if (artistError) {
-          setSlides([]);
-          setLoadError(true);
-          setLoading(false);
-          return;
-        }
-
-        const artistsById = new Map(((artistData ?? []) as ArtistRow[]).map((artist) => [artist.id, artist]));
-        setSlides(configuredSlides.flatMap((heroSlide) => {
-          const album = albumsById.get(heroSlide.album_id);
-          const artist = album ? artistsById.get(album.artist_id) : null;
-          if (!album || !artist) return [];
-          return [{
-          id: album.id,
-          artistName: artist.name,
-          artistSlug: artist.slug,
-          title: album.title,
-          type: album.type,
-          imageUrl: album.hero_image_url || album.cover_url || "",
-          spotifyId: album.spotify_id,
-          youtubeUrl: album.youtube_url || null,
-          descriptions: {
-            ko: album.description_ko ?? "",
-            en: album.description_en ?? album.description_ko ?? "",
-            ja: album.description_ja ?? album.description_en ?? album.description_ko ?? "",
-          },
-          }];
-        }));
+        setSlides(nextSlides);
         setCurrentSlide(0);
         setPrevSlide(null);
         setIsTransitioning(false);
         setOpenStreamingSlideId(null);
+      } catch {
+        if (cancelled) return;
+        setSlides([]);
+        setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      setLoading(false);
     }
 
     void loadSlides();
@@ -165,6 +58,26 @@ export default function Home() {
 
   useEffect(() => () => {
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
+  }, []);
+
+  useEffect(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncViewportPreferences = () => {
+      setPrefersReducedMotion(motionQuery.matches);
+    };
+    const syncVisibility = () => setIsPageVisible(document.visibilityState === "visible");
+    const animationFrame = requestAnimationFrame(() => {
+      syncViewportPreferences();
+      syncVisibility();
+    });
+
+    motionQuery.addEventListener("change", syncViewportPreferences);
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      motionQuery.removeEventListener("change", syncViewportPreferences);
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
   }, []);
 
   const goToSlide = useCallback((next: number) => {
@@ -186,27 +99,31 @@ export default function Home() {
   }, [currentSlide, isTransitioning, slides.length]);
 
   useEffect(() => {
-    if (slides.length <= 1 || isTransitioning) return;
+    if (slides.length <= 1 || isTransitioning || !isPageVisible || prefersReducedMotion) return;
 
     const timer = setTimeout(() => {
       goToSlide(currentSlide + 1);
     }, 6000);
 
     return () => clearTimeout(timer);
-  }, [currentSlide, goToSlide, isTransitioning, slides.length]);
+  }, [currentSlide, goToSlide, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
 
   if (loading || slides.length === 0) {
     return (
-      <section className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black">
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black">
         {loading
           ? <LoadingIndicator label="YOU ARE MY MUZE" className="text-white/50" />
-          : <div className="text-center"><p className="font-display text-sm font-black tracking-[0.35em] text-white/60">YOU ARE MY MUZE</p>{loadError && <p className="mt-4 text-xs text-white/35">Unable to load albums.</p>}</div>}
-      </section>
+          : <div className="text-center"><p className="font-display text-sm font-black text-white/60">YOU ARE MY MUZE</p>{loadError && <p className="mt-4 text-xs text-white/35">Unable to load albums.</p>}</div>}
+      </main>
     );
   }
 
   return (
-    <section className="relative h-screen w-full overflow-hidden" style={{ backgroundColor: "#000" }}>
+    <main
+      className="relative h-screen w-full overflow-hidden"
+      style={{ backgroundColor: "#000" }}
+    >
+      <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
       {slides.map((slide, index) => {
         const isActive = index === currentSlide;
         const isLeaving = index === prevSlide;
@@ -248,7 +165,7 @@ export default function Home() {
             <div className="absolute inset-x-0 bottom-16 z-20 mx-auto flex max-w-7xl items-end justify-between gap-6 px-6 md:bottom-20">
               <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
                 <span
-                  className="text-sm font-extrabold uppercase tracking-[0.3em] text-brand-pink md:text-base"
+                  className="text-sm font-extrabold uppercase text-brand-pink md:text-base"
                   style={{
                     opacity: isActive ? undefined : 0,
                     animation: isActive ? "fadeInUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both" : undefined,
@@ -257,7 +174,7 @@ export default function Home() {
                   {slide.artistName} {slide.type}
                 </span>
                 <h2
-                  className="font-display text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"
+                  className="font-hero text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"
                   style={{
                     color: "#ffffff",
                     opacity: isActive ? undefined : 0,
@@ -287,7 +204,7 @@ export default function Home() {
                 >
                   <a
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
-                    className="rounded-full bg-brand-pink px-7 py-3 text-xs font-black tracking-widest text-black shadow-lg shadow-brand-pink/20 transition-transform duration-300 hover:scale-105 hover:bg-brand-pink/90"
+                    className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-black shadow-lg shadow-brand-pink/20 transition-transform duration-300 hover:scale-105 hover:bg-brand-pink/90"
                   >
                     {t.hero.exploreBtn}
                   </a>
@@ -298,16 +215,11 @@ export default function Home() {
                         aria-expanded={openStreamingSlideId === slide.id}
                         aria-controls={`streaming-${slide.id}`}
                         onClick={() => setOpenStreamingSlideId((current) => current === slide.id ? null : slide.id)}
-                        className="rounded-full px-7 py-3 text-xs font-black tracking-widest transition-all duration-300"
-                        style={{
-                          backgroundColor: openStreamingSlideId === slide.id ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)",
-                          border: "1px solid rgba(255,255,255,0.30)",
-                          color: "#ffffff",
-                        }}
-                        onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)"; }}
-                        onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = openStreamingSlideId === slide.id ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)"; }}
+                        className={`home-listen-trigger ${openStreamingSlideId === slide.id ? "is-open" : ""}`}
                       >
-                        {t.hero.listenBtn}
+                        <span className="home-listen-icon" aria-hidden="true"><LuHeadphones /></span>
+                        <span>{t.hero.listenBtn}</span>
+                        <LuChevronDown className="home-listen-chevron" aria-hidden="true" />
                       </button>
                       <div
                         id={`streaming-${slide.id}`}
@@ -317,11 +229,13 @@ export default function Home() {
                         {slide.youtubeUrl && (
                           <a href={slide.youtubeUrl} target="_blank" rel="noreferrer" aria-label={`${slide.title} on YouTube`} className="is-youtube">
                             <SiYoutube aria-hidden="true" />
+                            <span>YouTube</span>
                           </a>
                         )}
                         {slide.spotifyId && (
                           <a href={`https://open.spotify.com/album/${slide.spotifyId}`} target="_blank" rel="noreferrer" aria-label={`${slide.title} on Spotify`} className="is-spotify">
                             <SiSpotify aria-hidden="true" />
+                            <span>Spotify</span>
                           </a>
                         )}
                       </div>
@@ -330,35 +244,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {slide.spotifyId && (
-                <div
-                  className="hidden shrink-0 md:block"
-                  style={{
-                    opacity: isActive ? undefined : 0,
-                    animation: isActive ? "fadeInUp 0.9s 0.8s cubic-bezier(0.16,1,0.3,1) both" : undefined,
-                    width: "300px",
-                  }}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <SiSpotify className="h-3.5 w-3.5 shrink-0 text-[#1DB954]" aria-hidden="true" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      NOW STREAMING
-                    </span>
-                  </div>
-                  {isActive && (
-                    <iframe
-                      key={`spotify-${slide.id}`}
-                      title={`${slide.title} on Spotify`}
-                      src={`https://open.spotify.com/embed/album/${slide.spotifyId}?utm_source=generator&theme=0`}
-                      width="300"
-                      height="80"
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="lazy"
-                      style={{ borderRadius: "10px", display: "block", border: "none" }}
-                    />
-                  )}
-                </div>
-              )}
             </div>
           </div>
         );
@@ -393,15 +278,18 @@ export default function Home() {
                 onClick={() => goToSlide(index)}
                 aria-label={`Show ${slide.title}`}
                 aria-current={index === currentSlide ? "true" : undefined}
-                className={`h-[3px] rounded-full transition-all duration-500 ${
-                  index === currentSlide ? "w-8 bg-brand-pink" : "w-3 hover:bg-white/50"
-                }`}
-                style={index !== currentSlide ? { backgroundColor: "rgba(255,255,255,0.30)" } : {}}
-              />
+                className="group grid h-11 min-w-11 place-items-center"
+              >
+                <span
+                  className={`h-[3px] rounded-full transition-all duration-500 ${index === currentSlide ? "w-8 bg-brand-pink" : "w-3 group-hover:bg-white/50"}`}
+                  style={index !== currentSlide ? { backgroundColor: "rgba(255,255,255,0.30)" } : {}}
+                  aria-hidden="true"
+                />
+              </button>
             ))}
           </div>
         </>
       )}
-    </section>
+    </main>
   );
 }

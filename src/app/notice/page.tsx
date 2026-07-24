@@ -1,5 +1,7 @@
 import NoticeBoard from "@/components/NoticeBoard";
+import { loadPublicNotices } from "@/features/notices/server";
 
-export default function Notice() {
-  return <main><NoticeBoard /></main>;
+export default async function Notice() {
+  const { data, loadFailed } = await loadPublicNotices();
+  return <main><NoticeBoard initialData={data} loadFailed={loadFailed} /></main>;
 }

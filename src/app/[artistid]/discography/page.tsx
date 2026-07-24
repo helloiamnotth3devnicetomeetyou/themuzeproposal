@@ -109,13 +109,14 @@ export default function Discography() {
         .eq("artist_id", artist.id)
         .eq("is_published", true)
         .lte("published_at", new Date().toISOString())
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true })
+        .overrideTypes<RawDiscographyAlbum[], { merge: false }>();
 
       if (cancelled) return;
       if (albumsResult.error) {
         setLoadError("디스코그래피를 불러오지 못했습니다.");
       } else {
-        const nextAlbums = ((albumsResult.data ?? []) as unknown as RawDiscographyAlbum[]).map((item) => ({
+        const nextAlbums = (albumsResult.data ?? []).map((item) => ({
           id: item.id,
           title: item.title,
           type: item.type,
@@ -447,7 +448,7 @@ export default function Discography() {
           <div className="shrink-0">
             <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: album.color, transition: "color 0.5s" }}>{album.type}</span>
             <div className="flex items-center justify-between mt-1">
-              <h2 className="text-4xl md:text-5xl font-black font-display tracking-tight text-white leading-none">{album.title}</h2>
+              <h2 className="font-hero text-4xl font-black leading-none tracking-tight text-white md:text-5xl">{album.title}</h2>
               <div className="flex gap-2">
                 <a href={album.links?.spotify || "#"} target="_blank" aria-label={`${album.title} on Spotify`} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-white hover:text-gray-200">
                   <SiSpotify className="w-4 h-4" aria-hidden="true" />

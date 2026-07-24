@@ -77,7 +77,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     }
     setLoading(true);
     const [sceneResult, memberResult] = await Promise.all([
-      supabase.from("artist_scenes").select(sceneSelect).eq("artist_id", artistId).order("is_hero", { ascending: false }).order("sort_order", { ascending: true }),
+      supabase.from("artist_scenes").select(sceneSelect).eq("artist_id", artistId).order("is_hero", { ascending: false }).order("sort_order", { ascending: true }).overrideTypes<ArtistScene[], { merge: false }>(),
       supabase.from("artist_members").select("id,name,eng_name,color,sort_order").eq("artist_id", artistId).order("sort_order", { ascending: true }),
     ]);
     setLoading(false);
@@ -88,7 +88,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       return;
     }
     setSchemaMissing(false);
-    const nextScenes = ((sceneResult.data as unknown as ArtistScene[] | null) ?? []).map(normalizedScene);
+    const nextScenes = (sceneResult.data ?? []).map(normalizedScene);
     setScenes(nextScenes);
     setMembers((memberResult.data as MemberLookup[] | null) ?? []);
     setSelectedSceneId((current) => {

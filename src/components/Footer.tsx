@@ -96,7 +96,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Left: Info */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4">
-          <Link href="/" className="relative w-36 h-8 block">
+          <Link href="/" className="relative block h-11 w-36">
             <Image
               src="/images/logo.png"
               alt="THE MUZE Logo"
@@ -128,7 +128,7 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     aria-label={accessibleLabel}
                     title={accessibleLabel}
-                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:text-brand-pink hover:border-brand-pink"
+                    className="flex size-11 items-center justify-center rounded-full transition-all duration-300 hover:text-brand-pink hover:border-brand-pink"
                     style={{
                       backgroundColor: "var(--bg-input)",
                       border: "1px solid var(--border-default)",
@@ -141,10 +141,7 @@ export default function Footer() {
               })}
             </div>
           )}
-          <div className="flex gap-6 text-xs" style={{ color: "var(--text-faint)" }}>
-            <Link href="#" className="hover:text-brand-pink transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-brand-pink transition-colors">Terms of Service</Link>
-          </div>
+
         </div>
       </div>
     </footer>

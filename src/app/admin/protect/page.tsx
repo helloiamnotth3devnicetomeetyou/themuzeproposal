@@ -77,17 +77,22 @@ export default function ProtectAdminPage() {
     const { data, error: fetchError } = await supabase
       .from("protect_reports")
       .select("*, artists(name)")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .overrideTypes<ProtectReport[], { merge: false }>();
     if (fetchError) setError(fetchError.message);
-    else setReports((data ?? []) as unknown as ProtectReport[]);
+    else setReports(data ?? []);
     setLoading(false);
   };
 
   useEffect(() => { void Promise.resolve().then(fetchReports); }, []);
 
-  useEffect(() => {
-    setNote(viewing?.admin_note || "");
+  const openReport = (report: ProtectReport) => {
+    setNote(report.admin_note || "");
     setSignedUrls({});
+    setViewing(report);
+  };
+
+  useEffect(() => {
     if (!viewing?.attachment_paths.length) return;
 
     let active = true;
@@ -219,7 +224,7 @@ export default function ProtectAdminPage() {
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead><tr><th>접수일</th><th>보호 대상</th><th>제보 내용</th><th>플랫폼</th><th>상태</th><th><span className="sr-only">보기</span></th></tr></thead>
-            <tbody>{filteredReports.map((report) => <tr key={report.id} tabIndex={0} onClick={() => setViewing(report)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setViewing(report); }}>
+            <tbody>{filteredReports.map((report) => <tr key={report.id} tabIndex={0} onClick={() => openReport(report)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openReport(report); }}>
               <td>{formatDate(report.created_at)}</td>
               <td><b>{report.artists?.name || "-"}</b><small>{reportTypeLabels[report.report_type] || "기타"}</small></td>
               <td><b>{report.title}</b><small>{report.author_name}</small></td>

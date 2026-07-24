@@ -1,4 +1,11 @@
 @font-face {
+  font-family: "Pretendard Variable";
+  src: url("/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: "Monument Extended";
   src: url("/fonts/MonumentExtended-Bold.woff") format("woff");
   font-weight: 700;
@@ -10,8 +17,9 @@
   --color-brand-green: #2c4b43;
   --color-brand-pink: #fc6fcf;
   --color-brand-dark: #121212;
-  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-display: "Monument Extended", "Montserrat", sans-serif;
+  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-montserrat), "Montserrat", "Pretendard Variable", sans-serif;
+  --font-hero: "Monument Extended", var(--font-montserrat), "Montserrat", sans-serif;
 }
 
 :root,
@@ -99,11 +107,26 @@
   --selection-text: #000000;
 }
 
+html {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 ::selection {
@@ -132,4 +155,29 @@ textarea::placeholder {
 select option {
   background-color: var(--bg-card);
   color: var(--text-primary);
+}
+.locale-shell {
+  display: flex;
+  min-height: 100%;
+  flex: 1;
+  flex-direction: column;
+}
+
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--selection-bg);
+  outline-offset: 3px;
+}
+
+:where(button, input, select, textarea) {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }

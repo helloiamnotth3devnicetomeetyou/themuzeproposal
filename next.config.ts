@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.replace(/\/+$/, "")
+  || (supabaseUrl ? `${supabaseUrl}/storage/v1/object/public` : "");
+
 const nextConfig: NextConfig = {
   images: {
-    // Supabase may resolve through NAT64 in this environment. Load public bucket
-    // assets directly in the browser instead of proxying them through Next Image.
-    unoptimized: true,
-    remotePatterns: [
-      new URL("https://kjsqwfhqjvekahacvfnc.supabase.co/storage/v1/object/public/**"),
-    ],
+    remotePatterns: storageUrl ? [new URL(`${storageUrl}/**`)] : [],
   },
 };
 

@@ -6,16 +6,8 @@ import { LuArrowUpRight, LuSearch, LuX } from "react-icons/lu";
 import { useLocale } from "@/app/context/LocaleContext";
 import CustomSelect from "@/components/ui/CustomSelect";
 import LoadingIndicator from "@/components/LoadingIndicator";
-import { supabase } from "@/lib/supabase";
+import type { LocalizedTextDTO, NoticeDTO, NoticeListDTO } from "@/features/notices/types";
 import styles from "./NoticeBoard.module.css";
-
-type Notice = {
-  id: string;
-  date: string;
-  title: { ko: string; en: string; ja: string };
-  content: { ko: string; en: string; ja: string };
-  category: { ko: string; en: string; ja: string };
-};
 
 type Locale = "ko" | "en" | "ja";
 
@@ -65,76 +57,25 @@ const pageCopy: Record<Locale, {
   },
 };
 
-const localized = (value: Notice["title"], locale: Locale) => value[locale] || value.ko || value.en || value.ja;
+const EMPTY_NOTICES: NoticeDTO[] = [];
+const localized = (value: LocalizedTextDTO, locale: Locale) => value[locale] || value.ko || value.en || value.ja;
 
-export default function NoticeBoard({ artistSlug }: { artistSlug?: string }) {
+export default function NoticeBoard({ artistSlug, initialData, loadFailed = false }: { artistSlug?: string; initialData: NoticeListDTO | null; loadFailed?: boolean }) {
   const { locale: activeLocale } = useLocale();
   const locale = activeLocale as Locale;
   const copy = pageCopy[locale] || pageCopy.ko;
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [scopeName, setScopeName] = useState("");
+  const notices = initialData?.notices ?? EMPTY_NOTICES;
+  const scopeName = initialData?.name ?? "";
+  const loading = false;
+  const error = loadFailed ? copy.error : "";
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [category, setCategory] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadNotices() {
-      setLoading(true);
-      setError("");
-      let artistId: string | null = null;
-
-      if (artistSlug) {
-        const { data: artist, error: artistError } = await supabase.from("artists").select("id,name,eng_name").eq("slug", artistSlug).single();
-        if (!active) return;
-        if (artistError || !artist) {
-          setNotices([]);
-          setError(copy.error);
-          setLoading(false);
-          return;
-        }
-        artistId = artist.id;
-        setScopeName(artist.eng_name || artist.name || artistSlug);
-      } else {
-        setScopeName("");
-      }
-
-      let query = supabase
-        .from("notices")
-        .select("id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date")
-        .eq("is_published", true)
-        .order("published_at", { ascending: false });
-      query = artistId ? query.eq("artist_id", artistId) : query.is("artist_id", null);
-
-      const { data, error: noticeError } = await query;
-      if (!active) return;
-      if (noticeError) {
-        setError(copy.error);
-        setLoading(false);
-        return;
-      }
-
-      setNotices((data ?? []).map((notice) => ({
-        id: notice.id,
-        date: notice.date ?? "",
-        title: { ko: notice.title_ko ?? "", en: notice.title_en ?? "", ja: notice.title_ja ?? "" },
-        content: { ko: notice.content_ko ?? "", en: notice.content_en ?? "", ja: notice.content_ja ?? "" },
-        category: { ko: notice.category_ko ?? "", en: notice.category_en ?? "", ja: notice.category_ja ?? "" },
-      })));
-      setLoading(false);
-    }
-
-    void loadNotices();
-    return () => { active = false; };
-  }, [artistSlug, copy.error]);
 
   const categories = useMemo(
     () => Array.from(new Set(notices.map((notice) => localized(notice.category, locale)).filter(Boolean))),

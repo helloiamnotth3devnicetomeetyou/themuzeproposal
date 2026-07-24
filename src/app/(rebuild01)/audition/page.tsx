@@ -4,20 +4,44 @@ import { useState } from "react";
 import { LuCircleCheck } from "react-icons/lu";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { useLocale } from "../../context/LocaleContext";
+import styles from "./audition.module.css";
 
 export default function Audition() {
   const { locale } = useLocale();
   const [submitted, setSubmitted] = useState(false);
   const [gender, setGender] = useState("");
 
-  const categories = {
-    ko: ["보컬 (Vocal)", "댄스 (Dance)", "랩 (Rap)", "비주얼/연기 (Visual/Acting)"],
-    en: ["Vocal", "Dance", "Rap", "Visual / Acting"],
-    ja: ["ボーカル (Vocal)", "ダンス (Dance)", "ラップ (Rap)", "ビジュアル/演技 (Visual/Acting)"]
+  const categories: { name: string; sub: string | null }[] = {
+    ko: [
+      { name: "보컬", sub: "Vocal" },
+      { name: "댄스", sub: "Dance" },
+      { name: "랩", sub: "Rap" },
+      { name: "비주얼 / 연기", sub: "Visual / Acting" },
+    ],
+    en: [
+      { name: "Vocal", sub: null },
+      { name: "Dance", sub: null },
+      { name: "Rap", sub: null },
+      { name: "Visual / Acting", sub: null },
+    ],
+    ja: [
+      { name: "ボーカル", sub: "Vocal" },
+      { name: "ダンス", sub: "Dance" },
+      { name: "ラップ", sub: "Rap" },
+      { name: "ビジュアル / 演技", sub: "Visual / Acting" },
+    ],
   }[locale];
 
-  const infoFields = {
+  const copy = {
     ko: {
+      eyebrow: "GLOBAL CASTING",
+      title: "AUDITION",
+      desc: "국적, 성별, 나이 제한 없이 꿈과 열정을 가진 누구나 지원할 수 있습니다.",
+      categoriesLabel: "CATEGORIES",
+      qualLabel: "QUALIFICATIONS",
+      qualText:
+        "국적, 성별, 연령 제한 없음. 꿈과 열정이 있는 지망생이라면 누구나 지원 가능합니다. 서류 합격자에 한해 개별 연락드립니다.",
+      formLabel: "APPLICATION",
       name: "이름",
       birth: "생년월일",
       gender: "성별",
@@ -26,11 +50,26 @@ export default function Audition() {
       email: "이메일",
       intro: "자기소개",
       attach: "오디션 영상 및 사진 링크",
+      attachPlaceholder: "YouTube, Google Drive 링크",
       submit: "지원서 제출하기",
-      successTitle: "지원서 제출 완료!",
-      successDesc: "소중한 지원 감사드립니다. 검토 후 서류 합격자에 한해 개별 연락드리겠습니다."
+      successTitle: "제출 완료",
+      successDesc:
+        "소중한 지원 감사드립니다. 검토 후 서류 합격자에 한해 개별 연락드리겠습니다.",
+      back: "BACK",
+      statusLabel: "STATUS",
+      statusValue: "OPEN",
+      periodLabel: "PERIOD",
+      periodValue: "상시 모집",
     },
     en: {
+      eyebrow: "GLOBAL CASTING",
+      title: "AUDITION",
+      desc: "Open to everyone regardless of nationality, gender, or age.",
+      categoriesLabel: "CATEGORIES",
+      qualLabel: "QUALIFICATIONS",
+      qualText:
+        "Open to all nationalities, genders, and ages. Anyone with passion and a dream is welcome. Qualified candidates will be contacted individually.",
+      formLabel: "APPLICATION",
       name: "Name",
       birth: "Date of Birth",
       gender: "Gender",
@@ -39,11 +78,26 @@ export default function Audition() {
       email: "Email",
       intro: "Self-Introduction",
       attach: "Audition Video & Photo Link",
+      attachPlaceholder: "YouTube, Google Drive link",
       submit: "Submit Application",
-      successTitle: "Submission Complete!",
-      successDesc: "Thank you for applying. We will review your materials and contact qualified candidates individually."
+      successTitle: "Submitted",
+      successDesc:
+        "Thank you for applying. We will review your materials and contact qualified candidates individually.",
+      back: "BACK",
+      statusLabel: "STATUS",
+      statusValue: "OPEN",
+      periodLabel: "PERIOD",
+      periodValue: "Open all year",
     },
     ja: {
+      eyebrow: "GLOBAL CASTING",
+      title: "AUDITION",
+      desc: "国籍・性別・年齢不問。夢と情熱のある方ならどなたでも応募可能です。",
+      categoriesLabel: "CATEGORIES",
+      qualLabel: "QUALIFICATIONS",
+      qualText:
+        "国籍・性別・年齢制限はありません。夢と情熱のある方ならどなたでも応募可能です。書類合格者にのみ個別にご連絡いたします。",
+      formLabel: "APPLICATION",
       name: "名前",
       birth: "生年月日",
       gender: "性別",
@@ -52,10 +106,17 @@ export default function Audition() {
       email: "メールアドレス",
       intro: "自己紹介",
       attach: "オーディション映像・写真リンク",
+      attachPlaceholder: "YouTube、Google Drive リンク",
       submit: "応募する",
-      successTitle: "応募完了!",
-      successDesc: "ご応募ありがとうございます。選考の上、合格者の方にのみ個別にご連絡いたします."
-    }
+      successTitle: "応募完了",
+      successDesc:
+        "ご応募ありがとうございます。選考の上、合格者の方にのみ個別にご連絡いたします。",
+      back: "BACK",
+      statusLabel: "STATUS",
+      statusValue: "OPEN",
+      periodLabel: "PERIOD",
+      periodValue: "通年募集",
+    },
   }[locale];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,152 +124,151 @@ export default function Audition() {
     setSubmitted(true);
   };
 
-  const inputStyle = {
-    width: "100%",
-    backgroundColor: "var(--bg-input)",
-    border: "1px solid var(--bg-input-border)",
-    borderRadius: "0.75rem",
-    padding: "0.75rem 1rem",
-    fontSize: "0.875rem",
-    outline: "none",
-    color: "var(--text-primary)",
-    transition: "border-color 0.2s",
-  };
-
   return (
-    <main className="pt-32 pb-24 min-h-screen" style={{ backgroundColor: "var(--bg-base)" }}>
-      <div className="max-w-4xl mx-auto px-6">
+    <main className={styles.pageFrame}>
+      <div className={styles.shell}>
 
-        {/* Header */}
-        <div className="pb-8 mb-12" style={{ borderBottom: "1px solid var(--border-default)" }}>
-          <span className="text-brand-pink text-xs font-bold tracking-widest uppercase">GLOBAL CASTING</span>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight mt-2 font-display" style={{ color: "var(--text-primary)" }}>AUDITION</h1>
-        </div>
+        {/* ── Left: sticky sidebar ─────────────────────────── */}
+        <div className={styles.titleColumn}>
+          <div className={styles.titleSticky}>
+            <span className={styles.eyebrow}>{copy.eyebrow}</span>
+            <h1>{copy.title}</h1>
+            <p>{copy.desc}</p>
 
-        {/* Audition Criteria / Guide */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <div
-            className="p-8 rounded-2xl"
-            style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-          >
-            <h3 className="text-lg font-bold text-brand-pink uppercase tracking-widest mb-4">CATEGORIES</h3>
-            <ul className="flex flex-col gap-3">
-              {categories.map((cat, idx) => (
-                <li key={idx} className="flex items-center gap-3 text-sm" style={{ color: "var(--text-secondary)" }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-pink flex-shrink-0" />
-                  {cat}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div
-            className="p-8 rounded-2xl"
-            style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-          >
-            <h3 className="text-lg font-bold text-brand-pink uppercase tracking-widest mb-4">QUALIFICATIONS</h3>
-            <p className="text-sm leading-relaxed font-light" style={{ color: "var(--text-secondary)" }}>
-              {locale === "ko" && "국적, 성별, 연령 제한 없음. 꿈과 열정이 있는 지망생이라면 누구나 지원 가능합니다."}
-              {locale === "en" && "Open to everyone regardless of nationality, gender, or age. Anyone with passion can apply."}
-              {locale === "ja" && "국적, 성별, Ages 제한 없음. 夢と情熱のある方ならどなたでも応募可能です。"}
-            </p>
+            <div className={styles.sideInfoBlock}>
+              <div className={styles.sideInfoItem}>
+                <span className={styles.sideInfoLabel}>{copy.statusLabel}</span>
+                <span className={styles.sideInfoValue} style={{ color: "#fc6fcf" }}>
+                  {copy.statusValue}
+                </span>
+              </div>
+              <div className={styles.sideInfoItem}>
+                <span className={styles.sideInfoLabel}>{copy.periodLabel}</span>
+                <span className={styles.sideInfoValue}>{copy.periodValue}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Application Form */}
-        <div
-          className="rounded-3xl p-8 md:p-12 relative overflow-hidden"
-          style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-pink/5 rounded-full blur-3xl" />
+        {/* ── Right: content ───────────────────────────────── */}
+        <div className={styles.contentColumn}>
+
+          {/* Categories */}
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionLabel}>{copy.categoriesLabel}</span>
+          </div>
+          <div className={styles.categoryGrid}>
+            {categories.map((cat, idx) => (
+              <div key={idx} className={styles.categoryItem}>
+                <span className={styles.categoryIndex}>
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <span className={styles.categoryName}>
+                  {cat.name}
+                  {cat.sub && (
+                    <span className={styles.categoryNameSub}>{cat.sub}</span>
+                  )}
+                </span>
+                <span className={styles.categoryDot} aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+
+          {/* Qualifications */}
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionLabel}>{copy.qualLabel}</span>
+          </div>
+          <div className={styles.qualBlock}>
+            <p className={styles.qualText}>{copy.qualText}</p>
+          </div>
+
+          {/* Form */}
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionLabel}>{copy.formLabel}</span>
+          </div>
 
           {submitted ? (
-            <div className="text-center py-16 animate-fadeInUp">
-              <LuCircleCheck className="mx-auto h-14 w-14 text-brand-pink" aria-hidden="true" />
-              <h3 className="text-2xl font-bold mt-6" style={{ color: "var(--text-primary)" }}>{infoFields.successTitle}</h3>
-              <p className="text-sm mt-4 max-w-md mx-auto leading-relaxed font-light" style={{ color: "var(--text-muted)" }}>
-                {infoFields.successDesc}
-              </p>
+            <div className={styles.successState}>
+              <LuCircleCheck className={styles.successIcon} aria-hidden="true" />
+              <h2 className={styles.successTitle}>{copy.successTitle}</h2>
+              <p className={styles.successDesc}>{copy.successDesc}</p>
               <button
+                type="button"
                 onClick={() => setSubmitted(false)}
-                className="mt-8 text-xs font-bold tracking-widest px-8 py-3 rounded-full transition-colors hover:border-brand-pink hover:text-brand-pink"
-                style={{
-                  border: "1px solid var(--border-strong)",
-                  color: "var(--text-primary)",
-                  background: "transparent",
-                }}
+                className={styles.backBtn}
               >
-                GO BACK
+                {copy.back}
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative z-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <div className={styles.formRow}>
                 {/* Name */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.name}</label>
-                  <input type="text" required style={inputStyle} />
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>{copy.name}</label>
+                  <input type="text" required className={styles.fieldInput} />
                 </div>
-
                 {/* Birth */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.birth}</label>
-                  <input type="date" required style={inputStyle} />
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>{copy.birth}</label>
+                  <input type="date" required className={styles.fieldInput} />
                 </div>
-
                 {/* Gender */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.gender}</label>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>{copy.gender}</label>
                   <CustomSelect
-                    ariaLabel={infoFields.gender}
-                    value={gender || infoFields.genderOptions[0]}
+                    ariaLabel={copy.gender}
+                    value={gender || copy.genderOptions[0]}
                     onChange={setGender}
-                    placeholder={infoFields.gender}
-                    options={infoFields.genderOptions.map((option) => ({ value: option, label: option }))}
+                    placeholder={copy.gender}
+                    options={copy.genderOptions.map((opt) => ({ value: opt, label: opt }))}
                   />
                 </div>
-
                 {/* Contact */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.contact}</label>
-                  <input type="tel" required placeholder="ex) 010-0000-0000" style={inputStyle} />
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>{copy.contact}</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="010-0000-0000"
+                    className={styles.fieldInput}
+                  />
                 </div>
               </div>
 
               {/* Email */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.email}</label>
-                <input type="email" required style={inputStyle} />
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>{copy.email}</label>
+                <input type="email" required className={styles.fieldInput} />
               </div>
 
-              {/* Attach Link */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.attach}</label>
+              {/* Link */}
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>{copy.attach}</label>
                 <input
                   type="url"
                   required
-                  placeholder="ex) YouTube link, Google Drive link"
-                  style={inputStyle}
+                  placeholder={copy.attachPlaceholder}
+                  className={styles.fieldInput}
                 />
               </div>
 
-              {/* Intro */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>{infoFields.intro}</label>
-                <textarea rows={5} required style={{ ...inputStyle, resize: "none" }} />
+              {/* Self-intro */}
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>{copy.intro}</label>
+                <textarea
+                  rows={6}
+                  required
+                  className={`${styles.fieldInput} ${styles.fieldTextarea}`}
+                />
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-brand-pink hover:bg-brand-pink/90 text-black py-4 rounded-xl text-sm font-black tracking-widest transition-transform duration-300 hover:scale-[1.01] shadow-lg shadow-brand-pink/10"
-              >
-                {infoFields.submit}
+              <button type="submit" className={styles.submitBtn}>
+                {copy.submit}
               </button>
             </form>
           )}
         </div>
-
       </div>
     </main>
   );

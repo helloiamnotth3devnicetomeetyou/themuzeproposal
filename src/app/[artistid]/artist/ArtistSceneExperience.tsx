@@ -106,11 +106,12 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
         .eq("artist_id", artistData.id)
         .eq("is_published", true)
         .order("is_hero", { ascending: false })
-        .order("sort_order", { ascending: true }),
+        .order("sort_order", { ascending: true })
+        .overrideTypes<ArtistScene[], { merge: false }>(),
     ]);
 
     const nextMembers = (memberResult.data as Member[] | null) ?? [];
-    let nextScenes = ((sceneResult.data as unknown as ArtistScene[] | null) ?? []).map(normalizeScene);
+    let nextScenes = (sceneResult.data ?? []).map(normalizeScene);
     if (!nextScenes.length && artistData.image_url) {
       nextScenes = [{
         id: "legacy-hero",

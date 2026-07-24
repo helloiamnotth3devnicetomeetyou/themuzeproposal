@@ -86,15 +86,18 @@ export default function ArtistSchedulePage() {
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const calendarCells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => index < firstWeekday ? null : index - firstWeekday + 1);
 
-  useEffect(() => setPage(0), [cursor]);
   const localized = (event: ScheduleRow, field: "title" | "description") => {
     const preferred = event[`${field}_${locale}` as keyof ScheduleRow];
     const english = event[`${field}_en` as keyof ScheduleRow];
     const korean = event[`${field}_ko` as keyof ScheduleRow];
     return String(preferred || english || korean || "");
   };
-  const moveYear = (amount: number) => setCursor((current) => new Date(current.getFullYear() + amount, current.getMonth(), 1));
-  const goToday = () => setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+  const changeCursor = (nextCursor: Date) => {
+    setCursor(nextCursor);
+    setPage(0);
+  };
+  const moveYear = (amount: number) => changeCursor(new Date(cursor.getFullYear() + amount, cursor.getMonth(), 1));
+  const goToday = () => changeCursor(new Date(now.getFullYear(), now.getMonth(), 1));
   const eventsOnDay = (day: number) => monthEvents.filter((event) => dateAtLocalMidnight(event.event_date).getDate() === day);
 
   if (loading) return <main className={styles.page}><LoadingIndicator label="아티스트 일정을 불러오는 중…" /></main>;
@@ -145,7 +148,7 @@ export default function ArtistSchedulePage() {
             <button className={styles.todayButton} type="button" onClick={goToday}>TODAY</button>
           </div>
           <nav className={styles.months} aria-label="월 선택">
-            {MONTHS.map((month, index) => <button key={month} type="button" aria-current={cursor.getMonth() === index} onClick={() => setCursor(new Date(cursor.getFullYear(), index, 1))}>{month}</button>)}
+            {MONTHS.map((month, index) => <button key={month} type="button" aria-current={cursor.getMonth() === index} onClick={() => changeCursor(new Date(cursor.getFullYear(), index, 1))}>{month}</button>)}
           </nav>
           <div className={styles.weekdays}>{WEEKDAYS.map((day) => <span key={day}>{day}</span>)}</div>
           <div className={styles.days}>

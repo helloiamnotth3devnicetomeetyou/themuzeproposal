@@ -114,9 +114,9 @@ export default function DiscographyAdmin() {
     setLoading(true); setError("");
     const { data: artist, error: artistError } = await supabase.from("artists").select("id,name").eq("id", routeArtistId).maybeSingle();
     if (artistError || !artist) { setError("아티스트 정보를 불러오지 못했습니다."); setLoading(false); return; }
-    const { data, error: albumError } = await supabase.from("albums").select(albumSelect).eq("artist_id", artist.id).order("sort_order", { ascending: true });
+    const { data, error: albumError } = await supabase.from("albums").select(albumSelect).eq("artist_id", artist.id).order("sort_order", { ascending: true }).overrideTypes<RawAlbum[], { merge: false }>();
     if (albumError) { setError(albumError.message.includes("spotify_url") ? "음악 편집 DB 마이그레이션(003_music_editor.sql)을 먼저 적용해 주세요." : albumError.message); setLoading(false); return; }
-    const nextAlbums = ((data ?? []) as unknown as RawAlbum[]).map(fromRaw);
+    const nextAlbums = (data ?? []).map(fromRaw);
     setArtistId(artist.id); setAlbums(nextAlbums);
     const params = new URLSearchParams(window.location.search);
     const requestedId = preferredId || params.get("album") || nextAlbums[0]?.id;
@@ -317,7 +317,7 @@ export default function DiscographyAdmin() {
                   <div className="music-track-link-grid"><label className="music-field"><span>곡별 Spotify 링크</span><input type="url" className="admin-input" value={track.spotify_url} onChange={(event) => patchTrack(track.id, { spotify_url: event.target.value })} placeholder="https://open.spotify.com/track/…" /></label><label className="music-field"><span>곡별 YouTube 링크</span><input type="url" className="admin-input" value={track.youtube_url} onChange={(event) => patchTrack(track.id, { youtube_url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label></div>
                   <div className="music-track-asset-grid">
                     <TrackAssetField label="음원 MP3" hint="파일을 끌어놓거나 선택하세요 · 최대 100MB" accept="audio/mpeg,audio/mp3,.mp3" maxBytes={100 * 1024 * 1024} artistId={artistId} albumId={draft.id} trackId={track.id} kind="audio" value={track.audio_url} onError={setError} onClear={() => patchTrack(track.id, { audio_url: "" })} onUploaded={(asset) => { registerUpload(asset); patchTrack(track.id, { audio_url: asset.url }); }} />
-                    <TrackAssetField label="타이포 로고" hint="투명 배경 PNG/WebP/SVG · 최대 10MB" accept="image/png,image/webp,image/svg+xml,.svg" maxBytes={10 * 1024 * 1024} artistId={artistId} albumId={draft.id} trackId={track.id} kind="logo" value={track.logo_url} onError={setError} onClear={() => patchTrack(track.id, { logo_url: "" })} onUploaded={(asset) => { registerUpload(asset); patchTrack(track.id, { logo_url: asset.url }); }} />
+                    <TrackAssetField label="타이포 로고" hint="투명 배경 PNG/WebP · 최대 10MB" accept="image/png,image/webp" maxBytes={10 * 1024 * 1024} artistId={artistId} albumId={draft.id} trackId={track.id} kind="logo" value={track.logo_url} onError={setError} onClear={() => patchTrack(track.id, { logo_url: "" })} onUploaded={(asset) => { registerUpload(asset); patchTrack(track.id, { logo_url: asset.url }); }} />
                   </div>
                   {track.audio_url && <audio className="music-audio-preview" controls preload="metadata" src={track.audio_url}>브라우저가 오디오 재생을 지원하지 않습니다.</audio>}
                 </div>}
