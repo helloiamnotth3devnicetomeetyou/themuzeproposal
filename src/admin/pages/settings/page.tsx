@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuTrash2 } from "react-icons/lu";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
 import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
+import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
 import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 
@@ -79,6 +81,20 @@ export default function SettingsAdmin() {
   const draft = useMemo(() => ({ company, history, footer, social }), [company, history, footer, social]);
   const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
   const dirty = serializedDraft !== snapshot;
+  const previewTarget = tab === "company"
+    ? "/about?section=company#about-company"
+    : tab === "history"
+      ? "/about?section=history#about-history"
+      : `/about?section=${tab}#site-footer`;
+  const { openPreview } = useAdminPreview({
+    kind: "site-settings",
+    payload: draft,
+    targetPath: previewTarget,
+    canPreview: true,
+    unavailableMessage: "??? ?? ????? ? ? ????.",
+    onError: setError,
+  });
+
   const historyEventKey: "event_ko" | "event_en" | "event_ja" = `event_${historyLanguage}`;
 
   useEffect(() => {
@@ -254,7 +270,7 @@ export default function SettingsAdmin() {
     <ContentWorkbench
       rail={rail}
       identity={identity}
-      actions={<button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : "변경사항 저장"}</button>}
+      actions={<><PreviewButton onClick={openPreview} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : "변경사항 저장"}</button></>}
       tabs={tabs}
       activeTab={tab}
       onTabChange={setTab}

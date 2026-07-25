@@ -21,7 +21,6 @@ export interface LoginFormState {
   confirmPassword: string;
   name: string;
   error: string;
-  success: string;
   loading: boolean;
   currentSlide: number;
   t: LoginTranslations;
@@ -49,7 +48,6 @@ export function useLoginForm({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState(oauthFailed ? t.googleFailed : "");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -67,7 +65,6 @@ export function useLoginForm({
     setConfirmPassword("");
     setName("");
     setError("");
-    setSuccess("");
   };
 
   const switchMode = (next: Mode) => {
@@ -98,7 +95,6 @@ export function useLoginForm({
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     if (password.length < 6) {
@@ -114,12 +110,10 @@ export function useLoginForm({
     }
 
     try {
-      await signUp(email, password, name);
-      setSuccess(t.signupSuccess);
-      setMode("login");
-      setPassword("");
-      setConfirmPassword("");
-      setName("");
+      const data = await signUp(email, password, name);
+      if (!data.session) throw new AuthUserError("SIGNUP_FAILED");
+      router.push(redirectTo);
+      setTimeout(() => window.location.reload(), 100);
     } catch {
       setError(t.signupFailed);
     } finally {
@@ -146,7 +140,6 @@ export function useLoginForm({
     confirmPassword,
     name,
     error,
-    success,
     loading,
     currentSlide,
     t,

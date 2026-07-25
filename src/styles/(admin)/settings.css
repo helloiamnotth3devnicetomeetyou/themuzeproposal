@@ -23,7 +23,7 @@
 .settings-identity-art svg { width: 20px; height: 20px; }
 .settings-editor-stack { max-width: 1040px; }
 .settings-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.settings-section-heading h3 { font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: 24px; }
+.settings-section-heading h3 { font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: var(--text-2xl); }
 .settings-section-heading p { max-width: 510px; margin: 8px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.65; }
 .settings-section-heading > svg { width: 42px; height: 42px; padding: 11px; border: 1px solid var(--border-default); border-radius: 50%; color: var(--text-faint); }
 .settings-panel { display: flex; flex-direction: column; gap: 20px; padding: 23px; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); }
@@ -40,7 +40,7 @@
 .settings-history-columns { padding: 0 12px 8px; border-bottom: 1px solid var(--border-default); color: var(--text-faint); font-size: 8px; font-weight: 700; letter-spacing: .04em; }
 .settings-history-columns span:last-child { text-align: right; }
 .settings-history-list { border-bottom: 1px solid var(--border-default); }
-.settings-history-item { min-height: 62px; padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); transition: background .16s ease; }
+.settings-history-item { min-height: 62px; padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast) ease; }
 .settings-history-item:last-of-type { border-bottom: 0; }
 .settings-history-item:focus-within { background: var(--bg-subtle); }
 .settings-history-order { color: var(--text-faint); font: 8px var(--font-montserrat),'Montserrat',sans-serif; }

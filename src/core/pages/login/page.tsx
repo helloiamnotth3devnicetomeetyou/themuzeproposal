@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
+import { createPrivatePageMetadata } from "@/core/seo/metadata";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata = createPrivatePageMetadata("Login");
 
 function safeRedirect(value: string | string[] | undefined) {
   const target = Array.isArray(value) ? value[0] : value;

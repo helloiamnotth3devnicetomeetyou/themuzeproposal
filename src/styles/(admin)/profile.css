@@ -13,7 +13,7 @@
 .profile-workbench .profile-context-copy { position: absolute; z-index: 3; bottom: 30px; left: 38px; margin: 0; }
 .profile-workbench .profile-context-copy p { color: var(--color-brand-pink); font-size: 11px; }
 .profile-workbench .profile-context-copy strong { margin-top: 6px; color: var(--color-static-white); font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: clamp(28px,3.2vw,48px); font-weight: 700; letter-spacing: -.04em; line-height: .92; }
-.profile-workbench .profile-completion { position: absolute; z-index: 3; right: 34px; bottom: 25px; display: grid; grid-template-columns: repeat(2,minmax(145px,1fr)); gap: 3px 13px; width: min(360px,40%); margin: 0; padding: 13px 15px; border: 1px solid var(--alpha-ffffff-14); border-radius: 9px; background: var(--alpha-0a0a0a-48); backdrop-filter: blur(9px); transition: opacity .12s ease,transform .12s ease; }
+.profile-workbench .profile-completion { position: absolute; z-index: 3; right: 34px; bottom: 25px; display: grid; grid-template-columns: repeat(2,minmax(145px,1fr)); gap: 3px 13px; width: min(360px,40%); margin: 0; padding: 13px 15px; border: 1px solid var(--alpha-ffffff-14); border-radius: 9px; background: var(--alpha-0a0a0a-48); backdrop-filter: blur(9px); transition: opacity var(--duration-fast) ease,transform var(--duration-fast) ease; }
 .profile-workbench .profile-completion > p { grid-column: 1/-1; margin-bottom: 5px; color: var(--alpha-ffffff-48); }
 .profile-workbench .profile-completion > div { min-height: 24px; color: var(--alpha-ffffff-48); }
 .profile-workbench .profile-completion .is-ready { color: var(--alpha-ffffff-78); }

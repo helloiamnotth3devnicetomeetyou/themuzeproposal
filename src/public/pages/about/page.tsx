@@ -7,7 +7,8 @@ import { LuMail, LuMapPin } from "react-icons/lu";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
 import { supabase } from "@/core/supabase/client";
-import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
+import { sortHistoryNewestFirst } from "@/core/content/site-content";
+import { useSiteSettings } from "@/public/features/settings/useSiteSettings";
 
 type NoticePreview = {
   id: string;
@@ -24,10 +25,10 @@ export default function About() {
   const { locale } = useLocale();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { settings } = useSiteSettings();
 
   // 기본적으로 첫 번째 질문(0: ABOUT)이 열려있도록 초기값 설정
   const [activeTab, setActiveTab] = useState<number>(0);
-  const [history, setHistory] = useState<HistoryEntry[]>(DEFAULT_HISTORY);
   const [notices, setNotices] = useState<NoticePreview[]>([]);
   const [noticesLoading, setNoticesLoading] = useState(true);
 
@@ -49,19 +50,15 @@ export default function About() {
     let active = true;
 
     const loadAboutContent = async () => {
-      const [historyResult, noticesResult] = await Promise.all([
-        supabase.from("site_settings").select("value").eq("key", "history").maybeSingle(),
-        supabase
-          .from("notices")
-          .select("id,date,title_ko,title_en,title_ja,category_ko,category_en,category_ja")
-          .eq("is_published", true)
-          .is("artist_id", null)
-          .order("published_at", { ascending: false })
-          .limit(3),
-      ]);
+      const noticesResult = await supabase
+        .from("notices")
+        .select("id,date,title_ko,title_en,title_ja,category_ko,category_en,category_ja")
+        .eq("is_published", true)
+        .is("artist_id", null)
+        .order("published_at", { ascending: false })
+        .limit(3);
       if (!active) return;
 
-      if (historyResult.data?.value !== undefined) setHistory(normalizeHistory(historyResult.data.value));
       setNotices((noticesResult.data ?? []) as NoticePreview[]);
       setNoticesLoading(false);
     };
@@ -94,10 +91,15 @@ export default function About() {
     ]
   }[locale];
 
-  const historyList = sortHistoryNewestFirst(history).map((item) => ({
+  const historyList = sortHistoryNewestFirst(settings.history).map((item) => ({
     year: item.date,
     event: locale === "en" ? item.event_en || item.event_ko : locale === "ja" ? item.event_ja || item.event_ko : item.event_ko,
   }));
+  const companyName = settings.company[`name_${locale}`] || settings.company.name_en || settings.company.name_ko || "THE MUZE HQ";
+  const fallbackAddress = locale === "ko" ? "????? ??? ??? ??? ??" : locale === "ja" ? "Tokyo, Japan" : "Nonhyeon-ro, Sinsa-dong, Gangnam-gu, Seoul, Korea";
+  const companyAddress = settings.company[`address_${locale}`] || settings.company.address_en || settings.company.address_ko || fallbackAddress;
+  const companyEmail = settings.company.email || "contact@themuze.kr";
+
 
   const noticeList = notices.map((notice) => ({
     id: notice.id,
@@ -122,7 +124,7 @@ export default function About() {
       content: (
         <div className="flex flex-col gap-8 pt-4">
           <div className="flex flex-col gap-6 items-start">
-            <div className="relative w-64 h-20 transition-transform duration-300 hover:scale-102">
+            <div className="relative w-64 h-20 transition-transform duration-slow hover:scale-102">
               <Image
                 src="/images/logo.png"
                 alt="THE MUZE Logo Emblem"
@@ -158,7 +160,7 @@ export default function About() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-4">
             {visionList.map((val, idx) => (
-              <div key={idx} className="p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-subtle)" }}>
+              <div key={idx} className="p-6 rounded-2xl border transition-all duration-slow hover:-translate-y-1" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-subtle)" }}>
                 <span className="text-brand-pink text-xs font-bold font-display block mb-1">{val.num}</span>
                 <h4 className="text-base font-bold mb-2" style={{ color: "var(--text-primary)" }}>{val.title}</h4>
                 <p className="text-xs leading-relaxed font-light" style={{ color: "var(--text-secondary)" }}>{val.desc}</p>
@@ -184,7 +186,7 @@ export default function About() {
         <div className="pl-6 md:pl-16 border-l py-4" style={{ borderColor: "var(--border-default)" }}>
           {historyList.map((item, idx) => (
             <div key={idx} className="mb-10 relative last:mb-0 group">
-              <span className="absolute -left-[31px] md:-left-[21px] top-1.5 w-3.5 h-3.5 border-2 border-brand-pink rounded-full bg-base shadow-[0_0_8px_var(--alpha-fc6fcf-4)] group-hover:bg-brand-pink transition-colors duration-300" style={{ backgroundColor: "var(--bg-base)" }} />
+              <span className="absolute -left-[31px] md:-left-[21px] top-1.5 w-3.5 h-3.5 border-2 border-brand-pink rounded-full bg-base shadow-[0_0_8px_var(--alpha-fc6fcf-4)] group-hover:bg-brand-pink transition-colors duration-slow" style={{ backgroundColor: "var(--bg-base)" }} />
               <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-6">
                 <span className="text-brand-pink font-display font-black text-base sm:w-28 shrink-0">{item.year}</span>
                 <p className="text-sm font-light flex-1" style={{ color: "var(--text-secondary)" }}>{item.event}</p>
@@ -239,19 +241,21 @@ export default function About() {
           <div className="md:col-span-5 flex flex-col gap-5">
             <div>
               <span className="text-brand-pink text-xs font-extrabold tracking-widest uppercase block">NEW HEADQUARTERS</span>
-              <h3 className="text-2xl font-black mt-1" style={{ color: "var(--text-primary)" }}>THE MUZE HQ</h3>
+              <h3 className="text-2xl font-black mt-1" style={{ color: "var(--text-primary)" }}>{companyName}</h3>
             </div>
             
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
                 <LuMapPin className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
+                <style>{`.about-settings-address + span { display: none; }`}</style>
+                <span className="about-settings-address">{companyAddress}</span>
                 <span>{locale === "ko" ? "서울특별시 강남구 신사동 논현로 사옥" : locale === "ja" ? "大韓民국소울特別市江南区新沙洞ノンヒョン路" : "Nonhyeon-ro, Sinsa-dong, Gangnam-gu, Seoul, Korea"}</span>
               </div>
               
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
                 <LuMail className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
-                <a href="mailto:contact@themuze.kr" className="hover:text-brand-pink transition-colors">
-                  contact@themuze.kr
+                <a href={`mailto:${companyEmail}`} className="hover:text-brand-pink transition-colors">
+                  {companyEmail}
                 </a>
               </div>
             </div>
@@ -279,7 +283,7 @@ export default function About() {
   ];
 
   return (
-    <main className="min-h-screen pt-36 pb-24 transition-colors duration-300" style={{ backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}>
+    <main className="min-h-screen pt-36 pb-24 transition-colors duration-slow" style={{ backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}>
       <div className="max-w-4xl mx-auto px-6 pt-16">
         
         {/* Interactive Question Stack */}
@@ -289,6 +293,7 @@ export default function About() {
             return (
               <div 
                 key={item.id} 
+                id={item.id === 1 ? "about-history" : item.id === 3 ? "about-company" : undefined}
                 className={`flex flex-col reveal reveal-delay-${(idx + 1) * 100}`}
                 ref={(el) => { itemRefs.current[idx] = el; }}
               >
@@ -300,7 +305,7 @@ export default function About() {
                 >
                   {/* Arrow prefix (only visible on active) */}
                   <span
-                    className={`text-2xl md:text-4xl font-extrabold tracking-tight shrink-0 transition-all duration-300 ${
+                    className={`text-2xl md:text-4xl font-extrabold tracking-tight shrink-0 transition-all duration-slow ${
                       isActive ? "opacity-100 translate-x-0 text-brand-pink" : "opacity-0 -translate-x-2"
                     }`}
                   >
@@ -311,7 +316,7 @@ export default function About() {
                     {isActive ? (
                       /* Active State: Highlight background, bold text, no strike-through */
                       <span
-                        className="inline-block text-2xl md:text-4xl font-extrabold tracking-tight px-3.5 py-1 rounded-xl transition-all duration-300 transform scale-102"
+                        className="inline-block text-2xl md:text-4xl font-extrabold tracking-tight px-3.5 py-1 rounded-xl transition-all duration-slow transform scale-102"
                         style={{
                           backgroundColor: "var(--alpha-fc6fcf-15)",
                           color: "var(--color-brand-pink)"
@@ -322,7 +327,7 @@ export default function About() {
                     ) : (
                       /* Inactive State: Gray color, strike-through (line-through), regular weight */
                       <span
-                        className="inline-block text-2xl md:text-4xl font-semibold tracking-tight line-through opacity-25 group-hover:opacity-45 transition-all duration-300"
+                        className="inline-block text-2xl md:text-4xl font-semibold tracking-tight line-through opacity-25 group-hover:opacity-45 transition-all duration-slow"
                         style={{ color: "var(--text-primary)" }}
                       >
                         &quot;{item.label}&quot;

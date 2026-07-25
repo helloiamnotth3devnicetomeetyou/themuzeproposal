@@ -2,19 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { LuLink } from "react-icons/lu";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
-import { SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
-import { supabase } from "@/core/supabase/client";
-
-type SiteSocialLink = {
-  id: string;
-  platform: string;
-  label: string;
-  url: string;
-};
+import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { useSiteSettings } from "@/public/features/settings/useSiteSettings";
 
 const isSafeExternalUrl = (value: string) => {
   try {
@@ -25,68 +17,19 @@ const isSafeExternalUrl = (value: string) => {
   }
 };
 
-const normalizeSiteSocialLinks = (value: unknown): SiteSocialLink[] => {
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) => {
-      if (!item || typeof item !== "object") return [];
-      const candidate = item as Partial<SiteSocialLink>;
-      const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
-      if (!isSafeExternalUrl(url)) return [];
-
-      const platform = typeof candidate.platform === "string" && candidate.platform
-        ? candidate.platform.toLowerCase()
-        : "other";
-      return [{
-        id: typeof candidate.id === "string" && candidate.id ? candidate.id : `footer-social-${index}`,
-        platform: platform === "twitter" ? "x" : platform,
-        label: typeof candidate.label === "string" ? candidate.label.trim() : "",
-        url,
-      }];
-    });
-  }
-
-  // Keep compatibility with the original { instagram, youtube, ... } setting.
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>).flatMap(([platform, rawUrl], index) => {
-      const url = typeof rawUrl === "string" ? rawUrl.trim() : "";
-      if (!isSafeExternalUrl(url)) return [];
-      return [{
-        id: `footer-social-${platform}-${index}`,
-        platform: platform === "twitter" ? "x" : platform.toLowerCase(),
-        label: "",
-        url,
-      }];
-    });
-  }
-
-  return [];
-};
-
 export default function Footer() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { theme } = useTheme();
+  const { settings } = useSiteSettings();
   const isDark = theme === "dark";
-  const [socialLinks, setSocialLinks] = useState<SiteSocialLink[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchSocialLinks = async () => {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "social")
-        .maybeSingle();
-
-      if (active && !error) setSocialLinks(normalizeSiteSocialLinks(data?.value));
-    };
-
-    void fetchSocialLinks();
-    return () => { active = false; };
-  }, []);
+  const companyName = settings.company[`name_${locale}`] || settings.company.name_en || settings.company.name_ko || t.footer.companyName;
+  const address = settings.company[`address_${locale}`] || settings.company.address_en || settings.company.address_ko || t.footer.address;
+  const copyright = settings.footer.copyright || t.footer.copyright;
+  const socialLinks = settings.social.filter((item) => isSafeExternalUrl(item.url));
 
   return (
     <footer
+      id="site-footer"
       className="py-16 mt-auto"
       style={{
         backgroundColor: "var(--footer-bg)",
@@ -102,14 +45,14 @@ export default function Footer() {
               alt="THE MUZE Logo"
               fill
               sizes="144px"
-              className="object-contain transition-all duration-300"
+              className="object-contain transition-all duration-slow"
               style={isDark ? { filter: "invert(1)" } : {}}
             />
           </Link>
           <div className="text-xs leading-relaxed font-light mt-2" style={{ color: "var(--text-faint)" }}>
-            <p className="font-semibold" style={{ color: "var(--text-muted)" }}>{t.footer.companyName}</p>
-            <p className="mt-1">{t.footer.address}</p>
-            <p className="mt-2">{t.footer.copyright}</p>
+            <p className="font-semibold" style={{ color: "var(--text-muted)" }}>{companyName}</p>
+            <p className="mt-1">{address}</p>
+            <p className="mt-2">{copyright}</p>
           </div>
         </div>
 
@@ -118,8 +61,9 @@ export default function Footer() {
           {socialLinks.length > 0 && (
             <div className="flex flex-wrap justify-center gap-4 md:justify-end">
               {socialLinks.map((item) => {
-                const SocialIcon = SOCIAL_ICONS[item.platform] || LuLink;
-                const accessibleLabel = item.label || SOCIAL_LABELS[item.platform] || "Official link";
+                const platform = detectSocialPlatform(item.url) !== "other" ? detectSocialPlatform(item.url) : item.platform;
+                const SocialIcon = SOCIAL_ICONS[platform] || LuLink;
+                const accessibleLabel = item.label || SOCIAL_LABELS[platform] || "Official link";
                 return (
                   <a
                     key={item.id}
@@ -128,7 +72,7 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     aria-label={accessibleLabel}
                     title={accessibleLabel}
-                    className="flex size-11 items-center justify-center rounded-full transition-all duration-300 hover:text-brand-pink hover:border-brand-pink"
+                    className="flex size-11 items-center justify-center rounded-full transition-all duration-slow hover:text-brand-pink hover:border-brand-pink"
                     style={{
                       backgroundColor: "var(--bg-input)",
                       border: "1px solid var(--border-default)",

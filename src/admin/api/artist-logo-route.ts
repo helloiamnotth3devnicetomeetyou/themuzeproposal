@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-import { sanitizeSvg, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
+import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
 
 export const runtime = "nodejs";
 
@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
   let sanitized: string;
   try {
     sanitized = sanitizeSvg(await file.text());
+    if (formData.get("assetKind") === "album-typography") {
+      sanitized = await trimSvgToContent(sanitized);
+    }
   } catch (error) {
     if (error instanceof UnsafeSvgError) return errorResponse("UNSAFE_SVG", 400);
     return errorResponse("INVALID_FILE", 400);
@@ -69,7 +72,10 @@ export async function POST(request: NextRequest) {
   });
   const artistKey = safePathPart(formData.get("artistKey"), "draft");
   const entityKey = safePathPart(formData.get("entityKey"), "asset");
-  const path = `${artistKey}/artist-logo-sanitized/${entityKey}/${crypto.randomUUID()}.svg`;
+  const assetFolder = formData.get("assetKind") === "album-typography"
+    ? "album-typography-sanitized"
+    : "artist-logo-sanitized";
+  const path = `${artistKey}/${assetFolder}/${entityKey}/${crypto.randomUUID()}.svg`;
   const { error: uploadError } = await adminClient.storage
     .from("artist-assets")
     .upload(path, new Blob([sanitized], { type: "image/svg+xml" }), {

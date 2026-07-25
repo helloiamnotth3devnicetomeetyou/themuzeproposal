@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LuChevronDown } from "react-icons/lu";
-import styles from "./Navbar.module.css";
+import styles from "@/styles/(public)/components/layout/Navbar.module.css";
 
 type ArtistNavigationItem = {
   id: string;

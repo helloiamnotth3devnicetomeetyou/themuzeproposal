@@ -2,12 +2,13 @@
 
 import { useState, useRef, useMemo, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { LuCheck, LuTrash2, LuUpload } from "react-icons/lu";
+import { LuCheck } from "react-icons/lu";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { getUser } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import type { Artist, MyReport } from "../ProtectClient";
-import styles from "../protect.module.css";
+import styles from "@/styles/(public)/pages/protect.module.css";
+import ReportEvidenceUpload from "./ReportEvidenceUpload";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const HOLD_DURATION_MS = 1500;
@@ -62,11 +63,6 @@ type ReportFormProps = {
   setError: (msg: string) => void;
   error: string;
 };
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)}KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-}
 
 export default function ReportForm({
   artists,
@@ -382,25 +378,7 @@ export default function ReportForm({
         <input id="postIp" maxLength={64} value={form.postIp} onChange={updateField("postIp")} placeholder="확인된 IP 주소가 있다면 입력해 주세요 (선택)" />
       </div>
 
-      <div className={`${styles.formRow} ${styles.alignTop}`}>
-        <span className={styles.rowLabel}>첨부 자료 <i>*</i></span>
-        <div className={styles.fileUploadArea}>
-          <label className={styles.uploadButton}>
-            <LuUpload aria-hidden="true" />
-            <span><b>파일 올리기</b><small>JPG, PNG, WEBP, GIF, PDF · 파일당 50MB 이하 · 최대 3개</small></span>
-            <em>{files.length} / 3</em>
-            <input id="evidenceFiles" type="file" multiple disabled={files.length >= 3} accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" onChange={addFiles} />
-          </label>
-          {files.length > 0 && <div className={styles.fileList}>
-            {fileSlots.map((file, index) => file && (
-              <div className={styles.fileItem} key={`${file.name}-${file.lastModified}`}>
-                <span>{file.name}<small>{formatBytes(file.size)}</small></span>
-                <button type="button" onClick={() => removeFile(index)} aria-label={`${file.name} 삭제`}><LuTrash2 aria-hidden="true" /></button>
-              </div>
-            ))}
-          </div>}
-        </div>
-      </div>
+      <ReportEvidenceUpload fileSlots={fileSlots} files={files} onAddFiles={addFiles} onRemoveFile={removeFile} />
 
       <p className={styles.guide}>캡처 날짜, 게시물 내용, URL, 작성자 정보가 보이도록 저장해 주세요.<br />내용이 길다면 순서를 알 수 있도록 여러 장으로 첨부해 주세요.</p>
 

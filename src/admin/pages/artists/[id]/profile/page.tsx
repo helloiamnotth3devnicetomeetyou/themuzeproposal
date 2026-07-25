@@ -11,11 +11,14 @@ import ArtistSceneManager from "@/admin/components/scenes/ArtistSceneManager";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
-import ImageAssetField from "@/admin/components/assets/ImageAssetField";
+import ImageAssetField, { type UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
+import PreviewButton from "@/admin/components/content/PreviewButton";
 import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
 import { notifyArtistsChanged } from "@/core/utils/artist-events";
 
@@ -92,6 +95,9 @@ export default function ArtistProfileAdmin() {
     setToast,
     patchDraft,
   } = useAdminCrud<ProfileDraft>({ initialDraft: isNew ? EMPTY_PROFILE : null });
+  const uploadedAssets = useRef<UploadedImageAsset[]>([]);
+
+  useEffect(() => { void cleanupAbandonedDraftImageAssets(supabase); }, []);
 
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
   void serializedDraft; // kept for forward-compat; dirty now derived from hook
@@ -113,6 +119,34 @@ export default function ArtistProfileAdmin() {
     { label: "한국어 아티스트 소개", ready: Boolean(draft.descKo.trim()) },
     { label: "공개 상태 확인", ready: true },
   ] : [];
+  const previewSlug = draft ? toSlug(draft.engName) : "";
+  const previewPayload = useMemo(() => draft && artistId && previewSlug ? {
+    artist: {
+      id: artistId,
+      slug: previewSlug,
+      name: draft.name,
+      eng_name: draft.engName,
+      type: draft.type,
+      debut_date: draft.debutDate || null,
+      image_url: draft.imageUrl || null,
+      logo_url: draft.logoUrl || null,
+      color: draft.color || null,
+      description_ko: draft.descKo || null,
+      description_en: draft.descEn || null,
+      description_ja: draft.descJa || null,
+      social_links: draft.socialLinks,
+      is_active: draft.isActive,
+    },
+  } : null, [artistId, draft, previewSlug]);
+  const { openPreview } = useAdminPreview({
+    kind: "artist-profile",
+    payload: previewPayload,
+    targetPath: previewSlug ? `/${previewSlug}/artist` : "",
+    canPreview: Boolean(previewPayload),
+    unavailableMessage: "????? ??? ?? ?????? ?? ??? ???.",
+    onError: setError,
+  });
+
 
   useEffect(() => {
     if (isNew) return;
@@ -153,22 +187,15 @@ export default function ArtistProfileAdmin() {
     patchDraft({ engName: value });
   };
 
-  const handleProfileAssetChange = async (field: "imageUrl" | "logoUrl", value: string) => {
+  const handleProfileAssetChange = (field: "imageUrl" | "logoUrl", value: string) => {
     patchDraft({ [field]: value } as Pick<ProfileDraft, typeof field>);
-    if (!artistId || isNew) return;
-    setError("");
-    const column = field === "imageUrl" ? "image_url" : "logo_url";
-    const { error: assetError } = await supabase.from("artists").update({ [column]: value || null }).eq("id", artistId);
-    if (assetError) {
-      setError(assetError.message.includes("logo_url") ? "아티스트 로고 컬럼이 없습니다. 004_artist_assets.sql을 먼저 적용하세요." : assetError.message);
-      return;
-    }
-    setSnapshot((current) => {
-      const saved = JSON.parse(current) as ProfileDraft;
-      return JSON.stringify({ ...saved, [field]: value });
-    });
-    notifyArtistsChanged();
-    setToast(value ? "이미지를 업로드하고 저장했습니다." : "이미지를 제거했습니다.");
+  };
+
+  const cancelNewArtist = async () => {
+    const queued = uploadedAssets.current;
+    uploadedAssets.current = [];
+    await discardDraftImageAssets(supabase, queued);
+    router.push("/admin");
   };
 
   const handleSave = async () => {
@@ -179,6 +206,7 @@ export default function ArtistProfileAdmin() {
     }
     setSaving(true);
     setError("");
+    const originalDraft = snapshot ? JSON.parse(snapshot) as ProfileDraft : null;
     const payload = {
       slug: toSlug(draft.engName),
       name: draft.name,
@@ -197,13 +225,21 @@ export default function ArtistProfileAdmin() {
     const result = isNew
       ? await supabase.from("artists").insert({ id: artistId, ...payload }).select("id").single()
       : await supabase.from("artists").update(payload).eq("id", artistId).select("id").single();
-    setSaving(false);
     if (result.error) {
       setError(result.error.code === "23505" ? "같은 영문명으로 생성된 공개 경로가 이미 사용 중입니다." : result.error.message.includes("column of 'artists' in the schema cache") ? "아티스트 프로필 DB 컬럼이 누락되었습니다. 최신 007_artist_profile_schema.sql을 적용한 뒤 다시 저장하세요." : result.error.message.includes("social_links") ? "공식 계정 컬럼이 없습니다. 005_artist_social_links.sql을 먼저 적용하세요." : result.error.message.includes("logo_url") ? "아티스트 로고 컬럼이 없습니다. 004_artist_assets.sql을 먼저 적용하세요." : result.error.message);
+      setSaving(false);
       return;
     }
     setArtistId(result.data.id);
     setSnapshot(serializedDraft);
+    await finalizeDraftImageAssets(
+      supabase,
+      uploadedAssets.current,
+      [draft.imageUrl, draft.logoUrl],
+      originalDraft ? [originalDraft.imageUrl, originalDraft.logoUrl] : [],
+    );
+    uploadedAssets.current = [];
+    setSaving(false);
     notifyArtistsChanged();
     setToast(isNew ? "아티스트를 만들었습니다." : "변경사항을 저장했습니다.");
     if (routeId !== result.data.id) router.replace(`/admin/artists/${result.data.id}/profile`);
@@ -282,7 +318,7 @@ export default function ArtistProfileAdmin() {
         <p>프로필 준비 상태</p>
         {completion.map((item) => <div key={item.label} className={item.ready ? "is-ready" : ""}><i>{item.ready ? <LuCheck aria-hidden="true" /> : <LuMinus aria-hidden="true" />}</i><span>{item.label}</span></div>)}
       </div>
-      {isNew && <button type="button" className="content-rail-quiet-action" onClick={() => router.push("/admin")}>작성 취소</button>}
+      {isNew && <button type="button" className="content-rail-quiet-action" onClick={() => void cancelNewArtist()}>작성 취소</button>}
     </div>
   );
 
@@ -299,7 +335,7 @@ export default function ArtistProfileAdmin() {
     <ContentWorkbench
       rail={rail}
       identity={identity}
-      actions={<>{!isNew && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : isNew ? "아티스트 만들기" : "변경사항 저장"}</button></>}
+      actions={<>{!isNew && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : isNew ? "아티스트 만들기" : "변경사항 저장"}</button></>}
       tabs={tabs}
       activeTab={tab}
       onTabChange={setTab}
@@ -326,8 +362,8 @@ export default function ArtistProfileAdmin() {
         {tab === "visual" && <>
           <div className="content-section-heading"><h3>대표 비주얼</h3><span>아티스트를 식별하는 이미지와 테마 컬러를 설정합니다.</span></div>
           <div className="content-asset-grid">
-            <ImageAssetField label="프로필 이미지" hint="드래그앤드롭하거나 파일을 선택하세요. 공개 프로필에서는 원본 비율을 유지해 표시됩니다." value={draft.imageUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-profile" shape="portrait" onChange={(imageUrl) => handleProfileAssetChange("imageUrl", imageUrl)} onError={setError} />
-            <ImageAssetField label="아티스트 로고" hint="SVG 또는 투명 배경 PNG·WebP를 권장합니다. SVG는 서버에서 안전성 검사 후 저장됩니다." value={draft.logoUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-logo" shape="logo" onChange={(logoUrl) => handleProfileAssetChange("logoUrl", logoUrl)} onError={setError} />
+            <ImageAssetField label="프로필 이미지" hint="드래그앤드롭하거나 파일을 선택하세요. 공개 프로필에서는 원본 비율을 유지해 표시됩니다." value={draft.imageUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-profile" shape="portrait" onChange={(imageUrl) => handleProfileAssetChange("imageUrl", imageUrl)} onUploaded={(asset) => { uploadedAssets.current.push(asset); trackDraftImageAsset(asset); }} onError={setError} />
+            <ImageAssetField label="아티스트 로고" hint="SVG 또는 투명 배경 PNG·WebP를 권장합니다. SVG는 서버에서 안전성 검사 후 저장됩니다." value={draft.logoUrl} artistKey={artistId || "new-artist"} entityKey={artistId || "new-artist"} kind="artist-logo" shape="logo" onChange={(logoUrl) => handleProfileAssetChange("logoUrl", logoUrl)} onUploaded={(asset) => { uploadedAssets.current.push(asset); trackDraftImageAsset(asset); }} onError={setError} />
           </div>
           <label className="music-field content-field-short"><span>테마 컬러 <b>*</b></span><div className="content-color-row"><input type="color" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /><input className="admin-input" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /></div></label>
         </>}

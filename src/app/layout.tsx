@@ -1,27 +1,21 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { cookies } from "next/headers";
-import "@/core/styles/globals.css";
+import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
 import { getSiteUrl } from "@/core/config/public-env";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
-  display: "swap",
-});
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
 export const metadata: Metadata = {
-  title: {
-    default: "THE MUZE ENTERTAINMENT",
-    template: "%s · THE MUZE",
-  },
-  description: "THE MUZE Entertainment - Artists, Music, Auditions & News.",
+  title: { default: "THE MUZE ENTERTAINMENT", template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
   metadataBase: new URL(getSiteUrl()),
   openGraph: {
     title: "THE MUZE ENTERTAINMENT",
-    description: "Artists, music, auditions and news from THE MUZE Entertainment.",
+    description: SITE_DESCRIPTION,
     images: ["/images/og_image.png"],
   },
 };

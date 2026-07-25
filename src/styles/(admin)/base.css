@@ -4,7 +4,7 @@
   color: var(--text-primary);
   font-family: var(--font-sans);
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
 }
 
 /* ─── Typography ─── */
@@ -32,7 +32,7 @@
   padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
   width: 100%;
-  transition: border-color 0.15s;
+  transition: border-color var(--duration-fast);
 }
 
 .admin-input:focus {
@@ -56,7 +56,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity var(--duration-fast), transform var(--duration-fast);
   cursor: pointer;
 }
 
@@ -133,9 +133,9 @@
 .admin-table { background: transparent; }
 .admin-table th { height: 44px; padding: 0 16px; background: var(--bg-subtle); color: var(--text-faint); font-size: 9px; letter-spacing: .12em; }
 .admin-table td { height: 58px; padding: 10px 16px; border-bottom-color: var(--border-subtle); color: var(--text-secondary); }
-.admin-table tbody tr { transition: background .14s ease; }
+.admin-table tbody tr { transition: background var(--duration-fast) ease; }
 .admin-table tbody tr:hover { background: var(--bg-subtle); }
-.admin-input { min-height: 42px; padding: 10px 12px; border-color: var(--border-default) !important; border-radius: 10px; background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: 12px; }
+.admin-input { min-height: 42px; padding: 10px 12px; border-color: var(--border-default) !important; border-radius: 10px; background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: var(--text-xs); }
 .admin-input:focus { border-color: var(--color-brand-pink) !important; box-shadow: 0 0 0 3px var(--alpha-fc6fcf-1); }
 textarea.admin-input { min-height: 112px; resize: vertical; }
 .admin-btn { min-height: 38px; padding: 0 15px; border-radius: 9px; font-size: 10px; letter-spacing: .06em; }

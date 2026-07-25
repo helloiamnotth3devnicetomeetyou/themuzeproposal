@@ -86,7 +86,7 @@ export function TrackPlayer({
         <div className="flex items-center justify-center gap-6">
           <button
             onClick={onPrevious}
-            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-200"
+            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
             aria-label="이전 트랙"
           >
             <LuChevronLeft className="w-5 h-5" aria-hidden="true" />
@@ -99,7 +99,7 @@ export function TrackPlayer({
             style={{
               backgroundColor: albumColor,
               color: "var(--color-static-black)",
-              transition: "background-color 0.5s, transform 0.2s",
+              transition: "background-color 0.5s, transform var(--duration-base)",
             }}
           >
             {isPlaying ? (
@@ -110,7 +110,7 @@ export function TrackPlayer({
           </button>
           <button
             onClick={onNext}
-            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-200"
+            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
             aria-label="다음 트랙"
           >
             <LuChevronRight className="w-5 h-5" aria-hidden="true" />

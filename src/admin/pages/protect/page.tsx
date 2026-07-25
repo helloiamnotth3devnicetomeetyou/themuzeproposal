@@ -15,7 +15,7 @@ import {
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
-import styles from "./protect-admin.module.css";
+import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 
 type ReportStatus = "pending" | "reviewing" | "resolved" | "rejected";
 type ReportAttachment = { file_path: string; file_name: string };

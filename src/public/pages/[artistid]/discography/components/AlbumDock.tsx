@@ -53,7 +53,7 @@ export function AlbumDock({
               : "날짜 내림차순으로 정렬"
           }
           title={sortBy === "date-desc" ? "최신순" : "오래된순"}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-200 hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
+          className="flex items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -72,7 +72,7 @@ export function AlbumDock({
           onClick={() => onSelectAlbum(Math.max(albumIndex - 1, 0))}
           disabled={albumIndex === 0}
           aria-label="이전 앨범"
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -109,7 +109,7 @@ export function AlbumDock({
                     ? {
                         transform: "translateY(7px)",
                         opacity: 0,
-                        transition: `transform 0.1s ease ${
+                        transition: `transform var(--duration-fast) ease ${
                           pageIndex * 25
                         }ms, opacity 0.1s ease ${pageIndex * 25}ms`,
                       }
@@ -120,12 +120,12 @@ export function AlbumDock({
                           }ms both`,
                         }
                       : {
-                          transition: "all 0.2s ease",
+                          transition: "all var(--duration-base) ease",
                         }),
                 }}
               >
                 <div
-                  className="relative w-9 h-9 rounded-lg overflow-hidden border shrink-0 transition-all duration-200 group-hover:border-[var(--alpha-ffffff-2)]"
+                  className="relative w-9 h-9 rounded-lg overflow-hidden border shrink-0 transition-all duration-base group-hover:border-[var(--alpha-ffffff-2)]"
                   style={{
                     borderColor: isCurrent
                       ? `${album.color}60`
@@ -136,13 +136,13 @@ export function AlbumDock({
                     src={album.cover}
                     alt={album.title}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="object-cover transition-transform duration-slow group-hover:scale-110"
                     sizes="40px"
                   />
                 </div>
                 <div className="text-left shrink-0 pr-1">
                   <p
-                    className={`text-[10px] font-black leading-none tracking-tight transition-colors duration-200 ${
+                    className={`text-[10px] font-black leading-none tracking-tight transition-colors duration-base ${
                       isCurrent
                         ? "text-[var(--color-static-white)]"
                         : "text-[var(--palette-6b7280)] group-hover:text-[var(--palette-e5e7eb)]"
@@ -151,7 +151,7 @@ export function AlbumDock({
                     {album.title}
                   </p>
                   <p
-                    className={`text-[7px] uppercase font-medium mt-0.5 tracking-wider transition-colors duration-200 ${
+                    className={`text-[7px] uppercase font-medium mt-0.5 tracking-wider transition-colors duration-base ${
                       isCurrent
                         ? "text-[var(--palette-9ca3af)]"
                         : "text-[var(--palette-4b5563)] group-hover:text-[var(--palette-6b7280)]"
@@ -194,7 +194,7 @@ export function AlbumDock({
           }
           disabled={albumIndex === albums.length - 1}
           aria-label="다음 앨범"
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",

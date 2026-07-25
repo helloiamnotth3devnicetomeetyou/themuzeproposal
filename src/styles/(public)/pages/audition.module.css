@@ -146,7 +146,7 @@
 .categoryIndex {
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 550;
   letter-spacing: -0.025em;
 }
@@ -237,9 +237,9 @@
   background: transparent !important;
   color: var(--text-primary) !important;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 400;
-  transition: border-color 0.18s, box-shadow 0.18s;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .fieldInput:hover {
@@ -277,7 +277,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: background 0.16s ease, transform 0.16s ease;
+  transition: background var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 
 .submitBtn:hover {
@@ -339,7 +339,7 @@
   letter-spacing: 0.1em;
   text-align: left;
   text-transform: uppercase;
-  transition: color 0.16s ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .backBtn:hover {

@@ -77,6 +77,7 @@ create table if not exists public.albums (
   release_date date,
   cover_url text,
   hero_image_url text,
+  typo_logo_url text,
   color text not null default '#FC6FCF',
   description_ko text,
   description_en text,

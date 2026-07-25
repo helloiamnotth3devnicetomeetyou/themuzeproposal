@@ -1,6 +1,6 @@
 /* ─── Managed Artist Image Assets ─── */
 .content-asset-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
-.content-asset-field { display: grid; grid-template-columns: 150px minmax(0,1fr); min-width: 0; overflow: hidden; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); transition: border-color .15s,background .15s; }
+.content-asset-field { display: grid; grid-template-columns: 150px minmax(0,1fr); min-width: 0; overflow: hidden; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); transition: border-color var(--duration-fast),background var(--duration-fast); }
 .content-asset-field.is-dragging { border-color: var(--color-brand-pink); background: var(--alpha-fc6fcf-06); box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
 .content-asset-preview { display: grid; min-height: 190px; place-items: center; overflow: hidden; border-right: 1px solid var(--border-default); background: color-mix(in srgb,var(--bg-card) 82%,var(--bg-subtle)); }
 .content-asset-preview img { width: 100%; height: 100%; object-fit: cover; }
@@ -15,7 +15,7 @@
 :root[data-theme="dark"] .cms-artist-logo img.is-theme-svg { filter: brightness(0) saturate(100%) invert(1); }
 .content-asset-preview > div { display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-faint); }
 .content-asset-preview > div span { font-size: 7px; font-weight: 800; letter-spacing: .17em; }
-.content-asset-preview > div b { margin-top: 9px; color: var(--color-brand-pink); font-family: var(--font-display); font-size: 24px; }
+.content-asset-preview > div b { margin-top: 9px; color: var(--color-brand-pink); font-family: var(--font-display); font-size: var(--text-2xl); }
 .content-asset-dropzone { display: flex; min-width: 0; flex-direction: column; justify-content: center; gap: 14px; padding: 18px; }
 .content-asset-copy > span { color: var(--text-primary); font-size: 10px; font-weight: 750; }
 .content-asset-copy > span b { margin-left: 4px; color: var(--color-brand-pink); }

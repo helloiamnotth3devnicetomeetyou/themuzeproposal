@@ -4,7 +4,7 @@ import { supabase } from "@/core/supabase/client";
 import type { DiscographyAlbum, RawDiscographyAlbum } from "./types";
 
 const ALBUM_SELECT =
-  "id,title,type,release_date,cover_url,hero_image_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(title,track_number,is_title,spotify_url,youtube_url,audio_url,music_video_url,logo_url)";
+  "id,title,type,release_date,cover_url,hero_image_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(title,track_number,is_title,spotify_url,youtube_url,audio_url,music_video_url)";
 
 export async function fetchDiscography(artistSlug: string) {
   const { data: artist, error: artistError } = await supabase
@@ -51,7 +51,6 @@ export async function fetchDiscography(artistSlug: string) {
         youtubeUrl: track.youtube_url || undefined,
         audioUrl: track.audio_url || undefined,
         videoUrl: track.music_video_url || undefined,
-        logoUrl: track.logo_url || undefined,
       })),
     desc: {
       ko: item.description_ko || "",

@@ -2,7 +2,7 @@
 .social-link-editor { overflow: hidden; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-card); }
 .social-link-toolbar { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--border-default); }
 .social-link-toolbar > span { color: var(--text-muted); font-size: 9px; }
-.social-link-toolbar > span b { margin-left: 5px; color: var(--color-brand-pink); font-family: var(--font-display); font-size: 14px; }
+.social-link-toolbar > span b { margin-left: 5px; color: var(--color-brand-pink); font-family: var(--font-display); font-size: var(--text-sm); }
 .social-link-toolbar > button { display: inline-flex; min-height: 31px; align-items: center; gap: 6px; padding: 0 11px; border: 1px solid var(--border-default); border-radius: 7px; background: var(--bg-subtle); color: var(--text-primary); font-size: 8px; font-weight: 750; cursor: pointer; }
 .social-link-toolbar > button svg { width: 12px; height: 12px; }
 .social-link-toolbar > button:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
@@ -11,7 +11,7 @@
 .social-link-empty span { font-size: 10px; }
 .social-link-empty b { color: var(--color-brand-pink); font-size: 9px; }
 .social-link-list { display: flex; flex-direction: column; }
-.social-link-row { display: grid; grid-template-columns: 26px 38px minmax(118px,.7fr) minmax(150px,1fr) minmax(220px,1.55fr) 30px; align-items: start; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); transition: background .15s; }
+.social-link-row { display: grid; grid-template-columns: 26px 38px minmax(118px,.7fr) minmax(150px,1fr) minmax(220px,1.55fr) 30px; align-items: start; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast); }
 .social-link-row:last-child { border-bottom: 0; }
 .social-link-row:focus-within { background: color-mix(in srgb,var(--bg-subtle) 72%,var(--alpha-fc6fcf-04)); }
 .social-link-index { padding-top: 27px; color: var(--text-faint); font-family: var(--font-sans); font-size: 8px; }

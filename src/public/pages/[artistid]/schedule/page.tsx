@@ -10,8 +10,9 @@ import type { IconType } from "react-icons";
 import { LuCake, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuDisc3, LuPartyPopper, LuRadio } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { supabase } from "@/core/supabase/client";
-import styles from "./schedule.module.css";
+import styles from "@/styles/(public)/pages/artist-schedule.module.css";
 
 type Category = "show" | "release" | "anniversary" | "event" | "etc";
 type ScheduleRow = {
@@ -44,6 +45,10 @@ const dateAtLocalMidnight = (value: string) => new Date(`${value}T00:00:00`);
 export default function ArtistSchedulePage() {
   const { artistid } = useParams<{ artistid: string }>();
   const { locale } = useLocale();
+  const preview = usePreviewPayload("schedule");
+  const previewArtistId = preview?.artist.id;
+  const previewArtistColor = preview?.artist.color;
+
   const now = new Date();
   const [cursor, setCursor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [artistColor, setArtistColor] = useState(BRAND_PINK_HEX);
@@ -56,7 +61,9 @@ export default function ArtistSchedulePage() {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const artistResult = await supabase.from("artists").select("id,color").eq("slug", artistid).maybeSingle();
+      const artistResult = previewArtistId
+        ? { data: { id: previewArtistId, color: previewArtistColor }, error: null }
+        : await supabase.from("artists").select("id,color").eq("slug", artistid).maybeSingle();
       if (cancelled) return;
       if (artistResult.error || !artistResult.data) {
         setError("아티스트 정보를 찾을 수 없습니다.");
@@ -78,12 +85,31 @@ export default function ArtistSchedulePage() {
     }
     void load();
     return () => { cancelled = true; };
-  }, [artistid]);
+  }, [artistid, previewArtistColor, previewArtistId]);
 
-  const monthEvents = useMemo(() => events.filter((item) => {
+  const effectiveEvents = useMemo(() => {
+    if (!preview) return events;
+    const override = preview.schedule as ScheduleRow;
+    const exists = events.some((item) => item.id === override.id);
+    return exists
+      ? events.map((item) => item.id === override.id ? override : item)
+      : [...events, override];
+  }, [events, preview]);
+
+  useEffect(() => {
+    if (!preview) return;
+    const timer = window.setTimeout(() => {
+      setArtistColor(preview.artist.color || BRAND_PINK_HEX);
+      setCursor(dateAtLocalMidnight(preview.schedule.event_date));
+      setPage(0);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [preview]);
+
+  const monthEvents = useMemo(() => effectiveEvents.filter((item) => {
     const date = dateAtLocalMidnight(item.event_date);
     return date.getFullYear() === cursor.getFullYear() && date.getMonth() === cursor.getMonth();
-  }), [cursor, events]);
+  }), [cursor, effectiveEvents]);
   const totalPages = Math.max(1, Math.ceil(monthEvents.length / PAGE_SIZE));
   const visibleEvents = monthEvents.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const firstWeekday = new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay();

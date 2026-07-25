@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { LuCheck, LuChevronDown } from "react-icons/lu";
-import styles from "./CustomSelect.module.css";
+import styles from "@/styles/(core)/components/form/CustomSelect.module.css";
 
 export type CustomSelectOption = {
   value: string;

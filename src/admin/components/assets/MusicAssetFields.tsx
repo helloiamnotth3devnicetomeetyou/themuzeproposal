@@ -155,13 +155,14 @@ type AssetProps = {
   albumId: string;
   trackId: string;
   kind: "audio" | "logo";
+  secureSvg?: boolean;
   value: string;
   onUploaded: (asset: UploadedAsset) => void;
   onClear: () => void;
   onError: (message: string) => void;
 };
 
-export function TrackAssetField({ label, hint, accept, maxBytes, artistId, albumId, trackId, kind, value, onUploaded, onClear, onError }: AssetProps) {
+export function TrackAssetField({ label, hint, accept, maxBytes, artistId, albumId, trackId, kind, secureSvg = false, value, onUploaded, onClear, onError }: AssetProps) {
   const inputId = useId();
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -173,15 +174,38 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
     if (file.size > maxBytes) return onError(`${label} 파일 용량이 제한을 넘었습니다.`);
     setBusy(true);
     try {
+      const isSvg = kind === "logo" && (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg"));
+      if (isSvg && secureSvg) {
+        const formData = new FormData();
+        formData.set("file", file);
+        formData.set("artistKey", artistId);
+        formData.set("entityKey", albumId);
+        formData.set("assetKind", "album-typography");
+        const response = await fetch("/api/uploads/artist-logo", { method: "POST", body: formData });
+        const payload = await response.json().catch(() => ({})) as { asset?: UploadedAsset; code?: string };
+        if (!response.ok || !payload.asset) throw new Error(payload.code || "UPLOAD_FAILED");
+        onUploaded(payload.asset);
+        return;
+      }
       const extension = kind === "audio"
         ? "mp3"
-        : file.type === "image/png"
-          ? "png"
-          : "webp";
+        : isSvg
+          ? "svg"
+          : file.type === "image/png"
+            ? "png"
+            : "webp";
       const path = `${artistId}/${albumId}/${trackId}/${kind}-${crypto.randomUUID()}.${extension}`;
-      onUploaded(await upload("track-assets", path, file, kind === "audio" ? "audio/mpeg" : file.type));
+      onUploaded(await upload("track-assets", path, file, kind === "audio" ? "audio/mpeg" : isSvg ? "image/svg+xml" : file.type));
     } catch (cause) {
-      onError(cause instanceof Error ? cause.message : `${label} 업로드에 실패했습니다.`);
+      const code = cause instanceof Error ? cause.message : "";
+      const message = code === "UNSAFE_SVG"
+        ? "SVG 안에 허용되지 않은 스크립트나 외부 리소스가 있습니다."
+        : code === "FILE_TOO_LARGE"
+          ? "SVG 파일은 10MB 이하여야 합니다."
+          : code === "UNAUTHORIZED" || code === "FORBIDDEN"
+            ? "관리자 권한을 확인한 뒤 다시 시도해 주세요."
+            : code || `${label} 업로드에 실패했습니다.`;
+      onError(message);
     } finally { setBusy(false); }
   };
 
@@ -199,7 +223,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
     onDrop={drop}
   >
     {kind === "logo" && value
-      ? <span className="track-asset-logo-preview"><img src={value} alt="업로드한 타이포 로고" /></span>
+      ? <span className="track-asset-logo-preview"><img src={value} alt="업로드한 타이포 로고" className={/\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /></span>
       : <span className="track-asset-icon">{kind === "audio" ? <LuMusic aria-hidden="true" /> : <LuImage aria-hidden="true" />}</span>}
     <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
     {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}

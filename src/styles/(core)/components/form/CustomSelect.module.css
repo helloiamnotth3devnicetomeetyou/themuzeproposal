@@ -28,7 +28,7 @@
   letter-spacing: 0.12em;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  transition: border-color var(--duration-base) ease, background-color var(--duration-base) ease, color var(--duration-base) ease;
 }
 
 .trigger:hover {
@@ -59,7 +59,7 @@
   height: 14px;
   flex: 0 0 14px;
   color: var(--text-faint);
-  transition: color 150ms ease, transform 170ms ease;
+  transition: color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 
 .open .trigger svg {

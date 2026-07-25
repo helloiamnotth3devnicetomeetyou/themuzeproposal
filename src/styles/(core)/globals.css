@@ -1,17 +1,28 @@
 @import "tailwindcss";
+@import "./foundations/color-primitives.css";
+@import "./foundations/base.css";
+@import "./foundations/animations.css";
+@import "./components/loading.css";
+@import "../(public)/pages/home.css";
+@import "../(public)/pages/notice.css";
 
 @theme {
-  /* Shared responsive scale: mobile / tablet / desktop. */
+  /* Raw CSS media queries mirror these values because custom properties cannot
+     be evaluated in media-query conditions. */
   --breakpoint-sm: 30rem;
   --breakpoint-md: 48rem;
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;
 }
 
+@utility duration-fast {
+  transition-duration: var(--duration-fast);
+}
 
-@import "./foundations/color-primitives.css";
-@import "./foundations/base.css";
-@import "./foundations/animations.css";
-@import "./components/loading.css";
-@import "../../public/styles/pages/home.css";
-@import "../../public/styles/pages/notice.css";
+@utility duration-base {
+  transition-duration: var(--duration-base);
+}
+
+@utility duration-slow {
+  transition-duration: var(--duration-slow);
+}

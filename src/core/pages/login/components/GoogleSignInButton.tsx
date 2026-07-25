@@ -25,7 +25,7 @@ export default function GoogleSignInButton({
         type="button"
         disabled={loading}
         onClick={onClick}
-        className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-4 text-xs font-bold tracking-wider transition-all duration-300 hover:border-brand-pink disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-4 text-xs font-bold tracking-wider transition-all duration-slow hover:border-brand-pink disabled:cursor-not-allowed disabled:opacity-50"
         style={{
           backgroundColor: "var(--bg-subtle)",
           borderColor: "var(--border-default)",

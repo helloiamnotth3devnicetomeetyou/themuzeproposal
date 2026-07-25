@@ -4,13 +4,13 @@
 .rich-text-label > span { color: var(--text-secondary); font-size: 10px; font-weight: 700; }
 .rich-text-label > span b { color: var(--color-brand-pink); }
 .rich-text-label > small { color: var(--text-faint); font-size: 8px; }
-.rich-text-shell { overflow: hidden; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-input); transition: border-color .16s ease, box-shadow .16s ease; }
+.rich-text-shell { overflow: hidden; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-input); transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease; }
 .rich-text-shell:focus-within { border-color: var(--color-brand-pink); box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
 .rich-text-toolbar { display: flex; min-height: 48px; align-items: center; gap: 5px; overflow-x: auto; padding: 7px 9px; border-bottom: 1px solid var(--border-default); background: var(--bg-subtle); scrollbar-width: none; }
 .rich-text-toolbar::-webkit-scrollbar { display: none; }
 .rich-text-tool-group { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; padding-right: 5px; border-right: 1px solid var(--border-default); }
 .rich-text-tool-group:last-child { padding-right: 0; border-right: 0; }
-.rich-text-toolbar button { display: grid; width: 31px; height: 31px; flex: 0 0 31px; padding: 0; place-items: center; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; transition: border-color .14s ease, background .14s ease, color .14s ease; }
+.rich-text-toolbar button { display: grid; width: 31px; height: 31px; flex: 0 0 31px; padding: 0; place-items: center; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease, color var(--duration-fast) ease; }
 .rich-text-toolbar button:hover { border-color: var(--border-default); background: var(--bg-elevated); color: var(--text-primary); }
 .rich-text-toolbar button.is-active { border-color: var(--alpha-fc6fcf-24); background: var(--alpha-fc6fcf-08); color: var(--color-brand-pink); }
 .rich-text-toolbar button svg { width: 14px; height: 14px; }
@@ -36,7 +36,7 @@
 
 /* Notice category combobox */
 .notice-category-combobox { position: relative; z-index: 4; }
-.notice-category-combobox > svg { position: absolute; z-index: 2; top: 50%; left: 13px; width: 13px; height: 13px; color: var(--text-faint); transform: translateY(-50%); pointer-events: none; transition: color .15s ease; }
+.notice-category-combobox > svg { position: absolute; z-index: 2; top: 50%; left: 13px; width: 13px; height: 13px; color: var(--text-faint); transform: translateY(-50%); pointer-events: none; transition: color var(--duration-fast) ease; }
 .notice-category-combobox:focus-within > svg { color: var(--color-brand-pink); }
 .notice-category-combobox > .admin-input { width: 100%; padding-left: 37px; }
 .notice-category-suggestions { position: absolute; z-index: 70; top: calc(100% + 6px); right: 0; left: 0; overflow: hidden; padding: 6px; border: 1px solid var(--border-default); border-radius: 9px; background: var(--bg-elevated); box-shadow: 0 20px 44px var(--alpha-000000-34); }

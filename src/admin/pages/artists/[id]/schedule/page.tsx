@@ -7,13 +7,15 @@ import { useParams } from "next/navigation";
 import { LuCake, LuCalendarDays, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuClock3, LuDisc3, LuMapPin, LuPartyPopper, LuPlus, LuRadio } from "react-icons/lu";
 import type { IconType } from "react-icons";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
-import styles from "./schedule-admin.module.css";
+import styles from "@/styles/(admin)/pages/artist-schedule/schedule-admin.module.css";
 
 type Category = "show" | "release" | "anniversary" | "event" | "etc";
 type Tab = "calendar" | "details" | "publish";
@@ -80,6 +82,9 @@ const toDraft = (row: ScheduleRow): Draft => ({ id: row.id, eventDate: row.event
 export default function ArtistScheduleAdminPage() {
   const artistId = useParams<{ id: string }>()?.id;
   const [artistName, setArtistName] = useState("");
+  const [artistSlug, setArtistSlug] = useState("");
+  const [artistColor, setArtistColor] = useState<string | null>(null);
+  const [previewScheduleId] = useState(() => `preview-${crypto.randomUUID()}`);
   const [items, setItems] = useState<ScheduleRow[]>([]);
   const [tab, setTab] = useState<Tab>("calendar");
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDateKey(today()));
@@ -87,7 +92,6 @@ export default function ArtistScheduleAdminPage() {
   const {
     draft,
     setDraft,
-    snapshot,
     setSnapshot,
     dirty,
     loading,
@@ -128,10 +132,14 @@ export default function ArtistScheduleAdminPage() {
   const loadItems = useCallback(async (selectId?: string) => {
     if (!artistId) return;
     const [artistResult, scheduleResult] = await Promise.all([
-      supabase.from("artists").select("name").eq("id", artistId).single(),
+      supabase.from("artists").select("name,slug,color").eq("id", artistId).single(),
       supabase.from("artist_schedules").select("*").eq("artist_id", artistId).order("event_date", { ascending: false }).order("start_time", { ascending: true, nullsFirst: true }),
     ]);
-    if (artistResult.data) setArtistName(artistResult.data.name);
+    if (artistResult.data) {
+      setArtistName(artistResult.data.name);
+      setArtistSlug(artistResult.data.slug || "");
+      setArtistColor(artistResult.data.color || null);
+    }
     if (scheduleResult.error) {
       setError(scheduleResult.error.message.includes("artist_schedules") ? "일정 테이블이 없습니다. 018_artist_schedules.sql을 먼저 적용하세요." : scheduleResult.error.message);
     } else {
@@ -143,7 +151,7 @@ export default function ArtistScheduleAdminPage() {
       }
     }
     setLoading(false);
-  }, [artistId]);
+  }, [artistId, setDraft, setError, setLoading, setSnapshot]);
 
   useEffect(() => { void Promise.resolve().then(() => loadItems()); }, [loadItems]);
   useEffect(() => {
@@ -164,6 +172,34 @@ export default function ArtistScheduleAdminPage() {
     if (draft.linkUrl && !/^https?:\/\//i.test(draft.linkUrl)) return "연결 링크는 http:// 또는 https://로 시작해야 합니다.";
     return "";
   }, [draft]);
+
+  const effectiveScheduleId = draft?.id || previewScheduleId;
+  const previewPayload = useMemo(() => draft && artistId && artistSlug && draft.eventDate ? {
+    artist: { id: artistId, slug: artistSlug, color: artistColor },
+    schedule: {
+      id: effectiveScheduleId,
+      event_date: draft.eventDate,
+      start_time: draft.startTime || null,
+      category: draft.category,
+      title_ko: draft.titleKo,
+      title_en: draft.titleEn || null,
+      title_ja: draft.titleJa || null,
+      description_ko: draft.descriptionKo || null,
+      description_en: draft.descriptionEn || null,
+      description_ja: draft.descriptionJa || null,
+      location: draft.location || null,
+      link_url: draft.linkUrl || null,
+      sort_order: draft.sortOrder,
+    },
+  } : null, [artistColor, artistId, artistSlug, draft, effectiveScheduleId]);
+  const { openPreview } = useAdminPreview({
+    kind: "schedule",
+    payload: previewPayload,
+    targetPath: previewPayload ? `/${artistSlug}/schedule` : "",
+    canPreview: Boolean(previewPayload),
+    unavailableMessage: "?? ????? ??? ??? ???? ?? ??? ?????.",
+    onError: setError,
+  });
 
   const save = async () => {
     if (!draft || !artistId) return;
@@ -220,7 +256,7 @@ export default function ArtistScheduleAdminPage() {
     </div>
   </>;
   const identity = draft ? <><span className={styles.dateArt}><b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b><small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small></span><div className="content-identity-copy"><p><span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>{draft.isPublished ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.titleKo || "이름 없는 일정"}</h2></div></> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>일정을 선택하세요</h2><small>{artistName}</small></div>;
-  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
+  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
 
   return <>
     <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench">

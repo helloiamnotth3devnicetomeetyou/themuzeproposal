@@ -12,7 +12,7 @@ import {
   updateUserPassword,
   verifyCurrentPassword,
 } from "@/core/auth/auth";
-import styles from "./account.module.css";
+import styles from "@/styles/(core)/pages/account.module.css";
 
 type Status = { type: "success" | "error"; message: string } | null;
 type AccountSection = "profile" | "email" | "password" | "session";

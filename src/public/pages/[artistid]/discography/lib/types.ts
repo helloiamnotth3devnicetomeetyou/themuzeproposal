@@ -7,7 +7,6 @@ export interface DiscographyTrack {
   youtubeUrl?: string;
   audioUrl?: string;
   videoUrl?: string;
-  logoUrl?: string;
 }
 
 export interface DiscographyAlbum {
@@ -47,7 +46,6 @@ export interface RawDiscographyAlbum {
     youtube_url: string | null;
     audio_url: string | null;
     music_video_url: string | null;
-    logo_url: string | null;
   }>;
 }
 

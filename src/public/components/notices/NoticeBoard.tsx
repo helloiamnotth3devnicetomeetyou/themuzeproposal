@@ -7,7 +7,7 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import type { LocalizedTextDTO, NoticeDTO, NoticeListDTO } from "@/public/features/notices/types";
-import styles from "./NoticeBoard.module.css";
+import styles from "@/styles/(public)/components/notices/NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";
 

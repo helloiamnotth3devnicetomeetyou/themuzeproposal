@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LuArrowRight, LuCircleAlert, LuFileCheck2, LuLockKeyhole } from "react-icons/lu";
-import styles from "./protect.module.css";
+import styles from "@/styles/(public)/pages/protect.module.css";
 import ReportList from "./components/ReportList";
 import ReportForm from "./components/ReportForm";
 

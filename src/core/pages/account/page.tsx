@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import AccountClient from "./AccountClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
+import { createPrivatePageMetadata } from "@/core/seo/metadata";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata = createPrivatePageMetadata("Account");
 
 export default async function AccountPage() {
   const supabase = await createSupabaseServerClient();

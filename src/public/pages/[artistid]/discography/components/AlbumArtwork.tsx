@@ -87,7 +87,7 @@ export function AlbumArtwork({
               }}
             >
               <div
-                className={`absolute inset-0 rounded-full overflow-hidden transition-shadow duration-200 group-hover/cd:shadow-[0_0_40px_var(--alpha-ffffff-15)] ${
+                className={`absolute inset-0 rounded-full overflow-hidden transition-shadow duration-base group-hover/cd:shadow-[0_0_40px_var(--alpha-ffffff-15)] ${
                   isActiveTrack && isPlaying
                     ? "animate-vinyl-spin"
                     : "animate-vinyl-spin animation-paused"
@@ -103,14 +103,14 @@ export function AlbumArtwork({
                 }}
               >
                 <Image
-                  src={track.logoUrl || album.cover}
-                  alt={track.logoUrl ? `${track.title} 타이포 로고` : track.title}
+                  src={album.titleImage || album.cover}
+                  alt={album.titleImage ? `${track.title} 타이포 로고` : track.title}
                   fill
                   className={`${
-                    track.logoUrl
+                    album.titleImage
                       ? "object-contain p-10"
                       : "object-cover brightness-[0.5] group-hover/cd:brightness-[0.7]"
-                  } transition-[filter] duration-200`}
+                  } transition-[filter] duration-base`}
                   sizes="300px"
                 />
                 <div
@@ -182,7 +182,7 @@ export function AlbumArtwork({
               {album.title}
             </span>
           </div>
-          <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[var(--alpha-000000-4)] backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-[var(--alpha-ffffff-08)]">
+          <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[var(--alpha-000000-4)] backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-slow border border-[var(--alpha-ffffff-08)]">
             <LuChevronRight
               className={`w-3.5 h-3.5 text-[var(--color-static-white)] transition-transform duration-500 ${
                 showDiscs ? "rotate-180" : ""

@@ -1,6 +1,7 @@
 "use client";
 
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { useParams } from "next/navigation";
 import { useRef } from "react";
 
@@ -14,12 +15,14 @@ import { DiscographyBackground } from "./DiscographyBackground";
 export function DiscographyExperience() {
   const { locale } = useLocale();
   const { artistid } = useParams<{ artistid: string }>();
+  const preview = usePreviewPayload("album");
   const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
   const discography = useDiscographyController(
     artistid,
     audioRef,
     albumRailRef,
+    preview,
   );
 
   if (discography.loading || !discography.album) {

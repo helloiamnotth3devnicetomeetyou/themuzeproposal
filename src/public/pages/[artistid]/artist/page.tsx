@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useParams } from "next/navigation";
 import ArtistSceneExperience from "./ArtistSceneExperience";
 

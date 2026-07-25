@@ -109,7 +109,7 @@
   justify-content: flex-end;
   border-bottom: 1px solid transparent;
   color: var(--text-muted);
-  transition: width 220ms ease, border-color 180ms ease;
+  transition: width var(--duration-base) ease, border-color var(--duration-fast) ease;
 }
 
 .searchControl.searchOpen {
@@ -122,7 +122,7 @@
   min-width: 0;
   overflow: hidden;
   opacity: 0;
-  transition: width 220ms ease, opacity 150ms ease;
+  transition: width var(--duration-base) ease, opacity var(--duration-fast) ease;
 }
 
 .searchOpen .searchField {
@@ -157,7 +157,7 @@
   color: inherit;
   cursor: pointer;
   place-items: center;
-  transition: color 160ms ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .searchControl > button:hover,
@@ -196,7 +196,7 @@
   content: "";
   opacity: 0;
   transform: scaleY(0.25);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 
 .item:hover::before,
@@ -209,7 +209,7 @@
   padding-top: 4px;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 550;
   letter-spacing: -0.025em;
 }
@@ -239,7 +239,7 @@
   font-weight: 650;
   letter-spacing: -0.025em;
   line-height: 1.42;
-  transition: color 160ms ease, transform 200ms ease;
+  transition: color var(--duration-fast) ease, transform var(--duration-base) ease;
 }
 
 .item time {
@@ -258,7 +258,7 @@
   color: var(--text-faint);
   opacity: 0;
   transform: translate(-5px, 5px);
-  transition: color 160ms ease, opacity 160ms ease, transform 200ms ease;
+  transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, transform var(--duration-base) ease;
 }
 
 .item:hover strong,
@@ -289,7 +289,7 @@
   justify-items: center;
   gap: 14px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
@@ -338,7 +338,7 @@
   font-size: 11px;
   font-weight: 650;
   text-decoration: none;
-  transition: color 160ms ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .backLink:hover {
@@ -470,7 +470,7 @@
   font-size: 11px;
   font-weight: 650;
   text-decoration: none;
-  transition: color 160ms ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .articleBack:hover {
@@ -629,7 +629,7 @@
 
   .articleContent {
     padding: 36px 0 56px;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 }
 
@@ -665,7 +665,7 @@
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  transition: border-color var(--duration-base) ease, color var(--duration-base) ease, background-color var(--duration-base) ease;
 }
 
 .pagination button:hover:not(:disabled) {

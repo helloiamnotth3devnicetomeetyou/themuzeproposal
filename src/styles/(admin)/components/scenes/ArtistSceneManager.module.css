@@ -3,7 +3,7 @@
 .toolbar { display:flex; min-height:72px; align-items:center; gap:8px; padding:14px; border:1px solid var(--border-default); border-radius:11px; background:var(--bg-card); }
 .toolbar > div { min-width:0; flex:1; }
 .toolbar b,.toolbar span { display:block; }
-.toolbar b { color:var(--text-primary); font-size:12px; }
+.toolbar b { color:var(--text-primary); font-size: var(--text-xs); }
 .toolbar span { margin-top:5px; color:var(--text-muted); font-size:9px; }
 .toolbar button,.sceneSettings button,.outlineTools button { display:flex; min-height:36px; align-items:center; justify-content:center; gap:7px; padding:0 11px; border:1px solid var(--border-default); border-radius:7px; background:var(--bg-card); color:var(--text-secondary); font-size:9px; font-weight:700; cursor:pointer; }
 .toolbar button:hover,.sceneSettings button:hover,.outlineTools button:hover { border-color:var(--color-brand-pink); color:var(--color-brand-pink); }
@@ -59,7 +59,7 @@
 .outlineTools > div { padding-bottom:12px; border-bottom:1px solid var(--border-default); }
 .outlineTools span,.outlineTools b,.outlineTools small { display:block; }
 .outlineTools span { color:var(--color-brand-pink); font-size:7px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-.outlineTools b { margin-top:7px; color:var(--text-primary); font-size:14px; }
+.outlineTools b { margin-top:7px; color:var(--text-primary); font-size: var(--text-sm); }
 .outlineTools small { margin-top:6px; color:var(--text-muted); font-size:8px; line-height:1.5; }
 .outlineTools button { width:100%; }
 .outlineTools p { margin:2px 0 0; padding:7px 8px; border-radius:6px; background:var(--alpha-35a963-08); color:var(--color-status-success); font-size:7px; font-weight:700; text-align:center; }

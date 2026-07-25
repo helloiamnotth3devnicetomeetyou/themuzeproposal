@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HomeSlideDTO } from "./types";
 
-const HOME_SLIDE_LIMIT = 5;
+const HOME_SLIDE_LIMIT = 7 ;
 
 type AlbumRow = {
   id: string;
@@ -10,6 +10,7 @@ type AlbumRow = {
   type: string;
   cover_url: string | null;
   hero_image_url: string | null;
+  typo_logo_url: string | null;
   spotify_id: string | null;
   youtube_url: string | null;
   description_ko: string | null;
@@ -45,7 +46,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
 
   const { data: albumData, error: albumError } = await client
     .from("albums")
-    .select("id, artist_id, title, type, cover_url, hero_image_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
+    .select("id, artist_id, title, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
     .in("id", albumIds)
     .eq("is_published", true)
     .lte("published_at", new Date().toISOString());
@@ -78,6 +79,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
       title: album.title,
       type: album.type,
       imageUrl: album.hero_image_url || album.cover_url || "",
+      typoLogoUrl: album.typo_logo_url,
       spotifyId: album.spotify_id,
       youtubeUrl: album.youtube_url,
       descriptions: {

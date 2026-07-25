@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFileText, LuPlus } from "react-icons/lu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import NoticeCategoryInput from "@/admin/components/content/NoticeCategoryInput";
 import RichTextEditor from "@/admin/components/content/RichTextEditor";
@@ -11,6 +12,7 @@ import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
 import { supabase } from "@/core/supabase/client";
 
+import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 type Notice = {
   id: string;
   title_ko: string;
@@ -59,6 +61,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const requestConfirm = useAdminConfirm();
   const [artistId, setArtistId] = useState<string | null>(null);
   const [scopeName, setScopeName] = useState(scopeArtistId ? "아티스트" : "THE MUZE");
+  const [scopeSlug, setScopeSlug] = useState("");
   const [notices, setNotices] = useState<Notice[]>([]);
   const [draft, setDraft] = useState<NoticeDraft | null>(null);
   const [snapshot, setSnapshot] = useState("");
@@ -71,6 +74,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [previewNoticeId] = useState(() => `preview-${crypto.randomUUID()}`);
 
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
   const dirty = Boolean(draft && serializedDraft !== snapshot);
@@ -84,9 +88,27 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
         if (!category || seen.has(key)) return false;
         seen.add(key);
         return true;
-      })
-      ;
+      });
   }, [notices]);
+
+  const effectiveNoticeId = draft?.id || previewNoticeId;
+  const previewPayload = useMemo(() => draft ? {
+    scope: { name: scopeName, artistSlug: scopeSlug || undefined },
+    notice: {
+      id: effectiveNoticeId,
+      title: draft.title,
+      content: sanitizeRichText(draft.content),
+      category: draft.category,
+      date: draft.date,
+    },
+  } : null, [draft, effectiveNoticeId, scopeName, scopeSlug]);
+  const { openPreview } = useAdminPreview({
+    kind: "notice", payload: previewPayload,
+    targetPath: previewPayload ? (scopeSlug ? `/${scopeSlug}/notice/${effectiveNoticeId}` : `/notice/${effectiveNoticeId}`) : "",
+    canPreview: Boolean(previewPayload),
+    unavailableMessage: "미리보기할 공지 내용을 먼저 입력해 주세요.",
+    onError: setError,
+  });
   const patchDraft = (patch: Partial<NoticeDraft>) => setDraft((current) => current ? { ...current, ...patch } : current);
 
   const loadNotices = useCallback(async (preferredId?: string) => {
@@ -94,7 +116,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     setError("");
     let resolvedArtistId: string | null = null;
     if (scopeArtistId) {
-      const { data: artist, error: artistError } = await supabase.from("artists").select("id,name").eq("id", scopeArtistId).single();
+      const { data: artist, error: artistError } = await supabase.from("artists").select("id,name,slug").eq("id", scopeArtistId).single();
       if (artistError || !artist) {
         setError("아티스트 정보를 불러오지 못했습니다.");
         setLoading(false);
@@ -102,8 +124,10 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       }
       resolvedArtistId = artist.id;
       setScopeName(artist.name || "아티스트");
+      setScopeSlug(artist.slug || "");
     } else {
       setScopeName("THE MUZE");
+      setScopeSlug("");
     }
     setArtistId(resolvedArtistId);
     let query = supabase.from("notices").select("id,title_ko,content_ko,category_ko,date,is_published").order("date", { ascending: false });
@@ -237,7 +261,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     <div className="content-identity-copy"><p><span className={`cms-status ${draft.published ? "is-live" : ""}`}>{draft.published ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 공지"}</h2><small>{scopeName} · {draft.category || "분류 미설정"}</small></div>
   </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>공지를 선택하세요</h2><small>{scopeName} notice desk</small></div>;
 
-  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || !canSave || saving} onClick={() => void saveNotice()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
+  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || !canSave || saving} onClick={() => void saveNotice()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
 
   return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench">
     {!draft ? <div className="content-no-selection"><span><LuFileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">

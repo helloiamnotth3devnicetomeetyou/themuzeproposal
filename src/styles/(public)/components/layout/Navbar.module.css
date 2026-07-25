@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   z-index: 50;
-  transition: background-color 0.4s ease, backdrop-filter 0.4s ease, height 0.4s ease;
+  transition: background-color var(--duration-slow) ease, backdrop-filter var(--duration-slow) ease, height var(--duration-slow) ease;
 }
 
 .headerAdmin {
@@ -36,7 +36,7 @@
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   height: 72px;
-  transition: height 0.4s ease;
+  transition: height var(--duration-slow) ease;
 }
 
 .containerScrolled {
@@ -45,7 +45,7 @@
 
 .logoImage {
   object-fit: contain;
-  transition: filter 0.3s ease;
+  transition: filter var(--duration-slow) ease;
 }
 
 .logoDark {
@@ -62,7 +62,7 @@
   font-weight: 750;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
-  transition: color 0.2s ease;
+  transition: color var(--duration-base) ease;
 }
 
 .navLink:hover,
@@ -87,7 +87,7 @@
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  transition: filter 0.2s ease;
+  transition: filter var(--duration-base) ease;
 }
 
 .navLink:hover .artistLogoBadge :global(.is-theme-svg),
@@ -124,7 +124,7 @@
   letter-spacing: 0.04em;
   color: var(--text-secondary);
   border-radius: 6px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
 }
 
 .dropdownItem:hover,
@@ -152,7 +152,7 @@
   padding: 3px 7px;
   background-color: var(--lang-pill-bg);
   border: 1px solid var(--lang-pill-border);
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  transition: border-color var(--duration-base) ease, background-color var(--duration-base) ease, transform var(--duration-base) ease;
   cursor: pointer;
   outline: none;
 }
@@ -175,7 +175,7 @@
   justify-content: center;
   color: var(--color-static-black);
   box-shadow: 0 2px 8px var(--alpha-fc6fcf-35);
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--duration-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .themeToggleThumbDark {
@@ -206,7 +206,7 @@
   font-weight: 750;
   letter-spacing: 0.12em;
   color: var(--text-secondary);
-  transition: all 0.2s ease;
+  transition: all var(--duration-base) ease;
 }
 
 .iconLink:hover,
@@ -233,7 +233,7 @@
   font-size: 0.6875rem;
   font-weight: 750;
   letter-spacing: 0.12em;
-  transition: all 0.2s ease;
+  transition: all var(--duration-base) ease;
   cursor: pointer;
 }
 
@@ -324,7 +324,7 @@
   width: 16px;
   height: 16px;
   color: var(--text-muted);
-  transition: transform 0.25s ease;
+  transition: transform var(--duration-base) ease;
 }
 
 .mobileArtistChevronOpen {

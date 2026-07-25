@@ -5,6 +5,7 @@ export type HomeSlideDTO = {
   title: string;
   type: string;
   imageUrl: string;
+  typoLogoUrl: string | null;
   spotifyId: string | null;
   youtubeUrl: string | null;
   descriptions: {

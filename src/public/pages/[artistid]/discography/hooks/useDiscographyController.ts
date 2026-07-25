@@ -8,6 +8,7 @@ import {
   useState,
   type RefObject,
 } from "react";
+import type { AlbumPreviewPayload } from "@/core/preview/types";
 
 import { fetchDiscography } from "../lib/discography-data";
 import {
@@ -31,6 +32,7 @@ export function useDiscographyController(
   artistSlug: string,
   audioRef: RefObject<HTMLAudioElement | null>,
   albumRailRef: RefObject<HTMLDivElement | null>,
+  preview: AlbumPreviewPayload | null,
 ) {
   const [albums, setAlbums] = useState<DiscographyAlbum[]>([]);
   const [artistName, setArtistName] = useState("");
@@ -61,22 +63,64 @@ export function useDiscographyController(
     setShowDiscs,
     setCurrentTrackIndex,
     restoreTimeRef,
-    lastSavedSecondRef,
     handleLoadedMetadata,
     handleTimeUpdate: rawHandleTimeUpdate,
     seek: rawSeek,
   } = useAudioPlayback(audioRef);
 
+  const previewAlbum = useMemo<DiscographyAlbum | null>(() => preview ? {
+    id: preview.album.id,
+    title: preview.album.title,
+    type: preview.album.type,
+    releaseDate: preview.album.release_date,
+    cover: preview.album.cover_url,
+    titleImage: preview.album.hero_image_url || undefined,
+    color: preview.album.color,
+    tracks: preview.album.tracks.map((track) => ({
+      title: track.title,
+      isTitle: track.is_title,
+      spotifyUrl: track.spotify_url || undefined,
+      youtubeUrl: track.youtube_url || undefined,
+      audioUrl: track.audio_url || undefined,
+      videoUrl: track.music_video_url || undefined,
+    })),
+    desc: {
+      ko: preview.album.description_ko,
+      en: preview.album.description_en,
+      ja: preview.album.description_ja,
+    },
+    links: {
+      spotify: preview.album.spotify_id
+        ? `https://open.spotify.com/album/${preview.album.spotify_id}`
+        : undefined,
+      youtube: preview.album.youtube_url || undefined,
+    },
+  } : null, [preview]);
+  const effectiveAlbums = useMemo(() => {
+    if (!previewAlbum) return albums;
+    const exists = albums.some((item) => item.id === previewAlbum.id);
+    return exists
+      ? albums.map((item) => item.id === previewAlbum.id ? previewAlbum : item)
+      : [...albums, previewAlbum];
+  }, [albums, previewAlbum]);
   const sortedAlbums = useMemo(
     () =>
-      [...albums].sort((a, b) =>
+      [...effectiveAlbums].sort((a, b) =>
         sortBy === "date-asc"
           ? (a.releaseDate || "").localeCompare(b.releaseDate || "")
           : (b.releaseDate || "").localeCompare(a.releaseDate || ""),
       ),
-    [albums, sortBy],
+    [effectiveAlbums, sortBy],
   );
   const album = sortedAlbums[albumIndex];
+
+  useEffect(() => {
+    if (!previewAlbum) return;
+    const index = sortedAlbums.findIndex((item) => item.id === previewAlbum.id);
+    if (index < 0) return;
+    const timer = window.setTimeout(() => setAlbumIndex(index), 0);
+    return () => window.clearTimeout(timer);
+  }, [previewAlbum, sortedAlbums]);
 
   const savePlayback = useCallback(
     (albumId: string, trackIndex: number, currentTime: number) => {
@@ -313,7 +357,7 @@ export function useDiscographyController(
     activeTab,
     album,
     albumIndex,
-    artistName,
+    artistName: preview?.artist.name || artistName,
     audioDuration,
     contentClass,
     currentTrackIndex,

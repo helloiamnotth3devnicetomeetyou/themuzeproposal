@@ -6,7 +6,7 @@
   padding: clamp(132px, 15vh, 190px) clamp(22px, 7vw, 118px) 90px;
   background: var(--bg-base, var(--color-static-white));
   color: var(--text-primary, var(--palette-171719));
-  transition: background-color .3s ease, color .3s ease;
+  transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
 }
 
 :global([data-theme="dark"]) .page {
@@ -52,7 +52,7 @@
 .eventDate { padding-top: 1px; }
 .eventDate strong { display: block; font-size: 13px; letter-spacing: .02em; }
 .eventDate span { display: block; margin-top: 4px; color: var(--schedule-muted); font-size: 10px; font-weight: 750; letter-spacing: .12em; }
-.eventTitle { margin: 0; font-size: clamp(14px, 1.1vw, 18px); font-weight: 720; line-height: 1.42; transition: color .2s ease; }
+.eventTitle { margin: 0; font-size: clamp(14px, 1.1vw, 18px); font-weight: 720; line-height: 1.42; transition: color var(--duration-base) ease; }
 .eventMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-top: 7px; color: var(--schedule-muted); font-size: 10px; }
 .eventType { display: inline-flex; align-items: center; gap: 8px; color: var(--schedule-muted); font-weight: 700; letter-spacing: .02em; }
 .eventType i, .legend i {
@@ -65,7 +65,7 @@
   background: color-mix(in srgb, var(--event-color) 13%, var(--schedule-panel));
   color: var(--event-color);
   box-shadow: inset 2px 0 var(--event-color);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-style: normal;
   font-weight: 850;
 }
@@ -80,7 +80,7 @@
 .calendarPanel { padding-top: 2px; }
 .calendarTop { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
 .yearControl { display: flex; align-items: center; gap: 10px; }
-.yearControl button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 20px; line-height: 1; }
+.yearControl button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: var(--text-xl); line-height: 1; }
 .yearControl strong { min-width: 74px; text-align: center; font-size: 21px; letter-spacing: -.025em; }
 .todayButton { border: 1px solid var(--schedule-line); border-radius: 999px; background: transparent; color: var(--schedule-muted); padding: 7px 13px; font-size: 9px; font-weight: 750; letter-spacing: .08em; cursor: pointer; }
 .todayButton:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
@@ -123,7 +123,7 @@
   .weekdays span { font-size: 11px; }
   .days { grid-auto-rows: 58px; }
   .day { min-height: 58px; }
-  .dayNumber { width: 34px; height: 34px; font-size: 12px; }
+  .dayNumber { width: 34px; height: 34px; font-size: var(--text-xs); }
   .event { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; }
   .legend { justify-content: flex-start; }
 }

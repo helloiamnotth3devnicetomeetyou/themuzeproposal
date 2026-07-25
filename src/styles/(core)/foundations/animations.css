@@ -205,7 +205,7 @@
   letter-spacing: .04em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease;
+  transition: border-color var(--duration-base) ease, background-color var(--duration-base) ease, color var(--duration-base) ease, transform var(--duration-base) ease;
 }
 
 .discography-youtube-button svg {
@@ -249,7 +249,7 @@
   height: 4px;
   border-radius: 999px;
   background: linear-gradient(to right, var(--album-accent) 0 var(--progress), var(--alpha-ffffff-1) var(--progress) 100%);
-  transition: height .16s ease;
+  transition: height var(--duration-fast) ease;
 }
 
 .discography-progress::-webkit-slider-thumb {
@@ -263,7 +263,7 @@
   background: var(--album-accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--album-accent) 45%, transparent), 0 0 14px color-mix(in srgb, var(--album-accent) 48%, transparent);
   opacity: .78;
-  transition: opacity .16s ease, transform .16s ease;
+  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 
 .discography-progress::-moz-range-track {

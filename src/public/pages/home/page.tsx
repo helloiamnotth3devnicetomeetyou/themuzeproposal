@@ -4,19 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
 import { SiSpotify, SiYoutube } from "react-icons/si";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
-import { getPublicHomeSlides } from "@/public/features/home/repository";
-import { supabase } from "@/core/supabase/client";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 
 const TRANSITION_DURATION = 1100;
 
-export default function Home() {
+export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
-  const [slides, setSlides] = useState<HomeSlideDTO[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [slides] = useState<HomeSlideDTO[]>(initialSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -25,36 +20,6 @@ export default function Home() {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadSlides() {
-      setLoading(true);
-      setLoadError(false);
-
-      try {
-        const nextSlides = await getPublicHomeSlides(supabase);
-        if (cancelled) return;
-        setSlides(nextSlides);
-        setCurrentSlide(0);
-        setPrevSlide(null);
-        setIsTransitioning(false);
-        setOpenStreamingSlideId(null);
-      } catch {
-        if (cancelled) return;
-        setSlides([]);
-        setLoadError(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadSlides();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => () => {
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
@@ -108,12 +73,10 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [currentSlide, goToSlide, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
 
-  if (loading || slides.length === 0) {
+  if (slides.length === 0) {
     return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[var(--bg-base)] transition-colors duration-300">
-        {loading
-          ? <LoadingIndicator label="YOU ARE MY MUZE" />
-          : <div className="text-center"><p className="font-display text-sm font-black text-[var(--text-muted)]">YOU ARE MY MUZE</p>{loadError && <p className="mt-4 text-xs text-[var(--text-faint)]">Unable to load albums.</p>}</div>}
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[var(--bg-base)] transition-colors duration-slow">
+        <div className="text-center"><p className="font-display text-sm font-black text-[var(--text-muted)]">YOU ARE MY MUZE</p><p className="mt-4 text-xs text-[var(--text-faint)]">No featured albums are available.</p></div>
       </main>
     );
   }
@@ -175,13 +138,23 @@ export default function Home() {
                 </span>
                 <h2
                   className="font-hero text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"
+                  aria-label={slide.title}
                   style={{
                     color: "var(--color-static-white)",
                     opacity: isActive ? undefined : 0,
                     animation: isActive ? "textShimmer 1s 0.25s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                   }}
                 >
-                  {slide.title}
+                  {slide.typoLogoUrl ? (
+                    <span
+                      aria-hidden="true"
+                      className="home-typo-logo"
+                      style={{
+                        WebkitMaskImage: `url("${slide.typoLogoUrl}")`,
+                        maskImage: `url("${slide.typoLogoUrl}")`,
+                      }}
+                    />
+                  ) : slide.title}
                 </h2>
                 {slide.descriptions[locale] && (
                   <p
@@ -204,7 +177,7 @@ export default function Home() {
                 >
                   <a
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-[var(--color-static-black)] shadow-lg shadow-brand-pink/20 transition-transform duration-300 hover:scale-105 hover:bg-brand-pink/90"
+                    className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-[var(--color-static-black)] shadow-lg shadow-brand-pink/20 transition-transform duration-slow hover:scale-105 hover:bg-brand-pink/90"
                   >
                     {t.hero.exploreBtn}
                   </a>
@@ -255,7 +228,7 @@ export default function Home() {
             type="button"
             onClick={() => goToSlide(currentSlide - 1)}
             aria-label="Previous album"
-            className="absolute left-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-[var(--color-static-black)]"
+            className="absolute left-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-slow hover:bg-brand-pink hover:text-[var(--color-static-black)]"
             style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
           >
             <LuChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -264,7 +237,7 @@ export default function Home() {
             type="button"
             onClick={() => goToSlide(currentSlide + 1)}
             aria-label="Next album"
-            className="absolute right-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-300 hover:bg-brand-pink hover:text-[var(--color-static-black)]"
+            className="absolute right-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-slow hover:bg-brand-pink hover:text-[var(--color-static-black)]"
             style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
           >
             <LuChevronRight className="h-5 w-5" aria-hidden="true" />

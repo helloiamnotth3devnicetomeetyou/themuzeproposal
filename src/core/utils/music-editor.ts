@@ -8,7 +8,6 @@ export type TrackDraft = {
   youtube_url: string;
   audio_url: string;
   music_video_url: string;
-  logo_url: string;
 };
 
 export type AlbumEditorDraft = {
@@ -19,6 +18,7 @@ export type AlbumEditorDraft = {
   release_date: string;
   cover_url: string;
   hero_image_url: string;
+  typo_logo_url: string;
   color: string;
   spotify_id: string;
   youtube_url: string;
@@ -39,7 +39,7 @@ export type AlbumValidationResult = {
 };
 
 export type UploadedAsset = {
-  bucket: "album-covers" | "track-assets";
+  bucket: "album-covers" | "track-assets" | "artist-assets";
   path: string;
   url: string;
 };
@@ -61,7 +61,6 @@ export function parseBulkTracks(value: string): TrackDraft[] {
       youtube_url: "",
       audio_url: "",
       music_video_url: "",
-      logo_url: "",
     };
   });
 }
@@ -86,6 +85,6 @@ export function validateAlbum(draft: AlbumEditorDraft): AlbumValidationResult {
 }
 
 export function managedAssetFromUrl(url: string): { bucket: string; path: string } | null {
-  const match = url.match(/\/storage\/v1\/object\/public\/(album-covers|track-assets)\/(.+)$/);
+  const match = url.match(/\/storage\/v1\/object\/public\/(album-covers|track-assets|artist-assets)\/(.+)$/);
   return match ? { bucket: match[1], path: decodeURIComponent(match[2]) } : null;
 }

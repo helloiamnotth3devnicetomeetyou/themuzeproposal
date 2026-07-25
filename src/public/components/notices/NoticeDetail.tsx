@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { LuArrowLeft } from "react-icons/lu";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import type { LocalizedTextDTO, NoticeDetailDTO } from "@/public/features/notices/types";
 import { sanitizeRichText } from "@/core/utils/rich-text";
-import styles from "./NoticeBoard.module.css";
+import styles from "@/styles/(public)/components/notices/NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";
 
@@ -20,12 +21,24 @@ const localized = (value: LocalizedTextDTO, locale: Locale) => value[locale] || 
 
 export default function NoticeDetail({ artistSlug, initialData, loadFailed = false }: { noticeId: string; artistSlug?: string; initialData: NoticeDetailDTO | null; loadFailed?: boolean }) {
   const { locale: activeLocale } = useLocale();
+  const preview = usePreviewPayload("notice");
   const locale = activeLocale as Locale;
   const pageCopy = copy[locale] || copy.ko;
-  const notice = initialData?.notice ?? null;
-  const scopeName = initialData?.name ?? "";
+  const previewData: NoticeDetailDTO | null = preview ? {
+    name: preview.scope.name,
+    notice: {
+      id: preview.notice.id,
+      date: preview.notice.date,
+      title: { ko: preview.notice.title, en: "", ja: "" },
+      content: { ko: preview.notice.content, en: "", ja: "" },
+      category: { ko: preview.notice.category, en: "", ja: "" },
+    },
+  } : null;
+  const effectiveData = previewData ?? initialData;
+  const notice = effectiveData?.notice ?? null;
+  const scopeName = effectiveData?.name ?? "";
   const loading = false;
-  const error = loadFailed || !notice ? pageCopy.notFound : "";
+  const error = (!preview && loadFailed) || !notice ? pageCopy.notFound : "";
   const heading = scopeName ? `${scopeName.toUpperCase()} NOTICE` : "NOTICE";
   const listHref = artistSlug ? `/${artistSlug}/notice` : "/notice";
 

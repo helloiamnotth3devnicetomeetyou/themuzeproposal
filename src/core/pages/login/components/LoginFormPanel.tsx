@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type Mode, type LoginFormState } from "../hooks";
+import { type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginFormPanelProps extends LoginFormState {
@@ -42,7 +42,7 @@ function FormInput({
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 rounded-lg text-sm transition-all duration-300 focus:outline-none focus:border-brand-pink"
+        className="w-full px-4 py-3 rounded-lg text-sm transition-all duration-slow focus:outline-none focus:border-brand-pink"
         style={{
           backgroundColor: "var(--bg-subtle)",
           border: "1px solid var(--border-default)",
@@ -67,7 +67,7 @@ function ModeTab({
   return (
     <button
       onClick={onClick}
-      className="pb-3 text-[10px] font-bold transition-all duration-300 relative cursor-pointer"
+      className="pb-3 text-[10px] font-bold transition-all duration-slow relative cursor-pointer"
       style={{ color: isActive ? "var(--text-primary)" : "var(--text-muted)" }}
     >
       {label}
@@ -83,7 +83,6 @@ export default function LoginFormPanel({
   confirmPassword,
   name,
   error,
-  success,
   loading,
   t,
   isDark,
@@ -102,13 +101,13 @@ export default function LoginFormPanel({
 
         {/* Brand Logo */}
         <div className="flex flex-col items-start mb-12">
-          <Link href="/" className="relative w-44 h-11 block transition-transform duration-300 hover:scale-105">
+          <Link href="/" className="relative w-44 h-11 block transition-transform duration-slow hover:scale-105">
             <Image
               src="/images/logo.png"
               alt="THE MUZE Logo"
               fill
               sizes="176px"
-              className="object-contain object-left transition-all duration-300"
+              className="object-contain object-left transition-all duration-slow"
               style={isDark ? { filter: "invert(1)" } : {}}
               priority
             />
@@ -129,25 +128,12 @@ export default function LoginFormPanel({
           <div
             className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
             style={{
-              backgroundColor: "var(--alpha-ef4444-03)",
-              color: "var(--palette-ef4444)",
-              borderColor: "var(--alpha-ef4444-15)",
+              backgroundColor: "var(--color-error-subtle)",
+              color: "var(--color-error)",
+              borderColor: "var(--color-error-border)",
             }}
           >
             {error}
-          </div>
-        )}
-
-        {success && (
-          <div
-            className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
-            style={{
-              backgroundColor: "var(--alpha-22c55e-03)",
-              color: "var(--palette-22c55e)",
-              borderColor: "var(--alpha-22c55e-15)",
-            }}
-          >
-            {success}
           </div>
         )}
 
@@ -203,7 +189,7 @@ export default function LoginFormPanel({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 mt-4 rounded-lg text-xs font-bold tracking-widest transition-all duration-300 hover:opacity-90 disabled:opacity-50 cursor-pointer"
+            className="w-full py-4 mt-4 rounded-lg text-xs font-bold tracking-widest transition-all duration-slow hover:opacity-90 disabled:opacity-50 cursor-pointer"
             style={{
               backgroundColor: "var(--text-primary)",
               color: "var(--bg-base)",

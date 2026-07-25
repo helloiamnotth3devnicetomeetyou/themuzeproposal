@@ -56,8 +56,7 @@ export function AlbumDetails({
     <div className="lg:col-span-5 flex flex-col gap-4 w-full relative z-20 h-full max-h-[600px]">
       <div className="shrink-0">
         <span
-          className="text-[10px] font-black tracking-[0.3em] uppercase"
-          style={{ color: album.color, transition: "color 0.5s" }}
+          className="text-[10px] font-black tracking-[0.3em] uppercase text-[rgba(255,255,255,0.45)]"
         >
           {album.type}
         </span>
@@ -86,16 +85,16 @@ export function AlbumDetails({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`text-[9px] font-sans tracking-wider uppercase transition-all duration-300 relative pb-1 ${
+            className={`font-display text-xs tracking-[0.04em] transition-all duration-slow relative pb-1 font-[750] ${
               activeTab === tab.id
-                ? "text-[var(--color-static-white)] font-bold"
-                : "text-[var(--palette-6b7280)] font-medium hover:text-[var(--palette-e5e7eb)]"
+                ? "text-[var(--color-static-white)]"
+                : "text-[var(--palette-6b7280)] hover:text-[var(--palette-e5e7eb)]"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
               <span
-                className="absolute -bottom-[7px] left-0 right-0 h-[2px] rounded-full shadow-[0_0_8px_var(--alpha-ffffff-8)] transition-all duration-300"
+                className="absolute -bottom-[7px] left-0 right-0 h-[2px] rounded-full shadow-[0_0_8px_var(--alpha-ffffff-8)] transition-all duration-slow"
                 style={{ backgroundColor: album.color }}
               />
             )}

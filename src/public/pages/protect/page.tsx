@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import ProtectClient, { type Artist, type MyReport } from "./ProtectClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
+import { createPrivatePageMetadata } from "@/core/seo/metadata";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = createPrivatePageMetadata("Protect Reports");
 
 export default async function ProtectPage() {
   const supabase = await createSupabaseServerClient();

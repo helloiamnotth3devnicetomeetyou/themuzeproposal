@@ -74,7 +74,7 @@
 .hero-admin-summary h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: var(--text-base);
   letter-spacing: -.025em;
 }
 
@@ -268,7 +268,7 @@
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--border-subtle);
-  transition: transform .18s ease, opacity .18s ease, background .18s ease, box-shadow .18s ease;
+  transition: transform var(--duration-fast) ease, opacity var(--duration-fast) ease, background var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .hero-admin-queue-item:last-child {
@@ -534,7 +534,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 9px;
   background: var(--bg-card);
-  transition: border-color .15s, background .15s;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
 }
 
 .hero-admin-catalog-item:hover {
@@ -667,7 +667,7 @@
   border: 2px solid transparent;
   border-radius: 15px;
   pointer-events: none;
-  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 
 .hero-slide-card.is-over:not(.is-dragging)::after {
@@ -866,7 +866,7 @@
 .hero-slide-copy b {
   margin-top: 3px;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: var(--text-xs);
   letter-spacing: -.04em;
   text-shadow: 0 1px 12px var(--alpha-000000-4);
 }
@@ -977,7 +977,7 @@
     height: 42px;
   }
   .hero-admin-summary h2 {
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
   .hero-admin-summary p {
     display: none;

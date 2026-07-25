@@ -1,0 +1,180 @@
+/* Admin workspace shell */
+.admin-root-shell {
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.admin-app-frame {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cms-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.cms-workspace {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cms-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 32px 34px 56px;
+  scrollbar-gutter: stable;
+}
+
+.cms-content.is-full-bleed {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cms-content-inner {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.cms-content.is-full-bleed .cms-content-inner {
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+}
+
+.cms-page-header {
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.cms-page-eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--color-brand-pink);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.cms-breadcrumb {
+  margin: 0 0 7px !important;
+  color: var(--text-faint) !important;
+  font-size: 8px !important;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cms-breadcrumb span {
+  margin: 0 5px;
+  color: var(--color-brand-pink);
+}
+
+.cms-page-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+
+.cms-page-header > div > p:last-child {
+  margin: 7px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cms-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.cms-header-action:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.cms-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.cms-status.is-live {
+  background: var(--alpha-4ade80-1);
+  color: var(--color-status-success);
+}
+
+.cms-content,
+.cms-nav,
+.music-album-list,
+.music-editor-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.cms-content::-webkit-scrollbar,
+.cms-nav::-webkit-scrollbar,
+.music-album-list::-webkit-scrollbar,
+.music-editor-body::-webkit-scrollbar { width: 8px; }
+
+.cms-content::-webkit-scrollbar-thumb,
+.cms-nav::-webkit-scrollbar-thumb,
+.music-album-list::-webkit-scrollbar-thumb,
+.music-editor-body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background: var(--border-strong);
+  background-clip: padding-box;
+}
+
+@media (max-width: 1024px) {
+  .cms-page-header { min-height: 82px; padding: 14px 20px; }
+  .cms-content { padding: 20px 16px 48px; }
+  .cms-header-action { display: none; }
+}

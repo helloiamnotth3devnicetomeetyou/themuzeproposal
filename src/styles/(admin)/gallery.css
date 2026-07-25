@@ -1,6 +1,6 @@
 /* ─── Album / Member Tagged Artist Gallery ─── */
 .gallery-manager { display: flex; min-width: 0; flex-direction: column; gap: 14px; }
-.gallery-dropzone { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; min-height: 92px; align-items: center; gap: 14px; padding: 17px 18px; border: 1px dashed var(--border-default); border-radius: 11px; background: linear-gradient(135deg,var(--bg-subtle),color-mix(in srgb,var(--bg-card) 94%,var(--color-brand-pink))); transition: border-color .15s,background .15s,box-shadow .15s; }
+.gallery-dropzone { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; min-height: 92px; align-items: center; gap: 14px; padding: 17px 18px; border: 1px dashed var(--border-default); border-radius: 11px; background: linear-gradient(135deg,var(--bg-subtle),color-mix(in srgb,var(--bg-card) 94%,var(--color-brand-pink))); transition: border-color var(--duration-fast),background var(--duration-fast),box-shadow var(--duration-fast); }
 .gallery-dropzone.is-dragging { border-color: var(--color-brand-pink); background: var(--alpha-fc6fcf-06); box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
 .gallery-dropzone > svg { width: 42px; height: 42px; padding: 11px; border: 1px solid var(--alpha-fc6fcf-22); border-radius: 50%; color: var(--color-brand-pink); }
 .gallery-dropzone > div { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
@@ -17,7 +17,7 @@
 .gallery-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .gallery-card { min-width: 0; overflow: hidden; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-card); }
 .gallery-card-image { position: relative; overflow: hidden; aspect-ratio: 4/3; background: var(--bg-subtle); }
-.gallery-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
+.gallery-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--duration-base); }
 .gallery-card:hover .gallery-card-image img { transform: scale(1.025); }
 .gallery-card-image .cms-status { position: absolute; top: 10px; right: 10px; border-color: var(--alpha-ffffff-18); background: var(--alpha-0a0a0a-72); color: var(--palette-bbbbbb); backdrop-filter: blur(8px); }
 .gallery-card-image .cms-status.is-live { color: var(--palette-84dda7); }
@@ -33,7 +33,7 @@
 .gallery-delete-button:hover { color: var(--color-status-danger); }
 .gallery-empty,.gallery-save-first { display: flex; min-height: 250px; align-items: center; justify-content: center; flex-direction: column; gap: 9px; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-card); color: var(--text-muted); }
 .gallery-empty > svg,.gallery-save-first > svg { width: 31px; height: 31px; padding: 7px; border: 1px solid var(--alpha-fc6fcf-22); border-radius: 50%; color: var(--color-brand-pink); }
-.gallery-empty b,.gallery-save-first h3 { margin: 3px 0 0; color: var(--text-primary); font-size: 12px; }
+.gallery-empty b,.gallery-save-first h3 { margin: 3px 0 0; color: var(--text-primary); font-size: var(--text-xs); }
 .gallery-empty span,.gallery-save-first p { margin: 0; color: var(--text-muted); font-size: 9px; }
 .music-gallery-section { max-width: 1120px; }
 
@@ -44,14 +44,14 @@
 .gallery-contact-sheet.has-inspector { grid-template-columns: minmax(0,1fr) 276px; }
 .gallery-contact-sheet .gallery-grid { display: grid; min-width: 0; grid-template-columns: repeat(auto-fill,minmax(138px,1fr)); align-content: start; gap: 5px; }
 .gallery-tile { position: relative; overflow: hidden; aspect-ratio: 1; padding: 0; border: 0; border-radius: 5px; background: var(--bg-subtle); cursor: pointer; outline: 1px solid transparent; outline-offset: -1px; }
-.gallery-tile > img { width: 100%; height: 100%; object-fit: cover; transition: filter .18s,transform .22s; }
+.gallery-tile > img { width: 100%; height: 100%; object-fit: cover; transition: filter var(--duration-fast),transform var(--duration-base); }
 .gallery-tile:hover > img,.gallery-tile:focus-visible > img { transform: scale(1.025); filter: brightness(.8); }
 .gallery-tile.is-selected { outline-color: var(--color-brand-pink); box-shadow: inset 0 0 0 1px var(--color-brand-pink); }
 .gallery-tile-status { position: absolute; z-index: 2; top: 8px; left: 8px; width: 6px; height: 6px; border: 1px solid var(--alpha-ffffff-42); border-radius: 50%; background: var(--palette-777777); box-shadow: 0 1px 5px var(--alpha-000000-35); }
 .gallery-tile-status.is-live { border-color: var(--palette-b8f0cc); background: var(--palette-58ca84); }
 .gallery-tile-check { position: absolute; z-index: 3; top: 7px; right: 7px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: var(--color-brand-pink); color: var(--palette-151515); box-shadow: 0 3px 12px var(--alpha-000000-28); }
 .gallery-tile-check svg { width: 11px; height: 11px; stroke-width: 3; }
-.gallery-tile-overlay { position: absolute; z-index: 2; right: 0; bottom: 0; left: 0; display: flex; min-height: 52px; justify-content: flex-end; flex-direction: column; gap: 3px; padding: 22px 10px 9px; background: linear-gradient(transparent,var(--alpha-000000-82)); color: var(--color-static-white); opacity: 0; transform: translateY(4px); transition: opacity .18s,transform .18s; text-align: left; }
+.gallery-tile-overlay { position: absolute; z-index: 2; right: 0; bottom: 0; left: 0; display: flex; min-height: 52px; justify-content: flex-end; flex-direction: column; gap: 3px; padding: 22px 10px 9px; background: linear-gradient(transparent,var(--alpha-000000-82)); color: var(--color-static-white); opacity: 0; transform: translateY(4px); transition: opacity var(--duration-fast),transform var(--duration-fast); text-align: left; }
 .gallery-tile:hover .gallery-tile-overlay,.gallery-tile:focus-visible .gallery-tile-overlay,.gallery-tile.is-selected .gallery-tile-overlay { opacity: 1; transform: none; }
 .gallery-tile-overlay b { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .gallery-tile-overlay small { overflow: hidden; color: var(--palette-c8c8c8); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }

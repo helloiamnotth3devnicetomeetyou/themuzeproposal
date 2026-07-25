@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import type { DiscographyAlbum } from "../lib/types";
 
 interface TrackListProps {
@@ -44,7 +42,7 @@ export function TrackList({
                 isHovered && !isActive
                   ? `0 0 15px ${album.color}20`
                   : undefined,
-              transition: "all 0.2s ease",
+              transition: "all var(--duration-base) ease",
             }}
           >
             <button
@@ -53,7 +51,7 @@ export function TrackList({
               className="flex flex-1 items-center gap-3 min-w-0 p-2.5 text-left cursor-pointer"
             >
               <span
-                className="text-[10px] shrink-0 transition-colors duration-200"
+                className="text-[10px] shrink-0 transition-colors duration-base"
                 style={{
                   color:
                     isActive || isHovered
@@ -63,19 +61,8 @@ export function TrackList({
               >
                 {(index + 1).toString().padStart(2, "0")}
               </span>
-              {track.logoUrl && (
-                <span className="relative w-7 h-7 shrink-0 rounded bg-[var(--alpha-ffffff-05)] overflow-hidden">
-                  <Image
-                    src={track.logoUrl}
-                    alt=""
-                    fill
-                    sizes="28px"
-                    className="object-contain p-1"
-                  />
-                </span>
-              )}
               <span
-                className={`text-sm font-semibold truncate transition-colors duration-200 ${
+                className={`text-sm font-semibold truncate transition-colors duration-base ${
                   isActive || isHovered
                     ? "text-[var(--color-static-white)]"
                     : "text-[var(--palette-6b7280)] group-hover/track:text-[var(--palette-d1d5db)]"

@@ -1,19 +1,47 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { PreviewProvider } from "@/core/preview/PreviewProvider";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({
+  children,
+  draftModeEnabled = false,
+}: {
+  children: React.ReactNode;
+  draftModeEnabled?: boolean;
+}) {
   const pathname = usePathname();
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
   const isImmersiveArtist = /^\/[^/]+\/artist(?:\/[^/]+)?\/?$/.test(pathname);
 
   useEffect(() => {
+    if (isImmersiveDiscography || isImmersiveArtist) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalBodyHeight = document.body.style.height;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+      const originalHtmlHeight = document.documentElement.style.height;
+
+      document.body.style.overflow = "hidden";
+      document.body.style.height = "100vh";
+      document.documentElement.style.overflow = "hidden";
+      document.documentElement.style.height = "100vh";
+
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.body.style.height = originalBodyHeight;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+        document.documentElement.style.height = originalHtmlHeight;
+      };
+    }
+  }, [isImmersiveDiscography, isImmersiveArtist]);
+
+  useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: "0px 0px -8% 0px", // Triggers slightly before entering the full viewport for a premium, intentional flow
+      rootMargin: "0px 0px -8% 0px",
       threshold: 0.02,
     };
 
@@ -21,7 +49,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("active");
-          // Scent diffusion only needs to trigger once per load
           observer.unobserve(entry.target);
         }
       });
@@ -29,25 +56,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     const observeElements = () => {
       const elements = document.querySelectorAll(".reveal");
-      elements.forEach((el) => {
-        if (!el.classList.contains("active")) {
-          observer.observe(el);
-        }
+      elements.forEach((element) => {
+        if (!element.classList.contains("active")) observer.observe(element);
       });
     };
 
-    // Scan initially
     observeElements();
-
-    // Setup MutationObserver to watch for dynamically loaded DOM elements (e.g. notices, history, dynamic sections)
-    const mutationObserver = new MutationObserver(() => {
-      observeElements();
-    });
-
-    mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
+    const mutationObserver = new MutationObserver(observeElements);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
@@ -55,30 +71,33 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     };
   }, [pathname]);
 
-  // Get a normalized key for page transitions to avoid unmounting when switching members or tabs on the same view.
   const getLayoutKey = (path: string) => {
     const parts = path.split("/").filter(Boolean);
     if (parts.length >= 2) {
-      if (parts[1] === "artist") {
-        return `/${parts[0]}/artist`;
-      }
-      if (parts[1] === "discography") {
-        return `/${parts[0]}/discography`;
-      }
+      if (parts[1] === "artist") return `/${parts[0]}/artist`;
+      if (parts[1] === "discography") return `/${parts[0]}/discography`;
     }
     return path;
   };
   const layoutKey = getLayoutKey(pathname);
-
-
-  return (
+  const content = (
     <>
       <Navbar />
-      <div key={layoutKey} className="flex flex-1 flex-col animate-page-fade">{children}</div>
+      <div
+        key={layoutKey}
+        className={`flex flex-1 flex-col animate-page-fade ${
+          isImmersiveDiscography || isImmersiveArtist ? "h-screen overflow-hidden" : ""
+        }`}
+      >
+        {children}
+      </div>
       {!isImmersiveDiscography && !isImmersiveArtist && <Footer />}
     </>
   );
+
+  return (
+    <Suspense fallback={content}>
+      <PreviewProvider draftModeEnabled={draftModeEnabled}>{content}</PreviewProvider>
+    </Suspense>
+  );
 }
-
-
-

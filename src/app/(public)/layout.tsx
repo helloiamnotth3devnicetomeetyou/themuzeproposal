@@ -1,5 +1,7 @@
+import { draftMode } from "next/headers";
 import MainLayout from "@/public/components/layout/SiteLayout";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return <MainLayout>{children}</MainLayout>;
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const { isEnabled } = await draftMode();
+  return <MainLayout draftModeEnabled={isEnabled}>{children}</MainLayout>;
 }

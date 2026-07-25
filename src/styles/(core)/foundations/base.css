@@ -19,6 +19,12 @@
   --color-brand-dark: var(--palette-121212);
   --color-static-white: var(--palette-ffffff);
   --color-static-black: var(--palette-000000);
+  --color-success: var(--palette-22c55e);
+  --color-success-subtle: color-mix(in srgb, var(--color-success) 3%, transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) 15%, transparent);
+  --color-error: var(--palette-ef4444);
+  --color-error-subtle: color-mix(in srgb, var(--color-error) 3%, transparent);
+  --color-error-border: color-mix(in srgb, var(--color-error) 15%, transparent);
   --color-status-success: var(--palette-35a963);
   --color-status-warning: var(--palette-d69a35);
   --color-status-danger: var(--palette-e46b6b);
@@ -27,6 +33,22 @@
   --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-montserrat), "Montserrat", "Pretendard Variable", sans-serif;
   --font-hero: "Monument Extended", var(--font-montserrat), "Montserrat", sans-serif;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --default-transition-duration: var(--duration-fast);
 }
 
 :root,
@@ -127,7 +149,7 @@ body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }

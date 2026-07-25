@@ -91,8 +91,8 @@
 
 /* Rail components */
 .content-rail-heading { display: flex; flex: 0 0 auto; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 22px 20px 16px; }
-.content-rail-heading h2 { margin: 0; color: var(--text-primary); font-size: 16px; letter-spacing: -.025em; }
-.content-rail-heading > button { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 20px; cursor: pointer; }
+.content-rail-heading h2 { margin: 0; color: var(--text-primary); font-size: var(--text-base); letter-spacing: -.025em; }
+.content-rail-heading > button { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: var(--text-xl); cursor: pointer; }
 .content-rail-heading > button:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
 .content-rail-sort { display: flex; min-height: 42px; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 0 16px; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-default); color: var(--text-faint); font-size: 8px; }
 .content-rail-sort button { border: 0; background: transparent; color: var(--text-muted); font-size: 8px; font-weight: 700; cursor: pointer; }

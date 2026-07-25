@@ -1,9 +1,11 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- canvas editing requires the source image element dimensions */
+
 import { useMemo, type PointerEvent } from "react";
 import { LuMousePointer2 } from "react-icons/lu";
 import { outlineToPath, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
-import styles from "./ArtistSceneManager.module.css";
+import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 
 interface SceneCanvasProps {
   selectedScene: ArtistScene;

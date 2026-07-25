@@ -1,4 +1,4 @@
--- Allow SVG typography logos for track assets in existing environments.
+-- Allow SVG typography logos in the shared music asset bucket.
 update storage.buckets
 set allowed_mime_types = array[
   'audio/mpeg',

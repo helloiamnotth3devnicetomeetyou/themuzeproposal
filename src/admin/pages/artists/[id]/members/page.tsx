@@ -3,7 +3,7 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuPlus, LuUserRound } from "react-icons/lu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
@@ -11,10 +11,13 @@ import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
-import ImageAssetField from "@/admin/components/assets/ImageAssetField";
+import ImageAssetField, { type UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
+import PreviewButton from "@/admin/components/content/PreviewButton";
 import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
 
 type Member = {
@@ -108,6 +111,7 @@ export default function ArtistMembersAdmin() {
   const requestConfirm = useAdminConfirm();
   const [artistId, setArtistId] = useState("");
   const [artistName, setArtistName] = useState("");
+  const [artistSlug, setArtistSlug] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [tab, setTab] = useState<MemberTab>("basic");
   const [sorting, setSorting] = useState(false);
@@ -135,14 +139,53 @@ export default function ArtistMembersAdmin() {
     setToast,
     patchDraft,
   } = useAdminCrud<MemberDraft>({ initialDraft: null });
+  const uploadedAssets = useRef<UploadedImageAsset[]>([]);
 
-  const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
+  useEffect(() => { void cleanupAbandonedDraftImageAssets(supabase); }, []);
+
   const canSave = Boolean(draft?.name.trim() && draft.engName.trim() && toSlug(draft.engName) && /^#[0-9a-f]{6}$/i.test(draft.color) && !hasInvalidSocialLinks(draft.socialLinks) && (draft.id || draft.roleKo.trim()));
+  const previewMemberSlug = draft ? toSlug(draft.engName) : "";
+  const previewMemberId = draft?.id || newMemberId || "";
+  const previewPayload = useMemo(() => draft && artistId && artistSlug && previewMemberSlug && previewMemberId ? {
+    artist: { id: artistId, slug: artistSlug, name: artistName },
+    member: {
+      id: previewMemberId,
+      slug: previewMemberSlug,
+      name: draft.name,
+      eng_name: draft.engName || null,
+      role_ko: draft.roleKo || null,
+      role_en: draft.roleEn || null,
+      role_ja: draft.roleJa || null,
+      birth: draft.birth || null,
+      mbti: draft.mbti || null,
+      image_url: draft.imageUrl || null,
+      color: draft.color || null,
+      bio_ko: draft.bioKo || null,
+      bio_en: draft.bioEn || null,
+      bio_ja: draft.bioJa || null,
+      sort_order: Math.max(1, members.findIndex((member) => member.id === draft.id) + 1 || members.length + 1),
+    },
+  } : null, [artistId, artistName, artistSlug, draft, members, previewMemberId, previewMemberSlug]);
+  const { openPreview } = useAdminPreview({
+    kind: "artist-member",
+    payload: previewPayload,
+    targetPath: artistSlug && previewMemberSlug ? `/${artistSlug}/artist/${previewMemberSlug}` : "",
+    canPreview: Boolean(previewPayload),
+    unavailableMessage: "????? ??? ?? ???? ???? ?? ??? ?????.",
+    onError: setError,
+  });
+
+  const discardQueuedUploads = useCallback(async () => {
+    const queued = uploadedAssets.current;
+    uploadedAssets.current = [];
+    await discardDraftImageAssets(supabase, queued);
+  }, []);
+
 
   const loadMembers = useCallback(async (preferredId?: string) => {
     setLoading(true);
     setError("");
-    const { data: artist, error: artistError } = await supabase.from("artists").select("id,name").eq("id", routeArtistId).single();
+    const { data: artist, error: artistError } = await supabase.from("artists").select("id,name,slug").eq("id", routeArtistId).single();
     if (artistError || !artist) {
       setError("아티스트 정보를 불러오지 못했습니다.");
       setLoading(false);
@@ -158,6 +201,7 @@ export default function ArtistMembersAdmin() {
     const selected = nextMembers.find((member) => member.id === preferredId) ?? nextMembers[0] ?? null;
     setArtistId(artist.id);
     setArtistName(artist.name || "아티스트");
+    setArtistSlug(artist.slug || "");
     setMembers(nextMembers);
     setNewMemberId(null);
     if (selected) {
@@ -169,7 +213,7 @@ export default function ArtistMembersAdmin() {
       setSnapshot("");
     }
     setLoading(false);
-  }, [routeArtistId]);
+  }, [routeArtistId, setDraft, setError, setLoading, setSnapshot]);
 
   useEffect(() => { void Promise.resolve().then(() => loadMembers()); }, [loadMembers]);
 
@@ -188,6 +232,7 @@ export default function ArtistMembersAdmin() {
       tone: "danger",
     })) return;
     const nextDraft = fromMember(member);
+    await discardQueuedUploads();
     setNewMemberId(null);
     setDraft(nextDraft);
     setSnapshot(JSON.stringify(nextDraft));
@@ -203,6 +248,7 @@ export default function ArtistMembersAdmin() {
       tone: "danger",
     })) return;
     setNewMemberId(crypto.randomUUID());
+    await discardQueuedUploads();
     setDraft({ ...EMPTY_MEMBER });
     setSnapshot(JSON.stringify(EMPTY_MEMBER));
     setTab("basic");
@@ -211,20 +257,8 @@ export default function ArtistMembersAdmin() {
     setSortDirty(false);
   };
 
-  const handleMemberImageChange = async (imageUrl: string) => {
+  const handleMemberImageChange = (imageUrl: string) => {
     patchDraft({ imageUrl });
-    if (!draft?.id) return;
-    setError("");
-    const { error: imageError } = await supabase.from("artist_members").update({ image_url: imageUrl || null }).eq("id", draft.id);
-    if (imageError) {
-      setError(imageError.message);
-      return;
-    }
-    setSnapshot((current) => {
-      const saved = JSON.parse(current) as MemberDraft;
-      return JSON.stringify({ ...saved, imageUrl });
-    });
-    setToast(imageUrl ? "멤버 이미지를 업로드하고 저장했습니다." : "멤버 이미지를 제거했습니다.");
   };
 
   const saveMember = async () => {
@@ -234,6 +268,7 @@ export default function ArtistMembersAdmin() {
     }
     setSaving(true);
     setError("");
+    const originalDraft = snapshot ? JSON.parse(snapshot) as MemberDraft : null;
     const payload = {
       artist_id: artistId,
       name: draft.name,
@@ -255,13 +290,21 @@ export default function ArtistMembersAdmin() {
     const result = draft.id
       ? await supabase.from("artist_members").update(payload).eq("id", draft.id).select("id").single()
       : await supabase.from("artist_members").insert({ id: pendingId, ...payload, sort_order: members.length + 1 }).select("id").single();
-    setSaving(false);
     if (result.error) {
       setError(result.error.code === "23505" ? "같은 영문명으로 생성된 공개 경로가 이미 사용 중입니다." : result.error.message.includes("column of 'artist_members' in the schema cache") ? "멤버 프로필 DB 컬럼이 누락되었습니다. 최신 007_artist_profile_schema.sql을 적용한 뒤 다시 저장하세요." : result.error.message.includes("social_links") ? "공식 계정 컬럼이 없습니다. 005_artist_social_links.sql을 먼저 적용하세요." : result.error.message);
+      setSaving(false);
       return;
     }
     setToast(draft.id ? "멤버 정보를 저장했습니다." : "새 멤버를 추가했습니다.");
     await loadMembers(result.data.id);
+    await finalizeDraftImageAssets(
+      supabase,
+      uploadedAssets.current,
+      [draft.imageUrl],
+      originalDraft ? [originalDraft.imageUrl] : [],
+    );
+    uploadedAssets.current = [];
+    setSaving(false);
   };
 
   const removeMember = async () => {
@@ -343,7 +386,7 @@ export default function ArtistMembersAdmin() {
     <div className="content-identity-copy"><p><span className={`cms-status ${draft.id ? "is-live" : ""}`}>{draft.id ? "등록됨" : "신규"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.name || "이름 없는 멤버"}</h2></div>
   </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>멤버를 선택하세요</h2><small>{artistName}</small></div>;
 
-  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void saveMember()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button>;
+  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void saveMember()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button>;
 
   return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="member-workbench">
     {!draft ? <div className="content-no-selection"><span><LuUserRound aria-hidden="true" /></span><h2>멤버를 선택하세요</h2><p>왼쪽 라이브러리에서 멤버를 선택하거나 새 멤버를 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button></div> : <div className="content-editor-stack">
@@ -356,7 +399,7 @@ export default function ArtistMembersAdmin() {
       </>}
       {tab === "profile" && <>
         <div className="content-section-heading"><h3>프로필 비주얼</h3><span>멤버를 식별하는 이미지와 기본 프로필 정보를 설정합니다.</span></div>
-        <ImageAssetField label="멤버 프로필 이미지" hint="선택 사항입니다. 드래그앤드롭하거나 파일을 선택하세요." value={draft.imageUrl} artistKey={artistId} entityKey={draft.id || newMemberId || "new-member"} kind="member-profile" shape="portrait" onChange={handleMemberImageChange} onError={setError} />
+        <ImageAssetField label="멤버 프로필 이미지" hint="선택 사항입니다. 드래그앤드롭하거나 파일을 선택하세요." value={draft.imageUrl} artistKey={artistId} entityKey={draft.id || newMemberId || "new-member"} kind="member-profile" shape="portrait" onChange={handleMemberImageChange} onUploaded={(asset) => { uploadedAssets.current.push(asset); trackDraftImageAsset(asset); }} onError={setError} />
         <div className="music-field-grid two"><label className="music-field"><span>생년월일</span><input className="admin-input" value={draft.birth} onChange={(event) => patchDraft({ birth: event.target.value })} placeholder="2004. 05. 25" /></label><label className="music-field"><span>MBTI</span><input className="admin-input" value={draft.mbti} onChange={(event) => patchDraft({ mbti: event.target.value.toUpperCase() })} placeholder="ESFP" /></label></div>
         <label className="music-field content-field-short"><span>테마 컬러</span><div className="content-color-row"><input type="color" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /><input className="admin-input" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} /></div></label>
       </>}

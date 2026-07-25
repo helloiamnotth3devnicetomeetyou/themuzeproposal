@@ -2,7 +2,7 @@
 
 import { LuArrowRight } from "react-icons/lu";
 import type { Artist, MyReport } from "../ProtectClient";
-import styles from "../protect.module.css";
+import styles from "@/styles/(public)/pages/protect.module.css";
 
 type ReportListProps = {
   myReports: MyReport[];

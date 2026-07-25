@@ -129,7 +129,7 @@
   margin: 8px 0 0;
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: -.05em;
 }
@@ -249,7 +249,7 @@
 
 .audition-table tbody tr {
   cursor: pointer;
-  transition: background .15s;
+  transition: background var(--duration-fast);
 }
 
 .audition-table tbody tr:hover {
@@ -410,7 +410,7 @@
 .audition-detail-header h2 {
   margin: 6px 0 0;
   color: var(--text-primary);
-  font-size: 18px;
+  font-size: var(--text-lg);
   letter-spacing: -.035em;
 }
 
