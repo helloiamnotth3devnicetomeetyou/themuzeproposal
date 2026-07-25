@@ -9,9 +9,9 @@
 }
 
 
-@import "../styles/color-primitives.css";
-@import "../styles/base.css";
-@import "../styles/animations.css";
-@import "../styles/components/loading.css";
-@import "../styles/pages/home.css";
-@import "../styles/pages/notice.css";
+@import "./foundations/color-primitives.css";
+@import "./foundations/base.css";
+@import "./foundations/animations.css";
+@import "./components/loading.css";
+@import "../../public/styles/pages/home.css";
+@import "../../public/styles/pages/notice.css";

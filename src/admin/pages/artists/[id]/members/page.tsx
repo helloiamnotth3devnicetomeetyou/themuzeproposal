@@ -1,21 +1,21 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuPlus, LuUserRound } from "react-icons/lu";
-import { useAdminConfirm } from "@/components/admin/AdminDialogProvider";
-import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import FormField from "@/components/admin/FormField";
-import GalleryManager from "@/components/admin/GalleryManager";
-import ImageAssetField from "@/components/admin/ImageAssetField";
-import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/components/admin/SocialLinksField";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
-import { supabase } from "@/lib/supabase";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import FormField from "@/admin/components/content/FormField";
+import GalleryManager from "@/admin/components/assets/GalleryManager";
+import ImageAssetField from "@/admin/components/assets/ImageAssetField";
+import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { supabase } from "@/core/supabase/client";
 
 type Member = {
   id: string;

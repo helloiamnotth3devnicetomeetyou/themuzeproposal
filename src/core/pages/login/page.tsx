@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServerClient } from "@/core/supabase/server";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 

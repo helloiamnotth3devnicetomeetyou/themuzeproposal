@@ -1,8 +1,8 @@
 "use client";
 
 import { LuLink, LuPlus, LuTrash2 } from "react-icons/lu";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { SOCIAL_ICONS } from "@/lib/social-icons";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { SOCIAL_ICONS } from "@/core/content/social-icons";
 
 export type SocialLink = {
   id: string;

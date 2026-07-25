@@ -1,5 +1,5 @@
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
-import { supabase } from "@/lib/supabase";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
+import { supabase } from "@/core/supabase/client";
 
 import type { DiscographyAlbum, RawDiscographyAlbum } from "./types";
 

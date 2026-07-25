@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getPublicSupabaseConfig } from "@/lib/public-env";
+import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
 export const runtime = "nodejs";
 

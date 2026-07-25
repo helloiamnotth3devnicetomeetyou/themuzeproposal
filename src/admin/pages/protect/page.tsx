@@ -12,9 +12,9 @@ import {
   LuSearch,
   LuShieldCheck,
 } from "react-icons/lu";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { supabase } from "@/lib/supabase";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { supabase } from "@/core/supabase/client";
 import styles from "./protect-admin.module.css";
 
 type ReportStatus = "pending" | "reviewing" | "resolved" | "rejected";

@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
 import { SiSpotify, SiYoutube } from "react-icons/si";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { useLocale } from "./context/LocaleContext";
-import { getPublicHomeSlides } from "@/features/home/repository";
-import { supabase } from "@/lib/supabase";
-import type { HomeSlideDTO } from "@/features/home/types";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { getPublicHomeSlides } from "@/public/features/home/repository";
+import { supabase } from "@/core/supabase/client";
+import type { HomeSlideDTO } from "@/public/features/home/types";
 
 const TRANSITION_DURATION = 1100;
 

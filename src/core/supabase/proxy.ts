@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAdmin } from "@/lib/admin-auth";
-import { getPublicSupabaseConfig } from "@/lib/public-env";
+import { isAdmin } from "@/core/auth/admin-auth";
+import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
 const { url: supabaseUrl, anonKey: supabaseAnonKey } = getPublicSupabaseConfig();
 

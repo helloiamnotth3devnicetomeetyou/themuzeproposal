@@ -2,7 +2,7 @@
 
 import { useMemo, type PointerEvent } from "react";
 import { LuMousePointer2 } from "react-icons/lu";
-import { outlineToPath, type ArtistScene, type ScenePoint } from "@/lib/artist-scenes";
+import { outlineToPath, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "./ArtistSceneManager.module.css";
 
 interface SceneCanvasProps {

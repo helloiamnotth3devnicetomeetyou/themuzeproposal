@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
-import { getPublicSupabaseConfig, getSiteUrl } from "@/lib/public-env";
+import { getPublicSupabaseConfig, getSiteUrl } from "@/core/config/public-env";
 
 export const revalidate = 3600;
 

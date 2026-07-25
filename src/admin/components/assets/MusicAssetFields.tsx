@@ -1,12 +1,12 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { type DragEvent, useId, useState } from "react";
 import { LuImage, LuMusic, LuX } from "react-icons/lu";
-import { supabase } from "@/lib/supabase";
-import type { UploadedAsset } from "@/lib/music-editor";
+import { supabase } from "@/core/supabase/client";
+import type { UploadedAsset } from "@/core/utils/music-editor";
 
 type CoverProps = {
   artistId: string;

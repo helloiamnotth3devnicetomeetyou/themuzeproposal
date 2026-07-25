@@ -3,10 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuFilter, LuImagePlus, LuSave, LuTrash2, LuUpload, LuX } from "react-icons/lu";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { supabase } from "@/lib/supabase";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { supabase } from "@/core/supabase/client";
 
 type GalleryScope = "artist" | "album" | "member";
 

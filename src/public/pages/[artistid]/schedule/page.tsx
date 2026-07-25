@@ -1,16 +1,16 @@
 "use client";
 
-import { SCHEDULE_CATEGORY_COLORS } from "@/lib/design-tokens";
+import { SCHEDULE_CATEGORY_COLORS } from "@/core/utils/design-tokens";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import type { IconType } from "react-icons";
 import { LuCake, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuDisc3, LuPartyPopper, LuRadio } from "react-icons/lu";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { useLocale } from "@/app/context/LocaleContext";
-import { supabase } from "@/lib/supabase";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { supabase } from "@/core/supabase/client";
 import styles from "./schedule.module.css";
 
 type Category = "show" | "release" | "anniversary" | "event" | "etc";

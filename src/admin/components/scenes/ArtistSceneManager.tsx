@@ -1,13 +1,13 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { supabase } from "@/lib/supabase";
-import { normalizeOutline, simplifyOutline, type ArtistScene, type ScenePoint } from "@/lib/artist-scenes";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { supabase } from "@/core/supabase/client";
+import { normalizeOutline, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "./ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
 

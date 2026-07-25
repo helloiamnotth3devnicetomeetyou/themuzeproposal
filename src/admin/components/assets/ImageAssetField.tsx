@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useId, useState } from "react";
 import { LuPlus } from "react-icons/lu";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/core/supabase/client";
 
 export type UploadedImageAsset = {
   bucket: "artist-assets";

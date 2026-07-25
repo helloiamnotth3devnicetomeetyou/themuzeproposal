@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LuMail, LuMapPin } from "react-icons/lu";
-import { useLocale } from "../context/LocaleContext";
-import { useTheme } from "../context/ThemeContext";
-import { supabase } from "@/lib/supabase";
-import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/lib/siteContent";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { useTheme } from "@/core/providers/ThemeContext";
+import { supabase } from "@/core/supabase/client";
+import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 
 type NoticePreview = {
   id: string;

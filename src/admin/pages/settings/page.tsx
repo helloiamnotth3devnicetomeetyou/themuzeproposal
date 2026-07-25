@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuTrash2 } from "react-icons/lu";
-import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
-import FormField from "@/components/admin/FormField";
-import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/components/admin/SocialLinksField";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { supabase } from "@/lib/supabase";
-import { SOCIAL_ICONS } from "@/lib/social-icons";
-import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/lib/siteContent";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import FormField from "@/admin/components/content/FormField";
+import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { supabase } from "@/core/supabase/client";
+import { SOCIAL_ICONS } from "@/core/content/social-icons";
+import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 
 type SettingsTab = "company" | "history" | "footer" | "social";
 type HistoryLanguage = "ko" | "en" | "ja";

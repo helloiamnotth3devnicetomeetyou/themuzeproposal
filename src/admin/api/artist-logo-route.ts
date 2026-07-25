@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAdmin } from "@/lib/admin-auth";
-import { getPublicSupabaseConfig } from "@/lib/public-env";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { sanitizeSvg, UnsafeSvgError } from "@/lib/svg-sanitizer";
+import { isAdmin } from "@/core/auth/admin-auth";
+import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { createSupabaseServerClient } from "@/core/supabase/server";
+import { sanitizeSvg, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
 
 export const runtime = "nodejs";
 

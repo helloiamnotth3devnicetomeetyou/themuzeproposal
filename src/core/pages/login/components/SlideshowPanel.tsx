@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { SLIDES } from "../_constants";
+import { SLIDES } from "../constants";
 
 interface SlideshowPanelProps {
   currentSlide: number;

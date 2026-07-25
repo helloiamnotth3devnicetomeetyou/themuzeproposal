@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServerClient } from "@/core/supabase/server";
 import { getPublicNotice, getPublicNotices } from "./repository";
 import type { NoticeDetailDTO, NoticeListDTO } from "./types";
 

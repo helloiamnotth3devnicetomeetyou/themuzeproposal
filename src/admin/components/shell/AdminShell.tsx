@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import AdminDialogProvider from "@/components/admin/AdminDialogProvider";
-import Sidebar from "@/components/admin/Sidebar";
+import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
+import Sidebar from "@/admin/components/shell/Sidebar";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LuArrowLeft, LuArrowRight, LuExternalLink, LuInbox, LuMail, LuPhone, LuSearch, LuUserRound } from "react-icons/lu";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { supabase } from "@/lib/supabase";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { supabase } from "@/core/supabase/client";
 
 type AuditionStatus = "pending" | "reviewing" | "accepted" | "rejected";
 type Submission = {

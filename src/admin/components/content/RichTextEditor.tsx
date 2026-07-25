@@ -16,7 +16,7 @@ import {
   LuUnderline,
   LuUndo2,
 } from "react-icons/lu";
-import { escapeHtml, sanitizeRichText } from "@/lib/rich-text";
+import { escapeHtml, sanitizeRichText } from "@/core/utils/rich-text";
 
 type RichTextEditorProps = {
   value: string;

@@ -1,11 +1,11 @@
 "use client";
 
-import LoadingIndicator from "@/components/LoadingIndicator";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useParams } from "next/navigation";
 import { useRef } from "react";
 
-import { useLocale } from "../../../context/LocaleContext";
-import { useDiscographyController } from "../_hooks/useDiscographyController";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { useDiscographyController } from "../hooks/useDiscographyController";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";

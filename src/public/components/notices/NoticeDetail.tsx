@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { LuArrowLeft } from "react-icons/lu";
-import { useLocale } from "@/app/context/LocaleContext";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import type { LocalizedTextDTO, NoticeDetailDTO } from "@/features/notices/types";
-import { sanitizeRichText } from "@/lib/rich-text";
+import { useLocale } from "@/core/providers/LocaleContext";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import type { LocalizedTextDTO, NoticeDetailDTO } from "@/public/features/notices/types";
+import { sanitizeRichText } from "@/core/utils/rich-text";
 import styles from "./NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";

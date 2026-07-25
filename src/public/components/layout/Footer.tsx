@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LuLink } from "react-icons/lu";
-import { useLocale } from "../app/context/LocaleContext";
-import { useTheme } from "../app/context/ThemeContext";
-import { SOCIAL_ICONS, SOCIAL_LABELS } from "../lib/social-icons";
-import { supabase } from "../lib/supabase";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { useTheme } from "@/core/providers/ThemeContext";
+import { SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { supabase } from "@/core/supabase/client";
 
 type SiteSocialLink = {
   id: string;

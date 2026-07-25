@@ -1,5 +1,5 @@
-import NoticeDetail from "@/components/NoticeDetail";
-import { loadPublicNotice } from "@/features/notices/server";
+import NoticeDetail from "@/public/components/notices/NoticeDetail";
+import { loadPublicNotice } from "@/public/features/notices/server";
 
 export default async function ArtistNoticeDetailPage({ params }: { params: Promise<{ artistid: string; id: string }> }) {
   const { artistid, id } = await params;

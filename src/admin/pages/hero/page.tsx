@@ -1,6 +1,6 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
@@ -32,10 +32,10 @@ import {
   LuSearch,
   LuTrash2,
 } from "react-icons/lu";
-import { useAdminConfirm } from "@/components/admin/AdminDialogProvider";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { supabase } from "@/lib/supabase";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { supabase } from "@/core/supabase/client";
 
 type Artist = { id: string; name: string; slug: string; color: string | null };
 type Album = {

@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { getPublicSupabaseConfig } from "./public-env";
+import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
 const { url: supabaseUrl, anonKey: supabaseAnonKey } = getPublicSupabaseConfig();
 

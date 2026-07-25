@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type Mode, type LoginFormState } from "../_hooks";
+import { type Mode, type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginFormPanelProps extends LoginFormState {

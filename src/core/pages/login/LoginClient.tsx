@@ -1,8 +1,8 @@
 "use client";
 
-import { useTheme } from "../context/ThemeContext";
-import { useLocale } from "../context/LocaleContext";
-import { useLoginForm } from "./_hooks";
+import { useTheme } from "@/core/providers/ThemeContext";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { useLoginForm } from "./hooks";
 import LoginFormPanel from "./components/LoginFormPanel";
 import SlideshowPanel from "./components/SlideshowPanel";
 

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 
-import type { DiscographyAlbum } from "../_lib/types";
+import type { DiscographyAlbum } from "../lib/types";
 
 interface DiscographyBackgroundProps {
   album: DiscographyAlbum;

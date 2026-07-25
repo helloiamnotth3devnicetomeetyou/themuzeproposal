@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { LuChevronRight } from "react-icons/lu";
 
-import type { DiscographyAlbum } from "../_lib/types";
+import type { DiscographyAlbum } from "../lib/types";
 
 interface AlbumArtworkProps {
   album: DiscographyAlbum;

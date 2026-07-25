@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFileText, LuPlus } from "react-icons/lu";
-import { useAdminConfirm } from "@/components/admin/AdminDialogProvider";
-import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import NoticeCategoryInput from "@/components/admin/NoticeCategoryInput";
-import RichTextEditor from "@/components/admin/RichTextEditor";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { hasRichTextContent, sanitizeRichText } from "@/lib/rich-text";
-import { supabase } from "@/lib/supabase";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import NoticeCategoryInput from "@/admin/components/content/NoticeCategoryInput";
+import RichTextEditor from "@/admin/components/content/RichTextEditor";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
+import { supabase } from "@/core/supabase/client";
 
 type Notice = {
   id: string;

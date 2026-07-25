@@ -2,7 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { getPublicSupabaseConfig } from "./public-env";
+import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
 const { url: supabaseUrl, anonKey: supabaseAnonKey } = getPublicSupabaseConfig();
 

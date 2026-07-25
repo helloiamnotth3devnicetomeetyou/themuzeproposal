@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuLogOut, LuShieldCheck } from "react-icons/lu";
-import { useLocale } from "../context/LocaleContext";
+import { useLocale } from "@/core/providers/LocaleContext";
 import {
   CurrentPasswordError,
   signOut,
@@ -11,7 +11,7 @@ import {
   updateUserName,
   updateUserPassword,
   verifyCurrentPassword,
-} from "@/lib/auth";
+} from "@/core/auth/auth";
 import styles from "./account.module.css";
 
 type Status = { type: "success" | "error"; message: string } | null;

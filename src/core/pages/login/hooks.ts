@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AuthUserError, signIn, signInWithGoogle, signUp } from "@/lib/auth";
-import { SLIDES } from "./_constants";
-import { localT, type LocaleKey, type LoginTranslations } from "./_locales";
+import { AuthUserError, signIn, signInWithGoogle, signUp } from "@/core/auth/auth";
+import { SLIDES } from "./constants";
+import { localT, type LocaleKey, type LoginTranslations } from "./locales";
 
 export type Mode = "login" | "signup";
 

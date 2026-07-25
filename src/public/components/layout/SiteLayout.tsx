@@ -7,14 +7,10 @@ import Footer from "./Footer";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLogin = pathname === "/login";
-  const isAdmin = pathname.startsWith("/admin");
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
   const isImmersiveArtist = /^\/[^/]+\/artist(?:\/[^/]+)?\/?$/.test(pathname);
 
   useEffect(() => {
-    if (isLogin || isAdmin) return;
-
     const observerOptions = {
       root: null,
       rootMargin: "0px 0px -8% 0px", // Triggers slightly before entering the full viewport for a premium, intentional flow
@@ -57,7 +53,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       observer.disconnect();
       mutationObserver.disconnect();
     };
-  }, [pathname, isLogin, isAdmin]);
+  }, [pathname]);
 
   // Get a normalized key for page transitions to avoid unmounting when switching members or tabs on the same view.
   const getLayoutKey = (path: string) => {
@@ -74,13 +70,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
   const layoutKey = getLayoutKey(pathname);
 
-  if (isLogin) {
-    return <>{children}</>;
-  }
-
-  if (isAdmin) {
-    return <div className="admin-root-shell"><Navbar /><div className="admin-app-frame">{children}</div></div>;
-  }
 
   return (
     <>

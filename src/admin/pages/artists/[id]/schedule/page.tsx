@@ -1,18 +1,18 @@
 "use client";
 
-import { SCHEDULE_CATEGORY_COLORS } from "@/lib/design-tokens";
+import { SCHEDULE_CATEGORY_COLORS } from "@/core/utils/design-tokens";
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { LuCake, LuCalendarDays, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuClock3, LuDisc3, LuMapPin, LuPartyPopper, LuPlus, LuRadio } from "react-icons/lu";
 import type { IconType } from "react-icons";
-import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import FormField from "@/components/admin/FormField";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
-import { supabase } from "@/lib/supabase";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import FormField from "@/admin/components/content/FormField";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { supabase } from "@/core/supabase/client";
 import styles from "./schedule-admin.module.css";
 
 type Category = "show" | "release" | "anniversary" | "event" | "etc";

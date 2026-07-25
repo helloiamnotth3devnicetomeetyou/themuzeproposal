@@ -6,7 +6,7 @@ import type {
   AlbumSort,
   DiscographyAlbum,
   RailPhase,
-} from "../_lib/types";
+} from "../lib/types";
 
 const ALBUMS_PER_PAGE = 6;
 

@@ -1,4 +1,4 @@
-import NoticeManager from "@/components/admin/NoticeManager";
+import NoticeManager from "@/admin/components/content/NoticeManager";
 
 export default function NoticesAdmin() {
   return <NoticeManager />;

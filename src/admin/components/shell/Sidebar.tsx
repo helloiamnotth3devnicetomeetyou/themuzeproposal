@@ -13,9 +13,9 @@ import {
   LuSettings,
   LuShieldCheck,
 } from "react-icons/lu";
-import { getUserProfile, signOut } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import { ARTISTS_CHANGED_EVENT } from "@/lib/artist-events";
+import { getUserProfile, signOut } from "@/core/auth/auth";
+import { supabase } from "@/core/supabase/client";
+import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
 import SidebarSearch from "./SidebarSearch";
 import ArtistNavGroup from "./ArtistNavGroup";
 

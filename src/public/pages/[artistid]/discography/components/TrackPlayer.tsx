@@ -7,7 +7,7 @@ import {
 } from "react-icons/lu";
 import { SiYoutube } from "react-icons/si";
 
-import type { DiscographyTrack } from "../_lib/types";
+import type { DiscographyTrack } from "../lib/types";
 
 interface TrackPlayerProps {
   albumColor: string;

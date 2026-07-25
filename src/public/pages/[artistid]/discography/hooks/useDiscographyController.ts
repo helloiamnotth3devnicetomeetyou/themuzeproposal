@@ -9,20 +9,20 @@ import {
   type RefObject,
 } from "react";
 
-import { fetchDiscography } from "../_lib/discography-data";
+import { fetchDiscography } from "../lib/discography-data";
 import {
   readPlaybackMemory,
   requestedAlbumId,
   savePlaybackMemory,
   syncAlbumQuery,
-} from "../_lib/playback-memory";
+} from "../lib/playback-memory";
 import type {
   AlbumSort,
   DiscographyAlbum,
   DiscographyTab,
   RailPhase,
   SlideDirection,
-} from "../_lib/types";
+} from "../lib/types";
 import { useAudioPlayback } from "./useAudioPlayback";
 
 const ALBUM_TRANSITION_MS = 350;

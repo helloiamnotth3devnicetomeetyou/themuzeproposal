@@ -5,10 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LuMoon, LuSun, LuUser, LuLogIn, LuChevronDown } from "react-icons/lu";
-import { useLocale } from "../app/context/LocaleContext";
-import { useTheme } from "../app/context/ThemeContext";
-import { supabase } from "@/lib/supabase";
-import { ARTISTS_CHANGED_EVENT } from "@/lib/artist-events";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { useTheme } from "@/core/providers/ThemeContext";
+import { supabase } from "@/core/supabase/client";
+import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
 import LanguageSwitcher from "./LanguageSwitcher";
 import MobileMenu from "./MobileMenu";
 import styles from "./Navbar.module.css";
@@ -44,7 +44,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { getUser, isAdmin: checkIsAdmin } = await import("@/lib/auth");
+      const { getUser, isAdmin: checkIsAdmin } = await import("@/core/auth/auth");
       const user = await getUser();
       setIsLoggedIn(Boolean(user));
       setIsAdmin(user ? await checkIsAdmin() : false);

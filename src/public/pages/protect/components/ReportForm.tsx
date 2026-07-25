@@ -3,9 +3,9 @@
 import { useState, useRef, useMemo, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LuCheck, LuTrash2, LuUpload } from "react-icons/lu";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { getUser } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import { getUser } from "@/core/auth/auth";
+import { supabase } from "@/core/supabase/client";
 import type { Artist, MyReport } from "../ProtectClient";
 import styles from "../protect.module.css";
 

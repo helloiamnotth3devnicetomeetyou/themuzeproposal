@@ -1,4 +1,4 @@
-import type { Locale } from "@/app/context/LocaleContext";
+import type { Locale } from "@/core/providers/LocaleContext";
 
 export interface DiscographyTrack {
   title: string;

@@ -1,8 +1,8 @@
-import type { Locale } from "@/app/context/LocaleContext";
+import type { Locale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
 import { SiSpotify } from "react-icons/si";
 
-import type { DiscographyAlbum, DiscographyTab } from "../_lib/types";
+import type { DiscographyAlbum, DiscographyTab } from "../lib/types";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
 

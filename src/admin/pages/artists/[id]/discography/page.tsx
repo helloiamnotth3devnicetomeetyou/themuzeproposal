@@ -1,17 +1,17 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuCheck, LuCircleAlert, LuDisc3, LuGripVertical, LuMusic, LuPlus } from "react-icons/lu";
-import { useAdminConfirm } from "@/components/admin/AdminDialogProvider";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/components/admin/MusicAssetFields";
-import GalleryManager from "@/components/admin/GalleryManager";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import CustomSelect from "@/components/ui/CustomSelect";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/admin/components/assets/MusicAssetFields";
+import GalleryManager from "@/admin/components/assets/GalleryManager";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import CustomSelect from "@/core/components/form/CustomSelect";
 import {
   ALBUM_TYPES,
   type AlbumEditorDraft,
@@ -21,9 +21,9 @@ import {
   type TrackDraft,
   type UploadedAsset,
   validateAlbum,
-} from "@/lib/music-editor";
-import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
-import { supabase } from "@/lib/supabase";
+} from "@/core/utils/music-editor";
+import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { supabase } from "@/core/supabase/client";
 
 type RawTrack = {
   id: string; title: string; is_title: boolean; track_number: number;

@@ -1,15 +1,15 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { LuArrowLeft, LuArrowRight, LuChevronDown, LuDisc3, LuRotateCcw, LuX } from "react-icons/lu";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { useLocale } from "../../context/LocaleContext";
-import { supabase } from "@/lib/supabase";
-import { normalizeOutline, outlineCentroid, outlineToPath, type ArtistScene } from "@/lib/artist-scenes";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { useLocale } from "@/core/providers/LocaleContext";
+import { supabase } from "@/core/supabase/client";
+import { normalizeOutline, outlineCentroid, outlineToPath, type ArtistScene } from "@/core/utils/artist-scenes";
 import styles from "./scene.module.css";
 
 type Artist = {

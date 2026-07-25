@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LuArrowRight, LuDisc3, LuFilePlus2, LuListMusic } from "react-icons/lu";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/core/supabase/client";
 
 type Stats = { artists: number; albums: number; members: number; notices: number; auditions: number; protectReports: number; protectActive: number };
 type RecentAlbum = { id: string; title: string; type: string; cover_url: string | null; is_published: boolean; artist: { id: string; name: string } | null };

@@ -1,23 +1,23 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/lib/design-tokens";
+import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { LuCheck, LuMinus } from "react-icons/lu";
-import ContentWorkbench, { type WorkbenchTab } from "@/components/admin/ContentWorkbench";
-import ArtistSceneManager from "@/components/admin/ArtistSceneManager";
-import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
-import FormField from "@/components/admin/FormField";
-import GalleryManager from "@/components/admin/GalleryManager";
-import ImageAssetField from "@/components/admin/ImageAssetField";
-import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/components/admin/SocialLinksField";
-import CustomSelect from "@/components/ui/CustomSelect";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
-import { supabase } from "@/lib/supabase";
-import { notifyArtistsChanged } from "@/lib/artist-events";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import ArtistSceneManager from "@/admin/components/scenes/ArtistSceneManager";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import FormField from "@/admin/components/content/FormField";
+import GalleryManager from "@/admin/components/assets/GalleryManager";
+import ImageAssetField from "@/admin/components/assets/ImageAssetField";
+import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import CustomSelect from "@/core/components/form/CustomSelect";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { supabase } from "@/core/supabase/client";
+import { notifyArtistsChanged } from "@/core/utils/artist-events";
 
 type ProfileTab = "basic" | "visual" | "content" | "social" | "scenes" | "gallery" | "publish";
 
@@ -98,6 +98,7 @@ export default function ArtistProfileAdmin() {
 
   const saveIssues = useMemo(() => {
     const issues: string[] = [];
+    if (!draft) return issues;
     if (!draft.name.trim()) issues.push("한국어 아티스트명");
     if (!draft.engName.trim()) issues.push("영문 아티스트명");
     if (!toSlug(draft.engName)) issues.push("영문명 기반 공개 경로");
@@ -106,12 +107,12 @@ export default function ArtistProfileAdmin() {
     return issues;
   }, [draft]);
 
-  const completion = [
+  const completion = draft ? [
     { label: "이름과 기본 정보", ready: Boolean(draft.name && draft.engName && toSlug(draft.engName)) },
     { label: "대표 이미지와 컬러", ready: Boolean(draft.imageUrl && /^#[0-9a-f]{6}$/i.test(draft.color)) },
     { label: "한국어 아티스트 소개", ready: Boolean(draft.descKo.trim()) },
     { label: "공개 상태 확인", ready: true },
-  ];
+  ] : [];
 
   useEffect(() => {
     if (isNew) return;
@@ -171,6 +172,7 @@ export default function ArtistProfileAdmin() {
   };
 
   const handleSave = async () => {
+    if (!draft) return;
     if (saveIssues.length || !artistId) {
       setError(`필수 정보를 확인하세요: ${saveIssues.join(", ")}`);
       return;
@@ -265,7 +267,7 @@ export default function ArtistProfileAdmin() {
     return () => body.removeEventListener("wheel", handleWheel);
   }, [loading]);
 
-  if (loading) return <LoadingIndicator label="아티스트 프로필을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
+  if (loading || !draft) return <LoadingIndicator label="아티스트 프로필을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
 
   const rail = (
     <div className="profile-context-rail">

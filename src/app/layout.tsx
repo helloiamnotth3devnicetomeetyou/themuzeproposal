@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { cookies } from "next/headers";
-import "./globals.css";
-import { LocaleProvider, type Locale } from "./context/LocaleContext";
-import { ThemeProvider, type Theme } from "./context/ThemeContext";
-import MainLayout from "../components/MainLayout";
-import { getSiteUrl } from "@/lib/public-env";
+import "@/core/styles/globals.css";
+import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
+import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
+import { getSiteUrl } from "@/core/config/public-env";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -41,9 +40,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>
-          <LocaleProvider initialLocale={initialLocale}>
-            <MainLayout>{children}</MainLayout>
-          </LocaleProvider>
+          <LocaleProvider initialLocale={initialLocale}>{children}</LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

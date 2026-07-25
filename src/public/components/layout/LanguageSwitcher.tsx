@@ -1,7 +1,7 @@
 "use client";
 
-import { useLocale, type Locale } from "../app/context/LocaleContext";
-import CustomSelect, { type CustomSelectOption } from "./ui/CustomSelect";
+import { useLocale, type Locale } from "@/core/providers/LocaleContext";
+import CustomSelect, { type CustomSelectOption } from "@/core/components/form/CustomSelect";
 
 const languageOptions: CustomSelectOption[] = [
   { value: "ko", label: "한국어" },
