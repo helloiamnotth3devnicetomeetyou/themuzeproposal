@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 import styles from "./protect-admin.module.css";
 
 type ReportStatus = "pending" | "reviewing" | "resolved" | "rejected";
+type ReportAttachment = { file_path: string; file_name: string };
 type ProtectReport = {
   id: string;
   reporter_email: string | null;
@@ -29,8 +30,7 @@ type ProtectReport = {
   posted_at: string;
   author_name: string;
   post_ip: string | null;
-  attachment_paths: string[];
-  attachment_names: string[];
+  protect_report_attachments: ReportAttachment[];
   status: string;
   admin_note: string | null;
   created_at: string;
@@ -76,7 +76,7 @@ export default function ProtectAdminPage() {
     setError("");
     const { data, error: fetchError } = await supabase
       .from("protect_reports")
-      .select("*, artists(name)")
+      .select("*, artists(name), protect_report_attachments(file_path, file_name)")
       .order("created_at", { ascending: false })
       .overrideTypes<ProtectReport[], { merge: false }>();
     if (fetchError) setError(fetchError.message);
@@ -93,13 +93,13 @@ export default function ProtectAdminPage() {
   };
 
   useEffect(() => {
-    if (!viewing?.attachment_paths.length) return;
+    if (!viewing?.protect_report_attachments.length) return;
 
     let active = true;
     const signEvidence = async () => {
-      const pairs = await Promise.all(viewing.attachment_paths.map(async (path) => {
-        const { data } = await supabase.storage.from("protect-evidence").createSignedUrl(path, 900);
-        return [path, data?.signedUrl || ""] as const;
+      const pairs = await Promise.all(viewing.protect_report_attachments.map(async ({ file_path }) => {
+        const { data } = await supabase.storage.from("protect-evidence").createSignedUrl(file_path, 900);
+        return [file_path, data?.signedUrl || ""] as const;
       }));
       if (active) setSignedUrls(Object.fromEntries(pairs));
     };
@@ -167,17 +167,16 @@ export default function ProtectAdminPage() {
             <section>
               <div className={styles.sectionHeading}><span>EVIDENCE</span><h2>첨부 자료</h2></div>
               <div className={styles.evidenceGrid}>
-                {viewing.attachment_paths.map((path, index) => {
-                  const name = viewing.attachment_names[index] || `첨부 자료 ${index + 1}`;
-                  const url = signedUrls[path];
-                  return <a key={path} className={styles.evidenceCard} href={url || undefined} target="_blank" rel="noreferrer" aria-disabled={!url}>
+                {viewing.protect_report_attachments.map(({ file_path, file_name }) => {
+                  const url = signedUrls[file_path];
+                  return <a key={file_path} className={styles.evidenceCard} href={url || undefined} target="_blank" rel="noreferrer" aria-disabled={!url}>
                     <span className={styles.evidencePreview}>
-                      {url && isImage(name)
+                      {url && isImage(file_name)
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img src={url} alt="" />
-                        : isImage(name) ? <LuFileImage aria-hidden="true" /> : <LuPaperclip aria-hidden="true" />}
+                        : isImage(file_name) ? <LuFileImage aria-hidden="true" /> : <LuPaperclip aria-hidden="true" />}
                     </span>
-                    <span><b>{name}</b><small>{url ? "새 창에서 원본 열기" : "보안 링크 생성 중…"}</small></span>
+                    <span><b>{file_name}</b><small>{url ? "새 창에서 원본 열기" : "보안 링크 생성 중…"}</small></span>
                     <LuExternalLink aria-hidden="true" />
                   </a>;
                 })}

@@ -65,7 +65,7 @@
 .outlineTools p { margin:2px 0 0; padding:7px 8px; border-radius:6px; background:var(--alpha-35a963-08); color:var(--color-status-success); font-size:7px; font-weight:700; text-align:center; }
 .outlineTools .danger { margin-top:auto; }
 
-@media (max-width:900px) {
+@media (max-width: 1024px) {
   .sceneSettings { grid-template-columns:1fr 1fr; }
   .sceneSettings > label:first-child { grid-column:1/-1; }
   .editor { grid-template-columns:1fr; }
@@ -73,7 +73,7 @@
   .outlineTools > div,.outlineTools .danger { grid-column:1/-1; }
 }
 
-@media (max-width:620px) {
+@media (max-width: 768px) {
   .toolbar { align-items:stretch; flex-wrap:wrap; }
   .toolbar > div { width:100%; flex-basis:100%; }
   .sceneSettings { grid-template-columns:1fr; }

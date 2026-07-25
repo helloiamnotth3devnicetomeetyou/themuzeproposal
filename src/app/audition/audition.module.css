@@ -352,7 +352,7 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .pageFrame {
     padding-top: 124px;
   }
@@ -372,7 +372,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .pageFrame {
     padding: 104px 0 64px;
   }

@@ -1,0 +1,45 @@
+/* ─── Managed Artist Image Assets ─── */
+.content-asset-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.content-asset-field { display: grid; grid-template-columns: 150px minmax(0,1fr); min-width: 0; overflow: hidden; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); transition: border-color .15s,background .15s; }
+.content-asset-field.is-dragging { border-color: var(--color-brand-pink); background: var(--alpha-fc6fcf-06); box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
+.content-asset-preview { display: grid; min-height: 190px; place-items: center; overflow: hidden; border-right: 1px solid var(--border-default); background: color-mix(in srgb,var(--bg-card) 82%,var(--bg-subtle)); }
+.content-asset-preview img { width: 100%; height: 100%; object-fit: cover; }
+.content-asset-field.is-portrait .content-asset-preview { aspect-ratio: 4/5; }
+.content-asset-field.is-logo .content-asset-preview { min-height: 150px; }
+.content-asset-field.is-logo .content-asset-preview img { padding: 18px; object-fit: contain; }
+.cms-artist-logo { display: grid; width: 20px; height: 20px; flex: 0 0 20px; place-items: center; }
+.cms-artist-logo img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.content-asset-field.is-logo .content-asset-preview img.is-theme-svg,
+.cms-artist-logo img.is-theme-svg { filter: brightness(0) saturate(100%); }
+:root[data-theme="dark"] .content-asset-field.is-logo .content-asset-preview img.is-theme-svg,
+:root[data-theme="dark"] .cms-artist-logo img.is-theme-svg { filter: brightness(0) saturate(100%) invert(1); }
+.content-asset-preview > div { display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-faint); }
+.content-asset-preview > div span { font-size: 7px; font-weight: 800; letter-spacing: .17em; }
+.content-asset-preview > div b { margin-top: 9px; color: var(--color-brand-pink); font-family: var(--font-display); font-size: 24px; }
+.content-asset-dropzone { display: flex; min-width: 0; flex-direction: column; justify-content: center; gap: 14px; padding: 18px; }
+.content-asset-copy > span { color: var(--text-primary); font-size: 10px; font-weight: 750; }
+.content-asset-copy > span b { margin-left: 4px; color: var(--color-brand-pink); }
+.content-asset-copy p { margin: 7px 0 0; color: var(--text-muted); font-size: 9px; line-height: 1.55; }
+.content-asset-copy small { display: block; margin-top: 6px; color: var(--text-faint); font-size: 8px; }
+.content-asset-actions { display: flex; align-items: center; gap: 8px; }
+.content-asset-actions label,.content-asset-actions button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 11px; border: 1px solid var(--border-default); border-radius: 7px; background: var(--bg-card); color: var(--text-secondary); font-size: 8px; font-weight: 750; cursor: pointer; }
+.content-asset-actions label:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
+.content-asset-actions button { border-color: transparent; background: transparent; color: var(--text-faint); }
+.content-asset-actions button:hover { color: var(--color-status-danger); }
+
+@media (max-width: 1024px) {
+  .content-asset-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .content-asset-field { grid-template-columns: 120px minmax(0,1fr); }
+  .content-asset-preview { min-height: 160px; }
+}
+@media (max-width: 480px) {
+  .content-asset-field { grid-template-columns: 1fr; }
+  .content-asset-preview { width: 100%; max-width: none; min-height: 150px; aspect-ratio: 16/9!important; border-right: 0; border-bottom: 1px solid var(--border-default); }
+  .content-asset-field.is-portrait .content-asset-preview img { object-position: center 22%; }
+  .content-asset-dropzone { padding: 15px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .content-asset-field { transition: none; }
+}

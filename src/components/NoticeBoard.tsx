@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { LuArrowUpRight, LuSearch, LuX } from "react-icons/lu";
+import { LuArrowLeft, LuArrowRight, LuArrowUpRight, LuSearch, LuX } from "react-icons/lu";
 import { useLocale } from "@/app/context/LocaleContext";
 import CustomSelect from "@/components/ui/CustomSelect";
 import LoadingIndicator from "@/components/LoadingIndicator";
@@ -58,6 +58,7 @@ const pageCopy: Record<Locale, {
 };
 
 const EMPTY_NOTICES: NoticeDTO[] = [];
+const NOTICES_PER_PAGE = 10;
 const localized = (value: LocalizedTextDTO, locale: Locale) => value[locale] || value.ko || value.en || value.ja;
 
 export default function NoticeBoard({ artistSlug, initialData, loadFailed = false }: { artistSlug?: string; initialData: NoticeListDTO | null; loadFailed?: boolean }) {
@@ -71,6 +72,7 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [category, setCategory] = useState("all");
+  const [page, setPage] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -93,6 +95,13 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
         return matchesCategory && matchesSearch;
       });
   }, [locale, notices, search, selectedCategory]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleNotices.length / NOTICES_PER_PAGE));
+  const currentPage = Math.min(page, pageCount);
+  const paginatedNotices = useMemo(
+    () => visibleNotices.slice((currentPage - 1) * NOTICES_PER_PAGE, currentPage * NOTICES_PER_PAGE),
+    [currentPage, visibleNotices],
+  );
 
   const heading = scopeName ? `${scopeName.toUpperCase()} NOTICE` : "NOTICE";
   const detailHref = (noticeId: string) => artistSlug ? `/${artistSlug}/notice/${noticeId}` : `/notice/${noticeId}`;
@@ -121,13 +130,13 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
               variant="line"
               ariaLabel={copy.category}
               value={selectedCategory}
-              onChange={setCategory}
+              onChange={(value) => { setCategory(value); setPage(1); }}
               options={[{ value: "all", label: copy.all }, ...categories.map((item) => ({ value: item, label: item }))]}
             />
             <div className={`${styles.searchControl} ${searchOpen ? styles.searchOpen : ""}`}>
               <label className={styles.searchField}>
                 <span className="sr-only">{copy.search}</span>
-                <input ref={searchInputRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={copy.search} tabIndex={searchOpen ? 0 : -1} />
+                <input ref={searchInputRef} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={copy.search} tabIndex={searchOpen ? 0 : -1} />
               </label>
               {searchOpen && search ? <button type="button" onClick={closeSearch} aria-label={copy.closeSearch}><LuX aria-hidden="true" /></button> : <button type="button" onClick={() => setSearchOpen((open) => !open)} aria-label={searchOpen ? copy.closeSearch : copy.search}><LuSearch aria-hidden="true" /></button>}
             </div>
@@ -138,7 +147,7 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
 
             {!loading && error && <div className={`${styles.state} ${styles.error}`} role="alert"><b>!</b><p>{error}</p></div>}
 
-            {!loading && !error && visibleNotices.map(({ notice, number }) => (
+            {!loading && !error && paginatedNotices.map(({ notice, number }) => (
               <Link key={notice.id} href={detailHref(notice.id)} className={styles.item}>
                 <span className={styles.number}>{String(number).padStart(4, "0")}</span>
                 <span className={styles.itemCopy}>
@@ -152,6 +161,18 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
 
             {!loading && !error && !visibleNotices.length && <div className={styles.state}><p>{copy.empty}</p></div>}
           </div>
+
+          {!loading && !error && visibleNotices.length > NOTICES_PER_PAGE && (
+            <nav className={styles.pagination} aria-label="Pagination">
+              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Previous page">
+                <LuArrowLeft aria-hidden="true" />
+              </button>
+              <span aria-live="polite">{currentPage} / {pageCount}</span>
+              <button type="button" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label="Next page">
+                <LuArrowRight aria-hidden="true" />
+              </button>
+            </nav>
+          )}
         </div>
       </section>
     </div>

@@ -109,7 +109,7 @@
 @keyframes card-pop-enter { from { opacity:0; transform:translateY(28px) scale(0.92); } to { opacity:var(--target-opacity, .62); transform:translateY(0) scale(1); } }
 @keyframes scene-sweep { 0% { left:-22vw; opacity:0; } 36% { opacity:.5; } 100% { left:105vw; opacity:0; } }
 
-@media (max-width:900px) {
+@media (max-width: 1024px) {
   .experience { min-height:560px; }
   .sceneViewport { padding:0; }
   .sceneHeader { top:80px; }
@@ -138,7 +138,7 @@
   .resetButton { padding:0 10px; }
 }
 
-@media (max-width:520px) {
+@media (max-width: 480px) {
   .sceneHeader div { display:none; }
   .sceneHeader { justify-content:flex-end; }
   .sceneViewport { padding:0; }

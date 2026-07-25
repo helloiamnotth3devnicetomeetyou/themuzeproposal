@@ -22,6 +22,7 @@ import {
   type UploadedAsset,
   validateAlbum,
 } from "@/lib/music-editor";
+import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
 import { supabase } from "@/lib/supabase";
 
 type RawTrack = {
@@ -82,18 +83,10 @@ export default function DiscographyAdmin() {
   const requestConfirm = useAdminConfirm();
   const [artistId, setArtistId] = useState("");
   const [albums, setAlbums] = useState<AlbumEditorDraft[]>([]);
-  const [draft, setDraft] = useState<AlbumEditorDraft | null>(null);
-  const [snapshot, setSnapshot] = useState("");
   const [tab, setTab] = useState<EditorTab>("basic");
   const [language, setLanguage] = useState<Language>("ko");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
   const [expandedTrack, setExpandedTrack] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkValue, setBulkValue] = useState("");
@@ -103,7 +96,27 @@ export default function DiscographyAdmin() {
   const [dragTrack, setDragTrack] = useState<string | null>(null);
   const uploadedAssets = useRef<UploadedAsset[]>([]);
 
-  const dirty = Boolean(draft && JSON.stringify(draft) !== snapshot);
+  const {
+    draft,
+    setDraft,
+    snapshot,
+    setSnapshot,
+    dirty,
+    loading,
+    setLoading,
+    saving,
+    setSaving,
+    deleting,
+    setDeleting,
+    deleteOpen,
+    setDeleteOpen,
+    error,
+    setError,
+    toast,
+    setToast,
+    patchDraft,
+  } = useAdminCrud<AlbumEditorDraft>({ initialDraft: null });
+
   const validation = useMemo(() => draft ? validateAlbum(draft) : null, [draft]);
 
   const syncUrl = useCallback((albumId: string, nextTab: EditorTab) => {
@@ -136,13 +149,7 @@ export default function DiscographyAdmin() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2600);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
-  const patchDraft = (patch: Partial<AlbumEditorDraft>) => setDraft((current) => current ? { ...current, ...patch } : current);
   const patchTrack = (id: string, patch: Partial<TrackDraft>) => setDraft((current) => current ? { ...current, tracks: current.tracks.map((track) => track.id === id ? { ...track, ...patch } : track) } : current);
 
   const removeAssets = async (assets: UploadedAsset[]) => {

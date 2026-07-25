@@ -14,6 +14,7 @@ import GalleryManager from "@/components/admin/GalleryManager";
 import ImageAssetField from "@/components/admin/ImageAssetField";
 import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/components/admin/SocialLinksField";
 import LoadingIndicator from "@/components/LoadingIndicator";
+import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
 import { supabase } from "@/lib/supabase";
 
 type Member = {
@@ -108,23 +109,34 @@ export default function ArtistMembersAdmin() {
   const [artistId, setArtistId] = useState("");
   const [artistName, setArtistName] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
-  const [draft, setDraft] = useState<MemberDraft | null>(null);
-  const [snapshot, setSnapshot] = useState("");
   const [tab, setTab] = useState<MemberTab>("basic");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
   const [sorting, setSorting] = useState(false);
   const [sortDirty, setSortDirty] = useState(false);
   const [dragMember, setDragMember] = useState<string | null>(null);
   const [newMemberId, setNewMemberId] = useState<string | null>(null);
 
+  const {
+    draft,
+    setDraft,
+    snapshot,
+    setSnapshot,
+    dirty,
+    loading,
+    setLoading,
+    saving,
+    setSaving,
+    deleting,
+    setDeleting,
+    deleteOpen,
+    setDeleteOpen,
+    error,
+    setError,
+    toast,
+    setToast,
+    patchDraft,
+  } = useAdminCrud<MemberDraft>({ initialDraft: null });
+
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
-  const dirty = Boolean(draft && serializedDraft !== snapshot);
-  const patchDraft = (patch: Partial<MemberDraft>) => setDraft((current) => current ? { ...current, ...patch } : current);
   const canSave = Boolean(draft?.name.trim() && draft.engName.trim() && toSlug(draft.engName) && /^#[0-9a-f]{6}$/i.test(draft.color) && !hasInvalidSocialLinks(draft.socialLinks) && (draft.id || draft.roleKo.trim()));
 
   const loadMembers = useCallback(async (preferredId?: string) => {
@@ -166,12 +178,6 @@ export default function ArtistMembersAdmin() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, sortDirty]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2600);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   const selectMember = async (member: Member) => {
     if (sorting) return;

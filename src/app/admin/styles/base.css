@@ -1,0 +1,174 @@
+/* ─── Admin Panel Base Styles ─── */
+.admin-layout {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ─── Typography ─── */
+.admin-title-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.admin-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-brand-pink);
+}
+
+/* ─── Inputs ─── */
+.admin-input {
+  background-color: var(--bg-input) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: var(--text-primary) !important;
+}
+
+.admin-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* ─── Buttons ─── */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px; /* Rounded pill buttons to match main web design */
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: opacity 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+
+.admin-btn-primary {
+  background-color: var(--text-primary);
+  color: var(--bg-base);
+}
+
+.admin-btn-primary:hover {
+  opacity: 0.85;
+}
+
+.admin-btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+.admin-btn-secondary:hover {
+  background-color: var(--bg-subtle);
+}
+
+/* ─── Cards ─── */
+.admin-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+
+/* ─── Tables ─── */
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.25rem;
+  background-color: var(--bg-card);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background-color: var(--bg-subtle);
+}
+
+/* ─── Shared CMS Controls Refresh ─── */
+.admin-card, .admin-table-container { border-color: var(--border-default); border-radius: 14px; background: var(--bg-card); box-shadow: none; }
+.admin-card { padding: 22px; }
+.admin-table { background: transparent; }
+.admin-table th { height: 44px; padding: 0 16px; background: var(--bg-subtle); color: var(--text-faint); font-size: 9px; letter-spacing: .12em; }
+.admin-table td { height: 58px; padding: 10px 16px; border-bottom-color: var(--border-subtle); color: var(--text-secondary); }
+.admin-table tbody tr { transition: background .14s ease; }
+.admin-table tbody tr:hover { background: var(--bg-subtle); }
+.admin-input { min-height: 42px; padding: 10px 12px; border-color: var(--border-default) !important; border-radius: 10px; background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: 12px; }
+.admin-input:focus { border-color: var(--color-brand-pink) !important; box-shadow: 0 0 0 3px var(--alpha-fc6fcf-1); }
+textarea.admin-input { min-height: 112px; resize: vertical; }
+.admin-btn { min-height: 38px; padding: 0 15px; border-radius: 9px; font-size: 10px; letter-spacing: .06em; }
+.admin-btn-primary { background: var(--color-brand-pink); color: var(--palette-151015); }
+.admin-btn-primary:hover { opacity: 1; background: var(--palette-ff87d8); transform: translateY(-1px); }
+.admin-btn-secondary { border-color: var(--border-default); background: var(--bg-card); color: var(--text-secondary); }
+.admin-btn-secondary:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+.admin-card, .admin-table-container { border-radius: 11px; }
+.admin-input { border-radius: 8px; }
+.admin-btn { border-radius: 8px; }
+.admin-table th { background: color-mix(in srgb, var(--bg-surface) 70%, transparent); }
+.admin-table tbody tr:hover { background: color-mix(in srgb, var(--bg-subtle) 80%, transparent); }
+
+.admin-btn:disabled { cursor: not-allowed; opacity: .38; transform: none !important; }
+
+/* ─── Shared Lucide Sizing ─── */
+.cms-account button svg,
+.cms-add-artist svg,
+.cms-artist-heading > b svg { width: 13px; height: 13px; }
+.music-album-grip svg { width: 15px; height: 15px; margin: auto; }
+.music-track-grip > svg,
+.track-asset-icon svg,
+.track-asset-field > button svg { width: 14px; height: 14px; }
+.music-track-empty > span svg { width: 24px; height: 24px; }
+.music-publish-check > span svg { width: 14px; height: 14px; }
+.music-toast { display: flex; align-items: center; gap: 6px; }
+.music-toast svg { width: 13px; height: 13px; }
+.music-no-selection > span svg { width: 32px; height: 32px; }
+.content-no-selection > span svg { width: 30px; height: 30px; }
+.content-asset-preview > div b svg { width: 24px; height: 24px; }
+.desk-panel-heading > a { display: flex; align-items: center; gap: 5px; }
+.desk-panel-heading > a svg { width: 11px; height: 11px; }
+.desk-release-arrow svg,
+.desk-inbox-card i svg { width: 12px; height: 12px; }
+.desk-shortcuts > a > span svg { width: 15px; height: 15px; }

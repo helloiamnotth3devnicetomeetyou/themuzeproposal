@@ -28,7 +28,7 @@ begin
      spotify_id, sort_order, is_published, published_at)
   values
     (v_artist_id, 'pretty-girl', 'Pretty Girl', 'Special Single', '2026-07-08',
-     '/images/hero_1.png', '#FC6FCF',
+     '/images/hero_1.webp', '#FC6FCF',
      'KARA의 2008년 히트곡을 리센느만의 감성으로 재해석한 스페셜 리메이크 싱글.',
      'A special remake single reinterpreting KARA''s 2008 hit with RESCENE''s own charm.',
      'KARAの2008年ヒット曲をRESCENEならではの感性でリメイクしたスペシャルシングル。',
@@ -48,7 +48,7 @@ begin
      spotify_id, sort_order, is_published, published_at)
   values
     (v_artist_id, 'runaway', 'Runaway', 'Digital Single', '2026-04-08',
-     '/images/hero_2.png', '#2C4B43',
+     '/images/hero_2.webp', '#2C4B43',
      '몽환적이면서도 파워풀한 보컬과 딥 그린 비주얼이 어우러진 디지털 싱글.',
      'A dreamy yet powerful digital single combining unique vocals with deep green aesthetics.',
      '幻想的でありながらパワフルなボーカルとディープグリーンが調和したデジタルシングル。',
@@ -68,7 +68,7 @@ begin
      spotify_id, sort_order, is_published, published_at)
   values
     (v_artist_id, 'lip-bomb', 'lip bomb', 'Mini Album', '2025-11-25',
-     '/images/hero_3.png', '#FB689E',
+     '/images/hero_3.webp', '#FB689E',
      '''lip balm(립밤)''에서 ''balm''을 ''bomb(폭탄)''으로 대체한 콘셉트. 촉촉하게 스며들면서도 강렬하게 터지는 리센느만의 에너지를 담은 미니 3집. 각 트랙은 베리 계열의 향기를 테마로 한다.',
      'The 3rd mini album — ''lip balm'' reimagined as ''lip bomb'' — where each track is paired with a berry scent, capturing both the soft and explosive sides of RESCENE.',
      '「lip balm」の「balm」を「bomb」に置き換えたコンセプトで、リップバームのように馴染みながら爆発的なエネルギーを放つRESCENEの3rdミニアルバム。各曲はベリー系の香りをテーマとする。',
@@ -108,7 +108,7 @@ begin
      sort_order, is_published, published_at)
   values
     (v_artist_id, 'dearest', 'Dearest', 'Single Album', '2025-07-02',
-     '/images/hero_5.png', '#3D9C2E',
+     '/images/hero_5.webp', '#3D9C2E',
      '풋풋한 설렘과 고유한 향기를 담아 한층 성숙해진 보컬을 보여주는 싱글 2집.',
      'The 2nd single album expressing fresh romantic feelings with a more mature vocal performance.',
      '初々しいときめきと独自の香りを込め、一段と成熟したボーカルを披露するシングル2集。',
@@ -168,7 +168,7 @@ begin
      sort_order, is_published, published_at)
   values
     (v_artist_id, 're-scene', 'Re:Scene', 'Single Album', '2024-03-26',
-     '/images/hero_4.png', '#D80F17',
+     '/images/hero_4.webp', '#D80F17',
      '''Scene(장면)''과 ''Scent(향기)''의 의미를 동시에 지닌 리센느의 정식 데뷔 싱글 1집. 프루스트 효과를 테마로, 향기와 음악이 한 번 맡으면 잊을 수 없는 기억을 만들어낸다.',
      'RESCENE''s debut single — combining the meanings of ''Scene'' and ''Scent'' — built around the Proust Effect: music and fragrance that stay with you forever.',
      '「Scene(場面)」と「Scent(香り)」の意味を同時に持つRESCENEのデビューシングル1集。プルースト効果をテーマに、香りと音楽が忘れられない記憶を作り出す。',
@@ -188,7 +188,7 @@ begin
      sort_order, is_published, published_at)
   values
     (v_artist_id, 'yoyo', 'YoYo', 'Pre-release Single', '2024-02-29',
-     '/images/hero_4.png', '#FFA500',
+     '/images/hero_4.webp', '#FFA500',
      '데뷔 전 선공개 싱글. 플로럴(Floral) 향을 담은 경쾌하고 설레는 분위기로 리센느의 첫 인사를 전하는 곡.',
      'Pre-debut pre-release single with a floral scent theme — a bright, exciting first hello from RESCENE.',
      'デビュー前の先行シングル。フローラルの香りをテーマにした軽快でときめく雰囲気で、RESCENEの最初の挨拶となる一曲。',
@@ -217,95 +217,95 @@ begin
   select id into v_album_id from public.albums
   where slug = 'yoyo' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'YoYo', 1, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Re:Scene (Single Album 1) ----
   select id into v_album_id from public.albums
   where slug = 're-scene' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'YoYo', 1, false),
     (v_album_id, 'UhUh', 2, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- SCENEDROME (Mini Album 1) ----
   select id into v_album_id from public.albums
   where slug = 'scenedrome' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Lucky you',   1, false),
     (v_album_id, 'LOVE ATTACK', 2, true),
     (v_album_id, 'New World',   3, false),
     (v_album_id, 'Pinball',     4, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Glow Up (Mini Album 2) ----
   select id into v_album_id from public.albums
   where slug = 'glow-up' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'CRASH',        1, false),
     (v_album_id, 'Glow Up',      2, true),
     (v_album_id, 'Going on',     3, false),
     (v_album_id, 'In my lotion', 4, false),
     (v_album_id, 'Cotton Candy', 5, false)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Dearest (Single Album 2) ----
   select id into v_album_id from public.albums
   where slug = 'dearest' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Deja Vu', 1, true),
     (v_album_id, 'Mood',    2, false)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Heart Drop (Pre-release Single) ----
   select id into v_album_id from public.albums
   where slug = 'heart-drop' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Heart Drop', 1, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- lip bomb (Mini Album 3) ----
   -- Each track carries a berry-scent concept
   select id into v_album_id from public.albums
   where slug = 'lip-bomb' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Heart Drop', 1, true),   -- Cranberry scent  (double title)
     (v_album_id, 'Bloom',      2, true),   -- Blackberry scent (double title)
     (v_album_id, 'Love Echo',  3, false),  -- Raspberry scent
     (v_album_id, 'Hello XO',   4, false),  -- Strawberry scent
     (v_album_id, 'MVP',        5, false)   -- Blueberry scent
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Runaway (Digital Single) ----
   select id into v_album_id from public.albums
   where slug = 'runaway' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Runaway', 1, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
   -- ---- Pretty Girl (Special Single) ----
   select id into v_album_id from public.albums
   where slug = 'pretty-girl' and artist_id = v_artist_id;
 
-  insert into public.tracks (album_id, title, track_number, is_title_track) values
+  insert into public.tracks (album_id, title, track_number, is_title) values
     (v_album_id, 'Pretty Girl', 1, true)
   on conflict (album_id, track_number) do update
-    set title = excluded.title, is_title_track = excluded.is_title_track;
+    set title = excluded.title, is_title = excluded.is_title;
 
 end $$;

@@ -15,6 +15,7 @@ import ImageAssetField from "@/components/admin/ImageAssetField";
 import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/components/admin/SocialLinksField";
 import CustomSelect from "@/components/ui/CustomSelect";
 import LoadingIndicator from "@/components/LoadingIndicator";
+import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
 import { supabase } from "@/lib/supabase";
 import { notifyArtistsChanged } from "@/lib/artist-events";
 
@@ -69,19 +70,31 @@ export default function ArtistProfileAdmin() {
   const heroCollapseRef = useRef(0);
   const isNew = routeId === "new";
   const [artistId, setArtistId] = useState<string | null>(() => isNew ? crypto.randomUUID() : null);
-  const [draft, setDraft] = useState<ProfileDraft>(EMPTY_PROFILE);
-  const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_PROFILE));
   const [tab, setTab] = useState<ProfileTab>("basic");
-  const [loading, setLoading] = useState(!isNew);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
 
-  const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
-  const dirty = serializedDraft !== snapshot;
-  const patchDraft = (patch: Partial<ProfileDraft>) => setDraft((current) => ({ ...current, ...patch }));
+  const {
+    draft,
+    setDraft,
+    snapshot,
+    setSnapshot,
+    dirty,
+    loading,
+    setLoading,
+    saving,
+    setSaving,
+    deleting,
+    setDeleting,
+    deleteOpen,
+    setDeleteOpen,
+    error,
+    setError,
+    toast,
+    setToast,
+    patchDraft,
+  } = useAdminCrud<ProfileDraft>({ initialDraft: isNew ? EMPTY_PROFILE : null });
+
+  const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
+  void serializedDraft; // kept for forward-compat; dirty now derived from hook
 
   const saveIssues = useMemo(() => {
     const issues: string[] = [];
@@ -104,6 +117,7 @@ export default function ArtistProfileAdmin() {
     if (isNew) return;
     let cancelled = false;
     async function loadProfile() {
+      setLoading(true);
       const { data, error: loadError } = await supabase.from("artists").select("*").eq("id", routeId).single();
       if (cancelled) return;
       if (loadError || !data) {
@@ -132,19 +146,7 @@ export default function ArtistProfileAdmin() {
     }
     void Promise.resolve().then(loadProfile);
     return () => { cancelled = true; };
-  }, [isNew, routeId]);
-
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2600);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
+  }, [isNew, routeId, setDraft, setSnapshot, setError, setLoading]);
 
   const handleEnglishName = (value: string) => {
     patchDraft({ engName: value });

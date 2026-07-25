@@ -11,6 +11,7 @@ import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog";
 import FormField from "@/components/admin/FormField";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { useAdminCrud } from "@/app/admin/_hooks/useAdminCrud";
 import { supabase } from "@/lib/supabase";
 import styles from "./schedule-admin.module.css";
 
@@ -80,17 +81,28 @@ export default function ArtistScheduleAdminPage() {
   const artistId = useParams<{ id: string }>()?.id;
   const [artistName, setArtistName] = useState("");
   const [items, setItems] = useState<ScheduleRow[]>([]);
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [snapshot, setSnapshot] = useState("");
   const [tab, setTab] = useState<Tab>("calendar");
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDateKey(today()));
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
-  const dirty = Boolean(draft && JSON.stringify(draft) !== snapshot);
+
+  const {
+    draft,
+    setDraft,
+    snapshot,
+    setSnapshot,
+    dirty,
+    loading,
+    setLoading,
+    saving,
+    setSaving,
+    deleting,
+    setDeleting,
+    deleteOpen,
+    setDeleteOpen,
+    error,
+    setError,
+    toast,
+    setToast,
+  } = useAdminCrud<Draft>({ initialDraft: null });
   const currentMonthKey = monthKey(calendarMonth);
   const calendarTitle = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(calendarMonth);
   const calendarDays = useMemo(() => {
@@ -134,11 +146,6 @@ export default function ArtistScheduleAdminPage() {
   }, [artistId]);
 
   useEffect(() => { void Promise.resolve().then(() => loadItems()); }, [loadItems]);
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2600);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); };
     window.addEventListener("beforeunload", warn);

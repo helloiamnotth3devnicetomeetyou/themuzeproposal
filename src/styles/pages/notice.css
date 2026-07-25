@@ -46,7 +46,7 @@
 .notice-public-page button:focus-visible,
 .notice-public-page input:focus-visible { outline: 2px solid var(--color-brand-pink); outline-offset: 2px; }
 
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
   .notice-public-shell { grid-template-columns: 1fr; }
   .notice-public-rail { border-right: 0; border-bottom: 1px solid var(--border-default); }
   .notice-public-header { padding: 20px; }
@@ -58,7 +58,7 @@
   .notice-public-rail-count { display: none; }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 480px) {
   .notice-public-page { padding: 96px 0 0; }
   .notice-public-shell { min-height: calc(100vh - 96px); border-right: 0; border-left: 0; border-radius: 0; }
   .notice-public-header { padding: 18px 17px; }

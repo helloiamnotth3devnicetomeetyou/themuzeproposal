@@ -72,13 +72,13 @@
 .calendarFooter p span { display:flex; align-items:center; gap:4px; }
 .calendarFooter p svg { width:9px; height:9px; }
 
-@media (max-width:1050px) {
+@media (max-width: 1024px) {
   .dayCell { min-height:98px; padding:6px; }
   .eventChip { padding-right:4px; padding-left:4px; }
   .eventChip time { display:none; }
 }
 
-@media (max-width:700px) {
+@media (max-width: 768px) {
   .calendarToolbar { align-items:flex-start; flex-direction:column; gap:13px; }
   .calendarControls { width:100%; }
   .addScheduleButton { margin-left:auto; }

@@ -111,7 +111,7 @@
   color: var(--palette-061b0d);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 768px) {
   .home-stream-actions {
     width: 100%;
     flex-wrap: wrap;

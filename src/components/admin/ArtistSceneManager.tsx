@@ -3,12 +3,13 @@
 import { BRAND_PINK_HEX } from "@/lib/design-tokens";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { LuImagePlus, LuMousePointer2, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { supabase } from "@/lib/supabase";
-import { normalizeOutline, outlineToPath, simplifyOutline, type ArtistScene, type ScenePoint } from "@/lib/artist-scenes";
+import { normalizeOutline, simplifyOutline, type ArtistScene, type ScenePoint } from "@/lib/artist-scenes";
 import styles from "./ArtistSceneManager.module.css";
+import SceneCanvas from "./SceneCanvas";
 
 type MemberLookup = {
   id: string;
@@ -239,37 +240,6 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     onToast("장면을 삭제했습니다.");
   };
 
-  const pointFromEvent = (event: PointerEvent<SVGSVGElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return {
-      x: Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100)),
-      y: Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100)),
-    };
-  };
-
-  const startOutline = (event: PointerEvent<SVGSVGElement>) => {
-    if (!selectedMemberId) return;
-    drawingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setDraftOutline([pointFromEvent(event)]);
-  };
-
-  const continueOutline = (event: PointerEvent<SVGSVGElement>) => {
-    if (!drawingRef.current) return;
-    const next = pointFromEvent(event);
-    setDraftOutline((current) => {
-      const previous = current[current.length - 1];
-      if (previous && Math.hypot(next.x - previous.x, next.y - previous.y) < .16) return current;
-      return [...current, next];
-    });
-  };
-
-  const finishOutline = () => {
-    if (!drawingRef.current) return;
-    drawingRef.current = false;
-    setDraftOutline((current) => simplifyOutline(current));
-  };
-
   const saveOutline = async () => {
     if (!selectedScene || !selectedMemberId || draftOutline.length < 3) return onError("멤버 외곽선을 먼저 한 바퀴 그려주세요.");
     setBusy(true);
@@ -329,8 +299,6 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (maskInputRef.current) maskInputRef.current.value = "";
   };
 
-  const renderedOutline = useMemo(() => outlineToPath(draftOutline), [draftOutline]);
-
   if (!artistId) return <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>아티스트를 먼저 저장하세요.</b></div>;
   if (loading) return <LoadingIndicator label="인터랙티브 장면을 불러오는 중" className="min-h-[360px]" />;
   if (schemaMissing) return <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>019_artist_scenes.sql 적용이 필요합니다.</b><span>스키마 적용 후 이 탭에서 장면과 멤버 실루엣을 편집할 수 있습니다.</span></div>;
@@ -366,25 +334,16 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
             })}</div>
           </div>
 
-          <div className={styles.canvasWrap}>
-            <div className={styles.canvas} style={{ aspectRatio: sceneRatio }}>
-              <img
-                src={selectedScene.image_url}
-                alt={selectedScene.title}
-                draggable={false}
-                onLoad={(event) => syncSceneDimensions(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)}
-              />
-              <div className={styles.safeArea} aria-hidden="true">
-                <span>확대 안전 영역 · 116%</span>
-              </div>
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" onPointerDown={startOutline} onPointerMove={continueOutline} onPointerUp={finishOutline} onPointerCancel={finishOutline}>
-                {selectedScene.artist_scene_members.filter((region) => region.member_id !== selectedMemberId).map((region) => <path key={region.id} d={outlineToPath(region.outline)} className={styles.savedOutline} />)}
-                {renderedOutline && <path d={renderedOutline} className={styles.draftOutline} />}
-                {draftOutline.map((point, index) => index % Math.max(1, Math.floor(draftOutline.length / 28)) === 0 ? <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={.22} /> : null)}
-              </svg>
-              <div className={styles.canvasHint}><LuMousePointer2 aria-hidden="true" />인물 외곽을 누른 채 한 바퀴 그리세요</div>
-            </div>
-          </div>
+          <SceneCanvas
+            selectedScene={selectedScene}
+            selectedMemberId={selectedMemberId}
+            draftOutline={draftOutline}
+            setDraftOutline={setDraftOutline}
+            drawingRef={drawingRef}
+            syncSceneDimensions={syncSceneDimensions}
+            simplifyOutline={simplifyOutline}
+            sceneRatio={sceneRatio}
+          />
 
           <aside className={styles.outlineTools}>
             <div><span>선택 멤버</span><b>{selectedMember?.eng_name || selectedMember?.name || "멤버 선택"}</b><small>{draftOutline.length ? `${draftOutline.length}개 윤곽 포인트` : "아직 외곽선이 없습니다."}</small></div>
