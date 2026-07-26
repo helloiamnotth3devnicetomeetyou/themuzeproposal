@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
-import { simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
+import { normalizeSceneLink, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
@@ -179,6 +179,11 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (!selectedScene) return;
     setBusy(true);
     onError("");
+    const linkUrl = selectedScene.link_url?.trim() || null;
+    if (linkUrl && !normalizeSceneLink(linkUrl)) {
+      setBusy(false);
+      return onError("장면 링크는 https:// 주소 또는 /로 시작하는 내부 경로를 입력해 주세요.");
+    }
     if (selectedScene.is_hero) {
       const unsetResult = await supabase.from("artist_scenes").update({ is_hero: false }).eq("artist_id", selectedScene.artist_id).neq("id", selectedScene.id);
       if (unsetResult.error) {
@@ -191,6 +196,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       title_ko: selectedScene.title_ko?.trim() || selectedScene.title.trim(),
       title_en: selectedScene.title_en?.trim() || null,
       title_ja: selectedScene.title_ja?.trim() || null,
+      link_url: linkUrl,
       is_hero: selectedScene.is_hero,
       is_published: selectedScene.is_published,
     }).eq("id", selectedScene.id);
@@ -299,6 +305,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           <label><span>장면 이름 (한국어)</span><input className="admin-input" value={selectedScene.title_ko || ""} onChange={(event) => patchScene({ title_ko: event.target.value })} /></label>
           <label><span>장면 이름 (영어)</span><input className="admin-input" value={selectedScene.title_en || ""} onChange={(event) => patchScene({ title_en: event.target.value })} /></label>
           <label><span>장면 이름 (일본어)</span><input className="admin-input" value={selectedScene.title_ja || ""} onChange={(event) => patchScene({ title_ja: event.target.value })} /></label>
+          <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => patchScene({ is_hero: event.target.checked })} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
           <button type="button" className={styles.danger} disabled={busy} onClick={() => void deleteScene()}><LuTrash2 aria-hidden="true" />삭제</button>

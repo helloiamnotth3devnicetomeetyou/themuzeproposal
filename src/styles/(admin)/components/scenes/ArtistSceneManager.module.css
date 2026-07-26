@@ -24,8 +24,9 @@
 .sceneTabs .isSelected img { filter:none; opacity:1; }
 
 .sceneSettings { display:grid; grid-template-columns:minmax(180px,1fr) auto auto auto auto; align-items:end; gap:8px; padding:12px; border:1px solid var(--border-default); border-radius:10px; background:var(--bg-card); }
-.sceneSettings > label:first-child > span { display:block; margin-bottom:7px; color:var(--text-muted); font-size:8px; font-weight:700; }
+.sceneSettings > label:not(.toggle) > span { display:block; margin-bottom:7px; color:var(--text-muted); font-size:8px; font-weight:700; }
 .sceneSettings input[type=text],.sceneSettings input:not([type]) { height:36px; }
+.sceneLinkField { grid-column:1/-1; }
 .toggle { display:flex; height:36px; align-items:center; gap:7px; padding:0 10px; border:1px solid var(--border-default); border-radius:7px; color:var(--text-secondary); font-size:8px; font-weight:700; }
 .toggle input { accent-color:var(--color-brand-pink); }
 .danger { color:var(--palette-df7777)!important; }

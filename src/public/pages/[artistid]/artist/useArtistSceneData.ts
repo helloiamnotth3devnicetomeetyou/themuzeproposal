@@ -6,7 +6,7 @@ import { normalizeOutline, type ArtistScene } from "@/core/utils/artist-scenes";
 import type { Artist, ArtistSceneData, Member } from "./artist-scene-types";
 
 const memberSelect = "id,slug,name,eng_name,name_ko,name_en,name_ja,role_ko,role_en,role_ja,birth,mbti,image_url,color,bio_ko,bio_en,bio_ja,sort_order";
-const sceneSelect = "id,artist_id,title,title_ko,title_en,title_ja,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
+const sceneSelect = "id,artist_id,title,title_ko,title_en,title_ja,link_url,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
 
 function normalizeScene(value: ArtistScene): ArtistScene {
   return { ...value, artist_scene_members: (value.artist_scene_members ?? []).map((region) => ({ ...region, outline: normalizeOutline(region.outline) })).filter((region) => region.outline.length >= 3).sort((a, b) => a.sort_order - b.sort_order) };
@@ -41,7 +41,7 @@ export function useArtistSceneData({ artistSlug, profilePreview, memberPreview }
           name_en: legacy.data.eng_name,
           name_ja: null,
           artist_members: legacy.data.artist_members.map((member) => ({ ...member, name_ko: member.name, name_en: member.eng_name, name_ja: null })),
-          artist_scenes: legacy.data.artist_scenes.map((scene) => ({ ...scene, title_ko: scene.title, title_en: null, title_ja: null })),
+          artist_scenes: legacy.data.artist_scenes.map((scene) => ({ ...scene, title_ko: scene.title, title_en: null, title_ja: null, link_url: null })),
         } : null,
       } as typeof result;
     }
@@ -51,7 +51,7 @@ export function useArtistSceneData({ artistSlug, profilePreview, memberPreview }
     let members = [...(fetched?.artist_members ?? [])].sort((a, b) => a.sort_order - b.sort_order);
     if (previewMember) members = [...members.filter((member) => member.id !== previewMember.id), previewMember].sort((a, b) => a.sort_order - b.sort_order);
     let scenes = [...(fetched?.artist_scenes ?? [])].filter((scene) => scene.is_published).map(normalizeScene).sort((a, b) => Number(b.is_hero) - Number(a.is_hero) || a.sort_order - b.sort_order);
-    if (!scenes.length && artist.image_url) scenes = [{ id: "legacy-hero", artist_id: artist.id, title: "Main scene", title_ko: "메인 장면", title_en: "Main scene", title_ja: "メインシーン", image_url: artist.image_url, image_width: null, image_height: null, is_hero: true, is_published: true, sort_order: 0, artist_scene_members: [] }];
+    if (!scenes.length && artist.image_url) scenes = [{ id: "legacy-hero", artist_id: artist.id, title: "Main scene", title_ko: "메인 장면", title_en: "Main scene", title_ja: "メインシーン", link_url: null, image_url: artist.image_url, image_width: null, image_height: null, is_hero: true, is_published: true, sort_order: 0, artist_scene_members: [] }];
     setData({ artist, members, scenes });
     setError(result.error?.message || (!artist.image_url && !scenes.length ? "No hero scene has been published." : ""));
     setLoading(false);

@@ -87,10 +87,12 @@
 .sceneStrip .isActiveScene { --target-opacity:1; width:212px; flex-basis:212px; border-width:2px; box-shadow:0 0 0 1px color-mix(in srgb,var(--artist-accent) 36%,transparent),0 12px 32px var(--alpha-000000-42); }
 .sceneStrip button:hover { transform:translateY(-4px); }
 .sceneStrip button:hover img,.sceneStrip .isActiveScene img { transform:scale(1.06); }
-.discographyLink,.resetButton { display:flex; height:44px; align-items:center; gap:8px; padding:0 14px; border:1px solid var(--alpha-ffffff-16); background:var(--alpha-050505-54); color:var(--color-static-white); font-size:7px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; backdrop-filter:blur(10px); white-space:nowrap; }
+.sceneLinkButton,.discographyLink,.resetButton { display:flex; height:44px; align-items:center; gap:8px; padding:0 14px; border:1px solid var(--alpha-ffffff-16); background:var(--alpha-050505-54); color:var(--color-static-white); font-size:7px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; backdrop-filter:blur(10px); white-space:nowrap; }
+.sceneLinkButton { position:relative; width:44px; justify-content:center; padding:0; }
+.sceneLinkFavicon { position:absolute; width:20px; height:20px; border-radius:4px; background-position:center; background-repeat:no-repeat; background-size:contain; }
 .resetButton { cursor:pointer; }
-.discographyLink:hover,.discographyLink:focus-visible,.resetButton:hover,.resetButton:focus-visible { border-color:var(--artist-accent); color:var(--artist-accent); outline:none; }
-.discographyLink svg,.resetButton svg { width:14px; height:14px; }
+.sceneLinkButton:hover,.sceneLinkButton:focus-visible,.discographyLink:hover,.discographyLink:focus-visible,.resetButton:hover,.resetButton:focus-visible { border-color:var(--artist-accent); color:var(--artist-accent); outline:none; }
+.sceneLinkButton svg,.discographyLink svg,.resetButton svg { width:14px; height:14px; }
 
 .sceneSweep { position:absolute; z-index:12; top:0; bottom:0; width:18vw; pointer-events:none; background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--artist-accent) 22%,var(--color-static-white)),transparent); filter:blur(16px); opacity:0; animation:scene-sweep .72s ease both; }
 .statePage { display:flex; min-height:100dvh; align-items:center; justify-content:center; flex-direction:column; gap:18px; background:var(--palette-080808); color:var(--color-static-white); }

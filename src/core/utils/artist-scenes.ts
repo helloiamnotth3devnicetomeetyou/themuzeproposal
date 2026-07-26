@@ -18,6 +18,7 @@ export type ArtistScene = {
   title_ko: string | null;
   title_en: string | null;
   title_ja: string | null;
+  link_url: string | null;
   image_url: string;
   image_width: number | null;
   image_height: number | null;
@@ -26,6 +27,18 @@ export type ArtistScene = {
   sort_order: number;
   artist_scene_members: ArtistSceneRegion[];
 };
+
+export function normalizeSceneLink(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:" ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
