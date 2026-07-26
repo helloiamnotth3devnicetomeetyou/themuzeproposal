@@ -138,13 +138,19 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             <div className="absolute inset-x-0 bottom-16 z-20 mx-auto flex max-w-7xl items-end justify-between gap-6 px-6 md:bottom-20">
               <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
                 <span
-                  className="text-sm font-medium uppercase md:text-base"
+                  className="text-xs font-medium uppercase tracking-wider"
                   style={{
                     opacity: isActive ? undefined : 0,
                     animation: isActive ? "fadeInUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                   }}
                 >
-                  <span className="text-brand-pink">{slide.artistName}</span> {slide.type}
+                  <span className="text-brand-pink">{slide.artistName}</span>
+                  {slide.type && (
+                    <>
+                      <span style={{ color: "var(--alpha-ffffff-3)", margin: "0 0.4em" }}>·</span>
+                      <span style={{ color: "var(--color-static-white)" }}>{slide.type}</span>
+                    </>
+                  )}
                 </span>
                 <h2
                   className="font-hero text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"

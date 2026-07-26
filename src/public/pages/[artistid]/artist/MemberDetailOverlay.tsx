@@ -1,13 +1,9 @@
-import { LuArrowLeft, LuArrowRight, LuChevronDown, LuX } from "react-icons/lu";
-import { localizeText } from "@/core/i18n/localized";
-import { useLocale } from "@/core/providers/LocaleContext";
-import type { Member, SceneCopy } from "./artist-scene-types";
+import { LuArrowLeft, LuArrowRight, LuX } from "react-icons/lu";
+import { getEnglishFirstMemberName, type Member, type SceneCopy } from "./artist-scene-types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
-export default function MemberDetailOverlay({ artistName, member, memberBio, panelLeft, groupFocused, groupBio, expanded, copy, onClose, onNavigate, onToggleBio }: { artistName: string; member: Member | null; memberBio: string; panelLeft: boolean; groupFocused: boolean; groupBio: string; expanded: boolean; copy: SceneCopy; onClose: () => void; onNavigate: (direction: -1 | 1) => void; onToggleBio: () => void }) {
-  const { locale } = useLocale();
-  const memberName = member ? localizeText({ ko: member.name_ko ?? member.name, en: member.name_en ?? member.eng_name, ja: member.name_ja }, locale, member.name) : "";
+export default function MemberDetailOverlay({ member, memberBio, panelLeft, copy, onClose, onNavigate }: { member: Member | null; memberBio: string; panelLeft: boolean; copy: SceneCopy; onClose: () => void; onNavigate: (direction: -1 | 1) => void }) {
+  const memberName = member ? getEnglishFirstMemberName(member) : "";
   if (member) return <aside key={member.id} className={`${styles.profilePanel} ${panelLeft ? styles.panelLeft : styles.panelRight}`} aria-live="polite"><button type="button" className={styles.closeButton} onClick={onClose} aria-label={copy.close}><LuX aria-hidden="true" /></button><h1>{memberName}</h1>{member.name !== memberName && <p className={styles.nativeName}>{member.name}</p>}<div className={styles.memberBio}><p>{memberBio}</p></div><div className={styles.memberArrows}><button type="button" onClick={() => onNavigate(-1)} aria-label={copy.previous}><LuArrowLeft aria-hidden="true" /></button><button type="button" onClick={() => onNavigate(1)} aria-label={copy.next}><LuArrowRight aria-hidden="true" /></button></div></aside>;
-  if (!groupFocused) return null;
-  return <aside className={`${styles.profilePanel} ${styles.groupPanel} ${styles.panelLeft}`} aria-live="polite"><button type="button" className={styles.closeButton} onClick={onClose} aria-label={copy.close}><LuX aria-hidden="true" /></button><span className={styles.groupEyebrow}>{copy.groupProfile}</span><h1>{artistName}</h1>{groupBio && <div className={`${styles.groupBio} ${expanded ? styles.isGroupBioExpanded : ""}`}><p id="group-artist-bio">{groupBio}</p><button type="button" className={styles.groupBioToggle} aria-expanded={expanded} aria-controls="group-artist-bio" onClick={onToggleBio}>{expanded ? copy.collapse : copy.expand}<LuChevronDown aria-hidden="true" /></button></div>}</aside>;
+  return null;
 }

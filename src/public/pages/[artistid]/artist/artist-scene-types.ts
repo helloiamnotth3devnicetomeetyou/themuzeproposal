@@ -17,3 +17,12 @@ export type Member = {
 
 export type ArtistSceneData = { artist: Artist; members: Member[]; scenes: ArtistScene[] };
 export type SceneCopy = { select: string; scene: string; close: string; previous: string; next: string; discography: string; profile: string; groupProfile: string; expand: string; collapse: string };
+
+export function getEnglishFirstMemberName(member: Member) {
+  return member.name_en?.trim()
+    || member.eng_name?.trim()
+    || member.name.trim()
+    || member.name_ko?.trim()
+    || member.name_ja?.trim()
+    || "";
+}
