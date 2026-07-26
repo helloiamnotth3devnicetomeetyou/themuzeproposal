@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
   images: {
     // Keep the built-in optimizer active for both local and Supabase-hosted media.
     unoptimized: false,
+    minimumCacheTTL: 604800,
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 85],
     remotePatterns: storageUrl ? [new URL(`${storageUrl}/**`)] : [],

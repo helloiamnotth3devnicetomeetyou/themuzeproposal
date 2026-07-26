@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
 import { SiSpotify, SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
@@ -116,7 +117,6 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 fill
                 sizes="100vw"
                 priority={index === 0}
-                unoptimized={slide.imageUrl.startsWith("http")}
                 className="object-cover object-center"
                 style={{
                   animation: isActive ? "kenBurnsIn 6s ease-out forwards" : undefined,
@@ -175,12 +175,12 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                     animation: isActive ? "fadeInUp 0.9s 0.65s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                   }}
                 >
-                  <a
+                  <Link
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
                     className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-7 text-xs font-black tracking-widest text-[var(--color-static-black)] shadow-lg shadow-brand-pink/20 transition-transform duration-slow hover:scale-105 hover:bg-brand-pink/90"
                   >
                     {t.hero.exploreBtn}
-                  </a>
+                  </Link>
                   {(slide.youtubeUrl || slide.spotifyId) && (
                     <div className="home-stream-actions">
                       <button

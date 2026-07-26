@@ -3,15 +3,21 @@
 import { Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PreviewProvider } from "@/core/preview/PreviewProvider";
+import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import type { ArtistNavigationItem } from "./navbar-types";
 
 export default function MainLayout({
   children,
   draftModeEnabled = false,
+  initialArtists,
+  initialSettings,
 }: {
   children: React.ReactNode;
   draftModeEnabled?: boolean;
+  initialArtists: ArtistNavigationItem[];
+  initialSettings: SiteSettingsPreviewPayload;
 }) {
   const pathname = usePathname();
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
@@ -82,7 +88,7 @@ export default function MainLayout({
   const layoutKey = getLayoutKey(pathname);
   const content = (
     <>
-      <Navbar />
+      <Navbar initialArtists={initialArtists} />
       <div
         key={layoutKey}
         className={`flex flex-1 flex-col animate-page-fade ${
@@ -91,7 +97,9 @@ export default function MainLayout({
       >
         {children}
       </div>
-      {!isImmersiveDiscography && !isImmersiveArtist && <Footer />}
+      {!isImmersiveDiscography && !isImmersiveArtist && (
+        <Footer initialSettings={initialSettings} />
+      )}
     </>
   );
 

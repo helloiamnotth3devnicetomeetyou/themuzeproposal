@@ -28,7 +28,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <div className="admin-layout cms-shell">
             <Sidebar />
             <div className="cms-workspace">
-              <main className={`cms-content ${isFullBleed ? "is-full-bleed" : ""}`}>
+              <main key={pathname} className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""}`}>
                 <div className="cms-content-inner">{children}</div>
               </main>
             </div>

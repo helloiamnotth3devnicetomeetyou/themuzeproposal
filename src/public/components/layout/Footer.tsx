@@ -7,6 +7,7 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
 import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
 import { useSiteSettings } from "@/public/features/settings/useSiteSettings";
+import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 
 const isSafeExternalUrl = (value: string) => {
   try {
@@ -17,10 +18,10 @@ const isSafeExternalUrl = (value: string) => {
   }
 };
 
-export default function Footer() {
+export default function Footer({ initialSettings }: { initialSettings: SiteSettingsPreviewPayload }) {
   const { t, locale } = useLocale();
   const { theme } = useTheme();
-  const { settings } = useSiteSettings();
+  const { settings } = useSiteSettings(initialSettings);
   const isDark = theme === "dark";
   const companyName = settings.company[`name_${locale}`] || settings.company.name_en || settings.company.name_ko || t.footer.companyName;
   const address = settings.company[`address_${locale}`] || settings.company.address_en || settings.company.address_ko || t.footer.address;

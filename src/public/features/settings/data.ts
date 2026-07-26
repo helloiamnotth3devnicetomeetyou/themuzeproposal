@@ -1,0 +1,63 @@
+import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
+import { DEFAULT_HISTORY, normalizeHistory } from "@/core/content/site-content";
+import { detectSocialPlatform } from "@/core/content/social-icons";
+
+export const EMPTY_SETTINGS: SiteSettingsPreviewPayload = {
+  company: {
+    name_ko: "",
+    name_en: "",
+    name_ja: "",
+    address_ko: "",
+    address_en: "",
+    address_ja: "",
+    email: "",
+  },
+  history: DEFAULT_HISTORY,
+  footer: { copyright: "" },
+  social: [],
+};
+
+export const normalizeSocial = (value: unknown): SiteSettingsPreviewPayload["social"] => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => {
+      if (!item || typeof item !== "object") return [];
+      const candidate = item as Record<string, unknown>;
+      const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
+      if (!url) return [];
+      return [{
+        id: typeof candidate.id === "string" ? candidate.id : `site-social-${index}`,
+        platform: detectSocialPlatform(url) !== "other"
+          ? detectSocialPlatform(url)
+          : (typeof candidate.platform === "string" ? candidate.platform : "other"),
+        label: typeof candidate.label === "string" ? candidate.label : "",
+        url,
+      }];
+    });
+  }
+
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([platform, url], index) =>
+    typeof url === "string" && url.trim()
+      ? [{ id: `site-social-${index}`, platform, label: "", url: url.trim() }]
+      : [],
+  );
+};
+
+export function normalizeSiteSettings(
+  rows: Array<{ key: string; value: unknown }> | null | undefined,
+): SiteSettingsPreviewPayload {
+  const next = structuredClone(EMPTY_SETTINGS);
+
+  rows?.forEach((item) => {
+    if (item.key === "company" && item.value && typeof item.value === "object") {
+      next.company = { ...next.company, ...(item.value as Partial<typeof next.company>) };
+    }
+    if (item.key === "history") next.history = normalizeHistory(item.value);
+    if (item.key === "footer" && item.value && typeof item.value === "object") {
+      next.footer = { ...next.footer, ...(item.value as Partial<typeof next.footer>) };
+    }
+    if (item.key === "social") next.social = normalizeSocial(item.value);
+  });
+
+  return next;
+}

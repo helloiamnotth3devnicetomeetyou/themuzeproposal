@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: ["/images/og_image.png"],
   },
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 const isLocale = (value?: string): value is Locale => value === "ko" || value === "en" || value === "ja";

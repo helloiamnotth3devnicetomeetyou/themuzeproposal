@@ -129,6 +129,7 @@ export default function About() {
                 src="/images/logo.png"
                 alt="THE MUZE Logo Emblem"
                 fill
+                sizes="256px"
                 className="object-contain"
                 style={isDark ? { filter: "invert(1)" } : {}}
               />
