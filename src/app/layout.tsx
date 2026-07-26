@@ -7,6 +7,8 @@ import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
 import { getSiteUrl } from "@/core/config/public-env";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 
+import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
+
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
 export const metadata: Metadata = {
@@ -37,7 +39,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>
-          <LocaleProvider initialLocale={initialLocale}>{children}</LocaleProvider>
+          <LocaleProvider initialLocale={initialLocale}>
+            <DisclaimerBanner />
+            {children}
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

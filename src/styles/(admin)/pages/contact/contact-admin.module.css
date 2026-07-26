@@ -1,0 +1,45 @@
+.categoryTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-surface) 64%, var(--bg-card));
+}
+
+.categoryTabs button {
+  position: relative;
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 21px;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font: 700 9px var(--font-sans);
+  cursor: pointer;
+}
+
+.categoryTabs button + button { border-left: 1px solid var(--border-default); }
+.categoryTabs button::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: transparent; content: ""; }
+.categoryTabs button svg { width: 13px; height: 13px; }
+.categoryTabs button span { flex: 1; text-align: left; }
+.categoryTabs button small { display: grid; min-width: 23px; height: 23px; place-items: center; border-radius: 999px; background: var(--bg-subtle); color: var(--text-muted); font-size: 7px; }
+.categoryTabs button:hover,
+.categoryTabs button.active { color: var(--text-primary); }
+.categoryTabs button.active::after { background: var(--color-brand-pink); }
+.categoryTabs button.active svg,
+.categoryTabs button.active small { color: var(--color-brand-pink); }
+
+.noAttachment {
+  margin: 18px 0 0;
+  padding: 18px;
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  color: var(--text-faint);
+  font-size: 9px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .categoryTabs button { padding-inline: 14px; }
+}

@@ -8,6 +8,8 @@
   overflow: hidden;
   background: var(--bg-base);
   color: var(--text-primary);
+  padding-top: var(--banner-height, 0px);
+  transition: padding-top var(--duration-slow) ease;
 }
 
 .admin-app-frame {

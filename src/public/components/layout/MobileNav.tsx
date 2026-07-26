@@ -81,6 +81,7 @@ export default function MobileNav({
           })}
           <Link href="/notice" onClick={onClose} className={mobileLinkClass("/notice")}>{t.nav.notice}</Link>
           <Link href="/protect" onClick={onClose} className={mobileLinkClass("/protect")}>PROTECT</Link>
+          <Link href="/contact" onClick={onClose} className={mobileLinkClass("/contact")}>CONTACT</Link>
           {isAdmin && <Link href="/admin" onClick={onClose} className={mobileLinkClass("/admin")}>ADMIN</Link>}
         </nav>
       </div>

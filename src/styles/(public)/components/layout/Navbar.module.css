@@ -1,11 +1,11 @@
 /* Navbar CSS module */
 .header {
   position: fixed;
-  top: 0;
+  top: var(--banner-height, 0px);
   left: 0;
   right: 0;
   z-index: 50;
-  transition: background-color var(--duration-slow) ease, backdrop-filter var(--duration-slow) ease, height var(--duration-slow) ease;
+  transition: top var(--duration-slow) ease, background-color var(--duration-slow) ease, backdrop-filter var(--duration-slow) ease, height var(--duration-slow) ease;
 }
 
 .headerAdmin {

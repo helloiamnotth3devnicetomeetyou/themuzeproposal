@@ -114,6 +114,9 @@ export default function MobileMenu({
           <Link href="/protect" onClick={closeMobileMenu} className={mobileLinkClass("/protect")}>
             PROTECT
           </Link>
+          <Link href="/contact" onClick={closeMobileMenu} className={mobileLinkClass("/contact")}>
+            CONTACT
+          </Link>
           {isAdmin && (
             <Link href="/admin" onClick={closeMobileMenu} className={mobileLinkClass("/admin")}>
               ADMIN

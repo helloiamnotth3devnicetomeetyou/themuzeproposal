@@ -9,6 +9,7 @@ import {
   LuInbox,
   LuLayoutDashboard,
   LuLogOut,
+  LuMail,
   LuPlus,
   LuSettings,
   LuShieldCheck,
@@ -27,6 +28,7 @@ const workspaceLinks = [
   { label: "전체 공지", href: "/admin/notices", icon: LuFileText },
   { label: "오디션", href: "/admin/auditions", icon: LuInbox },
   { label: "권익 보호", href: "/admin/protect", icon: LuShieldCheck },
+  { label: "문의 관리", href: "/admin/contact", icon: LuMail },
   { label: "사이트 설정", href: "/admin/settings", icon: LuSettings },
 ];
 

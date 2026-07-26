@@ -1,0 +1,181 @@
+.page {
+  min-height: 100vh;
+  padding: 154px 0 112px;
+  background: var(--bg-base);
+}
+
+.shell {
+  display: grid;
+  width: 100%;
+  max-width: 1600px;
+  box-sizing: border-box;
+  grid-template-columns: minmax(250px, .3fr) minmax(0, .7fr);
+  gap: clamp(48px, 6vw, 108px);
+  margin: 0 auto;
+  padding: 0 clamp(28px, 4vw, 68px);
+}
+
+.header { min-width: 0; align-self: stretch; }
+.headerSticky { position: sticky; top: 154px; }
+.header h1 { margin: 0; color: var(--text-primary); font-family: var(--font-display); font-size: clamp(42px, 4.5vw, 72px); font-weight: 800; letter-spacing: -.065em; line-height: .86; white-space: nowrap; }
+.intro { max-width: 290px; margin: 30px 0 0 4px; color: var(--text-muted); font-size: 11px; line-height: 1.75; }
+
+.tabs {
+  display: grid;
+  width: min(290px, 100%);
+  grid-template-columns: 1fr;
+  margin: 34px 0 0 4px;
+  border-block: 1px solid var(--border-default);
+}
+.tabs button { position: relative; display: flex; min-height: 58px; align-items: center; padding: 0 14px; border: 0; background: transparent; color: var(--text-faint); font-family: var(--font-sans); text-align: left; cursor: pointer; }
+.tabs button + button { border-top: 1px solid var(--border-default); }
+.tabs button::after { position: absolute; inset: 0 auto 0 -1px; width: 2px; background: transparent; content: ""; }
+.tabs button span { font-size: var(--text-xs); font-weight: 700; }
+.tabs button:hover,
+.tabs .activeTab { color: var(--text-primary); }
+.tabs .activeTab::after { background: var(--color-brand-pink); }
+
+.contentColumn { min-width: 0; align-self: start; border-top: 2px solid var(--text-primary); }
+.formHeader { position: relative; padding: 34px 14px 30px; border-bottom: 1px solid var(--border-default); }
+.formHeader h2 { margin: 0; color: var(--text-primary); font-size: clamp(19px, 2vw, 27px); letter-spacing: -.04em; }
+.formHeader > span { position: absolute; right: 14px; bottom: 33px; color: var(--text-faint); font-size: 9px; }
+.formHeader i,
+.formRow i,
+.rowLabel i { color: var(--color-brand-pink); font-style: normal; }
+
+.error { display: flex; min-height: 52px; align-items: center; gap: 11px; margin: 22px 14px 0; padding: 13px 16px; border: 1px solid var(--alpha-e56969-32); background: var(--alpha-e56969-06); color: var(--palette-e47777); font-size: var(--text-xs); }
+.error svg { width: 17px; height: 17px; flex: 0 0 17px; }
+.error span { flex: 1; }
+.error button { border: 0; background: transparent; color: inherit; cursor: pointer; }
+
+.form { display: flex; flex-direction: column; gap: 26px; padding: 42px 14px 0; }
+.formRow { display: grid; min-width: 0; grid-template-columns: 176px minmax(0, 1fr); align-items: center; gap: 34px; }
+.formRow > label,
+.rowLabel { color: var(--text-secondary); font-size: 13px; font-weight: 650; line-height: 1.45; }
+.alignTop { align-items: start; }
+.alignTop > label,
+.alignTop > .rowLabel { padding-top: 19px; }
+.customSelect > button { height: 56px; padding: 0 16px; border-color: var(--border-strong); border-radius: 2px; background: transparent; font-size: var(--text-sm); font-weight: 500; }
+.customSelect > button:hover { background: transparent; }
+
+.formRow > input,
+.textareaControl textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 2px;
+  outline: 0;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.formRow > input { height: 56px; padding: 0 16px; }
+.formRow input::placeholder,
+.formRow textarea::placeholder { color: var(--text-faint) !important; }
+.formRow input:hover,
+.formRow textarea:hover { border-color: var(--text-muted) !important; }
+.formRow input:focus,
+.formRow textarea:focus { border-color: var(--color-brand-pink) !important; box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
+.textareaControl { position: relative; min-width: 0; }
+.textareaControl textarea { min-height: 186px; padding: 16px 16px 36px; line-height: 1.75; resize: vertical; }
+.textareaControl > span { position: absolute; right: 14px; bottom: 12px; color: var(--text-faint); font-size: 9px; pointer-events: none; }
+
+.fileArea { min-width: 0; }
+.uploadButton,
+.fileItem { display: flex; min-height: 72px; align-items: center; gap: 13px; padding: 13px 16px; border: 1px solid var(--border-strong); }
+.uploadButton { position: relative; color: var(--text-primary); cursor: pointer; transition: border-color var(--duration-fast); }
+.uploadButton:hover { border-color: var(--color-brand-pink); }
+.uploadButton > svg,
+.fileItem > svg { width: 18px; height: 18px; flex: 0 0 18px; color: var(--color-brand-pink); }
+.uploadButton > span,
+.fileItem > span { min-width: 0; flex: 1; }
+.uploadButton b,
+.uploadButton small,
+.fileItem b,
+.fileItem small { display: block; }
+.uploadButton b,
+.fileItem b { overflow: hidden; color: var(--text-primary); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.uploadButton small,
+.fileItem small { margin-top: 6px; color: var(--text-faint); font-size: 10px; }
+.uploadButton em { color: var(--color-brand-pink); font-size: 10px; font-style: normal; font-weight: 700; }
+.uploadButton input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.uploadButton:has(input:focus-visible) { outline: 2px solid var(--color-brand-pink); outline-offset: 2px; }
+.fileItem button { display: grid; width: 34px; height: 34px; place-items: center; border: 0; background: transparent; color: var(--text-faint); cursor: pointer; }
+.fileItem button:hover { color: var(--palette-e47777); }
+.fileItem button svg { width: 15px; height: 15px; }
+
+.termsBox { max-height: 210px; overflow-y: auto; padding: 20px; border: 1px solid var(--border-default); background: var(--bg-subtle); color: var(--text-muted); scrollbar-width: thin; }
+.termsBox > b { color: var(--text-primary); font-size: 11px; }
+.termsBox dl { display: grid; gap: 12px; margin: 18px 0 0; }
+.termsBox dl div { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 14px; }
+.termsBox dt { color: var(--text-secondary); font-size: 10px; font-weight: 700; }
+.termsBox dd { margin: 0; font-size: 10px; line-height: 1.65; }
+.termsBox p { margin: 16px 0 0; padding-top: 15px; border-top: 1px solid var(--border-default); font-size: 10px; line-height: 1.65; }
+.consent { position: relative; display: flex; align-items: center; gap: 11px; margin-top: 14px; color: var(--text-primary); font-size: var(--text-xs); font-weight: 650; cursor: pointer; }
+.consent input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.consent > span { display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid var(--border-strong); border-radius: 3px; color: transparent; }
+.consent > span svg { width: 12px; height: 12px; }
+.consent input:checked + span { border-color: var(--color-brand-pink); background: var(--color-brand-pink); color: var(--palette-171017); }
+.consent:has(input:focus-visible) > span { outline: 2px solid var(--color-brand-pink); outline-offset: 2px; }
+
+.submitArea { margin-top: 8px; padding-top: 30px; border-top: 1px solid var(--border-default); }
+.submit { display: flex; width: 100%; height: 58px; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--color-brand-pink); border-radius: 2px; background: var(--color-brand-pink); color: var(--palette-171017); font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 780; cursor: pointer; transition: filter var(--duration-fast), transform var(--duration-fast); }
+.submit:hover:not(:disabled) { filter: brightness(1.05); }
+.submit:active:not(:disabled) { transform: translateY(1px); }
+.submit:disabled { opacity: .55; cursor: wait; }
+.submit svg { width: 16px; height: 16px; }
+.submitArea p { max-width: 620px; margin: 14px auto 0; color: var(--text-faint); font-size: 10px; line-height: 1.65; text-align: center; }
+
+.success { display: flex; width: min(620px, calc(100% - 40px)); min-height: 540px; align-items: center; justify-content: center; flex-direction: column; margin: 2vh auto 0; text-align: center; }
+.success > svg { width: 42px; height: 42px; padding: 9px; border: 1px solid var(--color-brand-pink); border-radius: 50%; color: var(--color-brand-pink); }
+.success h1 { margin: 25px 0 0; color: var(--text-primary); font-size: clamp(27px, 4vw, 38px); letter-spacing: -.05em; }
+.success > span { margin-top: 12px; color: var(--text-muted); font-size: 13px; }
+.success dl { display: grid; width: 100%; grid-template-columns: repeat(2, 1fr); margin: 38px 0; border-block: 1px solid var(--border-default); }
+.success dl div { padding: 20px; }
+.success dl div + div { border-left: 1px solid var(--border-default); }
+.success dt { color: var(--text-faint); font-size: 10px; }
+.success dd { margin: 8px 0 0; color: var(--text-primary); font-size: 13px; font-weight: 700; }
+.success button { display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--text-primary); font-size: var(--text-xs); font-weight: 700; cursor: pointer; }
+.success button:hover { color: var(--color-brand-pink); }
+
+@media (max-width: 1024px) {
+  .page { padding-top: 124px; }
+  .shell { grid-template-columns: minmax(210px, .27fr) minmax(0, .73fr); gap: 40px; padding: 0 28px; }
+  .headerSticky { top: 124px; }
+  .header h1 { font-size: clamp(38px, 5.4vw, 56px); }
+  .formRow { grid-template-columns: 140px minmax(0, 1fr); gap: 24px; }
+}
+
+@media (max-width: 768px) {
+  .page { padding: 104px 0 64px; }
+  .shell { display: block; padding: 0 20px; }
+  .headerSticky { position: static; padding: 24px 0 38px; }
+  .header h1 { font-size: clamp(42px, 13vw, 66px); }
+  .intro { margin-top: 21px; font-size: 10px; }
+  .tabs { width: 100%; max-width: 360px; margin-top: 28px; }
+  .contentColumn { border-top-width: 2px; }
+  .formHeader > span { position: static; display: block; margin-top: 14px; }
+  .form { gap: 24px; padding-inline: 4px; }
+  .formRow { grid-template-columns: 1fr; gap: 10px; }
+  .alignTop > label,
+  .alignTop > .rowLabel { padding-top: 0; }
+  .error { margin-inline: 4px; }
+}
+
+@media (max-width: 480px) {
+  .formRow > input,
+  .textareaControl textarea { font-size: var(--text-base); }
+  .termsBox { padding: 16px; }
+  .termsBox dl div { grid-template-columns: 1fr; gap: 5px; }
+  .uploadButton { align-items: flex-start; }
+  .uploadButton em { padding-top: 2px; }
+  .success { min-height: calc(100vh - 104px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formRow input,
+  .formRow textarea,
+  .uploadButton,
+  .submit { transition: none; }
+}
