@@ -19,6 +19,7 @@ export interface DiscographyAlbum {
   color: string;
   desc: Record<Locale, string>;
   titleImage?: string;
+  typoLogoUrl?: string;
   links?: {
     youtube?: string;
     spotify?: string;
@@ -32,6 +33,7 @@ export interface RawDiscographyAlbum {
   release_date: string | null;
   cover_url: string;
   hero_image_url: string | null;
+  typo_logo_url: string | null;
   color: string | null;
   description_ko: string | null;
   description_en: string | null;

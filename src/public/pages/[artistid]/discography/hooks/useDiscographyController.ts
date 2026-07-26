@@ -26,7 +26,7 @@ import type {
 } from "../lib/types";
 import { useAudioPlayback } from "./useAudioPlayback";
 
-const ALBUM_TRANSITION_MS = 350;
+const ALBUM_TRANSITION_MS = 220;
 
 export function useDiscographyController(
   artistSlug: string,

@@ -2,22 +2,25 @@
 
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
-import { normalizeOutline, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
+import { simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
-
-type MemberLookup = {
-  id: string;
-  name: string;
-  eng_name: string | null;
-  color: string | null;
-  sort_order: number;
-};
+import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
+import {
+  ACCEPTED_MASK_TYPES,
+  ACCEPTED_SCENE_TYPES,
+  MAX_IMAGE_BYTES,
+  imageDimensions,
+  imageDimensionsFromUrl,
+  normalizeScene,
+  sceneSelect,
+  storagePathFromUrl,
+  type MemberLookup,
+} from "./artist-scene-editor-model";
 
 type Props = {
   artistId: string | null;
@@ -26,39 +29,6 @@ type Props = {
   onToast: (message: string) => void;
 };
 
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
-const ACCEPTED_SCENE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const ACCEPTED_MASK_TYPES = new Set(["image/png", "image/webp"]);
-const sceneSelect = "id,artist_id,title,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
-
-function storagePathFromUrl(url: string) {
-  const match = url.match(/\/storage\/v1\/object\/public\/artist-assets\/(.+)$/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-async function imageDimensions(file: File) {
-  const url = URL.createObjectURL(file);
-  try {
-    return await imageDimensionsFromUrl(url);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-async function imageDimensionsFromUrl(url: string) {
-  const image = new Image();
-  image.src = url;
-  await image.decode();
-  if (!image.naturalWidth || !image.naturalHeight) throw new Error("이미지 원본 크기를 확인할 수 없습니다.");
-  return { width: image.naturalWidth, height: image.naturalHeight };
-}
-
-function normalizedScene(scene: ArtistScene): ArtistScene {
-  return {
-    ...scene,
-    artist_scene_members: (scene.artist_scene_members ?? []).map((region) => ({ ...region, outline: normalizeOutline(region.outline) })),
-  };
-}
 
 export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast }: Props) {
   const sceneInputRef = useRef<HTMLInputElement>(null);
@@ -91,7 +61,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       return;
     }
     setSchemaMissing(false);
-    const nextScenes = (sceneResult.data ?? []).map(normalizedScene);
+    const nextScenes = (sceneResult.data ?? []).map(normalizeScene);
     setScenes(nextScenes);
     setMembers((memberResult.data as MemberLookup[] | null) ?? []);
     setSelectedSceneId((current) => {
@@ -314,7 +284,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
 
       {!scenes.length ? <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>인터랙티브 장면이 없습니다.</b><span>대표 이미지를 가져오거나 새 콘셉트 이미지를 추가하세요.</span></div> : <>
         <div className={styles.sceneTabs}>
-          {scenes.map((scene) => <button type="button" key={scene.id} className={scene.id === selectedSceneId ? styles.isSelected : ""} onClick={() => setSelectedSceneId(scene.id)}><img src={scene.image_url} alt="" /><span>{scene.title || "이름 없는 장면"}</span>{scene.is_hero && <i>HERO</i>}</button>)}
+          {scenes.map((scene) => <button type="button" key={scene.id} className={scene.id === selectedSceneId ? styles.isSelected : ""} onClick={() => setSelectedSceneId(scene.id)}><AdminAssetImage src={scene.image_url} alt="" sizes="120px" /><span>{scene.title || "이름 없는 장면"}</span>{scene.is_hero && <i>HERO</i>}</button>)}
         </div>
 
         {selectedScene && <div className={styles.sceneSettings}>

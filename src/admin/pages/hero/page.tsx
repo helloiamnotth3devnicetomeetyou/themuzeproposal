@@ -2,7 +2,6 @@
 
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   closestCenter,
@@ -21,94 +20,26 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
-  LuGripVertical,
   LuImage,
   LuPlus,
   LuRefreshCw,
   LuSearch,
-  LuTrash2,
 } from "react-icons/lu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
-
-type Artist = { id: string; name: string; slug: string; color: string | null };
-type Album = {
-  id: string;
-  artist_id: string;
-  title: string;
-  type: string;
-  cover_url: string | null;
-  hero_image_url: string | null;
-  color: string | null;
-  release_date: string | null;
-  is_published: boolean;
-  published_at: string | null;
-};
-type HeroSlide = { id: string; album_id: string; sort_order: number; is_active: boolean };
+import {
+  SlideDragOverlay,
+  SortableSlideCard,
+  type HeroAlbum as Album,
+  type HeroArtist as Artist,
+  type HeroSlide,
+} from "./HeroSlideCard";
 type SortMode = "hero" | "newest" | "title";
-
-type SlideCardProps = {
-  slide: HeroSlide;
-  index: number;
-  album?: Album;
-  artist?: Artist;
-  live: boolean;
-  accent: string;
-  disabled: boolean;
-  onRemove: () => void;
-};
-
-function SortableSlideCard({ slide, index, album, artist, live, accent, disabled, onRemove }: SlideCardProps) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } = useSortable({
-    id: slide.id,
-    disabled,
-    transition: { duration: 240, easing: "cubic-bezier(.22,.8,.24,1)" },
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    "--album-color": accent,
-  } as CSSProperties;
-
-  return (
-    <article ref={setNodeRef} style={style} className={`hero-slide-card ${isDragging ? "is-dragging" : ""} ${isOver ? "is-over" : ""}`}>
-      <div className="hero-slide-frame">
-        {album?.hero_image_url || album?.cover_url ? <img src={album.hero_image_url || album.cover_url || ""} alt="" /> : <i className="hero-slide-placeholder" />}
-        <span className="hero-slide-shade" />
-        <span className="hero-slide-position"><small>SLIDE</small><b>{String(index + 1).padStart(2, "0")}</b></span>
-        <button ref={setActivatorNodeRef} type="button" className="hero-slide-grab" disabled={disabled} title="끌어서 순서 변경" {...attributes} {...listeners}><LuGripVertical aria-hidden="true" /><span>끌어서 이동</span></button>
-        {!live && <span className="hero-slide-unavailable">앨범 비공개</span>}
-        <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
-      </div>
-      <footer className="hero-slide-footer">
-        <span>드래그해 노출 순서 변경</span>
-        <div>
-          <button type="button" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><LuTrash2 /></button>
-        </div>
-      </footer>
-    </article>
-  );
-}
-
-function SlideDragOverlay({ index, album, artist, accent }: Pick<SlideCardProps, "index" | "album" | "artist" | "accent">) {
-  return (
-    <article className="hero-slide-card is-overlay" style={{ "--album-color": accent } as CSSProperties}>
-      <div className="hero-slide-frame">
-        {album?.hero_image_url || album?.cover_url ? <img src={album.hero_image_url || album.cover_url || ""} alt="" /> : <i className="hero-slide-placeholder" />}
-        <span className="hero-slide-shade" />
-        <span className="hero-slide-position"><small>SLIDE</small><b>{String(index + 1).padStart(2, "0")}</b></span>
-        <span className="hero-slide-grab is-overlay-handle"><LuGripVertical aria-hidden="true" /><span>이동 중</span></span>
-        <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
-      </div>
-    </article>
-  );
-}
 
 export default function HeroAdminPage() {
   const requestConfirm = useAdminConfirm();
@@ -304,7 +235,7 @@ export default function HeroAdminPage() {
             return (
               <article key={album.id} className={`hero-admin-catalog-item ${selected ? "is-selected" : ""}`}>
                 <span className="hero-admin-catalog-cover" style={{ "--album-color": album.color || artist?.color || BRAND_PINK_HEX } as CSSProperties}>
-                  {album.cover_url ? <img src={album.cover_url} alt="" /> : <i />}
+                  {album.cover_url ? <AdminAssetImage src={album.cover_url} alt="" sizes="64px" /> : <i />}
                 </span>
                 <div><b>{album.title}</b><small>{artist?.name || "THE MUZE"} · {album.type}</small><em>{album.release_date || "발매일 미지정"}</em></div>
                 <button type="button" disabled={selected || savingId === album.id} onClick={() => void addSlide(album)}>{selected ? <><span>추가됨</span></> : <><LuPlus aria-hidden="true" /><span>메인에 추가</span></>}</button>

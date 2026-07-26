@@ -8,8 +8,6 @@ import type {
   RailPhase,
 } from "../lib/types";
 
-const ALBUMS_PER_PAGE = 6;
-
 interface AlbumDockProps {
   albumIndex: number;
   albums: DiscographyAlbum[];
@@ -31,10 +29,6 @@ export function AlbumDock({
   onSelectAlbum,
   onToggleSort,
 }: AlbumDockProps) {
-  const pageCount = Math.max(1, Math.ceil(albums.length / ALBUMS_PER_PAGE));
-  const currentPage = Math.floor(albumIndex / ALBUMS_PER_PAGE);
-  const pageStart = currentPage * ALBUMS_PER_PAGE;
-  const pageAlbums = albums.slice(pageStart, pageStart + ALBUMS_PER_PAGE);
   return (
     <div
       className="w-full py-3 border-t z-10 relative shrink-0"
@@ -88,8 +82,7 @@ export function AlbumDock({
           ref={railRef}
           className="discography-album-rail flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1"
         >
-          {pageAlbums.map((album, pageIndex) => {
-            const index = pageStart + pageIndex;
+          {albums.map((album, index) => {
             const isCurrent = index === albumIndex;
             return (
               <button
@@ -110,13 +103,13 @@ export function AlbumDock({
                         transform: "translateY(7px)",
                         opacity: 0,
                         transition: `transform var(--duration-fast) ease ${
-                          pageIndex * 25
-                        }ms, opacity 0.1s ease ${pageIndex * 25}ms`,
+                          index * 25
+                        }ms, opacity 0.1s ease ${index * 25}ms`,
                       }
                     : railPhase === "enter"
                       ? {
                           animation: `slideInItem 0.22s cubic-bezier(0.34,1.56,0.64,1) ${
-                            pageIndex * 28
+                            index * 28
                           }ms both`,
                         }
                       : {
@@ -165,29 +158,6 @@ export function AlbumDock({
           })}
         </div>
 
-        {pageCount > 1 && (
-          <div className="hidden md:flex items-center gap-1 shrink-0" aria-label="Album pages">
-            <button
-              type="button"
-              onClick={() => onSelectAlbum(Math.max(0, (currentPage - 1) * ALBUMS_PER_PAGE))}
-              disabled={currentPage === 0}
-              aria-label="Previous album page"
-              className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-white disabled:opacity-25"
-            >
-              <LuChevronLeft className="w-3 h-3" aria-hidden="true" />
-            </button>
-            <span className="min-w-7 text-center text-[8px] font-semibold text-[var(--palette-6b7280)]">{currentPage + 1}/{pageCount}</span>
-            <button
-              type="button"
-              onClick={() => onSelectAlbum(Math.min(albums.length - 1, (currentPage + 1) * ALBUMS_PER_PAGE))}
-              disabled={currentPage === pageCount - 1}
-              aria-label="Next album page"
-              className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-white disabled:opacity-25"
-            >
-              <LuChevronRight className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
-        )}
         <button
           onClick={() =>
             onSelectAlbum(Math.min(albumIndex + 1, albums.length - 1))

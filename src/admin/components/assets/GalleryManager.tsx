@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuFilter, LuImagePlus, LuSave, LuTrash2, LuUpload, LuX } from "react-icons/lu";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
+import AdminAssetImage from "./AdminAssetImage";
 
 type GalleryScope = "artist" | "album" | "member";
 
@@ -207,7 +207,7 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
             const itemAlbum = albumName(item.album_id);
             const itemMember = memberName(item.member_id);
             return <button type="button" className={`gallery-tile ${selectedItem?.id === item.id ? "is-selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)} aria-label={`${item.caption || "갤러리 이미지"} 편집`}>
-              <img src={item.image_url} alt={item.caption || "갤러리 이미지"} />
+              <AdminAssetImage src={item.image_url} alt={item.caption || "갤러리 이미지"} sizes="180px" />
               <span className={`gallery-tile-status ${item.is_published ? "is-live" : ""}`} aria-label={item.is_published ? "공개" : "비공개"} />
               {selectedItem?.id === item.id && <span className="gallery-tile-check"><LuCheck aria-hidden="true" /></span>}
               <span className="gallery-tile-overlay">
@@ -220,7 +220,7 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
 
         {selectedItem && <aside className="gallery-inspector">
           <div className="gallery-inspector-heading"><div><span>선택한 이미지</span><b>{selectedItem.caption || "이름 없는 이미지"}</b></div><button type="button" aria-label="이미지 편집 닫기" onClick={() => setSelectedId(null)}><LuX aria-hidden="true" /></button></div>
-          <div className="gallery-inspector-preview"><img src={selectedItem.image_url} alt={selectedItem.caption || "갤러리 이미지"} /></div>
+          <div className="gallery-inspector-preview"><AdminAssetImage src={selectedItem.image_url} alt={selectedItem.caption || "갤러리 이미지"} sizes="420px" /></div>
           <div className="gallery-inspector-fields">
             <label className="music-field"><span>이미지 이름</span><input className="admin-input" value={selectedItem.caption} onChange={(event) => patchItem(selectedItem.id, { caption: event.target.value })} placeholder="촬영명 또는 이미지 설명" /></label>
             {scope !== "album" && <div className="music-field"><span>앨범</span><CustomSelect ariaLabel="앨범 지정" value={selectedItem.album_id || ""} onChange={(value) => patchItem(selectedItem.id, { album_id: value || null })} options={[{ value: "", label: "앨범 미지정" }, ...albums.map((album) => ({ value: album.id, label: album.name }))]} /></div>}

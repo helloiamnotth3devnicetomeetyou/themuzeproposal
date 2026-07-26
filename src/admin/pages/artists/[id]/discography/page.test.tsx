@@ -20,8 +20,8 @@ vi.mock("@/admin/components/content/PreviewButton", () => ({ default: () => null
 vi.mock("@/core/components/feedback/LoadingIndicator", () => ({ default: () => null }));
 vi.mock("@/core/components/form/CustomSelect", () => ({ default: () => <select aria-label="album type" /> }));
 vi.mock("@/admin/hooks/useAdminPreview", () => ({ useAdminPreview: () => ({ openPreview: vi.fn(), canPreview: true }) }));
-vi.mock("@/admin/hooks/useAdminCrud", () => ({
-  useAdminCrud: () => ({
+vi.mock("@/admin/hooks/useAdminEntityEditor", () => ({
+  useAdminEntityEditor: () => ({
     draft, setDraft: mocks.setDraft, setSnapshot: vi.fn(), dirty: true, loading: false, setLoading: mocks.setLoading,
     saving: false, setSaving: vi.fn(), deleting: false, setDeleting: vi.fn(), deleteOpen: false, setDeleteOpen: vi.fn(),
     error: "", setError: mocks.setError, toast: "", setToast: vi.fn(), patchDraft: mocks.patchDraft,

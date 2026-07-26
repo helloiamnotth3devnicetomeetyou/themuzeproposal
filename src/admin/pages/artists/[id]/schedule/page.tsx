@@ -1,83 +1,33 @@
 "use client";
 
-import { SCHEDULE_CATEGORY_COLORS } from "@/core/utils/design-tokens";
-
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import { LuCake, LuCalendarDays, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuClock3, LuDisc3, LuMapPin, LuPartyPopper, LuPlus, LuRadio } from "react-icons/lu";
-import type { IconType } from "react-icons";
-import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import { LuCalendarDays, LuChevronLeft, LuChevronRight, LuClock3, LuMapPin, LuPlus } from "react-icons/lu";
+import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
-import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/artist-schedule/schedule-admin.module.css";
-
-type Category = "show" | "release" | "anniversary" | "event" | "etc";
-type Tab = "calendar" | "details" | "publish";
-type ScheduleRow = {
-  id: string;
-  event_date: string;
-  start_time: string | null;
-  category: Category;
-  title_ko: string;
-  title_en: string | null;
-  title_ja: string | null;
-  description_ko: string | null;
-  description_en: string | null;
-  description_ja: string | null;
-  location: string | null;
-  link_url: string | null;
-  is_published: boolean;
-  sort_order: number;
-};
-type Draft = {
-  id: string;
-  eventDate: string;
-  startTime: string;
-  category: Category;
-  titleKo: string;
-  titleEn: string;
-  titleJa: string;
-  descriptionKo: string;
-  descriptionEn: string;
-  descriptionJa: string;
-  location: string;
-  linkUrl: string;
-  isPublished: boolean;
-  sortOrder: number;
-};
-
-const CATEGORY: Record<Category, { label: string; icon: IconType; color: string }> = {
-  show: { label: "방송 / 공연", icon: LuRadio, color: SCHEDULE_CATEGORY_COLORS.show },
-  release: { label: "발매", icon: LuDisc3, color: SCHEDULE_CATEGORY_COLORS.release },
-  anniversary: { label: "기념일", icon: LuCake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
-  event: { label: "이벤트", icon: LuPartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
-  etc: { label: "기타", icon: LuCalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
-};
-const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
-const tabs: WorkbenchTab<Tab>[] = [
-  { id: "calendar", label: "월간 달력" },
-  { id: "details", label: "일정 정보" },
-  { id: "publish", label: "공개 설정" },
-];
-const toDateKey = (date: Date) => [
-  date.getFullYear(),
-  String(date.getMonth() + 1).padStart(2, "0"),
-  String(date.getDate()).padStart(2, "0"),
-].join("-");
-const today = () => toDateKey(new Date());
-const monthFromDateKey = (value: string) => {
-  const [year, month] = value.split("-").map(Number);
-  return new Date(year, month - 1, 1);
-};
-const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-const emptyDraft = (eventDate = today()): Draft => ({ id: "", eventDate, startTime: "", category: "event", titleKo: "", titleEn: "", titleJa: "", descriptionKo: "", descriptionEn: "", descriptionJa: "", location: "", linkUrl: "", isPublished: false, sortOrder: 0 });
-const toDraft = (row: ScheduleRow): Draft => ({ id: row.id, eventDate: row.event_date, startTime: row.start_time?.slice(0, 5) || "", category: row.category, titleKo: row.title_ko, titleEn: row.title_en || "", titleJa: row.title_ja || "", descriptionKo: row.description_ko || "", descriptionEn: row.description_en || "", descriptionJa: row.description_ja || "", location: row.location || "", linkUrl: row.link_url || "", isPublished: row.is_published, sortOrder: row.sort_order });
+import {
+  CATEGORY,
+  WEEKDAYS,
+  emptyScheduleDraft,
+  monthFromDateKey,
+  monthKey,
+  scheduleTabs,
+  scheduleToDraft,
+  toDateKey,
+  today,
+  type ScheduleDraft,
+  type ScheduleRow,
+  type ScheduleTab,
+  type Category,
+} from "./schedule-editor-model";
 
 export default function ArtistScheduleAdminPage() {
   const artistId = useParams<{ id: string }>()?.id;
@@ -86,7 +36,7 @@ export default function ArtistScheduleAdminPage() {
   const [artistColor, setArtistColor] = useState<string | null>(null);
   const [previewScheduleId] = useState(() => `preview-${crypto.randomUUID()}`);
   const [items, setItems] = useState<ScheduleRow[]>([]);
-  const [tab, setTab] = useState<Tab>("calendar");
+  const [tab, setTab] = useState<ScheduleTab>("calendar");
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDateKey(today()));
 
   const {
@@ -106,7 +56,7 @@ export default function ArtistScheduleAdminPage() {
     setError,
     toast,
     setToast,
-  } = useAdminCrud<Draft>({ initialDraft: null });
+  } = useAdminEntityEditor<ScheduleDraft>({ initialDraft: null });
   const currentMonthKey = monthKey(calendarMonth);
   const calendarTitle = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(calendarMonth);
   const calendarDays = useMemo(() => {
@@ -147,7 +97,7 @@ export default function ArtistScheduleAdminPage() {
       setItems(next);
       if (selectId) {
         const selected = next.find((item) => item.id === selectId);
-        if (selected) { const nextDraft = toDraft(selected); setDraft(nextDraft); setSnapshot(JSON.stringify(nextDraft)); }
+        if (selected) { const nextDraft = scheduleToDraft(selected); setDraft(nextDraft); setSnapshot(JSON.stringify(nextDraft)); }
       }
     }
     setLoading(false);
@@ -160,9 +110,9 @@ export default function ArtistScheduleAdminPage() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const patch = (value: Partial<Draft>) => setDraft((current) => current ? { ...current, ...value } : current);
-  const add = (eventDate = today()) => { const next = emptyDraft(eventDate); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(eventDate)); setTab("details"); setError(""); };
-  const select = (item: ScheduleRow) => { const next = toDraft(item); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(item.event_date)); setTab("details"); setError(""); };
+  const patch = (value: Partial<ScheduleDraft>) => setDraft((current) => current ? { ...current, ...value } : current);
+  const add = (eventDate = today()) => { const next = emptyScheduleDraft(eventDate); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(eventDate)); setTab("details"); setError(""); };
+  const select = (item: ScheduleRow) => { const next = scheduleToDraft(item); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(item.event_date)); setTab("details"); setError(""); };
   const moveMonth = (offset: number) => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   const showToday = () => setCalendarMonth(monthFromDateKey(today()));
   const validation = useMemo(() => {
@@ -259,7 +209,7 @@ export default function ArtistScheduleAdminPage() {
   const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
 
   return <>
-    <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench">
+    <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={scheduleTabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench">
       {tab === "calendar" ? <section className={styles.calendarView} aria-label={`${calendarTitle} 일정 달력`}>
         <header className={styles.calendarToolbar}>
           <div className={styles.calendarHeading}>

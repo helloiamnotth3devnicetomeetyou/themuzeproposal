@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useRef, useMemo, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
 import { useRouter } from "next/navigation";
-import { LuCheck } from "react-icons/lu";
-import CustomSelect from "@/core/components/form/CustomSelect";
 import { getUser } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import type { Artist, MyReport } from "../ProtectClient";
+import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
 import styles from "@/styles/(public)/pages/protect.module.css";
-import ReportEvidenceUpload from "./ReportEvidenceUpload";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const HOLD_DURATION_MS = 1500;
@@ -20,30 +27,7 @@ const ACCEPTED_FILE_TYPES = new Set([
   "application/pdf",
 ]);
 
-const reportTypes = [
-  { value: "defamation", label: "명예훼손·허위사실" },
-  { value: "harassment", label: "악성 댓글·비방" },
-  { value: "impersonation", label: "사칭·계정 도용" },
-  { value: "copyright", label: "저작권·콘텐츠 침해" },
-  { value: "privacy", label: "개인정보 노출" },
-  { value: "other", label: "기타" },
-];
-
-const platforms = ["Instagram", "X (Twitter)", "YouTube", "TikTok", "Facebook", "커뮤니티·게시판", "기타"];
-
-type ReportFormState = {
-  artistId: string;
-  reportType: string;
-  title: string;
-  content: string;
-  platform: string;
-  postUrl: string;
-  postedAt: string;
-  authorName: string;
-  postIp: string;
-};
-
-const initialForm: ReportFormState = {
+const initialForm: ReportFormValues = {
   artistId: "",
   reportType: "",
   title: "",
@@ -55,12 +39,12 @@ const initialForm: ReportFormState = {
   postIp: "",
 };
 
-type ReportFormProps = {
+type Props = {
   artists: Artist[];
   userEmail: string;
-  setMyReports: React.Dispatch<React.SetStateAction<MyReport[]>>;
+  setMyReports: Dispatch<SetStateAction<MyReport[]>>;
   setSubmittedId: (id: string) => void;
-  setError: (msg: string) => void;
+  setError: (message: string) => void;
   error: string;
 };
 
@@ -70,18 +54,42 @@ export default function ReportForm({
   setSubmittedId,
   setError,
   error,
-}: ReportFormProps) {
+}: Props) {
   const router = useRouter();
-  const [form, setForm] = useState<ReportFormState>(initialForm);
+  const [form, setForm] = useState<ReportFormValues>(initialForm);
   const [fileSlots, setFileSlots] = useState<Array<File | null>>([null, null, null]);
   const [confirmed, setConfirmed] = useState(false);
   const [holdingSubmit, setHoldingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<number | null>(null);
 
-  const files = useMemo(() => fileSlots.filter((file): file is File => file !== null), [fileSlots]);
+  const files = useMemo(
+    () => fileSlots.filter((file): file is File => file !== null),
+    [fileSlots],
+  );
+
+  useEffect(() => () => {
+    if (holdTimer.current) window.clearTimeout(holdTimer.current);
+  }, []);
+
+  const clearValidation = () => {
+    if (error) setError("");
+    if (missingFields.length) setMissingFields([]);
+  };
+
+  const updateField =
+    (field: keyof ReportFormValues) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      setForm((current) => ({ ...current, [field]: event.target.value }));
+      clearValidation();
+    };
+
+  const updateSelect = (field: keyof ReportFormValues) => (value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    clearValidation();
+  };
 
   const validateReport = () => {
     const requiredFields = [
@@ -97,8 +105,7 @@ export default function ReportForm({
       { label: "사실 확인 동의", id: "reportConfirmation", missing: !confirmed },
     ].filter((field) => field.missing);
 
-    const labels = requiredFields.map((field) => field.label);
-    setMissingFields(labels);
+    setMissingFields(requiredFields.map((field) => field.label));
     if (!requiredFields.length) return true;
 
     setError(`입력하지 않은 항목이 ${requiredFields.length}개 있습니다.`);
@@ -115,35 +122,20 @@ export default function ReportForm({
 
   const cancelSubmitHold = () => {
     if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
+      window.clearTimeout(holdTimer.current);
       holdTimer.current = null;
     }
     setHoldingSubmit(false);
   };
 
   const startSubmitHold = () => {
-    if (submitting || holdTimer.current) return;
-    if (!validateReport()) return;
+    if (submitting || holdTimer.current || !validateReport()) return;
     setHoldingSubmit(true);
-    holdTimer.current = setTimeout(() => {
+    holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null;
       setHoldingSubmit(false);
       formRef.current?.requestSubmit();
     }, HOLD_DURATION_MS);
-  };
-
-  const updateField =
-    (field: keyof ReportFormState) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setForm((current) => ({ ...current, [field]: event.target.value }));
-      if (error) setError("");
-      if (missingFields.length) setMissingFields([]);
-    };
-
-  const updateSelect = (field: keyof ReportFormState) => (value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
-    if (error) setError("");
-    if (missingFields.length) setMissingFields([]);
   };
 
   const addFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +144,6 @@ export default function ReportForm({
     setError("");
     setMissingFields([]);
     if (!incoming.length) return;
-
     if (files.length + incoming.length > 3) {
       setError("첨부 자료는 최대 3개까지 등록할 수 있습니다.");
       return;
@@ -163,7 +154,6 @@ export default function ReportForm({
       setError(`${invalidType.name}: JPG, PNG, WEBP, GIF 또는 PDF 파일만 첨부할 수 있습니다.`);
       return;
     }
-
     const oversized = incoming.find((file) => file.size > MAX_FILE_SIZE);
     if (oversized) {
       setError(`${oversized.name}: 파일 크기는 50MB 이하여야 합니다.`);
@@ -192,47 +182,36 @@ export default function ReportForm({
     });
   };
 
-  const removeFile = (slot: number) => {
-    setFileSlots((current) => current.map((item, index) => (index === slot ? null : item)));
-    setError("");
-    setMissingFields([]);
-  };
-
   const submitReport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
-
-    if (!files.length) {
-      setError("침해 내용을 확인할 수 있는 증거 자료를 1개 이상 첨부해 주세요.");
-      return;
-    }
-    if (!confirmed) {
-      setError("제보 내용이 사실에 근거해 작성되었음을 확인해 주세요.");
+    if (!files.length || !confirmed) {
+      setError(!files.length
+        ? "침해 내용을 확인할 수 있는 증거 자료를 1개 이상 첨부해 주세요."
+        : "제보 내용이 사실에 근거해 작성되었음을 확인해 주세요.");
       return;
     }
 
     setSubmitting(true);
     const user = await getUser();
     if (!user) {
+      setSubmitting(false);
       router.replace("/login?redirect=/protect");
       return;
     }
 
     const uploadedPaths: string[] = [];
     try {
-      // 1. Upload files to storage
       for (const file of files) {
         const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "file";
         const path = `${user.id}/${crypto.randomUUID()}.${extension.toLowerCase()}`;
-        const { error: uploadError } = await supabase.storage.from("protect-evidence").upload(path, file, {
-          contentType: file.type,
-          upsert: false,
-        });
+        const { error: uploadError } = await supabase.storage
+          .from("protect-evidence")
+          .upload(path, file, { contentType: file.type, upsert: false });
         if (uploadError) throw uploadError;
         uploadedPaths.push(path);
       }
 
-      // 2. Insert report metadata
       const { data, error: insertError } = await supabase
         .from("protect_reports")
         .insert({
@@ -251,34 +230,26 @@ export default function ReportForm({
         })
         .select("id")
         .single();
-
       if (insertError) throw insertError;
 
-      // 3. Insert into the normalized protect_report_attachments table
-      const attachments = uploadedPaths.map((path, idx) => ({
-        report_id: data.id,
-        file_path: path,
-        file_name: files[idx].name,
-      }));
-
-      const { error: attachError } = await supabase
+      const { error: attachmentError } = await supabase
         .from("protect_report_attachments")
-        .insert(attachments);
+        .insert(uploadedPaths.map((path, index) => ({
+          report_id: data.id,
+          file_path: path,
+          file_name: files[index].name,
+        })));
+      if (attachmentError) throw attachmentError;
 
-      if (attachError) throw attachError;
-
-      setMyReports((current) => [
-        {
-          id: data.id,
-          artist_id: form.artistId,
-          report_type: form.reportType,
-          title: form.title.trim(),
-          platform: form.platform,
-          status: "pending",
-          created_at: new Date().toISOString(),
-        },
-        ...current,
-      ]);
+      setMyReports((current) => [{
+        id: data.id,
+        artist_id: form.artistId,
+        report_type: form.reportType,
+        title: form.title.trim(),
+        platform: form.platform,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      }, ...current]);
       setSubmittedId(data.id);
       setForm(initialForm);
       setFileSlots([null, null, null]);
@@ -288,11 +259,9 @@ export default function ReportForm({
       if (uploadedPaths.length) {
         await supabase.storage.from("protect-evidence").remove(uploadedPaths);
       }
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      );
+      setError(submitError instanceof Error
+        ? submitError.message
+        : "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setSubmitting(false);
     }
@@ -300,132 +269,23 @@ export default function ReportForm({
 
   return (
     <form ref={formRef} className={styles.form} onSubmit={submitReport}>
-      <div className={styles.formRow}>
-        <span className={styles.rowLabel}>아티스트 <i>*</i></span>
-        <div id="artist" className={styles.selectControl}>
-          <CustomSelect
-            className={styles.customSelect}
-            ariaLabel="아티스트"
-            value={form.artistId}
-            onChange={updateSelect("artistId")}
-            placeholder="아티스트를 선택해 주세요"
-            options={artists.map((artist) => ({ value: artist.id, label: artist.name }))}
-          />
-        </div>
-      </div>
-
-      <div className={styles.formRow}>
-        <span className={styles.rowLabel}>신고 유형 <i>*</i></span>
-        <div id="reportType" className={styles.selectControl}>
-          <CustomSelect
-            className={styles.customSelect}
-            ariaLabel="신고 유형"
-            value={form.reportType}
-            onChange={updateSelect("reportType")}
-            placeholder="신고 유형을 선택해 주세요"
-            options={reportTypes.map((type) => ({ value: type.value, label: type.label }))}
-          />
-        </div>
-      </div>
-
-      <div className={styles.formRow}>
-        <label htmlFor="title">제목 <i>*</i></label>
-        <div className={styles.controlWithMeta}>
-          <input id="title" required maxLength={120} value={form.title} onChange={updateField("title")} placeholder="신고 주요 내용을 입력해 주세요" />
-          <span>{form.title.length} / 120</span>
-        </div>
-      </div>
-
-      <div className={`${styles.formRow} ${styles.alignTop}`}>
-        <label htmlFor="content">신고 내용 <i>*</i></label>
-        <div className={styles.controlWithMeta}>
-          <textarea id="content" required rows={6} maxLength={5000} value={form.content} onChange={updateField("content")} placeholder="침해 내용과 발생 경위를 자세히 입력해 주세요" />
-          <span>{form.content.length} / 5,000</span>
-        </div>
-      </div>
-
-      <div className={styles.formRow}>
-        <span className={styles.rowLabel}>게시 플랫폼 <i>*</i></span>
-        <div id="platform" className={styles.selectControl}>
-          <CustomSelect
-            className={styles.customSelect}
-            ariaLabel="게시 플랫폼"
-            value={form.platform}
-            onChange={updateSelect("platform")}
-            placeholder="신고할 게시물이 업로드된 플랫폼을 선택해 주세요"
-            options={platforms.map((platform) => ({ value: platform, label: platform }))}
-          />
-        </div>
-      </div>
-
-      <div className={styles.formRow}>
-        <label htmlFor="postUrl">게시물 URL <i>*</i></label>
-        <input id="postUrl" type="url" inputMode="url" required value={form.postUrl} onChange={updateField("postUrl")} placeholder="신고할 게시물의 URL을 입력해 주세요" />
-      </div>
-
-      <div className={styles.formRow}>
-        <label htmlFor="postedAt">게시 일자 <i>*</i></label>
-        <input id="postedAt" type="date" required max={new Date().toISOString().slice(0, 10)} value={form.postedAt} onChange={updateField("postedAt")} />
-      </div>
-
-      <div className={styles.formRow}>
-        <label htmlFor="authorName">게시물 작성자 <i>*</i></label>
-        <input id="authorName" required maxLength={120} value={form.authorName} onChange={updateField("authorName")} placeholder="게시물 작성자의 ID 또는 닉네임을 입력해 주세요" />
-      </div>
-
-      <div className={styles.formRow}>
-        <label htmlFor="postIp">게시물 IP 주소</label>
-        <input id="postIp" maxLength={64} value={form.postIp} onChange={updateField("postIp")} placeholder="확인된 IP 주소가 있다면 입력해 주세요 (선택)" />
-      </div>
-
-      <ReportEvidenceUpload fileSlots={fileSlots} files={files} onAddFiles={addFiles} onRemoveFile={removeFile} />
-
-      <p className={styles.guide}>캡처 날짜, 게시물 내용, URL, 작성자 정보가 보이도록 저장해 주세요.<br />내용이 길다면 순서를 알 수 있도록 여러 장으로 첨부해 주세요.</p>
-
-      <label className={styles.confirm}>
-        <input id="reportConfirmation" type="checkbox" checked={confirmed} onChange={(event) => { setConfirmed(event.target.checked); setError(""); }} />
-        <span><LuCheck aria-hidden="true" /></span>
-        본 신고 내용이 허위나 조작 없이 사실에 근거해 작성되었음을 확인합니다.
-      </label>
-
-      {missingFields.length > 0 && (
-        <div className={styles.validationSummary} role="alert">
-          <b>입력하지 않은 항목</b>
-          <p>{missingFields.join(" · ")}</p>
-        </div>
-      )}
-
-      <p className={styles.submitHint}>내용을 확인한 뒤 등록 버튼을 1.5초 동안 길게 눌러주세요.</p>
-
-      <button
-        className={`${styles.submit} ${holdingSubmit ? styles.holding : ""}`}
-        type="button"
-        disabled={submitting}
-        onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          event.currentTarget.focus();
-          startSubmitHold();
-        }}
-        onPointerUp={cancelSubmitHold}
-        onPointerCancel={cancelSubmitHold}
-        onPointerLeave={cancelSubmitHold}
-        onKeyDown={(event) => {
-          if ((event.key === " " || event.key === "Enter") && !event.repeat) {
-            event.preventDefault();
-            startSubmitHold();
-          }
-        }}
-        onKeyUp={(event) => {
-          if (event.key === " " || event.key === "Enter") {
-            event.preventDefault();
-            cancelSubmitHold();
-          }
-        }}
-        onBlur={cancelSubmitHold}
-        onContextMenu={(event) => event.preventDefault()}
-      >
-        {submitting ? "안전하게 전송하는 중…" : holdingSubmit ? "계속 누르세요…" : "1.5초 길게 눌러 등록"}
-      </button>
+      <ReportFormFields
+        artists={artists}
+        form={form}
+        fileSlots={fileSlots}
+        files={files}
+        confirmed={confirmed}
+        missingFields={missingFields}
+        holdingSubmit={holdingSubmit}
+        submitting={submitting}
+        updateField={updateField}
+        updateSelect={updateSelect}
+        addFiles={addFiles}
+        removeFile={(slot) => { setFileSlots((current) => current.map((item, index) => index === slot ? null : item)); clearValidation(); }}
+        onConfirmedChange={(next) => { setConfirmed(next); setError(""); }}
+        startSubmitHold={startSubmitHold}
+        cancelSubmitHold={cancelSubmitHold}
+      />
     </form>
   );
 }

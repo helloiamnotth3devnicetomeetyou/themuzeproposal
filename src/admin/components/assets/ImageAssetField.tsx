@@ -1,9 +1,9 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
 import { useId, useState } from "react";
 import { LuPlus } from "react-icons/lu";
 import { supabase } from "@/core/supabase/client";
+import AdminAssetImage from "./AdminAssetImage";
 
 export type UploadedImageAsset = {
   bucket: "artist-assets";
@@ -105,7 +105,7 @@ export default function ImageAssetField({
   return (
     <div className={`content-asset-field is-${shape} ${dragging ? "is-dragging" : ""} ${value ? "has-value" : ""}`}>
       <div className="content-asset-preview">
-        {value ? <img src={value} alt={`${label} 미리보기`} className={kind === "artist-logo" && /\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /> : <div><span>{kind === "artist-logo" ? "LOGO" : "IMAGE"}</span><b><LuPlus aria-hidden="true" /></b></div>}
+        {value ? <AdminAssetImage src={value} alt={`${label} 미리보기`} sizes="320px" className={kind === "artist-logo" && /\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /> : <div><span>{kind === "artist-logo" ? "LOGO" : "IMAGE"}</span><b><LuPlus aria-hidden="true" /></b></div>}
       </div>
       <div
         className="content-asset-dropzone"

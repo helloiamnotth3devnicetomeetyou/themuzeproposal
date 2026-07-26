@@ -102,15 +102,12 @@ export function AlbumArtwork({
                   willChange: "transform",
                 }}
               >
-                <Image
-                  src={album.titleImage || album.cover}
-                  alt={album.titleImage ? `${track.title} 타이포 로고` : track.title}
+                 <Image
+                  key={`${album.id}-disc-img-${trackIndex}`}
+                  src={album.cover}
+                  alt={track.title}
                   fill
-                  className={`${
-                    album.titleImage
-                      ? "object-contain p-10"
-                      : "object-cover brightness-[0.5] group-hover/cd:brightness-[0.7]"
-                  } transition-[filter] duration-base`}
+                  className="object-cover brightness-[0.5] group-hover/cd:brightness-[0.7] transition-[filter] duration-base"
                   sizes="300px"
                 />
                 <div
@@ -123,6 +120,7 @@ export function AlbumArtwork({
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-[28%] h-[28%] rounded-full overflow-hidden border-2 border-[var(--alpha-000000-7)] relative">
                     <Image
+                      key={`${album.id}-disc-center-${trackIndex}`}
                       src={album.cover}
                       alt=""
                       fill
@@ -159,6 +157,7 @@ export function AlbumArtwork({
           }}
         >
           <Image
+            key={album.id}
             src={album.cover}
             alt={album.title}
             fill

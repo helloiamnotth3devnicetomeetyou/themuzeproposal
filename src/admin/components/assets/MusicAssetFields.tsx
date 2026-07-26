@@ -2,11 +2,11 @@
 
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
-/* eslint-disable @next/next/no-img-element */
 import { type DragEvent, useId, useState } from "react";
 import { LuImage, LuMusic, LuX } from "react-icons/lu";
 import { supabase } from "@/core/supabase/client";
 import type { UploadedAsset } from "@/core/utils/music-editor";
+import AdminAssetImage from "./AdminAssetImage";
 
 type CoverProps = {
   artistId: string;
@@ -95,7 +95,7 @@ export function CoverAssetField({ artistId, albumId, value, onUploaded, onError 
 
   return <div className={`music-cover-field music-image-dropzone ${dragging ? "is-dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={drop}>
     <div className="music-cover-preview">
-      {value ? <img src={value} alt="앨범 커버" /> : <span>커버 없음</span>}
+      {value ? <AdminAssetImage src={value} alt="앨범 커버" sizes="240px" /> : <span>커버 없음</span>}
     </div>
     <div className="music-asset-copy">
       <b>앨범 커버</b><p>파일을 여기에 놓거나 선택하세요 · 원본 그대로 저장 · JPG, PNG, WebP · 최대 30MB</p>
@@ -133,7 +133,7 @@ export function HeroAssetField({ artistId, albumId, value, onUploaded, onClear, 
   };
 
   return <div className={`music-hero-field music-image-dropzone ${dragging ? "is-dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={drop}>
-    <div className="music-hero-preview">{value ? <img src={value} alt="메인 슬라이드 히어로" /> : <span>16:9 HERO IMAGE</span>}</div>
+    <div className="music-hero-preview">{value ? <AdminAssetImage src={value} alt="메인 슬라이드 히어로" sizes="480px" /> : <span>16:9 HERO IMAGE</span>}</div>
     <div className="music-asset-copy">
       <b>메인 슬라이드 히어로 이미지</b>
       <p>파일을 여기에 놓거나 선택하세요 · 원본 그대로 저장 · 16:9 권장 · JPG, PNG, WebP · 최대 30MB</p>
@@ -223,7 +223,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
     onDrop={drop}
   >
     {kind === "logo" && value
-      ? <span className="track-asset-logo-preview"><img src={value} alt="업로드한 타이포 로고" className={/\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /></span>
+      ? <span className="track-asset-logo-preview"><AdminAssetImage src={value} alt="업로드한 타이포 로고" sizes="160px" className={/\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /></span>
       : <span className="track-asset-icon">{kind === "audio" ? <LuMusic aria-hidden="true" /> : <LuImage aria-hidden="true" />}</span>}
     <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
     {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}

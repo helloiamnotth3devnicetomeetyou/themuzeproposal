@@ -1,14 +1,12 @@
 "use client";
 
-import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
-
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuCheck, LuCircleAlert, LuDisc3, LuGripVertical, LuMusic, LuPlus } from "react-icons/lu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/admin/components/assets/MusicAssetFields";
+import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -23,59 +21,21 @@ import {
   type UploadedAsset,
   validateAlbum,
 } from "@/core/utils/music-editor";
-import { useAdminCrud } from "@/admin/hooks/useAdminCrud";
+import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
-
-type RawTrack = {
-  id: string; title: string; is_title: boolean; track_number: number;
-  spotify_url: string | null; youtube_url: string | null; audio_url: string | null; music_video_url: string | null;
-};
-
-type RawAlbum = {
-  id: string; artist_id: string; title: string; type: string; release_date: string | null;
-  cover_url: string | null; hero_image_url: string | null; typo_logo_url: string | null; color: string; spotify_id: string | null; youtube_url: string | null;
-  description_ko: string | null; description_en: string | null; description_ja: string | null;
-  is_published: boolean; published_at: string | null; sort_order: number; tracks: RawTrack[] | null;
-};
+import {
+  albumSelect,
+  albumToDraft,
+  collectAssetUrls,
+  createAlbumDraft,
+  createTrackDraft,
+  legacyAlbumSelect,
+  type RawAlbum,
+} from "./discography-editor-model";
 
 type Filter = "all" | "published" | "draft";
 type Language = "ko" | "en" | "ja";
-
-const albumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
-const legacyAlbumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
-
-function fromRaw(album: RawAlbum): AlbumEditorDraft {
-  return {
-    id: album.id, artist_id: album.artist_id, title: album.title, type: album.type,
-    release_date: album.release_date ?? "", cover_url: album.cover_url ?? "", hero_image_url: album.hero_image_url ?? "", typo_logo_url: album.typo_logo_url ?? "", color: album.color || BRAND_PINK_HEX,
-    spotify_id: album.spotify_id ?? "", youtube_url: album.youtube_url ?? "",
-    description_ko: album.description_ko ?? "", description_en: album.description_en ?? "", description_ja: album.description_ja ?? "",
-    is_published: album.is_published, published_at: album.published_at, sort_order: album.sort_order,
-    tracks: [...(album.tracks ?? [])].sort((a, b) => a.track_number - b.track_number).map((track) => ({
-      id: track.id, title: track.title, is_title: track.is_title,
-      spotify_url: track.spotify_url ?? "", youtube_url: track.youtube_url ?? "", audio_url: track.audio_url ?? "",
-      music_video_url: track.music_video_url ?? "",
-    })),
-  };
-}
-
-function newAlbum(artistId: string, sortOrder: number): AlbumEditorDraft {
-  const id = crypto.randomUUID();
-  return {
-    id, artist_id: artistId, title: "", type: "Mini Album", release_date: "",
-    cover_url: "", hero_image_url: "", typo_logo_url: "", color: BRAND_PINK_HEX, spotify_id: "", youtube_url: "", description_ko: "", description_en: "",
-    description_ja: "", is_published: false, published_at: null, sort_order: sortOrder, tracks: [],
-  };
-}
-
-function newTrack(): TrackDraft {
-  return { id: crypto.randomUUID(), title: "", is_title: false, spotify_url: "", youtube_url: "", audio_url: "", music_video_url: "" };
-}
-
-function collectAssetUrls(draft: AlbumEditorDraft) {
-  return new Set([draft.cover_url, draft.hero_image_url, draft.typo_logo_url, ...draft.tracks.flatMap((track) => [track.audio_url, track.music_video_url])].filter(Boolean));
-}
 
 function AssetBadge({ active, children }: { active: boolean; children: React.ReactNode }) {
   return <span className={`music-asset-badge ${active ? "is-ready" : ""}`}>{children}</span>;
@@ -119,7 +79,7 @@ export default function DiscographyAdmin() {
     toast,
     setToast,
     patchDraft,
-  } = useAdminCrud<AlbumEditorDraft>({ initialDraft: null });
+  } = useAdminEntityEditor<AlbumEditorDraft>({ initialDraft: null });
 
   const validation = useMemo(() => draft ? validateAlbum(draft) : null, [draft]);
 
@@ -155,7 +115,7 @@ export default function DiscographyAdmin() {
       albumError = legacyResult.error;
     }
     if (albumError) { setError(albumError.message.includes("spotify_url") ? "음악 편집 DB 마이그레이션(003_music_editor.sql)을 먼저 적용해 주세요." : albumError.message); setLoading(false); return; }
-    const nextAlbums = (albumRows ?? []).map(fromRaw);
+    const nextAlbums = (albumRows ?? []).map(albumToDraft);
     setArtistId(artist.id); setArtistName(artist.name || ""); setArtistSlug(artist.slug || ""); setAlbums(nextAlbums);
     const params = new URLSearchParams(window.location.search);
     const requestedId = preferredId || params.get("album") || nextAlbums[0]?.id;
@@ -206,7 +166,7 @@ export default function DiscographyAdmin() {
       tone: "danger",
     })) return;
     await discardQueuedUploads();
-    const next = newAlbum(artistId, albums.length + 1); setDraft(next); setSnapshot(JSON.stringify(next)); setTab("basic"); setExpandedTrack(null); syncUrl(next.id, "basic");
+    const next = createAlbumDraft(artistId, albums.length + 1); setDraft(next); setSnapshot(JSON.stringify(next)); setTab("basic"); setExpandedTrack(null); syncUrl(next.id, "basic");
   };
 
   const changeTab = (next: EditorTab) => { if (!draft) return; setTab(next); syncUrl(draft.id, next); };
@@ -293,7 +253,7 @@ export default function DiscographyAdmin() {
       <div className="music-album-list">
         {visibleAlbums.map((album) => <button key={album.id} type="button" draggable={sorting} onDragStart={() => setDragAlbum(album.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderAlbum(album.id)} onClick={() => !sorting && void selectAlbum(album)} className={`music-album-item ${draft?.id === album.id ? "is-selected" : ""} ${sorting ? "is-sorting" : ""}`}>
           <span className="music-album-grip">{sorting ? <LuGripVertical aria-hidden="true" /> : String(albums.indexOf(album) + 1).padStart(2, "0")}</span>
-          <span className="music-album-cover">{album.cover_url ? <img src={album.cover_url} alt="" /> : <i />}</span>
+          <span className="music-album-cover">{album.cover_url ? <AdminAssetImage src={album.cover_url} alt="" sizes="56px" /> : <i />}</span>
           <span className="music-album-copy"><b>{album.title}</b><small>{album.type} · {album.tracks.length}곡</small></span>
           <span className={`cms-status ${album.is_published ? "is-live" : ""}`}>{album.is_published ? "공개" : "초안"}</span>
         </button>)}
@@ -307,7 +267,7 @@ export default function DiscographyAdmin() {
       {!draft ? <div className="music-no-selection"><span><LuDisc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> : <>
         <header className="music-editor-header">
           <div className="music-editor-identity">
-            <span className="music-header-cover">{draft.cover_url ? <img src={draft.cover_url} alt="" /> : <i />}</span>
+            <span className="music-header-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="72px" /> : <i />}</span>
             <div><p><span className={`cms-status ${draft.is_published ? "is-live" : ""}`}>{draft.is_published ? "공개" : "초안"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 새 앨범"}</h2></div>
           </div>
           <div className="music-header-actions">{albums.some((album) => album.id === draft.id) && <button type="button" className="music-delete-button" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving || !validation?.canSave} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></div>
@@ -337,7 +297,7 @@ export default function DiscographyAdmin() {
           </div>}
 
           {tab === "tracks" && <div className="music-section-stack music-track-section">
-            <div className="music-section-title"><div><h3>수록곡과 미디어</h3><span>곡명, MP3, Spotify, YouTube 음원을 한곳에서 관리합니다.</span></div><div><button type="button" className="admin-btn admin-btn-secondary" onClick={() => setBulkOpen(true)}>여러 곡 붙여넣기</button><button type="button" className="admin-btn admin-btn-primary" onClick={() => { const track = newTrack(); patchDraft({ tracks: [...draft.tracks, track] }); setExpandedTrack(track.id); }}>+ 트랙 추가</button></div></div>
+            <div className="music-section-title"><div><h3>수록곡과 미디어</h3><span>곡명, MP3, Spotify, YouTube 음원을 한곳에서 관리합니다.</span></div><div><button type="button" className="admin-btn admin-btn-secondary" onClick={() => setBulkOpen(true)}>여러 곡 붙여넣기</button><button type="button" className="admin-btn admin-btn-primary" onClick={() => { const track = createTrackDraft(); patchDraft({ tracks: [...draft.tracks, track] }); setExpandedTrack(track.id); }}>+ 트랙 추가</button></div></div>
             <div className="music-track-table">
               <div className="music-track-head"><span>순서</span><span>곡 정보</span><span>미디어 상태</span><span /></div>
               {draft.tracks.map((track, index) => <div key={track.id} className={`music-track-wrap ${expandedTrack === track.id ? "is-open" : ""}`} draggable onDragStart={() => setDragTrack(track.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderTrack(track.id)}>
@@ -366,7 +326,7 @@ export default function DiscographyAdmin() {
 
           {tab === "publish" && <div className="music-section-stack">
             <div className="music-section-title music-release-heading"><div><h3>공개 설정</h3><span>공개 전 필수 정보를 확인하고,<br />연결된 미디어를 마지막으로 점검합니다.</span></div></div>
-            <div className="music-publish-summary"><div className="music-publish-cover">{draft.cover_url ? <img src={draft.cover_url} alt="" /> : <span>커버 없음</span>}</div><div><p>{draft.type}</p><h4>{draft.title || "제목 없음"}</h4><span>{draft.release_date || "발매일 미설정"} · {draft.tracks.length}곡</span><div className="music-summary-badges"><AssetBadge active={draft.tracks.some((track) => Boolean(track.audio_url))}>MP3 {draft.tracks.filter((track) => track.audio_url).length}</AssetBadge><AssetBadge active={draft.tracks.some((track) => Boolean(track.youtube_url))}>YouTube {draft.tracks.filter((track) => track.youtube_url).length}</AssetBadge><AssetBadge active={Boolean(draft.typo_logo_url)}>Typo</AssetBadge></div></div></div>
+            <div className="music-publish-summary"><div className="music-publish-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="120px" /> : <span>커버 없음</span>}</div><div><p>{draft.type}</p><h4>{draft.title || "제목 없음"}</h4><span>{draft.release_date || "발매일 미설정"} · {draft.tracks.length}곡</span><div className="music-summary-badges"><AssetBadge active={draft.tracks.some((track) => Boolean(track.audio_url))}>MP3 {draft.tracks.filter((track) => track.audio_url).length}</AssetBadge><AssetBadge active={draft.tracks.some((track) => Boolean(track.youtube_url))}>YouTube {draft.tracks.filter((track) => track.youtube_url).length}</AssetBadge><AssetBadge active={Boolean(draft.typo_logo_url)}>Typo</AssetBadge></div></div></div>
             <div className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}><span>{validation?.canPublish ? <LuCheck aria-hidden="true" /> : <LuCircleAlert aria-hidden="true" />}</span><div><b>{validation?.canPublish ? "공개할 준비가 되었습니다." : "공개 전 확인이 필요합니다."}</b><p>{validation?.canPublish ? "필수 정보가 모두 입력되었습니다." : validation?.publishIssues.join(" · ")}</p></div></div>
             <label className="music-publish-toggle"><span><b>웹사이트에 공개</b><small>공개하면 디스코그래피에서 앨범과 업로드한 음원을 볼 수 있습니다.</small></span><input type="checkbox" checked={draft.is_published} onChange={(event) => { if (event.target.checked && !validation?.canPublish) { setError(`공개 전 확인: ${validation?.publishIssues.join(", ")}`); return; } patchDraft({ is_published: event.target.checked }); }} /></label>
           </div>}

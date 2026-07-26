@@ -69,6 +69,16 @@ export function DiscographyExperience() {
         isPlaying={discography.isPlaying}
       />
 
+      {/* Preload all album covers and title images to ensure instant transitions */}
+      <div className="hidden" aria-hidden="true">
+        {discography.sortedAlbums.map((alb) => (
+          <span key={alb.id}>
+            <img src={alb.cover} alt="" />
+            {alb.titleImage && <img src={alb.titleImage} alt="" />}
+          </span>
+        ))}
+      </div>
+
       <div
         className={`flex-1 grid grid-cols-1 lg:grid-cols-12 items-center max-w-[1400px] mx-auto px-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}
       >

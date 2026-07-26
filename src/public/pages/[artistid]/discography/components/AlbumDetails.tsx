@@ -7,9 +7,9 @@ import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
 
 const TABS: Array<{ id: DiscographyTab; label: string }> = [
-  { id: "concept", label: "CONCEPT IMAGE" },
-  { id: "intro", label: "TRACK INTRO" },
-  { id: "members", label: "MEMBERS" },
+  { id: "concept", label: "Concept" },
+  { id: "intro", label: "Track Intro" },
+  { id: "members", label: "Members" },
 ];
 
 interface AlbumDetailsProps {
@@ -61,10 +61,29 @@ export function AlbumDetails({
           {album.type}
         </span>
         <div className="flex items-center justify-between mt-1">
-          <h2 className="font-hero text-4xl font-black leading-none tracking-tight text-[var(--color-static-white)] md:text-5xl">
-            {album.title}
+          <h2 className="font-hero text-4xl font-black leading-none tracking-tight text-[var(--color-static-white)] md:text-5xl w-full flex items-center min-h-[2.5rem] md:min-h-[3rem]">
+            {album.typoLogoUrl ? (
+              <span
+                aria-label={album.title}
+                className="block bg-current"
+                style={{
+                  WebkitMaskImage: `url("${album.typoLogoUrl}")`,
+                  maskImage: `url("${album.typoLogoUrl}")`,
+                  WebkitMaskPosition: "left center",
+                  maskPosition: "left center",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                  width: "100%",
+                  height: "clamp(2.5rem, 6vw, 3.5rem)",
+                }}
+              />
+            ) : (
+              album.title
+            )}
           </h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <a
               href={album.links?.spotify || "#"}
               target="_blank"
@@ -80,21 +99,21 @@ export function AlbumDetails({
         </p>
       </div>
 
-      <div className="flex gap-4 border-b border-[var(--alpha-ffffff-1)] pb-1.5 mt-1 relative shrink-0">
+      <div className="flex gap-5 border-b border-[var(--alpha-ffffff-1)] pb-1.5 mt-1 relative shrink-0">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`font-display text-xs tracking-[0.04em] transition-all duration-slow relative pb-1 font-[750] ${
+            className={`font-sans text-[11.5px] tracking-normal transition-all duration-base relative pb-2 font-medium ${
               activeTab === tab.id
-                ? "text-[var(--color-static-white)]"
+                ? "text-[var(--color-static-white)] font-semibold"
                 : "text-[var(--palette-6b7280)] hover:text-[var(--palette-e5e7eb)]"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
               <span
-                className="absolute -bottom-[7px] left-0 right-0 h-[2px] rounded-full shadow-[0_0_8px_var(--alpha-ffffff-8)] transition-all duration-slow"
+                className="absolute -bottom-[1.5px] left-0 right-0 h-[2px] rounded-full shadow-[0_0_8px_var(--alpha-ffffff-8)] transition-all duration-base"
                 style={{ backgroundColor: album.color }}
               />
             )}

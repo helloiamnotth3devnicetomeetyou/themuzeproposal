@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 
@@ -172,8 +173,7 @@ export default function ProtectAdminPage() {
                   return <a key={file_path} className={styles.evidenceCard} href={url || undefined} target="_blank" rel="noreferrer" aria-disabled={!url}>
                     <span className={styles.evidencePreview}>
                       {url && isImage(file_name)
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={url} alt="" />
+                        ? <AdminAssetImage src={url} alt="" sizes="96px" />
                         : isImage(file_name) ? <LuFileImage aria-hidden="true" /> : <LuPaperclip aria-hidden="true" />}
                     </span>
                     <span><b>{file_name}</b><small>{url ? "새 창에서 원본 열기" : "보안 링크 생성 중…"}</small></span>

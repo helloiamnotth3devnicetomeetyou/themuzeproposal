@@ -3,67 +3,27 @@
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuTrash2 } from "react-icons/lu";
-import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
-import SocialLinksField, { hasInvalidSocialLinks, normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import SocialLinksField, { hasInvalidSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
 import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
-
-type SettingsTab = "company" | "history" | "footer" | "social";
-type HistoryLanguage = "ko" | "en" | "ja";
-
-type CompanySettings = {
-  name_ko: string;
-  name_en: string;
-  name_ja: string;
-  address_ko: string;
-  address_en: string;
-  address_ja: string;
-  email: string;
-};
-
-type FooterSettings = { copyright: string };
-type SettingsDraft = { company: CompanySettings; history: HistoryEntry[]; footer: FooterSettings; social: SocialLink[] };
-
-const EMPTY_COMPANY: CompanySettings = {
-  name_ko: "",
-  name_en: "",
-  name_ja: "",
-  address_ko: "",
-  address_en: "",
-  address_ja: "",
-  email: "",
-};
-
-const EMPTY_FOOTER: FooterSettings = { copyright: "" };
-const EMPTY_SOCIAL: SocialLink[] = [];
-const EMPTY_DRAFT: SettingsDraft = { company: EMPTY_COMPANY, history: DEFAULT_HISTORY, footer: EMPTY_FOOTER, social: EMPTY_SOCIAL };
-
-const tabs: WorkbenchTab<SettingsTab>[] = [
-  { id: "company", label: "회사 정보" },
-  { id: "history", label: "연혁" },
-  { id: "footer", label: "푸터" },
-  { id: "social", label: "소셜 채널" },
-];
-
-const normalizeSiteSocial = (value: unknown): SocialLink[] => {
-  if (Array.isArray(value)) return normalizeSocialLinks(value);
-  if (!value || typeof value !== "object") return [];
-
-  return Object.entries(value as Record<string, unknown>).flatMap(([platform, url], index) => {
-    if (typeof url !== "string" || !url.trim()) return [];
-    return [{
-      id: `site-${platform}-${index}`,
-      platform: platform === "twitter" ? "x" : platform,
-      label: "",
-      url,
-    }];
-  });
-};
+import {
+  EMPTY_COMPANY,
+  EMPTY_DRAFT,
+  EMPTY_FOOTER,
+  EMPTY_SOCIAL,
+  normalizeSiteSocial,
+  settingsTabs,
+  type CompanySettings,
+  type FooterSettings,
+  type HistoryLanguage,
+  type SettingsTab,
+} from "./settings-editor-model";
 
 export default function SettingsAdmin() {
   const [loading, setLoading] = useState(true);
@@ -271,7 +231,7 @@ export default function SettingsAdmin() {
       rail={rail}
       identity={identity}
       actions={<><PreviewButton onClick={openPreview} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : "변경사항 저장"}</button></>}
-      tabs={tabs}
+      tabs={settingsTabs}
       activeTab={tab}
       onTabChange={setTab}
       error={error}
