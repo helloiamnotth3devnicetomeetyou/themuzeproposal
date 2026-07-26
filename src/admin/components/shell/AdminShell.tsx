@@ -18,6 +18,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     "hero",
     "auditions",
     "protect",
+    "contact",
   ].some((segment) => pathname.includes(segment));
 
   return (

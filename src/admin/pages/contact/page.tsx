@@ -11,7 +11,6 @@ import {
   LuMessageSquareText,
   LuPaperclip,
   LuSearch,
-  LuUserRound,
 } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
@@ -170,18 +169,18 @@ export default function ContactAdminPage() {
   if (viewing) {
     const isBusiness = viewing.category === "business";
     return (
-      <div className={`${base.page} ${base.detailPage}`}>
-        <button type="button" className={base.back} onClick={() => setViewing(null)}>
+      <div className={`${base.page} ${base.detailPage} ${styles.fullPage}`}>
+        <button type="button" className={`${base.back} ${styles.fullWidth}`} onClick={() => setViewing(null)}>
           <LuArrowLeft aria-hidden="true" /> 문의 목록
         </button>
         {error && (
-          <div className={base.error} role="alert">
+          <div className={`${base.error} ${styles.fullWidth}`} role="alert">
             <b>!</b><span>{error}</span>
             <button type="button" onClick={() => setError("")}>닫기</button>
           </div>
         )}
 
-        <article className={base.detailCard}>
+        <article className={`${base.detailCard} ${styles.fullWidth}`}>
           <header className={base.detailHeader}>
             <span className={base.detailIcon}>
               {isBusiness ? <LuBriefcaseBusiness aria-hidden="true" /> : <LuMessageSquareText aria-hidden="true" />}
@@ -231,6 +230,18 @@ export default function ContactAdminPage() {
               </section>
             )}
 
+            {!isBusiness && (
+              <section>
+                <div className={base.sectionHeading}><span>SUBMISSION</span><h2>접수 정보</h2></div>
+                <dl className={base.infoGrid}>
+                  <div><dt>접수일</dt><dd>{formatDate(viewing.created_at, true)}</dd></div>
+                  <div><dt>접수 번호</dt><dd>{viewing.id.slice(0, 8).toUpperCase()}</dd></div>
+                  <div><dt>접수 경로</dt><dd>{viewing.user_id ? "로그인 계정" : "비회원"}</dd></div>
+                  <div><dt>개인정보 동의</dt><dd>동의 완료</dd></div>
+                </dl>
+              </section>
+            )}
+
             <section>
               <div className={base.sectionHeading}><span>INTERNAL</span><h2>관리자 메모</h2></div>
               <textarea className={base.adminNote} rows={5} value={note} onChange={(event) => setNote(event.target.value)} placeholder="검토 내용과 후속 조치를 기록해 주세요." />
@@ -252,42 +263,49 @@ export default function ContactAdminPage() {
     );
   }
 
-  const currentPending = categoryInquiries.filter((item) => item.status === "pending").length;
-  const currentReviewing = categoryInquiries.filter((item) => item.status === "reviewing").length;
+  const generalCount = inquiries.filter((item) => item.category === "general").length;
+  const businessCount = inquiries.filter((item) => item.category === "business").length;
 
   return (
-    <div className={base.page}>
+    <div className={`${base.page} ${styles.fullPage}`}>
       {error && (
-        <div className={base.error} role="alert">
+        <div className={`${base.error} ${styles.fullWidth}`} role="alert">
           <b>!</b><span>{error}</span>
           <button type="button" onClick={() => setError("")}>닫기</button>
         </div>
       )}
 
-      <section className={base.summary}>
+      <section className={`${base.summary} ${styles.fullWidth}`}>
         <div>
           <span className={base.summaryIcon}><LuMail aria-hidden="true" /></span>
           <p><small>전체 문의</small><strong>{inquiries.length}</strong></p>
         </div>
-        <dl>
-          <div><dt>신규 접수</dt><dd>{currentPending}</dd></div>
-          <div><dt>검토 중</dt><dd>{currentReviewing}</dd></div>
-        </dl>
-        <p>일반 문의와 비즈니스 제안을 분리해 확인하고, 담당자가 답변 상태와 내부 메모를 관리합니다.</p>
-      </section>
-
-      <section className={base.inbox}>
-        <div className={styles.categoryTabs} role="tablist" aria-label="문의 구분">
-          <button type="button" role="tab" aria-selected={category === "general"} className={category === "general" ? styles.active : ""} onClick={() => { setCategory("general"); setQuery(""); setFilter("all"); }}>
-            <LuUserRound aria-hidden="true" /><span>일반 문의</span><small>{inquiries.filter((item) => item.category === "general").length}</small>
+        <div className={styles.summaryTabs} role="tablist" aria-label="문의 구분">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={category === "general"}
+            className={category === "general" ? styles.active : ""}
+            onClick={() => { setCategory("general"); setQuery(""); setFilter("all"); }}
+          >
+            <span>일반 문의</span><strong>{generalCount}</strong>
           </button>
-          <button type="button" role="tab" aria-selected={category === "business"} className={category === "business" ? styles.active : ""} onClick={() => { setCategory("business"); setQuery(""); setFilter("all"); }}>
-            <LuBriefcaseBusiness aria-hidden="true" /><span>Business</span><small>{inquiries.filter((item) => item.category === "business").length}</small>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={category === "business"}
+            className={category === "business" ? styles.active : ""}
+            onClick={() => { setCategory("business"); setQuery(""); setFilter("all"); }}
+          >
+            <span>Business</span><strong>{businessCount}</strong>
           </button>
         </div>
+        <p>{category === "business" ? "협업·광고·제휴 제안을 검토하고 담당자 응대 상태를 기록합니다." : "팬과 고객이 남긴 일반 문의를 확인하고 답변 상태를 기록합니다."}</p>
+      </section>
 
+      <section className={`${base.inbox} ${styles.fullWidth}`}>
         <header className={base.toolbar}>
-          <div><span>{category === "business" ? "BUSINESS" : "GENERAL"}</span><h1>{category === "business" ? "비즈니스 제안" : "일반 문의"}</h1><p>{filteredInquiries.length}건의 문의</p></div>
+          <div><h1>문의 접수함</h1><p>{category === "business" ? "Business" : "일반 문의"} · {filteredInquiries.length}건</p></div>
           <div className={base.filters}>
             <label className={base.search}>
               <LuSearch aria-hidden="true" />

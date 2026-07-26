@@ -1,19 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { FiX } from "react-icons/fi";
 
 const STORAGE_KEY = "muze_not_official_banner_dismissed";
+const DISMISS_EVENT = "muze_banner_dismiss";
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(DISMISS_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(DISMISS_EVENT, callback);
+  };
+}
+
+function getSnapshot(): boolean {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(STORAGE_KEY) === "true";
+}
+
+function getServerSnapshot(): boolean {
+  return true;
+}
 
 export default function DisclaimerBanner() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const isDismissed = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    setMounted(true);
-    const isDismissed = localStorage.getItem(STORAGE_KEY) === "true";
     if (!isDismissed) {
-      setIsVisible(true);
       document.documentElement.style.setProperty("--banner-height", "42px");
     } else {
       document.documentElement.style.setProperty("--banner-height", "0px");
@@ -22,15 +37,14 @@ export default function DisclaimerBanner() {
     return () => {
       document.documentElement.style.setProperty("--banner-height", "0px");
     };
-  }, []);
+  }, [isDismissed]);
 
   const handleDismiss = () => {
-    setIsVisible(false);
     localStorage.setItem(STORAGE_KEY, "true");
-    document.documentElement.style.setProperty("--banner-height", "0px");
+    window.dispatchEvent(new Event(DISMISS_EVENT));
   };
 
-  if (!mounted || !isVisible) {
+  if (isDismissed) {
     return null;
   }
 
@@ -62,3 +76,4 @@ export default function DisclaimerBanner() {
     </aside>
   );
 }
+

@@ -1,34 +1,64 @@
-.categoryTabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 1px solid var(--border-default);
-  background: color-mix(in srgb, var(--bg-surface) 64%, var(--bg-card));
+.fullPage {
+  padding-inline: clamp(18px, 2vw, 30px);
 }
 
-.categoryTabs button {
+.fullWidth {
+  width: 100%;
+  max-width: none;
+}
+
+.summaryTabs {
+  display: flex;
+  align-self: stretch;
+  border-inline: 1px solid var(--border-default);
+}
+
+.summaryTabs button {
   position: relative;
   display: flex;
-  min-height: 54px;
+  min-width: 112px;
   align-items: center;
-  gap: 9px;
-  padding: 0 21px;
+  justify-content: center;
+  flex-direction: column;
   border: 0;
   background: transparent;
   color: var(--text-faint);
-  font: 700 9px var(--font-sans);
+  font-family: var(--font-sans);
   cursor: pointer;
 }
 
-.categoryTabs button + button { border-left: 1px solid var(--border-default); }
-.categoryTabs button::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: transparent; content: ""; }
-.categoryTabs button svg { width: 13px; height: 13px; }
-.categoryTabs button span { flex: 1; text-align: left; }
-.categoryTabs button small { display: grid; min-width: 23px; height: 23px; place-items: center; border-radius: 999px; background: var(--bg-subtle); color: var(--text-muted); font-size: 7px; }
-.categoryTabs button:hover,
-.categoryTabs button.active { color: var(--text-primary); }
-.categoryTabs button.active::after { background: var(--color-brand-pink); }
-.categoryTabs button.active svg,
-.categoryTabs button.active small { color: var(--color-brand-pink); }
+.summaryTabs button + button { border-left: 1px solid var(--border-default); }
+
+.summaryTabs button::after {
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  height: 2px;
+  background: transparent;
+  content: "";
+}
+
+.summaryTabs button span {
+  color: var(--text-faint);
+  font-size: 8px;
+  transition: color var(--duration-fast);
+}
+
+.summaryTabs button strong {
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -.05em;
+  transition: color var(--duration-fast);
+}
+
+.summaryTabs button:hover span,
+.summaryTabs button.active span,
+.summaryTabs button.active strong { color: var(--color-brand-pink); }
+.summaryTabs button.active::after { background: var(--color-brand-pink); }
 
 .noAttachment {
   margin: 18px 0 0;
@@ -41,5 +71,6 @@
 }
 
 @media (max-width: 600px) {
-  .categoryTabs button { padding-inline: 14px; }
+  .summaryTabs { min-height: 76px; border-top: 1px solid var(--border-default); border-inline: 0; }
+  .summaryTabs button { min-width: 0; flex: 1; }
 }
