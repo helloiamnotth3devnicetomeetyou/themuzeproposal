@@ -9,6 +9,8 @@ import {
   type RefObject,
 } from "react";
 import type { AlbumPreviewPayload } from "@/core/preview/types";
+import { localizeText } from "@/core/i18n/localized";
+import { useLocale } from "@/core/providers/LocaleContext";
 
 import { fetchDiscography } from "../lib/discography-data";
 import {
@@ -34,6 +36,7 @@ export function useDiscographyController(
   albumRailRef: RefObject<HTMLDivElement | null>,
   preview: AlbumPreviewPayload | null,
 ) {
+  const { locale, t } = useLocale();
   const [albums, setAlbums] = useState<DiscographyAlbum[]>([]);
   const [artistName, setArtistName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -71,6 +74,7 @@ export function useDiscographyController(
   const previewAlbum = useMemo<DiscographyAlbum | null>(() => preview ? {
     id: preview.album.id,
     title: preview.album.title,
+    titles: { ko: preview.album.title_ko ?? preview.album.title, en: preview.album.title_en, ja: preview.album.title_ja },
     type: preview.album.type,
     releaseDate: preview.album.release_date,
     cover: preview.album.cover_url,
@@ -78,6 +82,7 @@ export function useDiscographyController(
     color: preview.album.color,
     tracks: preview.album.tracks.map((track) => ({
       title: track.title,
+      titles: { ko: track.title_ko ?? track.title, en: track.title_en, ja: track.title_ja },
       isTitle: track.is_title,
       spotifyUrl: track.spotify_url || undefined,
       youtubeUrl: track.youtube_url || undefined,
@@ -105,12 +110,16 @@ export function useDiscographyController(
   }, [albums, previewAlbum]);
   const sortedAlbums = useMemo(
     () =>
-      [...effectiveAlbums].sort((a, b) =>
+      effectiveAlbums.map((item) => ({
+        ...item,
+        title: localizeText(item.titles, locale, item.title),
+        tracks: item.tracks.map((track) => ({ ...track, title: localizeText(track.titles, locale, track.title) })),
+      })).sort((a, b) =>
         sortBy === "date-asc"
           ? (a.releaseDate || "").localeCompare(b.releaseDate || "")
           : (b.releaseDate || "").localeCompare(a.releaseDate || ""),
       ),
-    [effectiveAlbums, sortBy],
+    [effectiveAlbums, locale, sortBy],
   );
   const album = sortedAlbums[albumIndex];
 
@@ -165,7 +174,7 @@ export function useDiscographyController(
           ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)))
           : 0;
 
-        setArtistName(result.artistName);
+        setArtistName(localizeText(result.artistNames, locale, result.artistName));
         setAlbums(result.albums);
         setAlbumIndex(nextAlbumIndex);
         setCurrentTrackIndex(rememberedTrackIndex);
@@ -180,7 +189,7 @@ export function useDiscographyController(
           setLoadError(
             error instanceof Error
               ? error.message
-              : "디스코그래피를 불러오지 못했습니다.",
+              : t.discography.loadError,
           );
         }
       } finally {
@@ -190,7 +199,7 @@ export function useDiscographyController(
 
     void load();
     return () => { cancelled = true; };
-  }, [artistSlug, setCurrentTrackIndex, restoreTimeRef]);
+  }, [artistSlug, locale, setCurrentTrackIndex, restoreTimeRef, t.discography.loadError]);
 
   const switchAlbum = useCallback(
     (newIndex: number) => {

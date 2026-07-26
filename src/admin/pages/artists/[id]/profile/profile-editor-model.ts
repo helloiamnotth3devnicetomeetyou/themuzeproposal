@@ -7,6 +7,7 @@ export type ProfileTab = "basic" | "visual" | "content" | "social" | "scenes" | 
 export type ProfileDraft = {
   name: string;
   engName: string;
+  jaName: string;
   type: string;
   debutDate: string;
   imageUrl: string;
@@ -22,6 +23,7 @@ export type ProfileDraft = {
 export const EMPTY_PROFILE: ProfileDraft = {
   name: "",
   engName: "",
+  jaName: "",
   type: "group",
   debutDate: "",
   imageUrl: "",

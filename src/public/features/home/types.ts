@@ -3,6 +3,8 @@ export type HomeSlideDTO = {
   artistName: string;
   artistSlug: string;
   title: string;
+  artistNames: { ko: string; en: string | null; ja: string | null };
+  titles: { ko: string; en: string | null; ja: string | null };
   type: string;
   imageUrl: string;
   typoLogoUrl: string | null;

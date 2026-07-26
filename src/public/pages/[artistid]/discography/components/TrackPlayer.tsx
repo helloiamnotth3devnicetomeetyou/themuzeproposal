@@ -6,6 +6,7 @@ import {
   LuPlay,
 } from "react-icons/lu";
 import { SiYoutube } from "react-icons/si";
+import { useLocale } from "@/core/providers/LocaleContext";
 
 import type { DiscographyTrack } from "../lib/types";
 
@@ -37,6 +38,7 @@ export function TrackPlayer({
   onSeek,
   onTogglePlay,
 }: TrackPlayerProps) {
+  const { t } = useLocale();
   return (
     <div
       className="p-4 rounded-2xl flex flex-col gap-3 shrink-0"
@@ -49,7 +51,7 @@ export function TrackPlayer({
       <div className="flex items-center justify-between">
         <div className="min-w-0">
           <span className="text-[8px] text-[var(--palette-4b5563)] font-black tracking-[0.15em] block">
-            NOW PLAYING
+            {t.discography.nowPlaying}
           </span>
           <span className="text-base font-bold text-[var(--color-static-white)] block truncate mt-0.5">
             {track?.title}
@@ -61,7 +63,7 @@ export function TrackPlayer({
       </div>
 
       <label className="discography-progress-wrap">
-        <span className="sr-only">{track?.title} 재생 위치</span>
+        <span className="sr-only">{track?.title} {t.discography.progress}</span>
         <input
           className="discography-progress"
           type="range"
@@ -87,14 +89,15 @@ export function TrackPlayer({
           <button
             onClick={onPrevious}
             className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
-            aria-label="이전 트랙"
+            aria-label={t.discography.previousTrack}
           >
             <LuChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
             onClick={onTogglePlay}
             disabled={!track?.audioUrl}
-            title={track?.audioUrl ? "재생" : "등록된 MP3가 없습니다"}
+            aria-label={isPlaying ? t.discography.pause : t.discography.play}
+            title={track?.audioUrl ? (isPlaying ? t.discography.pause : t.discography.play) : t.discography.noAudio}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
             style={{
               backgroundColor: albumColor,
@@ -111,7 +114,7 @@ export function TrackPlayer({
           <button
             onClick={onNext}
             className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
-            aria-label="다음 트랙"
+            aria-label={t.discography.nextTrack}
           >
             <LuChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -121,7 +124,7 @@ export function TrackPlayer({
             href={track.youtubeUrl}
             target="_blank"
             rel="noreferrer"
-            aria-label={`${track.title} 뮤직비디오 보기`}
+            aria-label={`${track.title} ${t.discography.musicVideo}`}
             className="discography-youtube-button justify-self-end"
           >
             <SiYoutube aria-hidden="true" />

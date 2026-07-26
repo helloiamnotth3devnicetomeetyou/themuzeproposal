@@ -312,7 +312,7 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
 
         <div className={styles.contentColumn}>
           <header className={styles.contentHeader}>
-            <div><span>{activeMeta.code}</span><h2>{activeMeta.label}</h2><p>{activeMeta.description}</p></div>
+            <div><h2>{activeMeta.label}</h2><p>{activeMeta.description}</p></div>
             <em>{String(sections.findIndex((item) => item.id === activeSection) + 1).padStart(2, "0")} / 04</em>
           </header>
 

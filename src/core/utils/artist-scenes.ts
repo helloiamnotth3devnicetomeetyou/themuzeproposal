@@ -15,6 +15,9 @@ export type ArtistScene = {
   id: string;
   artist_id: string;
   title: string;
+  title_ko: string | null;
+  title_en: string | null;
+  title_ja: string | null;
   image_url: string;
   image_width: number | null;
   image_height: number | null;

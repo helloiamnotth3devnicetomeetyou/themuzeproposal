@@ -4,6 +4,9 @@ import type { AlbumEditorDraft, TrackDraft } from "@/core/utils/music-editor";
 export type RawTrack = {
   id: string;
   title: string;
+  title_ko: string | null;
+  title_en: string | null;
+  title_ja: string | null;
   is_title: boolean;
   track_number: number;
   spotify_url: string | null;
@@ -16,6 +19,9 @@ export type RawAlbum = {
   id: string;
   artist_id: string;
   title: string;
+  title_ko: string | null;
+  title_en: string | null;
+  title_ja: string | null;
   type: string;
   release_date: string | null;
   cover_url: string | null;
@@ -33,7 +39,7 @@ export type RawAlbum = {
   tracks: RawTrack[] | null;
 };
 
-export const albumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
+export const albumSelect = "id,artist_id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,title_ko,title_en,title_ja,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
 export const legacyAlbumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
 
 export function albumToDraft(album: RawAlbum): AlbumEditorDraft {
@@ -41,6 +47,9 @@ export function albumToDraft(album: RawAlbum): AlbumEditorDraft {
     id: album.id,
     artist_id: album.artist_id,
     title: album.title,
+    title_ko: album.title_ko ?? album.title,
+    title_en: album.title_en ?? "",
+    title_ja: album.title_ja ?? "",
     type: album.type,
     release_date: album.release_date ?? "",
     cover_url: album.cover_url ?? "",
@@ -60,6 +69,9 @@ export function albumToDraft(album: RawAlbum): AlbumEditorDraft {
       .map((track) => ({
         id: track.id,
         title: track.title,
+        title_ko: track.title_ko ?? track.title,
+        title_en: track.title_en ?? "",
+        title_ja: track.title_ja ?? "",
         is_title: track.is_title,
         spotify_url: track.spotify_url ?? "",
         youtube_url: track.youtube_url ?? "",
@@ -77,6 +89,9 @@ export function createAlbumDraft(
     id: crypto.randomUUID(),
     artist_id: artistId,
     title: "",
+    title_ko: "",
+    title_en: "",
+    title_ja: "",
     type: "Mini Album",
     release_date: "",
     cover_url: "",
@@ -99,6 +114,9 @@ export function createTrackDraft(): TrackDraft {
   return {
     id: crypto.randomUUID(),
     title: "",
+    title_ko: "",
+    title_en: "",
+    title_ja: "",
     is_title: false,
     spotify_url: "",
     youtube_url: "",

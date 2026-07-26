@@ -23,6 +23,9 @@ export type ArtistProfilePreviewPayload = {
     slug: string;
     name: string;
     eng_name: string;
+    name_ko: string;
+    name_en: string;
+    name_ja: string | null;
     type: string;
     debut_date: string | null;
     image_url: string | null;
@@ -47,6 +50,9 @@ export type ArtistMemberPreviewPayload = {
     slug: string;
     name: string;
     eng_name: string | null;
+    name_ko: string;
+    name_en: string | null;
+    name_ja: string | null;
     role_ko: string | null;
     role_en: string | null;
     role_ja: string | null;
@@ -70,6 +76,9 @@ export type AlbumPreviewPayload = {
   album: {
     id: string;
     title: string;
+    title_ko: string;
+    title_en: string;
+    title_ja: string;
     type: string;
     release_date: string;
     cover_url: string;
@@ -85,6 +94,9 @@ export type AlbumPreviewPayload = {
     tracks: Array<{
       id: string;
       title: string;
+      title_ko: string;
+      title_en: string;
+      title_ja: string;
       is_title: boolean;
       spotify_url: string;
       youtube_url: string;
@@ -126,6 +138,9 @@ export type SchedulePreviewPayload = {
     description_en: string | null;
     description_ja: string | null;
     location: string | null;
+    location_ko: string | null;
+    location_en: string | null;
+    location_ja: string | null;
     link_url: string | null;
     sort_order: number;
   };
@@ -205,7 +220,7 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
   if (kind === "artist-profile") {
     const artist = payload.artist;
     return isRecord(artist)
-      && hasStrings(artist, ["id", "slug", "name", "eng_name", "type"])
+      && hasStrings(artist, ["id", "slug", "name", "eng_name", "name_ko", "name_en", "name_ja", "type"])
       && isNullableString(artist.debut_date)
       && isNullableString(artist.image_url)
       && isNullableString(artist.logo_url)
@@ -223,7 +238,7 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
     return isRecord(artist)
       && hasStrings(artist, ["id", "slug", "name"])
       && isRecord(member)
-      && hasStrings(member, ["id", "slug", "name"])
+      && hasStrings(member, ["id", "slug", "name", "name_ko", "name_en", "name_ja"])
       && isNullableString(member.eng_name)
       && isNullableString(member.image_url)
       && isFiniteNumber(member.sort_order);
@@ -235,11 +250,11 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
     return isRecord(artist)
       && hasStrings(artist, ["id", "slug", "name"])
       && isRecord(album)
-      && hasStrings(album, ["id", "title", "type", "release_date", "cover_url", "color"])
+      && hasStrings(album, ["id", "title", "title_ko", "title_en", "title_ja", "type", "release_date", "cover_url", "color"])
       && Array.isArray(album.tracks)
       && album.tracks.every((track) =>
         isRecord(track)
-        && hasStrings(track, ["id", "title", "spotify_url", "youtube_url", "audio_url", "music_video_url"])
+        && hasStrings(track, ["id", "title", "title_ko", "title_en", "title_ja", "spotify_url", "youtube_url", "audio_url", "music_video_url"])
         && typeof track.is_title === "boolean");
   }
 
@@ -260,7 +275,7 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
       && hasStrings(artist, ["id", "slug"])
       && isNullableString(artist.color)
       && isRecord(schedule)
-      && hasStrings(schedule, ["id", "event_date", "category", "title_ko"])
+      && hasStrings(schedule, ["id", "event_date", "category", "title_ko", "location_ko", "location_en", "location_ja"])
       && isFiniteNumber(schedule.sort_order);
   }
 

@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { AlbumEditorDraft } from "@/core/utils/music-editor";
 
 const draft: AlbumEditorDraft = {
-  id: "album-1", artist_id: "artist-1", title: "Existing album", type: "Mini Album", release_date: "2026-01-01",
+  id: "album-1", artist_id: "artist-1", title: "Existing album", title_ko: "Existing album", title_en: "", title_ja: "", type: "Mini Album", release_date: "2026-01-01",
   cover_url: "cover.jpg", hero_image_url: "", typo_logo_url: "", color: "#FFFFFF", spotify_id: "", youtube_url: "",
   description_ko: "", description_en: "", description_ja: "", is_published: false, published_at: null, sort_order: 1,
-  tracks: [{ id: "track-1", title: "Opening", is_title: true, spotify_url: "", youtube_url: "", audio_url: "", music_video_url: "" }],
+  tracks: [{ id: "track-1", title: "Opening", title_ko: "Opening", title_en: "", title_ja: "", is_title: true, spotify_url: "", youtube_url: "", audio_url: "", music_video_url: "" }],
 };
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), patchDraft: vi.fn(), setDraft: vi.fn(), setLoading: vi.fn(), setError: vi.fn() }));
@@ -48,7 +48,7 @@ describe("DiscographyAdmin", () => {
     const { container } = render(<DiscographyAdmin />);
     const title = container.querySelector("input[value='Existing album']")!;
     fireEvent.change(title, { target: { value: "Updated album" } });
-    expect(mocks.patchDraft).toHaveBeenCalledWith({ title: "Updated album" });
+    expect(mocks.patchDraft).toHaveBeenCalledWith({ title: "Updated album", title_ko: "Existing album" });
 
     const save = container.querySelector(".music-header-actions .admin-btn-primary")!;
     fireEvent.click(save);

@@ -138,6 +138,9 @@ export default function ArtistScheduleAdminPage() {
       description_en: draft.descriptionEn || null,
       description_ja: draft.descriptionJa || null,
       location: draft.location || null,
+      location_ko: draft.location || null,
+      location_en: draft.locationEn || null,
+      location_ja: draft.locationJa || null,
       link_url: draft.linkUrl || null,
       sort_order: draft.sortOrder,
     },
@@ -171,6 +174,9 @@ export default function ArtistScheduleAdminPage() {
       description_en: draft.descriptionEn.trim() || null,
       description_ja: draft.descriptionJa.trim() || null,
       location: draft.location.trim() || null,
+      location_ko: draft.location.trim() || null,
+      location_en: draft.locationEn.trim() || null,
+      location_ja: draft.locationJa.trim() || null,
       link_url: draft.linkUrl.trim() || null,
       is_published: draft.isPublished,
       sort_order: draft.sortOrder,
@@ -276,7 +282,8 @@ export default function ArtistScheduleAdminPage() {
           <FormField label="일정명" valueKo={draft.titleKo} valueEn={draft.titleEn} valueJa={draft.titleJa} onChangeKo={(titleKo) => patch({ titleKo })} onChangeEn={(titleEn) => patch({ titleEn })} onChangeJa={(titleJa) => patch({ titleJa })} required />
           <div className="music-field-grid two"><label className="music-field"><span>날짜 <b>*</b></span><input type="date" className="admin-input" value={draft.eventDate} onChange={(event) => patch({ eventDate: event.target.value })} /></label><label className="music-field"><span>시작 시간</span><input type="time" className="admin-input" value={draft.startTime} onChange={(event) => patch({ startTime: event.target.value })} /></label></div>
           <div className="music-field-grid two"><div className="music-field"><span>일정 유형 <b>*</b></span><CustomSelect ariaLabel="일정 유형" value={draft.category} onChange={(category) => patch({ category: category as Category })} options={(Object.keys(CATEGORY) as Category[]).map((key) => ({ value: key, label: CATEGORY[key].label }))} /></div><div className="music-field"><span>캘린더 표시</span><div className={styles.categoryPreview} style={{ "--category-color": CATEGORY[draft.category].color } as CSSProperties}>{(() => { const CategoryIcon = CATEGORY[draft.category].icon; return <i><CategoryIcon aria-hidden="true" /></i>; })()}{CATEGORY[draft.category].label}</div></div></div>
-          <div className="music-field-grid two"><label className="music-field"><span>장소</span><input className="admin-input" value={draft.location} onChange={(event) => patch({ location: event.target.value })} placeholder="예: 올림픽공원 KSPO DOME" /></label><label className="music-field"><span>연결 링크</span><input type="url" className="admin-input" value={draft.linkUrl} onChange={(event) => patch({ linkUrl: event.target.value })} placeholder="https://" /></label></div>
+          <FormField label="장소" valueKo={draft.location} valueEn={draft.locationEn} valueJa={draft.locationJa} onChangeKo={(location) => patch({ location })} onChangeEn={(locationEn) => patch({ locationEn })} onChangeJa={(locationJa) => patch({ locationJa })} />
+          <label className="music-field content-field-short"><span>연결 링크</span><input type="url" className="admin-input" value={draft.linkUrl} onChange={(event) => patch({ linkUrl: event.target.value })} placeholder="https://" /></label>
           <div className={styles.sectionDivider} />
           <div className="content-section-heading"><h3>일정 설명</h3><span>언어 탭을 전환해 같은 폼에서 설명을 작성합니다. 번역이 없으면 공개 페이지에서 한국어가 대신 표시됩니다.</span></div>
           <FormField label="일정 설명" type="textarea" valueKo={draft.descriptionKo} valueEn={draft.descriptionEn} valueJa={draft.descriptionJa} onChangeKo={(descriptionKo) => patch({ descriptionKo })} onChangeEn={(descriptionEn) => patch({ descriptionEn })} onChangeJa={(descriptionJa) => patch({ descriptionJa })} />

@@ -1,7 +1,9 @@
 import type { Locale } from "@/core/providers/LocaleContext";
+import type { LocalizedText } from "@/core/i18n/localized";
 
 export interface DiscographyTrack {
   title: string;
+  titles: LocalizedText;
   isTitle: boolean;
   spotifyUrl?: string;
   youtubeUrl?: string;
@@ -12,6 +14,7 @@ export interface DiscographyTrack {
 export interface DiscographyAlbum {
   id: string;
   title: string;
+  titles: LocalizedText;
   type: string;
   releaseDate: string;
   cover: string;
@@ -29,6 +32,9 @@ export interface DiscographyAlbum {
 export interface RawDiscographyAlbum {
   id: string;
   title: string;
+  title_ko: string | null;
+  title_en: string | null;
+  title_ja: string | null;
   type: string;
   release_date: string | null;
   cover_url: string;
@@ -42,6 +48,9 @@ export interface RawDiscographyAlbum {
   youtube_url: string | null;
   tracks: Array<{
     title: string;
+    title_ko: string | null;
+    title_en: string | null;
+    title_ja: string | null;
     track_number: number;
     is_title: boolean;
     spotify_url: string | null;

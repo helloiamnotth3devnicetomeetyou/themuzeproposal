@@ -1,16 +1,12 @@
 import type { Locale } from "@/core/providers/LocaleContext";
+import { localizeText } from "@/core/i18n/localized";
+import { useLocale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
 import { SiSpotify } from "react-icons/si";
 
 import type { DiscographyAlbum, DiscographyTab } from "../lib/types";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
-
-const TABS: Array<{ id: DiscographyTab; label: string }> = [
-  { id: "concept", label: "Concept" },
-  { id: "intro", label: "Track Intro" },
-  { id: "members", label: "Members" },
-];
 
 interface AlbumDetailsProps {
   activeTab: DiscographyTab;
@@ -50,7 +46,13 @@ export function AlbumDetails({
   onTabChange,
   onTogglePlay,
 }: AlbumDetailsProps) {
+  const { t } = useLocale();
   const currentTrack = album.tracks[currentTrackIndex];
+  const tabs: Array<{ id: DiscographyTab; label: string }> = [
+    { id: "concept", label: t.discography.tabs.concept },
+    { id: "intro", label: t.discography.tabs.intro },
+    { id: "members", label: t.discography.tabs.members },
+  ];
 
   return (
     <div className="lg:col-span-5 flex flex-col gap-4 w-full relative z-20 h-full max-h-[600px]">
@@ -100,7 +102,7 @@ export function AlbumDetails({
       </div>
 
       <div className="flex gap-5 border-b border-[var(--alpha-ffffff-1)] pb-1.5 mt-1 relative shrink-0">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
@@ -140,7 +142,7 @@ export function AlbumDetails({
         {activeTab === "intro" && (
           <div className="absolute inset-0 flex flex-col gap-4 animate-slideIn">
             <p className="text-sm text-[var(--palette-9ca3af)] font-light leading-relaxed max-w-md shrink-0">
-              {album.desc[locale]}
+              {localizeText(album.desc, locale, t.discography.noDescription)}
             </p>
             <TrackPlayer
               albumColor={album.color}
@@ -168,7 +170,7 @@ export function AlbumDetails({
           <div className="absolute inset-0 animate-slideIn">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 h-full">
               <p className="col-span-full self-center text-sm text-[var(--palette-6b7280)]">
-                등록된 멤버 정보가 없습니다.
+                {t.discography.noMembers}
               </p>
             </div>
           </div>

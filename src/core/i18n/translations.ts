@@ -1,7 +1,10 @@
-export type Locale = 'ko' | 'en' | 'ja';
+import { publicMessages } from "./public-messages";
+
+export type { Locale } from "./localized";
 
 export const translations = {
   ko: {
+    ...publicMessages.ko,
     nav: {
       about: "ABOUT",
       artists: "ARTISTS",
@@ -28,6 +31,7 @@ export const translations = {
     }
   },
   en: {
+    ...publicMessages.en,
     nav: {
       about: "ABOUT",
       artists: "ARTISTS",
@@ -54,6 +58,7 @@ export const translations = {
     }
   },
   ja: {
+    ...publicMessages.ja,
     nav: {
       about: "ABOUT",
       artists: "ARTISTS",

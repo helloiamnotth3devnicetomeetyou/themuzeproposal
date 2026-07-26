@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/core/auth/auth";
+import { useLocale } from "@/core/providers/LocaleContext";
 import { supabase } from "@/core/supabase/client";
 import type { Artist, MyReport } from "../ProtectClient";
 import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
@@ -55,6 +56,7 @@ export default function ReportForm({
   setError,
   error,
 }: Props) {
+  const { t } = useLocale();
   const router = useRouter();
   const [form, setForm] = useState<ReportFormValues>(initialForm);
   const [fileSlots, setFileSlots] = useState<Array<File | null>>([null, null, null]);
@@ -93,22 +95,22 @@ export default function ReportForm({
 
   const validateReport = () => {
     const requiredFields = [
-      { label: "아티스트", id: "artist", missing: !form.artistId },
-      { label: "신고 유형", id: "reportType", missing: !form.reportType },
-      { label: "제목", id: "title", missing: !form.title.trim() },
-      { label: "신고 내용", id: "content", missing: !form.content.trim() },
-      { label: "게시 플랫폼", id: "platform", missing: !form.platform },
-      { label: "게시물 URL", id: "postUrl", missing: !form.postUrl.trim() },
-      { label: "게시 일자", id: "postedAt", missing: !form.postedAt },
-      { label: "게시물 작성자", id: "authorName", missing: !form.authorName.trim() },
-      { label: "첨부 자료", id: "evidenceFiles", missing: files.length === 0 },
-      { label: "사실 확인 동의", id: "reportConfirmation", missing: !confirmed },
+      { label: t.protect.fields.artist, id: "artist", missing: !form.artistId },
+      { label: t.protect.fields.reportType, id: "reportType", missing: !form.reportType },
+      { label: t.protect.fields.title, id: "title", missing: !form.title.trim() },
+      { label: t.protect.fields.content, id: "content", missing: !form.content.trim() },
+      { label: t.protect.fields.platform, id: "platform", missing: !form.platform },
+      { label: t.protect.fields.postUrl, id: "postUrl", missing: !form.postUrl.trim() },
+      { label: t.protect.fields.postedAt, id: "postedAt", missing: !form.postedAt },
+      { label: t.protect.fields.authorName, id: "authorName", missing: !form.authorName.trim() },
+      { label: t.protect.fields.evidence, id: "evidenceFiles", missing: files.length === 0 },
+      { label: t.protect.fields.confirmation, id: "reportConfirmation", missing: !confirmed },
     ].filter((field) => field.missing);
 
     setMissingFields(requiredFields.map((field) => field.label));
     if (!requiredFields.length) return true;
 
-    setError(`입력하지 않은 항목이 ${requiredFields.length}개 있습니다.`);
+    setError(t.protect.missingCount(requiredFields.length));
     requestAnimationFrame(() => {
       const firstField = document.getElementById(requiredFields[0].id);
       firstField?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -145,18 +147,18 @@ export default function ReportForm({
     setMissingFields([]);
     if (!incoming.length) return;
     if (files.length + incoming.length > 3) {
-      setError("첨부 자료는 최대 3개까지 등록할 수 있습니다.");
+      setError(t.protect.errors.maxFiles);
       return;
     }
 
     const invalidType = incoming.find((file) => !ACCEPTED_FILE_TYPES.has(file.type));
     if (invalidType) {
-      setError(`${invalidType.name}: JPG, PNG, WEBP, GIF 또는 PDF 파일만 첨부할 수 있습니다.`);
+      setError(t.protect.errors.fileType(invalidType.name));
       return;
     }
     const oversized = incoming.find((file) => file.size > MAX_FILE_SIZE);
     if (oversized) {
-      setError(`${oversized.name}: 파일 크기는 50MB 이하여야 합니다.`);
+      setError(t.protect.errors.fileSize(oversized.name));
       return;
     }
 
@@ -168,7 +170,7 @@ export default function ReportForm({
       return false;
     });
     if (duplicate) {
-      setError(`${duplicate.name}: 이미 첨부한 파일입니다.`);
+      setError(t.protect.errors.duplicate(duplicate.name));
       return;
     }
 
@@ -187,8 +189,8 @@ export default function ReportForm({
     setError("");
     if (!files.length || !confirmed) {
       setError(!files.length
-        ? "침해 내용을 확인할 수 있는 증거 자료를 1개 이상 첨부해 주세요."
-        : "제보 내용이 사실에 근거해 작성되었음을 확인해 주세요.");
+        ? t.protect.errors.evidenceRequired
+        : t.protect.errors.confirmationRequired);
       return;
     }
 
@@ -261,7 +263,7 @@ export default function ReportForm({
       }
       setError(submitError instanceof Error
         ? submitError.message
-        : "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        : t.protect.errors.submitFailed);
     } finally {
       setSubmitting(false);
     }

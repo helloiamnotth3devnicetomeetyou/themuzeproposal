@@ -55,6 +55,10 @@ export default function ProfileEditorSections({
               <input className="admin-input" value={draft.engName} onChange={(event) => patchDraft({ engName: event.target.value })} />
             </label>
           </div>
+          <label className="music-field content-field-short">
+            <span>아티스트명 (일본어)</span>
+            <input className="admin-input" value={draft.jaName} onChange={(event) => patchDraft({ jaName: event.target.value })} />
+          </label>
           <div className="music-field-grid two">
             <label className="music-field">
               <span>공개 경로</span>

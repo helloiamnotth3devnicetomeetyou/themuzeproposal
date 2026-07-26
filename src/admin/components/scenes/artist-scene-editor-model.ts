@@ -19,7 +19,7 @@ export const ACCEPTED_SCENE_TYPES = new Set([
 ]);
 export const ACCEPTED_MASK_TYPES = new Set(["image/png", "image/webp"]);
 export const sceneSelect =
-  "id,artist_id,title,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
+  "id,artist_id,title,title_ko,title_en,title_ja,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
 
 export function storagePathFromUrl(url: string) {
   const match = url.match(

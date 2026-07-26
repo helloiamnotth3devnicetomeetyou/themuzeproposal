@@ -106,9 +106,11 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         const upload = await supabase.storage.from("artist-assets").upload(path, file, { contentType: file.type, upsert: false });
         if (upload.error) throw upload.error;
         const publicUrl = supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl;
+        const canonicalTitle = file.name.replace(/\.[^.]+$/, "");
         const inserted = await supabase.from("artist_scenes").insert({
           artist_id: artistId,
-          title: file.name.replace(/\.[^.]+$/, ""),
+          title: canonicalTitle,
+          title_ko: canonicalTitle,
           image_url: publicUrl,
           image_width: dimensions.width,
           image_height: dimensions.height,
@@ -141,6 +143,8 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       const result = await supabase.from("artist_scenes").insert({
         artist_id: artistId,
         title: "Main scene",
+        title_ko: "메인 장면",
+        title_en: "Main scene",
         image_url: heroUrl,
         image_width: dimensions.width,
         image_height: dimensions.height,
@@ -184,6 +188,9 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     }
     const result = await supabase.from("artist_scenes").update({
       title: selectedScene.title.trim(),
+      title_ko: selectedScene.title_ko?.trim() || selectedScene.title.trim(),
+      title_en: selectedScene.title_en?.trim() || null,
+      title_ja: selectedScene.title_ja?.trim() || null,
       is_hero: selectedScene.is_hero,
       is_published: selectedScene.is_published,
     }).eq("id", selectedScene.id);
@@ -289,6 +296,9 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
 
         {selectedScene && <div className={styles.sceneSettings}>
           <label><span>장면 이름</span><input className="admin-input" value={selectedScene.title} onChange={(event) => patchScene({ title: event.target.value })} /></label>
+          <label><span>장면 이름 (한국어)</span><input className="admin-input" value={selectedScene.title_ko || ""} onChange={(event) => patchScene({ title_ko: event.target.value })} /></label>
+          <label><span>장면 이름 (영어)</span><input className="admin-input" value={selectedScene.title_en || ""} onChange={(event) => patchScene({ title_en: event.target.value })} /></label>
+          <label><span>장면 이름 (일본어)</span><input className="admin-input" value={selectedScene.title_ja || ""} onChange={(event) => patchScene({ title_ja: event.target.value })} /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => patchScene({ is_hero: event.target.checked })} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
           <button type="button" className={styles.danger} disabled={busy} onClick={() => void deleteScene()}><LuTrash2 aria-hidden="true" />삭제</button>

@@ -1,4 +1,5 @@
 import type { DiscographyAlbum } from "../lib/types";
+import { useLocale } from "@/core/providers/LocaleContext";
 
 interface TrackListProps {
   album: DiscographyAlbum;
@@ -15,6 +16,7 @@ export function TrackList({
   isPlaying,
   onPlayTrack,
 }: TrackListProps) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-none pr-1 min-h-0">
       {album.tracks.map((track, index) => {
@@ -99,7 +101,7 @@ export function TrackList({
                   href={track.videoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`${track.title} 뮤직비디오`}
+                  aria-label={`${track.title} ${t.discography.musicVideo}`}
                   className="text-[8px] font-bold text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] px-1.5 py-1"
                 >
                   MV

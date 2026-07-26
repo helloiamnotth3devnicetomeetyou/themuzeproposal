@@ -109,9 +109,21 @@ export default function DiscographyAdmin() {
     const albumResult = await supabase.from("albums").select(albumSelect).eq("artist_id", artist.id).order("sort_order", { ascending: true }).overrideTypes<RawAlbum[], { merge: false }>();
     let albumRows = albumResult.data;
     let albumError = albumResult.error;
-    if (albumError?.message.includes("typo_logo_url")) {
+    if (albumError?.message.includes("typo_logo_url") || albumError?.message.includes("title_ko")) {
       const legacyResult = await supabase.from("albums").select(legacyAlbumSelect).eq("artist_id", artist.id).order("sort_order", { ascending: true });
-      albumRows = legacyResult.data ? legacyResult.data.map((album) => ({ ...album, typo_logo_url: null })) as RawAlbum[] : null;
+      albumRows = legacyResult.data ? legacyResult.data.map((album) => ({
+        ...album,
+        typo_logo_url: null,
+        title_ko: album.title,
+        title_en: null,
+        title_ja: null,
+        tracks: (album.tracks ?? []).map((track) => ({
+          ...track,
+          title_ko: track.title,
+          title_en: null,
+          title_ja: null,
+        })),
+      })) as RawAlbum[] : null;
       albumError = legacyResult.error;
     }
     if (albumError) { setError(albumError.message.includes("spotify_url") ? "음악 편집 DB 마이그레이션(003_music_editor.sql)을 먼저 적용해 주세요." : albumError.message); setLoading(false); return; }
@@ -170,7 +182,10 @@ export default function DiscographyAdmin() {
   };
 
   const changeTab = (next: EditorTab) => { if (!draft) return; setTab(next); syncUrl(draft.id, next); };
-  const handleTitle = (title: string) => patchDraft({ title });
+  const handleTitle = (title: string) => patchDraft({
+    title,
+    title_ko: draft?.title_ko || title,
+  });
 
   const registerUpload = (asset: UploadedAsset) => { uploadedAssets.current.push(asset); };
 
@@ -180,15 +195,42 @@ export default function DiscographyAdmin() {
     setSaving(true); setError("");
     const original = albums.find((album) => album.id === draft.id);
     const { tracks, ...albumDraft } = draft;
-    const albumPayload = { ...albumDraft, slug: draft.id };
-    const { data, error: saveError } = await supabase.rpc("save_album_with_tracks", { p_album: albumPayload, p_tracks: tracks });
+    const albumPayload = {
+      ...albumDraft,
+      title_ko: draft.title_ko.trim() || draft.title,
+      title_en: draft.title_en.trim() || null,
+      title_ja: draft.title_ja.trim() || null,
+      slug: draft.id,
+    };
+    const localizedTracks = tracks.map((track) => ({
+      ...track,
+      title_ko: track.title_ko.trim() || track.title,
+      title_en: track.title_en.trim() || null,
+      title_ja: track.title_ja.trim() || null,
+    }));
+    const { data, error: saveError } = await supabase.rpc("save_album_with_tracks", { p_album: albumPayload, p_tracks: localizedTracks });
     if (saveError) { setSaving(false); setError(saveError.code === "23505" ? "같은 앨범 ID를 사용하는 앨범이 있습니다." : saveError.message); return; }
 
     const savedAlbumId = String(data ?? draft.id);
-    const { error: heroImageError } = await supabase.from("albums").update({ hero_image_url: draft.hero_image_url || null, typo_logo_url: draft.typo_logo_url || null }).eq("id", savedAlbumId);
-    if (heroImageError) {
+    const [{ error: localizedAlbumError }, ...localizedTrackResults] = await Promise.all([
+      supabase.from("albums").update({
+        hero_image_url: draft.hero_image_url || null,
+        typo_logo_url: draft.typo_logo_url || null,
+        title_ko: draft.title_ko.trim() || draft.title,
+        title_en: draft.title_en.trim() || null,
+        title_ja: draft.title_ja.trim() || null,
+      }).eq("id", savedAlbumId),
+      ...localizedTracks.map((track) => supabase.from("tracks").update({
+        title_ko: track.title_ko,
+        title_en: track.title_en,
+        title_ja: track.title_ja,
+      }).eq("id", track.id)),
+    ]);
+    const localizedTrackError = localizedTrackResults.find((result) => result.error)?.error;
+    if (localizedAlbumError || localizedTrackError) {
+      const assetError = localizedAlbumError || localizedTrackError;
       setSaving(false);
-      setError(heroImageError.message.includes("typo_logo_url") ? "앨범 타이포 로고 DB 마이그레이션(023_move_track_typo_logo_to_albums.sql)을 먼저 적용해 주세요." : heroImageError.message.includes("hero_image_url") ? "앨범 히어로 이미지 DB 마이그레이션(013_album_hero_image.sql)을 먼저 적용해 주세요." : heroImageError.message);
+      setError(assetError!.message.includes("title_ko") ? "다국어 콘텐츠 DB 마이그레이션을 먼저 적용해 주세요." : assetError!.message);
       return;
     }
 
@@ -281,6 +323,11 @@ export default function DiscographyAdmin() {
           {tab === "basic" && <div className="music-section-stack">
             <div className="music-section-title music-release-heading"><div><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div></div>
             <div className="music-field-grid two"><label className="music-field"><span>앨범 제목 <b>*</b></span><input className="admin-input" value={draft.title} onChange={(event) => handleTitle(event.target.value)} autoFocus /></label><div className="music-field"><span>앨범 종류 <b>*</b></span><CustomSelect ariaLabel="앨범 종류" value={draft.type} onChange={(type) => patchDraft({ type })} options={ALBUM_TYPES.map((type) => ({ value: type, label: type }))} /></div></div>
+            <div className="music-field-grid three">
+              <label className="music-field"><span>표시 제목 (한국어)</span><input className="admin-input" value={draft.title_ko} onChange={(event) => patchDraft({ title_ko: event.target.value })} /></label>
+              <label className="music-field"><span>표시 제목 (영어)</span><input className="admin-input" value={draft.title_en} onChange={(event) => patchDraft({ title_en: event.target.value })} /></label>
+              <label className="music-field"><span>표시 제목 (일본어)</span><input className="admin-input" value={draft.title_ja} onChange={(event) => patchDraft({ title_ja: event.target.value })} /></label>
+            </div>
             <label className="music-field music-date-field"><span>발매일</span><input type="date" className="admin-input" value={draft.release_date} onChange={(event) => patchDraft({ release_date: event.target.value })} /></label>
             <div className="music-divider" />
             <CoverAssetField artistId={artistId} albumId={draft.id} value={draft.cover_url} onError={setError} onUploaded={(asset, color) => { registerUpload(asset); patchDraft({ cover_url: asset.url, color }); }} />
@@ -308,6 +355,11 @@ export default function DiscographyAdmin() {
                   <div className="music-track-actions"><button type="button" onClick={() => setExpandedTrack(expandedTrack === track.id ? null : track.id)}>{expandedTrack === track.id ? "접기" : "미디어"}</button><button type="button" className="is-danger" onClick={() => patchDraft({ tracks: draft.tracks.filter((item) => item.id !== track.id) })}>삭제</button></div>
                 </div>
                 {expandedTrack === track.id && <div className="music-track-assets">
+                  <div className="music-track-link-grid">
+                    <label className="music-field"><span>곡명 (한국어)</span><input value={track.title_ko} onChange={(event) => patchTrack(track.id, { title_ko: event.target.value })} /></label>
+                    <label className="music-field"><span>곡명 (영어)</span><input value={track.title_en} onChange={(event) => patchTrack(track.id, { title_en: event.target.value })} /></label>
+                    <label className="music-field"><span>곡명 (일본어)</span><input value={track.title_ja} onChange={(event) => patchTrack(track.id, { title_ja: event.target.value })} /></label>
+                  </div>
                   <div className="music-track-link-grid"><label className="music-field"><span>곡별 Spotify 링크</span><input type="url" className="admin-input" value={track.spotify_url} onChange={(event) => patchTrack(track.id, { spotify_url: event.target.value })} placeholder="https://open.spotify.com/track/…" /></label><label className="music-field"><span>곡별 YouTube 링크</span><input type="url" className="admin-input" value={track.youtube_url} onChange={(event) => patchTrack(track.id, { youtube_url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label></div>
                   <div className="music-track-asset-grid is-single">
                     <TrackAssetField label="음원 MP3" hint="파일을 끌어놓거나 선택하세요 · 최대 100MB" accept="audio/mpeg,audio/mp3,.mp3" maxBytes={100 * 1024 * 1024} artistId={artistId} albumId={draft.id} trackId={track.id} kind="audio" value={track.audio_url} onError={setError} onClear={() => patchTrack(track.id, { audio_url: "" })} onUploaded={(asset) => { registerUpload(asset); patchTrack(track.id, { audio_url: asset.url }); }} />

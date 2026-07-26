@@ -10,7 +10,7 @@ const languageOptions: CustomSelectOption[] = [
 ];
 
 export default function LanguageSwitcher() {
-  const { locale, setLocale } = useLocale();
+  const { locale, setLocale, t } = useLocale();
 
   return (
     <div style={{ width: "105px" }}>
@@ -18,7 +18,7 @@ export default function LanguageSwitcher() {
         value={locale}
         options={languageOptions}
         onChange={(val) => setLocale(val as Locale)}
-        ariaLabel="언어 선택"
+        ariaLabel={t.common.language}
         variant="field"
       />
     </div>

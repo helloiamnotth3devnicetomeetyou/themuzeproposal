@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LuMail, LuMapPin } from "react-icons/lu";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { localizeText } from "@/core/i18n/localized";
 import { useTheme } from "@/core/providers/ThemeContext";
 import { supabase } from "@/core/supabase/client";
 import { sortHistoryNewestFirst } from "@/core/content/site-content";
@@ -22,7 +23,7 @@ type NoticePreview = {
 };
 
 export default function About() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { settings } = useSiteSettings();
@@ -67,60 +68,34 @@ export default function About() {
     return () => { active = false; };
   }, []);
 
-  const companyDesc = {
-    ko: "더뮤즈엔터테인먼트는 'YOU ARE MY MUZE'라는 슬로건 아래, 대중의 영감이 되는 독창적이고 가치 있는 대중문화를 선도하는 글로벌 연예 기획사입니다. 음악 본연의 깊이와 예술성, 그리고 트렌디한 비주얼을 결합하여 전 세계 팬들의 마음을 움직이는 글로벌 아티스트를 육성하고 있습니다.",
-    en: "THE MUZE Entertainment is a global entertainment agency leading creative and valuable pop culture under the slogan 'YOU ARE MY MUZE'. We combine musical depth, artistry, and trendy visuals to cultivate global artists who inspire fans worldwide.",
-    ja: "THE MUZE Entertainmentは、「YOU ARE MY MUZE」という슬로건 아래, 大衆のインスピレーションとなる独創的で価値のある大衆文化をリードするグローバル芸能事務所です。音楽本来의深みと芸術性、高いビジュアルを融合させ、世界中のファンの心を動かすグローバルアーティストを育成しています。"
-  }[locale];
-
-  const visionList = {
-    ko: [
-      { num: "01", title: "예술적 깊이 (Artistic Depth)", desc: "단순한 유행을 넘어 음악 본연의 진정성과 완성도를 추구합니다." },
-      { num: "02", title: "독창적 콘셉트 (Sensory Concept)", desc: "향기(Scent)와 시각을 결합한 리센느(RESCENE)와 같이 감각적이고 고유한 아이덴티티를 설계합니다." },
-      { num: "03", title: "글로벌 확장 (Global Stage)", desc: "다국적 멤버와 세련된 팝 사운드를 기반으로 전 세계 무대를 지향합니다." }
-    ],
-    en: [
-      { num: "01", title: "Artistic Depth", desc: "Pursuing the authenticity and completeness of music beyond temporary trends." },
-      { num: "02", title: "Original Concept", desc: "Designing sensory and unique identities like RESCENE, blending scent and sight." },
-      { num: "03", title: "Global Vision", desc: "Aiming for the global stage with multicultural members and sophisticated pop sounds." }
-    ],
-    ja: [
-      { num: "01", title: "芸術적深み", desc: "一時のトレンドを超え、音楽本来の真実性と完成度を追求します。" },
-      { num: "02", title: "独創적コンセプト", desc: "香りと視覚を融合したRESCENEのように、感覚的で唯一無二의아이덴티티를 설계합니다." },
-      { num: "03", title: "グローバルビジョン", desc: "多国籍メンバーと洗練されたポップサウンドを基盤に、世界中のステージを目指します." }
-    ]
-  }[locale];
+  const companyDesc = t.about.companyDescription;
+  const visionList = t.about.vision.map((item, index) => ({
+    num: String(index + 1).padStart(2, "0"),
+    title: item.title,
+    desc: item.description,
+  }));
 
   const historyList = sortHistoryNewestFirst(settings.history).map((item) => ({
     year: item.date,
-    event: locale === "en" ? item.event_en || item.event_ko : locale === "ja" ? item.event_ja || item.event_ko : item.event_ko,
+    event: localizeText({ ko: item.event_ko, en: item.event_en, ja: item.event_ja }, locale),
   }));
-  const companyName = settings.company[`name_${locale}`] || settings.company.name_en || settings.company.name_ko || "THE MUZE HQ";
-  const fallbackAddress = locale === "ko" ? "????? ??? ??? ??? ??" : locale === "ja" ? "Tokyo, Japan" : "Nonhyeon-ro, Sinsa-dong, Gangnam-gu, Seoul, Korea";
-  const companyAddress = settings.company[`address_${locale}`] || settings.company.address_en || settings.company.address_ko || fallbackAddress;
+  const companyName = localizeText({ ko: settings.company.name_ko, en: settings.company.name_en, ja: settings.company.name_ja }, locale, "THE MUZE HQ");
+  const companyAddress = localizeText({ ko: settings.company.address_ko, en: settings.company.address_en, ja: settings.company.address_ja }, locale, t.about.addressFallback);
   const companyEmail = settings.company.email || "contact@themuze.kr";
 
 
   const noticeList = notices.map((notice) => ({
     id: notice.id,
     date: notice.date,
-    title: locale === "en" ? notice.title_en || notice.title_ko : locale === "ja" ? notice.title_ja || notice.title_ko : notice.title_ko,
-    category: locale === "en" ? notice.category_en || notice.category_ko : locale === "ja" ? notice.category_ja || notice.category_ko : notice.category_ko,
+    title: localizeText({ ko: notice.title_ko, en: notice.title_en, ja: notice.title_ja }, locale),
+    category: localizeText({ ko: notice.category_ko, en: notice.category_en, ja: notice.category_ja }, locale),
   }));
 
   const stackItems = [
     {
       id: 0,
-      label: {
-        ko: "THE MUZE가 지향하는 가치와 비전",
-        en: "THE MUZE values and core vision",
-        ja: "THE MUZEが目指す価値とビジョン"
-      }[locale],
-      conclusion: {
-        ko: "THE MUZE의 핵심 아이덴티티",
-        en: "THE MUZE Core Identity",
-        ja: "THE MUZEのアイデンティティ"
-      }[locale],
+      label: t.about.valueLabel,
+      conclusion: t.about.valueConclusion,
       content: (
         <div className="flex flex-col gap-8 pt-4">
           <div className="flex flex-col gap-6 items-start">
@@ -173,16 +148,8 @@ export default function About() {
     },
     {
       id: 1,
-      label: {
-        ko: "그동안 걸어온 음악과 성장의 기록",
-        en: "Milestones of music and corporate growth",
-        ja: "歩んできた音楽と成長の歴史"
-      }[locale],
-      conclusion: {
-        ko: "아티스트와 함께 구축한 연혁",
-        en: "THE MUZE Company History",
-        ja: "アーティストと歩んだ沿革"
-      }[locale],
+      label: t.about.historyLabel,
+      conclusion: t.about.historyConclusion,
       content: (
         <div className="pl-6 md:pl-16 border-l py-4" style={{ borderColor: "var(--border-default)" }}>
           {historyList.map((item, idx) => (
@@ -199,19 +166,11 @@ export default function About() {
     },
     {
       id: 2,
-      label: {
-        ko: "더뮤즈와 아티스트의 공식 안내 사항",
-        en: "Official notices and announcements",
-        ja: "THE MUZEと所属アーティストの公式公示"
-      }[locale],
-      conclusion: {
-        ko: "최근 공지 및 공식 업데이트",
-        en: "Official Announcements",
-        ja: "最近の告知とアップデート"
-      }[locale],
+      label: t.about.noticesLabel,
+      conclusion: t.about.noticesConclusion,
       content: (
         <div className="flex flex-col gap-3 pt-4">
-          {noticesLoading && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{locale === "ko" ? "공지를 불러오는 중…" : locale === "ja" ? "お知らせを読み込んでいます…" : "Loading notices…"}</div>}
+          {noticesLoading && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{t.about.noticesLoading}</div>}
           {!noticesLoading && noticeList.map((n) => (
             <Link key={n.id} href={`/notice/${n.id}`} className="flex items-center justify-between p-4 rounded-xl border transition-all hover:translate-x-1" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-subtle)" }}>
               <div className="flex items-center gap-3 min-w-0">
@@ -221,22 +180,14 @@ export default function About() {
               <span className="text-xs shrink-0 pl-4" style={{ color: "var(--text-muted)" }}>{n.date}</span>
             </Link>
           ))}
-          {!noticesLoading && !noticeList.length && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{locale === "ko" ? "등록된 공지가 없습니다." : locale === "ja" ? "登録されたお知らせはありません。" : "No notices have been published."}</div>}
+          {!noticesLoading && !noticeList.length && <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{t.about.noticesEmpty}</div>}
         </div>
       )
     },
     {
       id: 3,
-      label: {
-        ko: "크리에이터를 위한 신사옥의 위치",
-        en: "New creative building location",
-        ja: "クリエイターのための新社屋の位置"
-      }[locale],
-      conclusion: {
-        ko: "신사옥 안내 및 메일 문의",
-        en: "HQ Location & E-mail Contact",
-        ja: "新社屋案内とメール問い合わせ"
-      }[locale],
+      label: t.about.locationLabel,
+      conclusion: t.about.locationConclusion,
       content: (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center pt-4">
           <div className="md:col-span-5 flex flex-col gap-5">
@@ -248,9 +199,7 @@ export default function About() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
                 <LuMapPin className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
-                <style>{`.about-settings-address + span { display: none; }`}</style>
                 <span className="about-settings-address">{companyAddress}</span>
-                <span>{locale === "ko" ? "서울특별시 강남구 신사동 논현로 사옥" : locale === "ja" ? "大韓民국소울特別市江南区新沙洞ノンヒョン路" : "Nonhyeon-ro, Sinsa-dong, Gangnam-gu, Seoul, Korea"}</span>
               </div>
               
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
@@ -262,11 +211,7 @@ export default function About() {
             </div>
 
             <p className="text-xs leading-relaxed font-light" style={{ color: "var(--text-muted)" }}>
-              {locale === "ko" 
-                ? "2026년 7월 새롭게 이전한 신사동 사옥은 프로페셔널 레코딩 스튜디오와 연습 시설을 구비하여 크리에이터에게 최고의 집중 환경을 보장합니다."
-                : locale === "ja"
-                ? "2026年7月に移転した新沙洞社屋は、スタジオとダンスルームを備え、創作に専念できる環境を提供します。"
-                : "The new Sinsa-dong headquarters features custom recording studios and workspace spaces, ensuring perfect focus for our artists."}
+              {t.about.headquartersDescription}
             </p>
           </div>
           <div className="md:col-span-7 relative aspect-[16/10] overflow-hidden rounded-2xl border" style={{ borderColor: "var(--border-subtle)" }}>

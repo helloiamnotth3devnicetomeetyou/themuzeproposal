@@ -26,22 +26,27 @@ vi.mock("@/core/components/form/CustomSelect", () => ({
 }));
 
 import ReportForm from "./ReportForm";
+import { LocaleProvider } from "@/core/providers/LocaleContext";
 
-const renderForm = () => render(<ReportForm
-  artists={[{ id: "artist-1", name: "Artist" }]}
-  userEmail="user@example.com"
-  setMyReports={mocks.setMyReports}
-  setSubmittedId={mocks.setSubmittedId}
-  setError={mocks.setError}
-  error=""
-/>);
+const renderForm = () => render(
+  <LocaleProvider initialLocale="en">
+    <ReportForm
+      artists={[{ id: "artist-1", name: "Artist" }]}
+      userEmail="user@example.com"
+      setMyReports={mocks.setMyReports}
+      setSubmittedId={mocks.setSubmittedId}
+      setError={mocks.setError}
+      error=""
+    />
+  </LocaleProvider>,
+);
 
 const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.selectOptions(screen.getAllByRole("combobox")[0], "artist-1");
   await user.selectOptions(screen.getAllByRole("combobox")[1], "defamation");
   await user.type(document.getElementById("title")!, "Report title");
   await user.type(document.getElementById("content")!, "Report details");
-  await user.selectOptions(screen.getAllByRole("combobox")[2], "Instagram");
+  await user.selectOptions(screen.getAllByRole("combobox")[2], "instagram");
   await user.type(document.getElementById("postUrl")!, "https://example.com/post");
   fireEvent.change(document.getElementById("postedAt")!, { target: { value: "2026-01-01" } });
   await user.type(document.getElementById("authorName")!, "Author");

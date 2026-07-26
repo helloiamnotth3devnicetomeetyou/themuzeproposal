@@ -24,6 +24,9 @@ export type ScheduleRow = {
   description_en: string | null;
   description_ja: string | null;
   location: string | null;
+  location_ko: string | null;
+  location_en: string | null;
+  location_ja: string | null;
   link_url: string | null;
   is_published: boolean;
   sort_order: number;
@@ -41,6 +44,8 @@ export type ScheduleDraft = {
   descriptionEn: string;
   descriptionJa: string;
   location: string;
+  locationEn: string;
+  locationJa: string;
   linkUrl: string;
   isPublished: boolean;
   sortOrder: number;
@@ -116,6 +121,8 @@ export const emptyScheduleDraft = (
   descriptionEn: "",
   descriptionJa: "",
   location: "",
+  locationEn: "",
+  locationJa: "",
   linkUrl: "",
   isPublished: false,
   sortOrder: 0,
@@ -132,7 +139,9 @@ export const scheduleToDraft = (row: ScheduleRow): ScheduleDraft => ({
   descriptionKo: row.description_ko || "",
   descriptionEn: row.description_en || "",
   descriptionJa: row.description_ja || "",
-  location: row.location || "",
+  location: row.location_ko || row.location || "",
+  locationEn: row.location_en || "",
+  locationJa: row.location_ja || "",
   linkUrl: row.link_url || "",
   isPublished: row.is_published,
   sortOrder: row.sort_order,

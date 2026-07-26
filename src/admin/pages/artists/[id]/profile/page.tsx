@@ -86,6 +86,9 @@ export default function ArtistProfileAdmin() {
       slug: previewSlug,
       name: draft.name,
       eng_name: draft.engName,
+      name_ko: draft.name,
+      name_en: draft.engName,
+      name_ja: draft.jaName || null,
       type: draft.type,
       debut_date: draft.debutDate || null,
       image_url: draft.imageUrl || null,
@@ -121,8 +124,9 @@ export default function ArtistProfileAdmin() {
         return;
       }
       const nextDraft: ProfileDraft = {
-        name: data.name || "",
-        engName: data.eng_name || "",
+        name: data.name_ko || data.name || "",
+        engName: data.name_en || data.eng_name || "",
+        jaName: data.name_ja || "",
         type: data.type || "group",
         debutDate: data.debut_date || "",
         imageUrl: data.image_url || "",
@@ -167,6 +171,9 @@ export default function ArtistProfileAdmin() {
       slug: toArtistSlug(draft.engName),
       name: draft.name,
       eng_name: draft.engName,
+      name_ko: draft.name,
+      name_en: draft.engName,
+      name_ja: draft.jaName || null,
       type: draft.type,
       debut_date: draft.debutDate || null,
       image_url: draft.imageUrl || null,

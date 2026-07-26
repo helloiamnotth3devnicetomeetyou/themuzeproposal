@@ -3,6 +3,9 @@ export type EditorTab = "basic" | "content" | "tracks" | "gallery" | "publish";
 export type TrackDraft = {
   id: string;
   title: string;
+  title_ko: string;
+  title_en: string;
+  title_ja: string;
   is_title: boolean;
   spotify_url: string;
   youtube_url: string;
@@ -14,6 +17,9 @@ export type AlbumEditorDraft = {
   id: string;
   artist_id: string;
   title: string;
+  title_ko: string;
+  title_en: string;
+  title_ja: string;
   type: string;
   release_date: string;
   cover_url: string;
@@ -56,6 +62,9 @@ export function parseBulkTracks(value: string): TrackDraft[] {
     return {
       id: crypto.randomUUID(),
       title: stripped,
+      title_ko: stripped,
+      title_en: "",
+      title_ja: "",
       is_title: false,
       spotify_url: "",
       youtube_url: "",

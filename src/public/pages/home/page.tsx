@@ -1,18 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
 import { SiSpotify, SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { localizeText } from "@/core/i18n/localized";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 
 const TRANSITION_DURATION = 1100;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
-  const [slides] = useState<HomeSlideDTO[]>(initialSlides);
+  const [rawSlides] = useState<HomeSlideDTO[]>(initialSlides);
+  const slides = useMemo(() => rawSlides.map((slide) => ({
+    ...slide,
+    artistName: localizeText(slide.artistNames, locale, slide.artistName),
+    title: localizeText(slide.titles, locale, slide.title),
+  })), [locale, rawSlides]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -160,7 +166,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                     />
                   ) : slide.title}
                 </h2>
-                {slide.descriptions[locale] && (
+                {localizeText(slide.descriptions, locale) && (
                   <p
                     className="max-w-lg text-sm font-light leading-relaxed drop-shadow-md md:text-base"
                     style={{
@@ -169,7 +175,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                       animation: isActive ? "fadeInUp 0.9s 0.5s cubic-bezier(0.16,1,0.3,1) both" : undefined,
                     }}
                   >
-                    {slide.descriptions[locale]}
+                    {localizeText(slide.descriptions, locale)}
                   </p>
                 )}
                 <div

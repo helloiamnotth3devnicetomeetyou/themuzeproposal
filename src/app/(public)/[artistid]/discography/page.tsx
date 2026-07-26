@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import ArtistDiscographyPage from "@/public/pages/[artistid]/discography/page";
 import { createPageMetadata } from "@/core/seo/metadata";
-import { displayName, getPublicArtistTitle } from "@/public/features/seo/server";
+import { getServerLocale } from "@/core/i18n/server";
+import { displayName, getPublicArtistTitle, pageTypeLabel } from "@/public/features/seo/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ artistid: string }> }): Promise<Metadata> {
   const { artistid } = await params;
-  const artistName = displayName(await getPublicArtistTitle(artistid));
-  return createPageMetadata(artistName ? `${artistName} Discography` : "Discography");
+  const locale = await getServerLocale();
+  const artistName = displayName(await getPublicArtistTitle(artistid), locale);
+  const pageType = pageTypeLabel("discography", locale);
+  return createPageMetadata(artistName ? `${artistName} ${pageType}` : pageType);
 }
 
 export default ArtistDiscographyPage;

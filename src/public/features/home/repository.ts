@@ -7,6 +7,9 @@ type AlbumRow = {
   id: string;
   artist_id: string;
   title: string;
+  title_ko: string | null;
+  title_en: string | null;
+  title_ja: string | null;
   type: string;
   cover_url: string | null;
   hero_image_url: string | null;
@@ -21,6 +24,10 @@ type AlbumRow = {
 type ArtistRow = {
   id: string;
   name: string;
+  eng_name: string | null;
+  name_ko: string | null;
+  name_en: string | null;
+  name_ja: string | null;
   slug: string;
 };
 
@@ -44,29 +51,42 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
   const albumIds = configuredSlides.map((slide) => slide.album_id);
   if (!albumIds.length) return [];
 
-  const { data: albumData, error: albumError } = await client
+  let albumResult = await client
     .from("albums")
-    .select("id, artist_id, title, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
+    .select("id, artist_id, title, title_ko, title_en, title_ja, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
     .in("id", albumIds)
     .eq("is_published", true)
     .lte("published_at", new Date().toISOString());
 
-  if (albumError) throw albumError;
+  if (albumResult.error?.code === "42703") {
+    const legacy = await client
+      .from("albums")
+      .select("id, artist_id, title, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
+      .in("id", albumIds)
+      .eq("is_published", true)
+      .lte("published_at", new Date().toISOString());
+    albumResult = { ...legacy, data: legacy.data?.map((album) => ({ ...album, title_ko: album.title, title_en: null, title_ja: null })) ?? null } as typeof albumResult;
+  }
+  if (albumResult.error) throw albumResult.error;
 
-  const albums = (albumData ?? []) as AlbumRow[];
+  const albums = (albumResult.data ?? []) as AlbumRow[];
   const albumsById = new Map(albums.map((album) => [album.id, album]));
   const artistIds = [...new Set(albums.map((album) => album.artist_id))];
   if (!artistIds.length) return [];
 
-  const { data: artistData, error: artistError } = await client
+  let artistResult = await client
     .from("artists")
-    .select("id, name, slug")
+    .select("id, name, eng_name, name_ko, name_en, name_ja, slug")
     .in("id", artistIds)
     .eq("is_active", true);
 
-  if (artistError) throw artistError;
+  if (artistResult.error?.code === "42703") {
+    const legacy = await client.from("artists").select("id, name, eng_name, slug").in("id", artistIds).eq("is_active", true);
+    artistResult = { ...legacy, data: legacy.data?.map((artist) => ({ ...artist, name_ko: artist.name, name_en: artist.eng_name, name_ja: null })) ?? null } as typeof artistResult;
+  }
+  if (artistResult.error) throw artistResult.error;
 
-  const artistsById = new Map(((artistData ?? []) as ArtistRow[]).map((artist) => [artist.id, artist]));
+  const artistsById = new Map(((artistResult.data ?? []) as ArtistRow[]).map((artist) => [artist.id, artist]));
   return configuredSlides.flatMap((heroSlide) => {
     const album = albumsById.get(heroSlide.album_id);
     const artist = album ? artistsById.get(album.artist_id) : null;
@@ -75,8 +95,10 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
     return [{
       id: album.id,
       artistName: artist.name,
+      artistNames: { ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja },
       artistSlug: artist.slug,
       title: album.title,
+      titles: { ko: album.title_ko ?? album.title, en: album.title_en, ja: album.title_ja },
       type: album.type,
       imageUrl: album.hero_image_url || album.cover_url || "",
       typoLogoUrl: album.typo_logo_url,

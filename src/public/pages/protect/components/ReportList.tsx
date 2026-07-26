@@ -1,6 +1,8 @@
 "use client";
 
 import { LuArrowRight } from "react-icons/lu";
+import { localeTags } from "@/core/i18n/localized";
+import { useLocale } from "@/core/providers/LocaleContext";
 import type { Artist, MyReport } from "../ProtectClient";
 import styles from "@/styles/(public)/pages/protect.module.css";
 
@@ -19,22 +21,31 @@ export default function ReportList({
   statusLabels,
   onNavigateToReport,
 }: ReportListProps) {
+  const { locale, t } = useLocale();
+  const legacyPlatformCodes: Record<string, string> = {
+    Instagram: "instagram", "X (Twitter)": "x", YouTube: "youtube", TikTok: "tiktok",
+    Facebook: "facebook", "커뮤니티·게시판": "community", 기타: "other",
+  };
+  const platformLabel = (value: string) => {
+    const code = legacyPlatformCodes[value] ?? value;
+    return t.protect.platforms.find((platform) => platform.value === code)?.label ?? value;
+  };
   return (
     <section className={styles.myReports} aria-labelledby="my-reports-title">
       <div className={styles.listHeading}>
         <div>
-          <h2 id="my-reports-title">내 신고</h2>
-          <p>접수한 신고와 현재 처리 상태를 확인할 수 있습니다.</p>
+          <h2 id="my-reports-title">{t.protect.myReports}</h2>
+          <p>{t.protect.listDescription}</p>
         </div>
-        <span>총 {myReports.length}건</span>
+        <span>{t.protect.total(myReports.length)}</span>
       </div>
 
       {myReports.length === 0 ? (
         <div className={styles.emptyState}>
-          <p>아직 접수한 신고가 없습니다.</p>
-          <span>권익 침해 사례를 발견했다면 내용을 알려주세요.</span>
+          <p>{t.protect.emptyTitle}</p>
+          <span>{t.protect.emptyDescription}</span>
           <button type="button" onClick={onNavigateToReport}>
-            신고하기 <LuArrowRight aria-hidden="true" />
+            {t.protect.report} <LuArrowRight aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -43,18 +54,18 @@ export default function ReportList({
             <article key={report.id} className={styles.reportItem}>
               <div className={styles.reportMain}>
                 <span>
-                  {artists.find((artist) => artist.id === report.artist_id)?.name || "아티스트"} ·{" "}
-                  {reportTypes.find((type) => type.value === report.report_type)?.label || "기타"}
+                  {artists.find((artist) => artist.id === report.artist_id)?.name || t.protect.artistFallback} ·{" "}
+                  {reportTypes.find((type) => type.value === report.report_type)?.label || t.protect.reportTypes.at(-1)?.label}
                 </span>
                 <h3>{report.title}</h3>
                 <p>
-                  {report.platform} · 접수번호 {report.id.slice(0, 8).toUpperCase()}
+                  {platformLabel(report.platform)} · {t.protect.receipt} {report.id.slice(0, 8).toUpperCase()}
                 </p>
               </div>
               <div className={styles.reportStatus}>
                 <span data-status={report.status}>{statusLabels[report.status]}</span>
                 <time dateTime={report.created_at}>
-                  {new Intl.DateTimeFormat("ko-KR", {
+                  {new Intl.DateTimeFormat(localeTags[locale], {
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",

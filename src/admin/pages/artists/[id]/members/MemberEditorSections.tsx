@@ -58,6 +58,10 @@ export default function MemberEditorSections({
             <input className="admin-input" value={`/${toMemberSlug(draft.engName) || "english-name"}`} readOnly />
             <small>영문명을 기준으로 자동 생성됩니다.</small>
           </label>
+          <label className="music-field content-field-short">
+            <span>이름 (일본어)</span>
+            <input className="admin-input" value={draft.jaName} onChange={(event) => patchDraft({ jaName: event.target.value })} />
+          </label>
           <div className="music-divider" />
           <FormField
             label="역할 / 포지션"

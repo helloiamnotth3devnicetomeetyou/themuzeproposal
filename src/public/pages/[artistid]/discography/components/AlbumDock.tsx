@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { RefObject } from "react";
 import { LuCalendar, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { useLocale } from "@/core/providers/LocaleContext";
 
 import type {
   AlbumSort,
@@ -29,6 +30,7 @@ export function AlbumDock({
   onSelectAlbum,
   onToggleSort,
 }: AlbumDockProps) {
+  const { t } = useLocale();
   return (
     <div
       className="w-full py-3 border-t z-10 relative shrink-0"
@@ -43,10 +45,10 @@ export function AlbumDock({
           onClick={onToggleSort}
           aria-label={
             sortBy === "date-desc"
-              ? "날짜 오름차순으로 정렬"
-              : "날짜 내림차순으로 정렬"
+              ? t.discography.sortAscending
+              : t.discography.sortDescending
           }
-          title={sortBy === "date-desc" ? "최신순" : "오래된순"}
+          title={sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
           className="flex items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
@@ -58,14 +60,14 @@ export function AlbumDock({
             aria-hidden="true"
           />
           <span className="text-[8px] font-sans font-semibold tracking-wider text-[var(--palette-9ca3af)]">
-            {sortBy === "date-desc" ? "최신순" : "오래된순"}
+            {sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
           </span>
         </button>
 
         <button
           onClick={() => onSelectAlbum(Math.max(albumIndex - 1, 0))}
           disabled={albumIndex === 0}
-          aria-label="이전 앨범"
+          aria-label={t.discography.previousAlbum}
           className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
@@ -163,7 +165,7 @@ export function AlbumDock({
             onSelectAlbum(Math.min(albumIndex + 1, albums.length - 1))
           }
           disabled={albumIndex === albums.length - 1}
-          aria-label="다음 앨범"
+          aria-label={t.discography.nextAlbum}
           className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",

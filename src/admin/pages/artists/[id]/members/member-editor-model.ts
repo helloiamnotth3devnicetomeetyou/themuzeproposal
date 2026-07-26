@@ -6,6 +6,9 @@ export type Member = {
   id: string;
   name: string;
   eng_name: string | null;
+  name_ko: string | null;
+  name_en: string | null;
+  name_ja: string | null;
   slug: string;
   role_ko: string | null;
   role_en: string | null;
@@ -25,6 +28,7 @@ export type MemberDraft = {
   id: string | null;
   name: string;
   engName: string;
+  jaName: string;
   roleKo: string;
   roleEn: string;
   roleJa: string;
@@ -44,6 +48,7 @@ export const EMPTY_MEMBER: MemberDraft = {
   id: null,
   name: "",
   engName: "",
+  jaName: "",
   roleKo: "",
   roleEn: "",
   roleJa: "",
@@ -73,8 +78,9 @@ export const toMemberSlug = (value: string) => value
 
 export const memberToDraft = (member: Member): MemberDraft => ({
   id: member.id,
-  name: member.name || "",
-  engName: member.eng_name || "",
+  name: member.name_ko || member.name || "",
+  engName: member.name_en || member.eng_name || "",
+  jaName: member.name_ja || "",
   roleKo: member.role_ko || "",
   roleEn: member.role_en || "",
   roleJa: member.role_ja || "",

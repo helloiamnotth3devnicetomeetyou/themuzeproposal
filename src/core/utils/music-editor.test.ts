@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { managedAssetFromUrl, parseBulkTracks, validateAlbum, type AlbumEditorDraft } from "./music-editor";
 
 const draft = (overrides: Partial<AlbumEditorDraft> = {}): AlbumEditorDraft => ({
-  id: "album-1", artist_id: "artist-1", title: "Album", type: "Mini Album", release_date: "2026-01-01",
+  id: "album-1", artist_id: "artist-1", title: "Album", title_ko: "Album", title_en: "", title_ja: "", type: "Mini Album", release_date: "2026-01-01",
   cover_url: "https://project.supabase.co/storage/v1/object/public/album-covers/artist-1/cover.jpg",
   hero_image_url: "", typo_logo_url: "", color: "#FFFFFF", spotify_id: "", youtube_url: "",
   description_ko: "", description_en: "", description_ja: "", is_published: false, published_at: null,
-  sort_order: 1, tracks: [{ id: "track-1", title: "Title", is_title: true, spotify_url: "", youtube_url: "", audio_url: "", music_video_url: "" }],
+  sort_order: 1, tracks: [{ id: "track-1", title: "Title", title_ko: "Title", title_en: "", title_ja: "", is_title: true, spotify_url: "", youtube_url: "", audio_url: "", music_video_url: "" }],
   ...overrides,
 });
 

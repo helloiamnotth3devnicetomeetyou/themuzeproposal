@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { outlineCentroid } from "@/core/utils/artist-scenes";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -12,16 +13,15 @@ import MemberDetailOverlay from "./MemberDetailOverlay";
 import SceneCanvas from "./SceneCanvas";
 import SceneDock from "./SceneDock";
 import { useArtistSceneData } from "./useArtistSceneData";
-import type { SceneCopy } from "./artist-scene-types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 type Dimensions = Record<string, { width: number; height: number }>;
-const copy: SceneCopy = { select: "Select a member", scene: "Concept scenes", close: "Close profile", previous: "Previous member", next: "Next member", discography: "Discography", profile: "Profile", groupProfile: "Artist profile", expand: "Show introduction", collapse: "Hide introduction" };
 const EMPTY_MEMBERS: never[] = [];
 const EMPTY_SCENES: never[] = [];
 
 export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }: { artistSlug: string; initialMemberSlug?: string }) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
+  const copy = t.artistScene;
   const profilePreview = usePreviewPayload("artist-profile");
   const memberPreview = usePreviewPayload("artist-member");
   const { data, loading, error } = useArtistSceneData({ artistSlug, profilePreview, memberPreview });
@@ -42,7 +42,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const focusMemberId = hoveredMemberId || selectedMemberId;
   const selectedRegion = activeScene?.artist_scene_members.find((region) => region.member_id === selectedMemberId);
-  const artistName = artist?.eng_name || artist?.name || artistSlug.toUpperCase();
+  const artistName = artist ? localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name) : artistSlug.toUpperCase();
   const sceneRatio = activeScene ? ((dimensions[activeScene.id]?.width || activeScene.image_width || 16) / (dimensions[activeScene.id]?.height || activeScene.image_height || 9)) : 16 / 9;
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
@@ -58,13 +58,14 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const navigate = (direction: -1 | 1) => { const index = activeSceneMembers.findIndex((member) => member.id === selectedMemberId); if (index >= 0 && activeSceneMembers.length > 1) selectMember(activeSceneMembers[(index + direction + activeSceneMembers.length) % activeSceneMembers.length].id); };
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape" && (selectedMemberId || groupFocused)) closeMember(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); });
 
-  if (loading) return <main className={styles.statePage}><LoadingIndicator label="Loading artist scene" /></main>;
-  if (!artist || !activeScene) return <main className={styles.statePage}><b>404</b><span>{error || "Artist scene not found."}</span><Link href="/artists">Back to artists</Link></main>;
-  const groupBio = (locale === "ko" ? artist.description_ko : locale === "ja" ? artist.description_ja : artist.description_en) || artist.description_ko || artist.description_en || artist.description_ja || "";
-  const memberBio = selectedMember && ((locale === "ko" ? selectedMember.bio_ko : locale === "ja" ? selectedMember.bio_ja : selectedMember.bio_en) || selectedMember.bio_ko || selectedMember.role_ko || "");
+  if (loading) return <main className={styles.statePage}><LoadingIndicator label={copy.loading} /></main>;
+  if (!artist || !activeScene) return <main className={styles.statePage}><b>404</b><span>{error || copy.notFound}</span><Link href="/artists">{copy.back}</Link></main>;
+  const groupBio = localizeText({ ko: artist.description_ko, en: artist.description_en, ja: artist.description_ja }, locale);
+  const memberBio = selectedMember && localizeText({ ko: selectedMember.bio_ko ?? selectedMember.role_ko, en: selectedMember.bio_en ?? selectedMember.role_en, ja: selectedMember.bio_ja ?? selectedMember.role_ja }, locale);
+  const localizedScene = { ...activeScene, title: localizeText({ ko: activeScene.title_ko, en: activeScene.title_en, ja: activeScene.title_ja }, locale, activeScene.title) };
   const centroid = selectedRegion ? outlineCentroid(selectedRegion.outline) : { x: 50, y: 50 };
   return <main className={`${styles.experience} ${selectedMember || groupFocused ? styles.hasSelection : ""}`} style={{ "--artist-accent": selectedMember?.color || artist.color || BRAND_PINK_HEX } as CSSProperties}>
-    <SceneCanvas scene={activeScene} members={members} artistName={artistName} sceneLabel={copy.scene} focusMemberId={focusMemberId} groupFocused={groupFocused} selectedMember={Boolean(selectedMember)} cameraOffset={{ x: (50 - centroid.x) * .14, y: (50 - centroid.y) * .1 }} frameSize={frameSize} stageRef={stageRef} onDimensions={(width, height) => setDimensions((current) => ({ ...current, [activeScene.id]: { width, height } }))} onClose={() => { if (selectedMember || groupFocused) closeMember(); }} onHover={setHoveredMemberId} onSelect={selectMember} />
+    <SceneCanvas scene={localizedScene} members={members} artistName={artistName} sceneLabel={copy.scene} focusMemberId={focusMemberId} groupFocused={groupFocused} selectedMember={Boolean(selectedMember)} cameraOffset={{ x: (50 - centroid.x) * .14, y: (50 - centroid.y) * .1 }} frameSize={frameSize} stageRef={stageRef} onDimensions={(width, height) => setDimensions((current) => ({ ...current, [activeScene.id]: { width, height } }))} onClose={() => { if (selectedMember || groupFocused) closeMember(); }} onHover={setHoveredMemberId} onSelect={selectMember} />
     {!selectedMember && <div className={`${styles.artistIdentity} ${groupFocused ? styles.identityHidden : ""}`} aria-hidden={groupFocused}><button type="button" className={styles.artistWordmark} onClick={() => { setHoveredMemberId(null); setSelectedMemberId(null); setGroupFocused(true); setGroupBioExpanded(false); }} aria-label={`${artistName} ${copy.profile}`} tabIndex={groupFocused ? -1 : undefined}>{artist.logo_url && <Image src={artist.logo_url} alt={`${artistName} logo`} width={240} height={80} /> }<h1>{artistName}</h1></button></div>}
     <MemberDetailOverlay artistName={artistName} member={selectedMember} memberBio={memberBio || ""} panelLeft={Boolean(selectedRegion && outlineCentroid(selectedRegion.outline).x > 56)} groupFocused={groupFocused} groupBio={groupBio} expanded={groupBioExpanded} copy={copy} onClose={closeMember} onNavigate={navigate} onToggleBio={() => setGroupBioExpanded((value) => !value)} />
     <SceneDock artist={artist} member={selectedMember} scenes={memberScenes} activeSceneId={activeScene.id} copy={copy} showReset={Boolean(selectedMember || groupFocused || activeScene.id !== scenes[0]?.id)} onChangeScene={(id) => { setHoveredMemberId(null); setActiveSceneId(id); }} onReset={reset} />
