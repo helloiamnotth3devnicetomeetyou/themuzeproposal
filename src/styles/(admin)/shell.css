@@ -18,6 +18,14 @@
   overflow: hidden;
 }
 
+.admin-mobile-topbar {
+  display: none;
+}
+
+.admin-public-header {
+  flex: 0 0 auto;
+}
+
 .cms-shell {
   display: flex;
   width: 100%;
@@ -175,8 +183,51 @@
   background-clip: padding-box;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1199px) {
+  .admin-public-header { display: none; }
+  .admin-mobile-topbar {
+    z-index: 45;
+    display: grid;
+    height: var(--admin-mobile-bar-height);
+    flex: 0 0 var(--admin-mobile-bar-height);
+    grid-template-columns: 44px minmax(0,1fr) 44px;
+    align-items: center;
+    padding: 0 max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left));
+    border-bottom: 1px solid var(--border-default);
+    background: color-mix(in srgb,var(--bg-surface) 94%,transparent);
+    backdrop-filter: blur(18px);
+  }
+  .admin-mobile-menu-button,
+  .admin-mobile-site-link {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .admin-mobile-menu-button { cursor: pointer; }
+  .admin-mobile-menu-button svg,
+  .admin-mobile-site-link svg { width: 18px; height: 18px; }
+  .admin-mobile-title { min-width: 0; padding: 0 10px; }
+  .admin-mobile-title span,
+  .admin-mobile-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .admin-mobile-title span { color: var(--color-brand-pink); font-size: 7px; font-weight: 850; letter-spacing: .16em; }
+  .admin-mobile-title strong { margin-top: 3px; color: var(--text-primary); font-size: 12px; letter-spacing: -.02em; }
   .cms-page-header { min-height: 82px; padding: 14px 20px; }
   .cms-content { padding: 20px 16px 48px; }
   .cms-header-action { display: none; }
+}
+
+@media (max-width: 767px) {
+  .cms-content { padding: 16px var(--page-gutter) calc(72px + env(safe-area-inset-bottom)); }
+  .cms-page-header {
+    min-height: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px var(--page-gutter);
+  }
+  .cms-page-header h1 { font-size: clamp(21px,6vw,28px); }
 }

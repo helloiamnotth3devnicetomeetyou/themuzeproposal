@@ -31,9 +31,9 @@ export default function MainLayout({
       const originalHtmlHeight = document.documentElement.style.height;
 
       document.body.style.overflow = "hidden";
-      document.body.style.height = "100vh";
+      document.body.style.height = "100dvh";
       document.documentElement.style.overflow = "hidden";
-      document.documentElement.style.height = "100vh";
+      document.documentElement.style.height = "100dvh";
 
       return () => {
         document.body.style.overflow = originalBodyOverflow;
@@ -92,7 +92,7 @@ export default function MainLayout({
       <div
         key={layoutKey}
         className={`flex flex-1 flex-col animate-page-fade ${
-          isImmersiveDiscography || isImmersiveArtist ? "h-screen overflow-hidden" : ""
+          isImmersiveDiscography || isImmersiveArtist ? "h-[100dvh] overflow-hidden" : ""
         }`}
       >
         {children}

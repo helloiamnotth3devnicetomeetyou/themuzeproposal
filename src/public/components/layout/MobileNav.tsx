@@ -36,7 +36,7 @@ export default function MobileNav({
   const mobileLinkClass = (path: string) =>
     `flex min-h-14 items-center border-b border-[var(--border-default)] font-display text-[15px] font-bold tracking-[0.08em] transition-colors ${pathname === path ? "text-brand-pink" : "hover:text-brand-pink"}`;
 
-  return <div className="flex w-full items-center md:hidden">
+  return <div className="flex w-full items-center xl:hidden">
     <Link href="/" onClick={onClose} className="relative block size-10 shrink-0">
       <Image src="/images/iconlogo.png" alt="THE MUZE" fill sizes="40px" priority className={`${styles.logoImage} ${isDark ? styles.logoDark : ""}`} />
     </Link>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, type PointerEvent } from "react";
-import { LuMousePointer2 } from "react-icons/lu";
+import { useMemo, useState, type PointerEvent } from "react";
+import { LuMousePointer2, LuMove, LuZoomIn, LuZoomOut } from "react-icons/lu";
 import { outlineToPath, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
@@ -27,6 +27,8 @@ export default function SceneCanvas({
   simplifyOutline,
   sceneRatio,
 }: SceneCanvasProps) {
+  const [zoom, setZoom] = useState(1);
+  const [panMode, setPanMode] = useState(false);
   const pointFromEvent = (event: PointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     return {
@@ -36,14 +38,14 @@ export default function SceneCanvas({
   };
 
   const startOutline = (event: PointerEvent<SVGSVGElement>) => {
-    if (!selectedMemberId) return;
+    if (!selectedMemberId || panMode) return;
     drawingRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
     setDraftOutline([pointFromEvent(event)]);
   };
 
   const continueOutline = (event: PointerEvent<SVGSVGElement>) => {
-    if (!drawingRef.current) return;
+    if (!drawingRef.current || panMode) return;
     const next = pointFromEvent(event);
     setDraftOutline((current) => {
       const previous = current[current.length - 1];
@@ -62,7 +64,16 @@ export default function SceneCanvas({
 
   return (
     <div className={styles.canvasWrap}>
-      <div className={styles.canvas} style={{ aspectRatio: sceneRatio }}>
+      <div className={styles.canvasControls} aria-label="장면 확대 및 이동">
+        <button type="button" onClick={() => setZoom((value) => Math.max(1, value - .5))} disabled={zoom === 1} aria-label="축소"><LuZoomOut aria-hidden="true" /></button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button type="button" onClick={() => setZoom((value) => Math.min(3, value + .5))} disabled={zoom === 3} aria-label="확대"><LuZoomIn aria-hidden="true" /></button>
+        <button type="button" className={panMode ? styles.isActiveControl : ""} onClick={() => setPanMode((value) => !value)} aria-pressed={panMode} disabled={zoom === 1} aria-label="화면 이동 모드"><LuMove aria-hidden="true" /></button>
+      </div>
+      <div
+        className={`${styles.canvas} ${panMode ? styles.isPanning : ""}`}
+        style={{ aspectRatio: sceneRatio, width: `${zoom * 100}%` }}
+      >
         <AdminAssetImage
           src={selectedScene.image_url}
           alt={selectedScene.title}
@@ -95,7 +106,7 @@ export default function SceneCanvas({
         </svg>
         <div className={styles.canvasHint}>
           <LuMousePointer2 aria-hidden="true" />
-          인물 외곽을 누른 채 한 바퀴 그리세요
+          {panMode ? "화면을 밀어 편집 위치를 이동하세요" : "멤버 외곽선을 손가락이나 포인터로 그리세요"}
         </div>
       </div>
     </div>

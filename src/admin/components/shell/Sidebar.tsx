@@ -13,6 +13,7 @@ import {
   LuPlus,
   LuSettings,
   LuShieldCheck,
+  LuX,
 } from "react-icons/lu";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
@@ -40,7 +41,7 @@ const artistLinks = [
   { label: "공지", segment: "notices" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const [profile, setProfile] = useState<{ email?: string } | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -66,7 +67,20 @@ export default function Sidebar() {
   const leave = async () => { await signOut(); window.location.assign("/login"); };
 
   return (
-    <aside className="cms-sidebar">
+    <aside
+      id="admin-navigation"
+      className={`cms-sidebar ${isOpen ? "is-open" : ""}`}
+      aria-label="관리 메뉴"
+    >
+      <div className="cms-sidebar-mobile-heading">
+        <div>
+          <span>THE MUZE</span>
+          <strong>ADMIN WORKSPACE</strong>
+        </div>
+        <button type="button" onClick={onClose} aria-label="관리 메뉴 닫기">
+          <LuX aria-hidden="true" />
+        </button>
+      </div>
       <nav className="cms-nav" aria-label="관리자 메뉴">
         {/* Isolated Search Popover */}
         <SidebarSearch artists={artists} />

@@ -34,7 +34,7 @@ export function DiscographyExperience() {
 
     return (
       <main
-        className="min-h-screen flex items-center justify-center px-6"
+        className="min-h-[100dvh] flex items-center justify-center px-6"
         style={{ backgroundColor: "var(--palette-050505)" }}
       >
         {discography.loading ? (
@@ -53,7 +53,7 @@ export function DiscographyExperience() {
 
   return (
     <main
-      className="h-screen w-full relative overflow-hidden flex flex-col"
+      className="h-[100dvh] w-full relative overflow-hidden flex flex-col"
       style={{ backgroundColor: "var(--palette-050505)" }}
     >
       <audio
@@ -70,7 +70,7 @@ export function DiscographyExperience() {
       />
 
       <div
-        className={`flex-1 grid grid-cols-1 lg:grid-cols-12 items-center max-w-[1400px] mx-auto px-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}
+        className={`flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 items-start lg:items-center max-w-[1400px] mx-auto px-5 sm:px-8 pb-8 w-full relative z-10 overflow-y-auto lg:overflow-visible pt-24 lg:pt-28 gap-7 lg:gap-8 ${discography.contentClass}`}
       >
         <AlbumArtwork
           album={album}

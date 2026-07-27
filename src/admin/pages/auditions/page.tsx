@@ -148,11 +148,11 @@ export default function AuditionsAdmin() {
             <tbody>
               {filteredSubmissions.map((submission) => (
                 <tr key={submission.id} tabIndex={0} onClick={() => setViewing(submission)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setViewing(submission); }}>
-                  <td><span className="audition-date">{formatDate(submission.created_at)}</span></td>
-                  <td><b>{submission.name || "이름 없음"}</b><small>{submission.email || "이메일 미입력"}</small></td>
-                  <td>{submission.category || "-"}</td>
-                  <td>{submission.contact || "-"}</td>
-                  <td><span className={`audition-status ${statusClass(submission.status)}`}><i />{statusLabel(submission.status)}</span></td>
+                  <td data-label="접수일"><span className="audition-date">{formatDate(submission.created_at)}</span></td>
+                  <td data-label="지원자"><b>{submission.name || "이름 없음"}</b><small>{submission.email || "이메일 미입력"}</small></td>
+                  <td data-label="지원 분야">{submission.category || "-"}</td>
+                  <td data-label="연락처">{submission.contact || "-"}</td>
+                  <td data-label="상태"><span className={`audition-status ${statusClass(submission.status)}`}><i />{statusLabel(submission.status)}</span></td>
                   <td><button type="button" tabIndex={-1}>열기 <span><LuArrowRight aria-hidden="true" /></span></button></td>
                 </tr>
               ))}

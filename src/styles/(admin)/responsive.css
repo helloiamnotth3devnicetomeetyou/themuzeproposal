@@ -1,0 +1,176 @@
+/* Responsive behavior shared by every admin surface. */
+@media (max-width: 1199px) {
+  .admin-root-shell {
+    height: 100dvh;
+  }
+
+  .cms-content {
+    scrollbar-gutter: auto;
+  }
+
+  .content-workbench:not(.profile-workbench),
+  .music-editor-shell {
+    grid-template-columns: minmax(230px, .34fr) minmax(0, 1fr);
+  }
+
+  .content-workbench-header,
+  .music-editor-header {
+    padding-inline: clamp(18px, 3vw, 32px);
+  }
+
+  .content-workbench-tabs,
+  .music-editor-tabs {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .content-workbench-tabs::-webkit-scrollbar,
+  .music-editor-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .content-workbench-tabs button,
+  .music-editor-tabs button {
+    min-width: max-content;
+  }
+}
+
+@media (max-width: 767px) {
+  .cms-content.is-full-bleed {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .cms-content.is-full-bleed .cms-content-inner {
+    height: auto;
+    min-height: 100%;
+  }
+
+  .content-workbench,
+  .music-editor-shell {
+    display: flex;
+    height: auto;
+    min-height: 100%;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .content-workbench-rail,
+  .music-library {
+    width: 100%;
+    height: auto;
+    max-height: 244px;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .content-library-list,
+  .music-album-list {
+    min-height: 94px;
+    max-height: 136px;
+  }
+
+  .content-workbench-stage,
+  .music-workbench {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .content-workbench-body,
+  .music-editor-body {
+    max-height: none;
+    overflow: visible;
+    padding: 24px var(--page-gutter) calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .content-workbench-header,
+  .music-editor-header {
+    position: relative;
+    min-height: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px var(--page-gutter);
+  }
+
+  .content-workbench-actions,
+  .music-header-actions {
+    position: sticky;
+    z-index: 20;
+    bottom: 0;
+    width: 100%;
+    justify-content: flex-end;
+    padding: 8px 0;
+    background: linear-gradient(180deg,transparent,var(--bg-card) 28%);
+  }
+
+  .content-workbench-tabs,
+  .music-editor-tabs {
+    width: 100%;
+    gap: 20px;
+    padding-inline: var(--page-gutter);
+  }
+
+  .content-field-grid,
+  .content-choice-grid,
+  .content-publish-summary,
+  .music-field-grid.two,
+  .music-cover-field,
+  .music-hero-field,
+  .music-publish-summary {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .music-track-row {
+    grid-template-columns: 42px minmax(0,1fr);
+  }
+
+  .music-track-assets {
+    padding: 16px var(--page-gutter);
+  }
+
+  .music-track-link-grid,
+  .music-track-asset-grid {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .admin-root-shell :where(
+    .cms-nav-item,
+    .cms-artist-heading,
+    .cms-header-action,
+    .content-workbench-actions button,
+    .music-header-actions button,
+    .content-asset-actions button,
+    .toolbar button,
+    .sceneSettings button,
+    .outlineTools button
+  ) {
+    min-height: 44px;
+  }
+
+  .admin-root-shell :where(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .admin-root-shell :where(.admin-dialog-card,.delete-confirm-dialog,.music-crop-card,.music-bulk-card) {
+    max-height: calc(100dvh - 20px);
+    margin-top: auto;
+    margin-bottom: 0;
+    overflow-y: auto;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-workbench-tabs,
+  .music-editor-tabs {
+    scroll-behavior: auto;
+  }
+}

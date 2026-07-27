@@ -206,7 +206,20 @@
   .summary dl div { min-height: 76px; flex: 1; }
   .toolbar { align-items: stretch; flex-direction: column; }
   .filters { width: 100%; grid-template-columns: 1fr; }
-  .table { min-width: 760px; }
+  .tableWrap { overflow: visible; }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td { display: block; width: 100%; }
+  .table { min-width: 0; border-collapse: separate; }
+  .table thead { display: none; }
+  .table tbody { display: grid; gap: 10px; padding: 10px; }
+  .table tbody tr { position: relative; padding: 14px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-card); }
+  .table td { display: grid; height: auto; min-height: 30px; grid-template-columns: 82px minmax(0,1fr); align-items: center; padding: 5px 0; border: 0; line-height: 1.5; }
+  .table td[data-label]::before { color: var(--text-faint); font-size: 7px; font-weight: 800; letter-spacing: .08em; content: attr(data-label); }
+  .table td:last-child { position: absolute; top: 10px; right: 10px; display: block; width: auto; min-height: 44px; padding: 0; }
+  .table td:last-child button { min-width: 44px; min-height: 44px; font-size: 0; }
+  .table td:last-child button span { margin: 0; font-size: 14px; }
   .detailHeader { grid-template-columns: 50px minmax(0, 1fr); }
   .detailIcon { width: 48px; height: 48px; }
   .detailHeader > .status { grid-column: 2; }

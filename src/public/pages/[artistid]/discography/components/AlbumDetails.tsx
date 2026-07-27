@@ -55,7 +55,7 @@ export function AlbumDetails({
   ];
 
   return (
-    <div className="lg:col-span-5 flex flex-col gap-4 w-full relative z-20 h-full max-h-[600px]">
+    <div className="lg:col-span-5 flex flex-col gap-4 w-full relative z-20 h-auto min-h-[480px] lg:h-full lg:min-h-0 lg:max-h-[600px]">
       <div className="shrink-0">
         <span
           className="text-[10px] font-black tracking-[0.3em] uppercase text-[rgba(255,255,255,0.45)]"

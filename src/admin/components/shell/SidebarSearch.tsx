@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { LuCommand, LuSearch, LuX } from "react-icons/lu";
 import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
@@ -8,6 +9,7 @@ import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
 interface Artist { id: string; name: string; }
 interface SearchItem { id: string; categoryLabel: string; title: string; url: string; artistName?: string; }
 interface SidebarSearchProps { artists: Artist[]; }
+type ResultsPosition = { top: number; left: number; width: number; maxHeight: number };
 
 export default function SidebarSearch({ artists }: SidebarSearchProps) {
   const router = useRouter();
@@ -15,9 +17,24 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [resultsPosition, setResultsPosition] = useState<ResultsPosition | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const updateResultsPosition = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const rect = wrapper.getBoundingClientRect();
+    const viewportPadding = 8;
+    const gap = 7;
+    setResultsPosition({
+      top: rect.bottom + gap,
+      left: Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - rect.width - viewportPadding)),
+      width: rect.width,
+      maxHeight: Math.max(120, Math.min(312, window.innerHeight - rect.bottom - gap - viewportPadding)),
+    });
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -33,7 +50,8 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setIsOpen(false);
+      const target = event.target as Node;
+      if (!wrapperRef.current?.contains(target) && !resultsRef.current?.contains(target)) setIsOpen(false);
     };
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
@@ -61,9 +79,9 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   ], [artists]);
 
   const results = useMemo(() => {
-    const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    const terms = query.trim().toLocaleLowerCase("ko").split(/\s+/).filter(Boolean);
     if (!terms.length) return [];
-    return items.filter((item) => terms.every((term) => `${item.categoryLabel} ${item.artistName ?? ""} ${item.title}`.toLocaleLowerCase().includes(term)));
+    return items.filter((item) => terms.every((term) => `${item.categoryLabel} ${item.artistName ?? ""} ${item.title}`.toLocaleLowerCase("ko").includes(term)));
   }, [items, query]);
 
   const groups = useMemo(() => results.reduce<Record<string, SearchItem[]>>((result, item) => {
@@ -72,6 +90,17 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   }, {}), [results]);
 
   const isShowingResults = isOpen && query.trim().length > 0;
+
+  useEffect(() => {
+    if (!isShowingResults) return;
+    updateResultsPosition();
+    window.addEventListener("resize", updateResultsPosition);
+    window.addEventListener("scroll", updateResultsPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateResultsPosition);
+      window.removeEventListener("scroll", updateResultsPosition, true);
+    };
+  }, [isShowingResults, updateResultsPosition]);
 
   const select = useCallback((url: string) => {
     router.push(url);
@@ -100,8 +129,8 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
         <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => setIsOpen(true)} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
         {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><LuX aria-hidden="true" /></button> : <span className={styles.shortcut} aria-hidden="true"><LuCommand />K</span>}
       </div>
-      {isShowingResults && (
-        <div id="admin-search-results" className={styles.results} ref={resultsRef} role="listbox" aria-label="검색 결과">
+      {isShowingResults && resultsPosition && typeof document !== "undefined" && createPortal(
+        <div id="admin-search-results" className={styles.results} ref={resultsRef} style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">
           {Object.entries(groups).map(([label, group]) => <section className={styles.group} key={label} role="group" aria-label={label}>
             <p className={styles.groupLabel}>{label}</p>
             {group.map((item) => {
@@ -114,7 +143,8 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
             })}
           </section>)}
           {!results.length && <p className={styles.empty}>일치하는 메뉴가 없습니다.</p>}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

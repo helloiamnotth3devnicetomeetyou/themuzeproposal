@@ -40,7 +40,7 @@ export function AlbumDock({
         borderColor: "var(--alpha-ffffff-04)",
       }}
     >
-      <div className="max-w-[1400px] mx-auto px-8 flex items-center gap-3">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-8 flex items-center gap-2 sm:gap-3">
         <button
           onClick={onToggleSort}
           aria-label={
@@ -49,7 +49,7 @@ export function AlbumDock({
               : t.discography.sortDescending
           }
           title={sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
+          className="flex min-h-11 items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -68,7 +68,7 @@ export function AlbumDock({
           onClick={() => onSelectAlbum(Math.max(albumIndex - 1, 0))}
           disabled={albumIndex === 0}
           aria-label={t.discography.previousAlbum}
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -92,7 +92,7 @@ export function AlbumDock({
                 onClick={() => onSelectAlbum(index)}
                 data-album-index={index}
                 aria-pressed={isCurrent}
-                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
+                className="flex min-h-11 items-center gap-2.5 px-2.5 py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
                 style={{
                   backgroundColor: isCurrent
                     ? "var(--alpha-ffffff-06)"
@@ -166,7 +166,7 @@ export function AlbumDock({
           }
           disabled={albumIndex === albums.length - 1}
           aria-label={t.discography.nextAlbum}
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",

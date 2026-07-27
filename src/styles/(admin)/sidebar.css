@@ -11,6 +11,14 @@
   background: var(--bg-surface);
 }
 
+.cms-sidebar-mobile-heading {
+  display: none;
+}
+
+.cms-sidebar-backdrop {
+  display: none;
+}
+
 .cms-nav {
   display: flex;
   min-height: 0;
@@ -139,4 +147,62 @@
 .cms-account button:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .cms-account button svg { width: 13px; height: 13px; }
 
-@media (max-width: 1024px) { .cms-sidebar { display: none; } }
+@media (max-width: 1199px) {
+  .cms-sidebar {
+    position: fixed;
+    z-index: 80;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    width: min(344px,88vw);
+    min-height: 100dvh;
+    flex-basis: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-right-color: var(--border-strong);
+    box-shadow: 24px 0 70px var(--alpha-000000-48);
+    transform: translate3d(-105%,0,0);
+    transition: transform .32s cubic-bezier(.16,1,.3,1);
+  }
+  .cms-sidebar.is-open { transform: translate3d(0,0,0); }
+  .cms-sidebar-mobile-heading {
+    display: flex;
+    min-height: 68px;
+    align-items: center;
+    justify-content: space-between;
+    padding: max(12px,env(safe-area-inset-top)) 14px 10px 20px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .cms-sidebar-mobile-heading span,
+  .cms-sidebar-mobile-heading strong { display: block; }
+  .cms-sidebar-mobile-heading span { color: var(--color-brand-pink); font-size: 8px; font-weight: 850; letter-spacing: .16em; }
+  .cms-sidebar-mobile-heading strong { margin-top: 4px; color: var(--text-primary); font-size: 12px; letter-spacing: .04em; }
+  .cms-sidebar-mobile-heading button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 0;
+    border-radius: 9px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .cms-sidebar-backdrop {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: var(--alpha-000000-72);
+    backdrop-filter: blur(3px);
+  }
+  .cms-nav { padding-top: 16px; }
+  .cms-nav-item { min-height: 44px; }
+  .cms-artist-heading { min-height: 44px; }
+  .cms-artist-link { min-height: 40px; padding-block: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cms-sidebar { transition: none; }
+}

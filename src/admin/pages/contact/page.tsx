@@ -321,11 +321,11 @@ export default function ContactAdminPage() {
             <thead><tr><th>접수일</th><th>{category === "business" ? "회사 / 담당자" : "문의자"}</th><th>문의 내용</th><th>이메일</th><th>상태</th><th><span className="sr-only">보기</span></th></tr></thead>
             <tbody>{filteredInquiries.map((inquiry) => (
               <tr key={inquiry.id} tabIndex={0} onClick={() => openInquiry(inquiry)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openInquiry(inquiry); }}>
-                <td>{formatDate(inquiry.created_at)}</td>
-                <td><b>{inquiry.company_name || inquiry.contact_name}</b><small>{inquiry.company_name ? inquiry.contact_name : typeLabels[inquiry.inquiry_type]}</small></td>
-                <td><b>{typeLabels[inquiry.inquiry_type] || "기타 문의"}</b><small>{inquiry.message}</small></td>
-                <td>{inquiry.email}</td>
-                <td><span className={`${base.status} ${statusClass(inquiry.status)}`}><i />{statusLabel(inquiry.status)}</span></td>
+                <td data-label="접수일">{formatDate(inquiry.created_at)}</td>
+                <td data-label="문의자"><b>{inquiry.company_name || inquiry.contact_name}</b><small>{inquiry.company_name ? inquiry.contact_name : typeLabels[inquiry.inquiry_type]}</small></td>
+                <td data-label="문의 내용"><b>{typeLabels[inquiry.inquiry_type] || "기타 문의"}</b><small>{inquiry.message}</small></td>
+                <td data-label="이메일">{inquiry.email}</td>
+                <td data-label="상태"><span className={`${base.status} ${statusClass(inquiry.status)}`}><i />{statusLabel(inquiry.status)}</span></td>
                 <td><button type="button" tabIndex={-1}>열기 <span><LuArrowRight aria-hidden="true" /></span></button></td>
               </tr>
             ))}</tbody>

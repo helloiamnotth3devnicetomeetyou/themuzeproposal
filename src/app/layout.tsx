@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
@@ -28,12 +28,15 @@ export const metadata: Metadata = {
 const isLocale = (value?: string): value is Locale => value === "ko" || value === "en" || value === "ja";
 const isTheme = (value?: string): value is Theme => value === "dark" || value === "light";
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get("muze-locale")?.value;
   const themeCookie = cookieStore.get("muze-theme")?.value;
   const initialLocale: Locale = isLocale(localeCookie) ? localeCookie : "ko";
   const initialTheme: Theme = isTheme(themeCookie) ? themeCookie : "dark";
+  const nonce = (await headers()).get("x-nonce") || undefined;
 
   return (
     <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>

@@ -10,6 +10,7 @@ import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import MemberDetailOverlay from "./MemberDetailOverlay";
+import MobileArtistScene from "./MobileArtistScene";
 import SceneCanvas from "./SceneCanvas";
 import SceneDock from "./SceneDock";
 import { useArtistSceneData } from "./useArtistSceneData";
@@ -32,6 +33,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({});
   const [frameSize, setFrameSize] = useState<{ width: number; height: number } | null>(null);
+  const [isMobileExperience, setIsMobileExperience] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const focusWasOpenedHere = useRef(false);
   const pendingSceneIdRef = useRef<string | null>(null);
@@ -48,6 +50,13 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const sceneRatio = activeScene ? ((dimensions[activeScene.id]?.width || activeScene.image_width || 16) / (dimensions[activeScene.id]?.height || activeScene.image_height || 9)) : 16 / 9;
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobileExperience(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
   useEffect(() => { if (initialMemberSlug) void Promise.resolve().then(() => setSelectedMemberId(members.find((member) => member.slug === initialMemberSlug)?.id ?? null)); }, [initialMemberSlug, members]);
   useEffect(() => { const stage = stageRef.current; if (!stage) return; const observer = new ResizeObserver(([entry]) => { const width = Math.max(entry.contentRect.width, entry.contentRect.height * sceneRatio); setFrameSize({ width, height: width / sceneRatio }); }); observer.observe(stage); return () => observer.disconnect(); }, [sceneRatio]);
   useEffect(() => { const sync = () => { const slug = window.location.pathname.match(/^\/[^/]+\/artist\/([^/]+)\/?$/)?.[1]; setSelectedMemberId(slug ? members.find((member) => member.slug === decodeURIComponent(slug))?.id ?? null : null); setGroupFocused(false); setHoveredMemberId(null); focusWasOpenedHere.current = false; }; window.addEventListener("popstate", sync); return () => window.removeEventListener("popstate", sync); }, [members]);
@@ -83,12 +92,32 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const memberBio = selectedMember && localizeText({ ko: selectedMember.bio_ko ?? selectedMember.role_ko, en: selectedMember.bio_en ?? selectedMember.role_en, ja: selectedMember.bio_ja ?? selectedMember.role_ja }, locale);
   const localizedScene = { ...activeScene, title: localizeText({ ko: activeScene.title_ko, en: activeScene.title_en, ja: activeScene.title_ja }, locale, activeScene.title) };
   const centroid = selectedRegion ? outlineCentroid(selectedRegion.outline) : { x: 50, y: 50 };
+  if (isMobileExperience) return <MobileArtistScene
+    artist={artist}
+    artistName={artistName}
+    groupBio={groupBio}
+    members={members}
+    scenes={scenes}
+    activeSceneId={activeScene.id}
+    selectedMember={selectedMember}
+    memberBio={memberBio || ""}
+    locale={locale}
+    copy={copy}
+    onChangeScene={(id) => {
+      pendingSceneIdRef.current = null;
+      setPendingSceneId(null);
+      setActiveSceneId(id);
+    }}
+    onSelectMember={selectMember}
+    onCloseMember={closeMember}
+    onNavigateMember={navigate}
+  />;
   return <main className={`${styles.experience} ${selectedMember ? styles.hasSelection : ""}`} style={{ "--artist-accent": selectedMember?.color || artist.color || BRAND_PINK_HEX } as CSSProperties}>
     <SceneCanvas scene={localizedScene} members={members} artistName={artistName} sceneLabel={copy.scene} focusMemberId={focusMemberId} groupFocused={groupFocused} selectedMember={Boolean(selectedMember)} cameraOffset={{ x: (50 - centroid.x) * .14, y: (50 - centroid.y) * .1 }} frameSize={frameSize} stageRef={stageRef} onDimensions={(width, height) => setDimensions((current) => ({ ...current, [activeScene.id]: { width, height } }))} onClose={() => { if (selectedMember || groupFocused) closeMember(); }} onHover={setHoveredMemberId} onSelect={selectMember} />
     {!selectedMember && <div className={`${styles.artistIdentity} ${groupFocused ? styles.artistIdentityFocused : ""}`}><button type="button" className={styles.artistWordmark} onClick={(event) => { event.stopPropagation(); setHoveredMemberId(null); setSelectedMemberId(null); setGroupFocused((current) => !current); }} aria-label={`${artistName} ${copy.profile}`} aria-expanded={groupFocused} aria-controls={groupBio ? "group-artist-bio" : undefined}>{artist.logo_url && <Image src={artist.logo_url} alt={`${artistName} logo`} width={240} height={80} /> }<h1>{artistName}</h1></button>{groupBio && <div id="group-artist-bio" className={styles.artistBioReveal} aria-hidden={!groupFocused}><p>{groupBio}</p></div>}</div>}
     <MemberDetailOverlay member={selectedMember} memberBio={memberBio || ""} panelLeft={Boolean(selectedRegion && outlineCentroid(selectedRegion.outline).x > 56)} copy={copy} onClose={closeMember} onNavigate={navigate} />
     <SceneDock artist={artist} member={selectedMember} scenes={memberScenes} activeSceneId={pendingSceneId || activeScene.id} copy={copy} showReset={Boolean(selectedMember || groupFocused || activeScene.id !== scenes[0]?.id)} onChangeScene={requestSceneChange} onReset={reset} />
-    {pendingScene && <div className={styles.scenePreloader} aria-hidden="true"><Image key={`preload-${pendingScene.id}`} src={pendingScene.image_url} alt="" fill priority sizes="(max-width: 768px) 100vw, 90vw" onLoad={(event) => completeSceneChange(pendingScene.id, event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)} onError={() => completeSceneChange(pendingScene.id)} /></div>}
+    {pendingScene && <div className={styles.scenePreloader} aria-hidden="true"><Image key={`preload-${pendingScene.id}`} src={pendingScene.image_url} alt="" fill priority unoptimized onLoad={(event) => completeSceneChange(pendingScene.id, event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)} onError={() => completeSceneChange(pendingScene.id)} /></div>}
     <div className={styles.sceneSweep} key={`sweep-${activeScene.id}`} aria-hidden="true" />
   </main>;
 }

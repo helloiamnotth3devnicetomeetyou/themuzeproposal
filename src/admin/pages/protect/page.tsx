@@ -224,11 +224,11 @@ export default function ProtectAdminPage() {
           <table className={styles.table}>
             <thead><tr><th>접수일</th><th>보호 대상</th><th>제보 내용</th><th>플랫폼</th><th>상태</th><th><span className="sr-only">보기</span></th></tr></thead>
             <tbody>{filteredReports.map((report) => <tr key={report.id} tabIndex={0} onClick={() => openReport(report)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openReport(report); }}>
-              <td>{formatDate(report.created_at)}</td>
-              <td><b>{report.artists?.name || "-"}</b><small>{reportTypeLabels[report.report_type] || "기타"}</small></td>
-              <td><b>{report.title}</b><small>{report.author_name}</small></td>
-              <td>{report.platform}</td>
-              <td><span className={`${styles.status} ${statusClass(report.status)}`}><i />{statusLabel(report.status)}</span></td>
+              <td data-label="접수일">{formatDate(report.created_at)}</td>
+              <td data-label="보호 대상"><b>{report.artists?.name || "-"}</b><small>{reportTypeLabels[report.report_type] || "기타"}</small></td>
+              <td data-label="제보 내용"><b>{report.title}</b><small>{report.author_name}</small></td>
+              <td data-label="플랫폼">{report.platform}</td>
+              <td data-label="상태"><span className={`${styles.status} ${statusClass(report.status)}`}><i />{statusLabel(report.status)}</span></td>
               <td><button type="button" tabIndex={-1}>열기 <span><LuArrowRight aria-hidden="true" /></span></button></td>
             </tr>)}</tbody>
           </table>

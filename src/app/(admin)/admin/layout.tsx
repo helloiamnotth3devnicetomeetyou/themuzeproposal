@@ -18,6 +18,7 @@ import "@/styles/(admin)/gallery.css";
 import "@/styles/(admin)/settings.css";
 import "@/styles/(admin)/hero.css";
 import "@/styles/(admin)/audition.css";
+import "@/styles/(admin)/responsive.css";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 

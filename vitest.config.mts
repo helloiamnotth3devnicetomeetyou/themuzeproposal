@@ -15,6 +15,7 @@ export default defineConfig({
     setupFiles: ["./test/setup.ts"],
     clearMocks: true,
     restoreMocks: true,
+    pool: "threads",
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
