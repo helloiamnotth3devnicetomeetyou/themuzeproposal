@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { toWebP } from "@/admin/utils/image-convert";
 import { LuPlus } from "react-icons/lu";
 import { supabase } from "@/core/supabase/client";
 import AdminAssetImage from "./AdminAssetImage";
@@ -82,9 +83,9 @@ export default function ImageAssetField({
         if (!response.ok || !payload.asset) throw new Error(payload.code || "UPLOAD_FAILED");
         asset = payload.asset;
       } else {
-        const extension = fileType === "image/png" ? "png" : fileType === "image/webp" ? "webp" : "jpg";
-        const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.${extension}`;
-        const { error } = await supabase.storage.from("artist-assets").upload(path, file, { contentType: fileType, upsert: false });
+        const converted = await toWebP(file);
+        const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.webp`;
+        const { error } = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
         if (error) throw new Error("UPLOAD_FAILED");
         const { data } = supabase.storage.from("artist-assets").getPublicUrl(path);
         asset = { bucket: "artist-assets", path, url: data.publicUrl };

@@ -11,7 +11,7 @@ export default async function ProtectPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/protect");
 
-  const [initialArtistResult, reportResult] = await Promise.all([
+  const [artistResult, reportResult] = await Promise.all([
     supabase.from("artists").select("id,name,eng_name,name_ko,name_en,name_ja").eq("is_active", true).order("name"),
     supabase
       .from("protect_reports")
@@ -19,11 +19,6 @@ export default async function ProtectPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
-  let artistResult = initialArtistResult;
-  if (artistResult.error?.code === "42703") {
-    const legacy = await supabase.from("artists").select("id,name,eng_name").eq("is_active", true).order("name");
-    artistResult = { ...legacy, data: legacy.data?.map((artist) => ({ ...artist, name_ko: artist.name, name_en: artist.eng_name, name_ja: null })) ?? null } as typeof artistResult;
-  }
 
   return (
     <ProtectClient

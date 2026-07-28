@@ -2,6 +2,7 @@ import Image from "next/image";
 import { LuChevronRight } from "react-icons/lu";
 
 import type { DiscographyAlbum } from "../lib/types";
+import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
 
 interface AlbumArtworkProps {
   album: DiscographyAlbum;
@@ -162,7 +163,7 @@ export function AlbumArtwork({
             alt={album.title}
             fill
             priority
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 440px"
+            sizes={DISCOGRAPHY_COVER_SIZES}
             className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--alpha-ffffff-08)] via-transparent to-transparent pointer-events-none" />

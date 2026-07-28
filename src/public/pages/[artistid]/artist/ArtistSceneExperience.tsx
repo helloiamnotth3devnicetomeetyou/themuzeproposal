@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
+import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
 import { outlineCentroid } from "@/core/utils/artist-scenes";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
@@ -16,9 +17,12 @@ import SceneDock from "./SceneDock";
 import { useArtistSceneData } from "./useArtistSceneData";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
+import type { Member } from "./artist-scene-types";
+import type { ArtistScene } from "@/core/utils/artist-scenes";
+
 type Dimensions = Record<string, { width: number; height: number }>;
-const EMPTY_MEMBERS: never[] = [];
-const EMPTY_SCENES: never[] = [];
+const EMPTY_MEMBERS: Member[] = [];
+const EMPTY_SCENES: ArtistScene[] = [];
 
 export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }: { artistSlug: string; initialMemberSlug?: string }) {
   const { locale, t } = useLocale();
@@ -48,8 +52,16 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   const pendingScene = scenes.find((scene) => scene.id === pendingSceneId) ?? null;
   const artistName = artist ? localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name) : artistSlug.toUpperCase();
   const sceneRatio = activeScene ? ((dimensions[activeScene.id]?.width || activeScene.image_width || 16) / (dimensions[activeScene.id]?.height || activeScene.image_height || 9)) : 16 / 9;
+  const scenePreloadCandidates = useMemo(() => {
+    const urls = [
+      ...scenes.slice(1).map((scene) => scene.image_url),
+      ...scenes.flatMap((scene) => scene.artist_scene_members.map((region) => region.mask_url).filter(Boolean)),
+    ] as string[];
+    return Array.from(new Set(urls)).map((src) => ({ src }));
+  }, [scenes]);
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
+  useEffect(() => scheduleImagePreload(scenePreloadCandidates, { concurrency: 2 }), [scenePreloadCandidates]);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
     const sync = () => setIsMobileExperience(media.matches);
@@ -58,11 +70,23 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
     return () => media.removeEventListener("change", sync);
   }, []);
   useEffect(() => { if (initialMemberSlug) void Promise.resolve().then(() => setSelectedMemberId(members.find((member) => member.slug === initialMemberSlug)?.id ?? null)); }, [initialMemberSlug, members]);
-  useEffect(() => { const stage = stageRef.current; if (!stage) return; const observer = new ResizeObserver(([entry]) => { const width = Math.max(entry.contentRect.width, entry.contentRect.height * sceneRatio); setFrameSize({ width, height: width / sceneRatio }); }); observer.observe(stage); return () => observer.disconnect(); }, [sceneRatio]);
+  useEffect(() => { const stage = stageRef.current; if (!stage) return; const observer = new ResizeObserver(([entry]) => { const width = Math.max(entry.contentRect.width, entry.contentRect.height * sceneRatio); setFrameSize({ width, height: width / sceneRatio }); }); observer.observe(stage); return () => observer.disconnect(); }, [sceneRatio, isMobileExperience]);
   useEffect(() => { const sync = () => { const slug = window.location.pathname.match(/^\/[^/]+\/artist\/([^/]+)\/?$/)?.[1]; setSelectedMemberId(slug ? members.find((member) => member.slug === decodeURIComponent(slug))?.id ?? null : null); setGroupFocused(false); setHoveredMemberId(null); focusWasOpenedHere.current = false; }; window.addEventListener("popstate", sync); return () => window.removeEventListener("popstate", sync); }, [members]);
 
   const memberScenes = useMemo(() => selectedMemberId ? scenes.filter((scene) => scene.artist_scene_members.some((region) => region.member_id === selectedMemberId)) : scenes, [scenes, selectedMemberId]);
   const activeSceneMembers = useMemo(() => members.filter((member) => activeScene?.artist_scene_members.some((region) => region.member_id === member.id)), [activeScene, members]);
+  const warmScene = (id: string) => {
+    const scene = scenes.find((item) => item.id === id);
+    if (!scene) return;
+    const candidates = [
+      { src: scene.image_url },
+      ...scene.artist_scene_members
+        .map((region) => region.mask_url)
+        .filter((src): src is string => Boolean(src))
+        .map((src) => ({ src })),
+    ];
+    void preloadImages(candidates, { concurrency: 2 });
+  };
   const requestSceneChange = (id: string) => {
     setHoveredMemberId(null);
     if (id === activeScene?.id) {
@@ -70,6 +94,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
       setPendingSceneId(null);
       return;
     }
+    warmScene(id);
     pendingSceneIdRef.current = id;
     setPendingSceneId(id);
   };
@@ -104,6 +129,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
     locale={locale}
     copy={copy}
     onChangeScene={(id) => {
+      warmScene(id);
       pendingSceneIdRef.current = null;
       setPendingSceneId(null);
       setActiveSceneId(id);

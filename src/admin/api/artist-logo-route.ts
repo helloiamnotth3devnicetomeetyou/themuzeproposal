@@ -52,9 +52,21 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE", 400);
   }
 
+  const textContent = await file.text();
+  const trimmedText = textContent.replace(/^\uFEFF/, "").trim();
+  const isValidSvgStart =
+    trimmedText.startsWith("<svg") ||
+    trimmedText.startsWith("<?xml") ||
+    trimmedText.startsWith("<!--") ||
+    trimmedText.startsWith("<!DOCTYPE");
+
+  if (!isValidSvgStart) {
+    return errorResponse("INVALID_FILE", 400);
+  }
+
   let sanitized: string;
   try {
-    sanitized = sanitizeSvg(await file.text());
+    sanitized = sanitizeSvg(textContent);
     if (formData.get("assetKind") === "album-typography") {
       sanitized = await trimSvgToContent(sanitized);
     }

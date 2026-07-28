@@ -16,6 +16,7 @@ interface AlbumDockProps {
   railPhase: RailPhase;
   railRef: RefObject<HTMLDivElement | null>;
   sortBy: AlbumSort;
+  onIntentAlbum: (index: number) => void;
   onSelectAlbum: (index: number) => void;
   onToggleSort: () => void;
 }
@@ -27,10 +28,15 @@ export function AlbumDock({
   railPhase,
   railRef,
   sortBy,
+  onIntentAlbum,
   onSelectAlbum,
   onToggleSort,
 }: AlbumDockProps) {
   const { t } = useLocale();
+  const selectAlbum = (index: number) => {
+    onIntentAlbum(index);
+    onSelectAlbum(index);
+  };
   return (
     <div
       className="w-full py-3 border-t z-10 relative shrink-0"
@@ -65,7 +71,10 @@ export function AlbumDock({
         </button>
 
         <button
-          onClick={() => onSelectAlbum(Math.max(albumIndex - 1, 0))}
+          onPointerEnter={() => onIntentAlbum(Math.max(albumIndex - 1, 0))}
+          onFocus={() => onIntentAlbum(Math.max(albumIndex - 1, 0))}
+          onTouchStart={() => onIntentAlbum(Math.max(albumIndex - 1, 0))}
+          onClick={() => selectAlbum(Math.max(albumIndex - 1, 0))}
           disabled={albumIndex === 0}
           aria-label={t.discography.previousAlbum}
           className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
@@ -89,7 +98,10 @@ export function AlbumDock({
             return (
               <button
                 key={album.id}
-                onClick={() => onSelectAlbum(index)}
+                onPointerEnter={() => onIntentAlbum(index)}
+                onFocus={() => onIntentAlbum(index)}
+                onTouchStart={() => onIntentAlbum(index)}
+                onClick={() => selectAlbum(index)}
                 data-album-index={index}
                 aria-pressed={isCurrent}
                 className="flex min-h-11 items-center gap-2.5 px-2.5 py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
@@ -161,9 +173,10 @@ export function AlbumDock({
         </div>
 
         <button
-          onClick={() =>
-            onSelectAlbum(Math.min(albumIndex + 1, albums.length - 1))
-          }
+          onPointerEnter={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
+          onFocus={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
+          onTouchStart={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
+          onClick={() => selectAlbum(Math.min(albumIndex + 1, albums.length - 1))}
           disabled={albumIndex === albums.length - 1}
           aria-label={t.discography.nextAlbum}
           className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"

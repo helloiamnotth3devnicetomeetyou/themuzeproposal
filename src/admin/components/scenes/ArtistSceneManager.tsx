@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
+import { toWebP } from "@/admin/utils/image-convert";
 import { normalizeSceneLink, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
@@ -101,9 +102,9 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       let preferredId = "";
       for (const [index, file] of list.entries()) {
         const dimensions = await imageDimensions(file);
-        const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = `${artistId}/scenes/${crypto.randomUUID()}.${extension}`;
-        const upload = await supabase.storage.from("artist-assets").upload(path, file, { contentType: file.type, upsert: false });
+        const converted = await toWebP(file);
+        const path = `${artistId}/scenes/${crypto.randomUUID()}.webp`;
+        const upload = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
         if (upload.error) throw upload.error;
         const publicUrl = supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl;
         const canonicalTitle = file.name.replace(/\.[^.]+$/, "");

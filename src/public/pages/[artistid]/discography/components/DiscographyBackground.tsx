@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import type { DiscographyAlbum } from "../lib/types";
+import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
 
 interface DiscographyBackgroundProps {
   album: DiscographyAlbum;
@@ -23,7 +24,7 @@ export function DiscographyBackground({
           src={album.cover}
           alt=""
           fill
-          sizes="100vw"
+          sizes={DISCOGRAPHY_COVER_SIZES}
           className="object-cover blur-[100px] scale-[1.4] brightness-[0.1] saturate-150 transition-all duration-1000"
           priority
         />

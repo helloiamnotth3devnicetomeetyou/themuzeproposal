@@ -18,15 +18,11 @@ function createPublicClient() {
 export const getCachedNavigationArtists = unstable_cache(
   async (): Promise<ArtistNavigationItem[]> => {
     const client = createPublicClient();
-    let result = await client
+    const result = await client
       .from("artists")
       .select("id, slug, name, eng_name, name_ko, name_en, name_ja, logo_url")
       .order("name", { ascending: true });
 
-    if (result.error?.code === "42703") {
-      const legacy = await client.from("artists").select("id, slug, name, eng_name, logo_url").order("name", { ascending: true });
-      result = { ...legacy, data: legacy.data?.map((artist) => ({ ...artist, name_ko: artist.name, name_en: artist.eng_name, name_ja: null })) ?? null } as typeof result;
-    }
     if (result.error) return [];
     return (result.data ?? []) as ArtistNavigationItem[];
   },

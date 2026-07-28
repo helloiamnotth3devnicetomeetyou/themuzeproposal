@@ -26,13 +26,3 @@ export function localizeText(
   }
   return canonical.trim();
 }
-
-export function localizedFields(
-  value: {
-    ko?: string | null;
-    en?: string | null;
-    ja?: string | null;
-  },
-): LocalizedText {
-  return { ko: value.ko, en: value.en, ja: value.ja };
-}

@@ -1,6 +1,6 @@
 export const PREVIEW_VERSION = 1 as const;
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
-export const PREVIEW_STORAGE_PREFIX = "themuze:admin-preview:";
+const PREVIEW_STORAGE_PREFIX = "themuze:admin-preview:";
 
 export type PreviewKind =
   | "artist-profile"

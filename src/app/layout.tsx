@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
@@ -36,7 +36,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const themeCookie = cookieStore.get("muze-theme")?.value;
   const initialLocale: Locale = isLocale(localeCookie) ? localeCookie : "ko";
   const initialTheme: Theme = isTheme(themeCookie) ? themeCookie : "dark";
-  const nonce = (await headers()).get("x-nonce") || undefined;
 
   return (
     <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>

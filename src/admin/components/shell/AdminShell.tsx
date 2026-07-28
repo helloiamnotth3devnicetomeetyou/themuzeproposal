@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LuExternalLink, LuMenu } from "react-icons/lu";
+import { LuExternalLink, LuMenu, LuChevronRight } from "react-icons/lu";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import Navbar from "@/public/components/layout/Navbar";
@@ -12,6 +12,7 @@ function getPageLabel(pathname: string) {
   if (pathname === "/admin") return "대시보드";
   if (pathname.includes("/hero")) return "메인 앨범";
   if (pathname.includes("/notices")) return "공지";
+  if (pathname.includes("/audit-logs")) return "변경 이력";
   if (pathname.includes("/auditions")) return "오디션";
   if (pathname.includes("/protect")) return "권익 보호";
   if (pathname.includes("/contact")) return "문의";
@@ -26,6 +27,25 @@ function getPageLabel(pathname: string) {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const saved = localStorage.getItem("admin-sidebar-collapsed");
+    if (saved === "true") {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("admin-sidebar-collapsed", String(next));
+      return next;
+    });
+  };
+
   const isFullBleed = [
     "discography",
     "tracks",
@@ -33,6 +53,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     "members",
     "schedule",
     "notices",
+    "audit-logs",
     "settings",
     "hero",
     "auditions",
@@ -102,8 +123,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </Link>
         </header>
         <div className="admin-app-frame">
-          <div className="admin-layout cms-shell">
-            <Sidebar isOpen={isNavigationOpen} onClose={() => setIsNavigationOpen(false)} />
+          <div className={`admin-layout cms-shell ${isMounted && isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
+            <Sidebar
+              isOpen={isNavigationOpen}
+              onClose={() => setIsNavigationOpen(false)}
+              isCollapsed={isMounted && isSidebarCollapsed}
+              onToggleCollapse={toggleSidebar}
+            />
             {isNavigationOpen && (
               <button
                 type="button"

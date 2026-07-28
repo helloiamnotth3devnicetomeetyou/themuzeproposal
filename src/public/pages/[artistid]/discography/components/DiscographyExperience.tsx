@@ -3,10 +3,12 @@
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { useParams } from "next/navigation";
-import { useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { useLocale } from "@/core/providers/LocaleContext";
+import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
 import { useDiscographyController } from "../hooks/useDiscographyController";
+import { discographyCoverCandidate } from "../lib/cover-preload";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
@@ -24,6 +26,20 @@ export function DiscographyExperience() {
     albumRailRef,
     preview,
   );
+  const coverCandidates = useMemo(
+    () => discography.sortedAlbums.map((album) => discographyCoverCandidate(album.cover)),
+    [discography.sortedAlbums],
+  );
+
+  useEffect(() => scheduleImagePreload(
+    coverCandidates.filter((_, index) => index !== discography.albumIndex),
+    { concurrency: 2 },
+  ), [coverCandidates, discography.albumIndex]);
+
+  const preloadAlbum = useCallback((index: number) => {
+    const candidate = coverCandidates[index];
+    if (candidate) void preloadImages([candidate]);
+  }, [coverCandidates]);
 
   if (discography.loading || !discography.album) {
     const message =
@@ -111,6 +127,7 @@ export function DiscographyExperience() {
         railPhase={discography.railPhase}
         railRef={albumRailRef}
         sortBy={discography.sortBy}
+        onIntentAlbum={preloadAlbum}
         onSelectAlbum={discography.switchAlbum}
         onToggleSort={discography.toggleSort}
       />

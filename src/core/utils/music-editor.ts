@@ -52,9 +52,6 @@ export type UploadedAsset = {
 
 export const ALBUM_TYPES = ["Single", "Digital Single", "Mini Album", "Full Album", "OST"];
 
-export function toSlug(value: string) {
-  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
 
 export function parseBulkTracks(value: string): TrackDraft[] {
   return value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {

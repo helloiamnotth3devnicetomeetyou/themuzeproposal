@@ -108,15 +108,14 @@ export class CurrentPasswordError extends Error {
 }
 
 export async function verifyCurrentPassword(password: string) {
-  const user = await getUser();
-  if (!user?.email) throw new Error('The account email could not be found.');
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email: user.email,
-    password,
+  const response = await fetch('/api/auth/verify-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
   });
-  if (error) {
-    if (error.code === 'invalid_credentials') throw new CurrentPasswordError();
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { code?: string };
+    if (payload.code === 'INVALID_CREDENTIALS') throw new CurrentPasswordError();
     throw new AuthUserError('SERVICE_UNAVAILABLE');
   }
 }

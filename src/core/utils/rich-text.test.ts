@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeRichText, richTextToPlainText, plainTextToRichText, hasRichTextContent } from "./rich-text";
+import { sanitizeRichText, richTextToPlainText, plainTextToRichText } from "./rich-text";
 
 describe("Rich Text Utilities", () => {
   describe("sanitizeRichText", () => {

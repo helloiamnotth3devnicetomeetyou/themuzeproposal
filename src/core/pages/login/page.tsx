@@ -2,13 +2,9 @@ import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createPrivatePageMetadata } from "@/core/seo/metadata";
+import { safeRedirect } from "@/core/utils/redirect";
 
 export const metadata = createPrivatePageMetadata("Login");
-
-function safeRedirect(value: string | string[] | undefined) {
-  const target = Array.isArray(value) ? value[0] : value;
-  return target?.startsWith("/") && !target.startsWith("//") ? target : "/";
-}
 
 export default async function LoginPage({
   searchParams,

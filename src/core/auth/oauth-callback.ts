@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-
-function safeRedirect(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
+import { safeRedirect } from "@/core/utils/redirect";
 
 function loginErrorRedirect(request: NextRequest, next: string) {
   const loginUrl = new URL("/login", request.url);

@@ -17,7 +17,7 @@ export const EMPTY_SETTINGS: SiteSettingsPreviewPayload = {
   social: [],
 };
 
-export const normalizeSocial = (value: unknown): SiteSettingsPreviewPayload["social"] => {
+const normalizeSocial = (value: unknown): SiteSettingsPreviewPayload["social"] => {
   if (Array.isArray(value)) {
     return value.flatMap((item, index) => {
       if (!item || typeof item !== "object") return [];

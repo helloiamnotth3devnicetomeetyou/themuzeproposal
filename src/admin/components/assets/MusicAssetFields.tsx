@@ -6,6 +6,7 @@ import { type DragEvent, useId, useState } from "react";
 import { LuImage, LuMusic, LuX } from "react-icons/lu";
 import { supabase } from "@/core/supabase/client";
 import type { UploadedAsset } from "@/core/utils/music-editor";
+import { toWebP } from "@/admin/utils/image-convert";
 import AdminAssetImage from "./AdminAssetImage";
 
 type CoverProps = {
@@ -74,9 +75,9 @@ export function CoverAssetField({ artistId, albumId, value, onUploaded, onError 
     if (file.size > 30 * 1024 * 1024) return onError("커버 파일은 30MB 이하여야 합니다.");
     setBusy(true);
     try {
-      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const converted = await toWebP(file);
       const [asset, suggested] = await Promise.all([
-        upload("album-covers", `${artistId}/${albumId}/cover/${crypto.randomUUID()}.${extension}`, file, file.type),
+        upload("album-covers", `${artistId}/${albumId}/cover/${crypto.randomUUID()}.webp`, converted, "image/webp"),
         getSuggestedColor(file),
       ]);
       onUploaded(asset, suggested);
@@ -116,9 +117,9 @@ export function HeroAssetField({ artistId, albumId, value, onUploaded, onClear, 
     if (file.size > 30 * 1024 * 1024) return onError("히어로 이미지는 30MB 이하여야 합니다.");
     setBusy(true);
     try {
-      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-      const path = `${artistId}/${albumId}/hero/${crypto.randomUUID()}.${extension}`;
-      onUploaded(await upload("album-covers", path, file, file.type));
+      const converted = await toWebP(file);
+      const path = `${artistId}/${albumId}/hero/${crypto.randomUUID()}.webp`;
+      onUploaded(await upload("album-covers", path, converted, "image/webp"));
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : "히어로 이미지 업로드에 실패했습니다.");
     } finally {

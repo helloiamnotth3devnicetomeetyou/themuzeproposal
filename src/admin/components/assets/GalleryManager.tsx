@@ -6,6 +6,7 @@ import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
+import { toWebP } from "@/admin/utils/image-convert";
 import AdminAssetImage from "./AdminAssetImage";
 
 type GalleryScope = "artist" | "album" | "member";
@@ -112,9 +113,9 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
     onError("");
     try {
       for (const [index, file] of files.entries()) {
-        const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = `${artistId}/gallery/${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage.from("artist-assets").upload(path, file, { contentType: file.type, upsert: false });
+        const converted = await toWebP(file);
+        const path = `${artistId}/gallery/${crypto.randomUUID()}.webp`;
+        const { error: uploadError } = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
         if (uploadError) throw uploadError;
         const { data: publicUrl } = supabase.storage.from("artist-assets").getPublicUrl(path);
         const { error: insertError } = await supabase.from("artist_gallery").insert({

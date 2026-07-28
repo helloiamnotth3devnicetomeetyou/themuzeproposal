@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LuUserRound } from "react-icons/lu";
+import { arrayMove } from "@dnd-kit/sortable";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
@@ -289,8 +290,15 @@ export default function ArtistMembersAdmin() {
     sortDirty={sortDirty}
     onAdd={() => void addMember()}
     onSelect={(member) => void selectMember(member)}
-    onDrop={reorderMember}
-    onDragStart={setDragMember}
+    onReorder={(activeId, overId) => {
+      setMembers((current) => {
+        const from = current.findIndex((m) => m.id === activeId);
+        const to = current.findIndex((m) => m.id === overId);
+        if (from < 0 || to < 0) return current;
+        return arrayMove(current, from, to);
+      });
+      setSortDirty(true);
+    }}
     onToggleSorting={() => {
       setSorting((value) => !value);
       setSortDirty(false);

@@ -51,22 +51,13 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
   const albumIds = configuredSlides.map((slide) => slide.album_id);
   if (!albumIds.length) return [];
 
-  let albumResult = await client
+  const albumResult = await client
     .from("albums")
     .select("id, artist_id, title, title_ko, title_en, title_ja, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
     .in("id", albumIds)
     .eq("is_published", true)
     .lte("published_at", new Date().toISOString());
 
-  if (albumResult.error?.code === "42703") {
-    const legacy = await client
-      .from("albums")
-      .select("id, artist_id, title, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
-      .in("id", albumIds)
-      .eq("is_published", true)
-      .lte("published_at", new Date().toISOString());
-    albumResult = { ...legacy, data: legacy.data?.map((album) => ({ ...album, title_ko: album.title, title_en: null, title_ja: null })) ?? null } as typeof albumResult;
-  }
   if (albumResult.error) throw albumResult.error;
 
   const albums = (albumResult.data ?? []) as AlbumRow[];
@@ -74,16 +65,12 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
   const artistIds = [...new Set(albums.map((album) => album.artist_id))];
   if (!artistIds.length) return [];
 
-  let artistResult = await client
+  const artistResult = await client
     .from("artists")
     .select("id, name, eng_name, name_ko, name_en, name_ja, slug")
     .in("id", artistIds)
     .eq("is_active", true);
 
-  if (artistResult.error?.code === "42703") {
-    const legacy = await client.from("artists").select("id, name, eng_name, slug").in("id", artistIds).eq("is_active", true);
-    artistResult = { ...legacy, data: legacy.data?.map((artist) => ({ ...artist, name_ko: artist.name, name_en: artist.eng_name, name_ja: null })) ?? null } as typeof artistResult;
-  }
   if (artistResult.error) throw artistResult.error;
 
   const artistsById = new Map(((artistResult.data ?? []) as ArtistRow[]).map((artist) => [artist.id, artist]));
