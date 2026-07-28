@@ -1,4 +1,4 @@
-export type ValidatedFileType =
+type ValidatedFileType =
   | "image/jpeg"
   | "image/png"
   | "image/webp"

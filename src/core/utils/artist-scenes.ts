@@ -3,7 +3,7 @@ export type ScenePoint = {
   y: number;
 };
 
-export type ArtistSceneRegion = {
+type ArtistSceneRegion = {
   id: string;
   member_id: string;
   outline: ScenePoint[];

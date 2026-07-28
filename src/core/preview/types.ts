@@ -10,14 +10,14 @@ export type PreviewKind =
   | "schedule"
   | "site-settings";
 
-export type PreviewSocialLink = {
+type PreviewSocialLink = {
   id: string;
   platform: string;
   label: string;
   url: string;
 };
 
-export type ArtistProfilePreviewPayload = {
+type ArtistProfilePreviewPayload = {
   artist: {
     id: string;
     slug: string;
@@ -39,7 +39,7 @@ export type ArtistProfilePreviewPayload = {
   };
 };
 
-export type ArtistMemberPreviewPayload = {
+type ArtistMemberPreviewPayload = {
   artist: {
     id: string;
     slug: string;
@@ -106,7 +106,7 @@ export type AlbumPreviewPayload = {
   };
 };
 
-export type NoticePreviewPayload = {
+type NoticePreviewPayload = {
   scope: {
     name: string;
     artistSlug?: string;
@@ -120,7 +120,7 @@ export type NoticePreviewPayload = {
   };
 };
 
-export type SchedulePreviewPayload = {
+type SchedulePreviewPayload = {
   artist: {
     id: string;
     slug: string;

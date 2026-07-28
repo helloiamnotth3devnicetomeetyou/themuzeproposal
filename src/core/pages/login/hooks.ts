@@ -6,7 +6,7 @@ import { AuthUserError, signIn, signInWithGoogle, signUp } from "@/core/auth/aut
 import { SLIDES } from "./constants";
 import { localT, type LocaleKey, type LoginTranslations } from "./locales";
 
-export type Mode = "login" | "signup";
+type Mode = "login" | "signup";
 
 interface UseLoginFormOptions {
   redirectTo: string;

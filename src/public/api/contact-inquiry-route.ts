@@ -4,8 +4,6 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
-export const runtime = "nodejs";
-
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const GENERAL_TYPES = new Set(["account", "notice_event", "goods_md", "site_error", "other"]);
 const BUSINESS_TYPES = new Set([

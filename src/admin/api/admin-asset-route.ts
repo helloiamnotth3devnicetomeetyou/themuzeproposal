@@ -14,8 +14,6 @@ import {
   replacePathExtension,
 } from "@/core/uploads/service-storage";
 
-export const runtime = "nodejs";
-
 const BUCKETS = {
   "artist-assets": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },
   "album-covers": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },

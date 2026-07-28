@@ -6,8 +6,6 @@ import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
 
-export const runtime = "nodejs";
-
 const MAX_SVG_BYTES = 10 * 1024 * 1024;
 
 function safePathPart(value: FormDataEntryValue | null, fallback: string) {

@@ -4,8 +4,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
-export const runtime = "nodejs";
-
 const MAX_BODY_BYTES = 4 * 1024;
 
 function jsonError(code: string, status: number, retryAfter?: number) {

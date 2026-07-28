@@ -1,6 +1,6 @@
 export type AuditOperation = "INSERT" | "UPDATE" | "DELETE";
 
-export type AuditValues = Record<string, unknown>;
+type AuditValues = Record<string, unknown>;
 
 export type AuditLogRow = {
   id: number;
@@ -148,4 +148,3 @@ export function auditFields(row: AuditLogRow) {
     after: row.after_values?.[field],
   }));
 }
-

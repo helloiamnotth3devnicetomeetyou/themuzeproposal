@@ -1,7 +1,7 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { AlbumEditorDraft, TrackDraft } from "@/core/utils/music-editor";
 
-export type RawTrack = {
+type RawTrack = {
   id: string;
   title: string;
   title_ko: string | null;

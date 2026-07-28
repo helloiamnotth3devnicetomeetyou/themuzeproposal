@@ -5,8 +5,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 
-export const runtime = "nodejs";
-
 const MAX_BODY_BYTES = 16 * 1024;
 
 type PendingCookie = {

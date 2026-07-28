@@ -12,7 +12,7 @@ export type NoticeDTO = {
   category: LocalizedTextDTO;
 };
 
-export type NoticeScopeDTO = {
+type NoticeScopeDTO = {
   name: string;
 };
 

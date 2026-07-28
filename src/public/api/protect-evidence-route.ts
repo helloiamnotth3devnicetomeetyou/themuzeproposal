@@ -4,8 +4,6 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 import { validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
-export const runtime = "nodejs";
-
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function errorResponse(code: string, status: number) {

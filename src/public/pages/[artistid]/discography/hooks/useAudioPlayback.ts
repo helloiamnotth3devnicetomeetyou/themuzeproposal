@@ -12,7 +12,7 @@ import {
 
 type SavePlayback = (albumId: string, trackIndex: number, currentTime: number) => void;
 
-export interface AudioPlaybackState {
+interface AudioPlaybackState {
   isPlaying: boolean;
   progress: number;
   audioDuration: number;
@@ -52,7 +52,7 @@ function formatTime(seconds: number) {
 export function useAudioPlayback(
   audioRef: RefObject<HTMLAudioElement | null>,
   initialTrackIndex = 0,
-) {
+): AudioPlaybackState {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
