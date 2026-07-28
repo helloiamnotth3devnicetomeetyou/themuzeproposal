@@ -27,7 +27,6 @@ import {
   LuRefreshCw,
   LuSearch,
 } from "react-icons/lu";
-import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -43,7 +42,6 @@ import {
 type SortMode = "hero" | "newest" | "title";
 
 export default function HeroAdminPage() {
-  const requestConfirm = useAdminConfirm();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [slides, setSlides] = useState<HeroSlide[]>([]);

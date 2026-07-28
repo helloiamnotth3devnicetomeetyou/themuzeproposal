@@ -250,7 +250,8 @@ export default function ArtistMembersAdmin() {
     await loadMembers();
   };
 
-  const reorderMember = (targetId: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _reorderMember = (targetId: string) => {
     if (!dragMember || dragMember === targetId) return;
     setMembers((current) => {
       const next = [...current];

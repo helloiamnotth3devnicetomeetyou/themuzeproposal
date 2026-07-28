@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LuExternalLink, LuMenu, LuChevronRight } from "react-icons/lu";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { LuExternalLink, LuMenu } from "react-icons/lu";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import Navbar from "@/public/components/layout/Navbar";
@@ -24,19 +24,15 @@ function getPageLabel(pathname: string) {
   return "관리";
 }
 
+const emptySubscribe = () => () => {};
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem("admin-sidebar-collapsed");
-    if (saved === "true") {
-      setIsSidebarCollapsed(true);
-    }
-  }, []);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("admin-sidebar-collapsed") === "true"
+  );
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
