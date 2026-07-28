@@ -17,7 +17,7 @@ vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }
 import { POST } from "./password-login-route";
 
 const request = (body: unknown, headers: HeadersInit = {}) => new NextRequest("http://localhost/api/auth/login", {
-  method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body),
+  method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", ...headers }, body: JSON.stringify(body),
 });
 
 describe("POST /api/auth/login", () => {
@@ -34,6 +34,22 @@ describe("POST /api/auth/login", () => {
         }),
       },
     }));
+  });
+
+  it("rejects requests without a same-origin Origin header", async () => {
+    const missingOrigin = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "user@example.com", password: "password" }),
+    });
+    const crossOrigin = request(
+      { email: "user@example.com", password: "password" },
+      { origin: "https://attacker.example" },
+    );
+
+    await expect(POST(missingOrigin)).resolves.toMatchObject({ status: 400 });
+    await expect(POST(crossOrigin)).resolves.toMatchObject({ status: 400 });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("rejects malformed credentials before calling external services", async () => {

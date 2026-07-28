@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
 
@@ -23,10 +24,7 @@ function errorResponse(code: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) {
-    return errorResponse("FORBIDDEN", 403);
-  }
+  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
 
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (contentLength > MAX_SVG_BYTES + 64 * 1024) return errorResponse("FILE_TOO_LARGE", 413);

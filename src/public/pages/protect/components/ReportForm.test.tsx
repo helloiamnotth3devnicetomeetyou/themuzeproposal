@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   storageFrom: vi.fn(),
   upload: vi.fn(),
   remove: vi.fn(),
+  fetchUpload: vi.fn(),
   setMyReports: vi.fn(),
   setSubmittedId: vi.fn(),
   setError: vi.fn(),
@@ -57,6 +58,11 @@ const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
 describe("ReportForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("fetch", mocks.fetchUpload);
+    mocks.fetchUpload.mockResolvedValue(new Response(
+      JSON.stringify({ path: "user-1/file.png" }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ));
     mocks.storageFrom.mockReturnValue({ upload: mocks.upload, remove: mocks.remove });
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
@@ -72,7 +78,7 @@ describe("ReportForm", () => {
     const { container } = renderForm();
     fireEvent.pointerDown(container.querySelector("button[type='button']")!, { button: 0 });
     expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.fetchUpload).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported evidence files", async () => {
@@ -87,7 +93,10 @@ describe("ReportForm", () => {
     const { container } = renderForm();
     await fillValidForm(user);
     await act(async () => { fireEvent.submit(container.querySelector("form")!); });
-    expect(mocks.upload).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchUpload).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchUpload).toHaveBeenCalledWith("/api/uploads/protect-evidence", expect.objectContaining({
+      method: "POST",
+    }));
     expect(mocks.from).toHaveBeenCalledWith("protect_reports");
     expect(mocks.from).toHaveBeenCalledWith("protect_report_attachments");
     expect(mocks.setSubmittedId).toHaveBeenCalledWith("report-1");

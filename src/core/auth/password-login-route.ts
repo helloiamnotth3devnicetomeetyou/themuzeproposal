@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { isSameOriginRequest } from "@/core/http/same-origin";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,8 @@ function hashIdentifier(value: string, secret: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) return jsonError("INVALID_REQUEST", 400);
+
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (contentLength > MAX_BODY_BYTES) return jsonError("INVALID_REQUEST", 400);
 

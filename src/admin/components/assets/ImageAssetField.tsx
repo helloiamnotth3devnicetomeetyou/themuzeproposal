@@ -2,8 +2,8 @@
 
 import { useId, useState } from "react";
 import { toWebP } from "@/admin/utils/image-convert";
+import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { LuPlus } from "react-icons/lu";
-import { supabase } from "@/core/supabase/client";
 import AdminAssetImage from "./AdminAssetImage";
 
 export type UploadedImageAsset = {
@@ -85,10 +85,7 @@ export default function ImageAssetField({
       } else {
         const converted = await toWebP(file);
         const path = `${safePathPart(artistKey, "draft")}/${kind}/${safePathPart(entityKey, "asset")}/${crypto.randomUUID()}.webp`;
-        const { error } = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
-        if (error) throw new Error("UPLOAD_FAILED");
-        const { data } = supabase.storage.from("artist-assets").getPublicUrl(path);
-        asset = { bucket: "artist-assets", path, url: data.publicUrl };
+        asset = await uploadAdminAsset("artist-assets", path, converted);
       }
       await onChange(asset.url);
       onUploaded?.(asset);

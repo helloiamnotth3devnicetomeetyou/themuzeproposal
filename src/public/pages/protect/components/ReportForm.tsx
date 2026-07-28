@@ -205,13 +205,15 @@ export default function ReportForm({
     const uploadedPaths: string[] = [];
     try {
       for (const file of files) {
-        const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "file";
-        const path = `${user.id}/${crypto.randomUUID()}.${extension.toLowerCase()}`;
-        const { error: uploadError } = await supabase.storage
-          .from("protect-evidence")
-          .upload(path, file, { contentType: file.type, upsert: false });
-        if (uploadError) throw uploadError;
-        uploadedPaths.push(path);
+        const payload = new FormData();
+        payload.set("file", file);
+        const response = await fetch("/api/uploads/protect-evidence", {
+          method: "POST",
+          body: payload,
+        });
+        const result = await response.json().catch(() => ({})) as { path?: string; code?: string };
+        if (!response.ok || !result.path) throw new Error(result.code || "UPLOAD_FAILED");
+        uploadedPaths.push(result.path);
       }
 
       const { data, error: insertError } = await supabase

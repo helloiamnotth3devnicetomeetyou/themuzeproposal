@@ -7,6 +7,7 @@ import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
+import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import AdminAssetImage from "./AdminAssetImage";
 
 type GalleryScope = "artist" | "album" | "member";
@@ -115,20 +116,18 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
       for (const [index, file] of files.entries()) {
         const converted = await toWebP(file);
         const path = `${artistId}/gallery/${crypto.randomUUID()}.webp`;
-        const { error: uploadError } = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
-        if (uploadError) throw uploadError;
-        const { data: publicUrl } = supabase.storage.from("artist-assets").getPublicUrl(path);
+        const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
         const { error: insertError } = await supabase.from("artist_gallery").insert({
           artist_id: artistId,
           album_id: scope === "album" ? albumId : null,
           member_id: scope === "member" ? memberId : null,
-          image_url: publicUrl.publicUrl,
+          image_url: uploadedAsset.url,
           caption: "",
           sort_order: items.length + index + 1,
           is_published: true,
         });
         if (insertError) {
-          await supabase.storage.from("artist-assets").remove([path]);
+          await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
           throw insertError;
         }
       }

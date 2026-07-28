@@ -7,6 +7,7 @@ import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-ico
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
+import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { normalizeSceneLink, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
@@ -104,9 +105,8 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         const dimensions = await imageDimensions(file);
         const converted = await toWebP(file);
         const path = `${artistId}/scenes/${crypto.randomUUID()}.webp`;
-        const upload = await supabase.storage.from("artist-assets").upload(path, converted, { contentType: "image/webp", upsert: false });
-        if (upload.error) throw upload.error;
-        const publicUrl = supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl;
+        const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
+        const publicUrl = uploadedAsset.url;
         const canonicalTitle = file.name.replace(/\.[^.]+$/, "");
         const inserted = await supabase.from("artist_scenes").insert({
           artist_id: artistId,
@@ -120,7 +120,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           sort_order: scenes.length + index,
         }).select("id").single();
         if (inserted.error) {
-          await supabase.storage.from("artist-assets").remove([path]);
+          await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
           throw inserted.error;
         }
         preferredId = inserted.data.id;
@@ -263,12 +263,14 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(true);
     const extension = file.name.split(".").pop()?.toLowerCase() || "png";
     const path = `${artistId}/scene-masks/${selectedScene.id}/${selectedMemberId}.${extension}`;
-    const upload = await supabase.storage.from("artist-assets").upload(path, file, { contentType: file.type, upsert: true });
-    if (upload.error) {
+    let uploadedAsset;
+    try {
+      uploadedAsset = await uploadAdminAsset("artist-assets", path, file, { upsert: true });
+    } catch (uploadError) {
       setBusy(false);
-      return onError(upload.error.message);
+      return onError(uploadError instanceof Error ? uploadError.message : "UPLOAD_FAILED");
     }
-    const url = `${supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+    const url = `${uploadedAsset.url}?v=${Date.now()}`;
     const result = await supabase.from("artist_scene_members").upsert({
       scene_id: selectedScene.id,
       member_id: selectedMemberId,

@@ -10,7 +10,6 @@ import {
   LuTrash2,
 } from "react-icons/lu";
 import CustomSelect from "@/core/components/form/CustomSelect";
-import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(public)/pages/contact.module.css";
 
 type ContactCategory = "general" | "business";
@@ -46,7 +45,6 @@ const EMPTY_ERROR = "";
 export default function ContactClient({
   initialName,
   initialEmail,
-  initialUserId,
 }: {
   initialName: string;
   initialEmail: string;
@@ -143,40 +141,27 @@ export default function ContactClient({
     if (!validate()) return;
 
     setSubmitting(true);
-    let attachmentPath: string | null = null;
-    const inquiryId = crypto.randomUUID();
 
     try {
-      if (isBusiness && attachment) {
-        const extension = attachment.name.split(".").pop()?.toLowerCase() || "file";
-        attachmentPath = `${inquiryId}/${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage
-          .from("contact-attachments")
-          .upload(attachmentPath, attachment, {
-            contentType: attachment.type || undefined,
-            upsert: false,
-          });
-        if (uploadError) throw uploadError;
-      }
+      const payload = new FormData();
+      payload.set("category", category);
+      payload.set("inquiryType", form.inquiryType);
+      payload.set("companyName", isBusiness ? form.companyName.trim() : "");
+      payload.set("contactName", form.name.trim());
+      payload.set("phone", form.phone.trim());
+      payload.set("email", form.email.trim().toLowerCase());
+      payload.set("message", form.message.trim());
+      payload.set("privacyConsent", "true");
+      if (isBusiness && attachment) payload.set("attachment", attachment);
 
-      const { error: insertError } = await supabase.from("contact_inquiries").insert({
-        id: inquiryId,
-        user_id: initialUserId,
-        category,
-        inquiry_type: form.inquiryType,
-        company_name: isBusiness ? form.companyName.trim() : null,
-        contact_name: form.name.trim(),
-        phone: form.phone.trim() || null,
-        email: form.email.trim().toLowerCase(),
-        message: form.message.trim(),
-        attachment_path: attachmentPath,
-        attachment_name: attachment?.name || null,
-        attachment_size: attachment?.size || null,
-        privacy_consent: true,
+      const response = await fetch("/api/contact-inquiries", {
+        method: "POST",
+        body: payload,
       });
-      if (insertError) throw insertError;
+      const result = await response.json().catch(() => ({})) as { id?: string; code?: string };
+      if (!response.ok || !result.id) throw new Error(result.code || "SUBMISSION_FAILED");
 
-      setSubmittedId(inquiryId);
+      setSubmittedId(result.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
       setError(

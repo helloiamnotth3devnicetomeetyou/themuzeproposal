@@ -4,9 +4,9 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { type DragEvent, useId, useState } from "react";
 import { LuImage, LuMusic, LuX } from "react-icons/lu";
-import { supabase } from "@/core/supabase/client";
 import type { UploadedAsset } from "@/core/utils/music-editor";
 import { toWebP } from "@/admin/utils/image-convert";
+import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import AdminAssetImage from "./AdminAssetImage";
 
 type CoverProps = {
@@ -57,13 +57,6 @@ async function getSuggestedColor(file: File) {
   }
 }
 
-async function upload(bucket: UploadedAsset["bucket"], path: string, body: Blob, contentType: string) {
-  const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType, upsert: false });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return { bucket, path, url: data.publicUrl } satisfies UploadedAsset;
-}
-
 export function CoverAssetField({ artistId, albumId, value, onUploaded, onError }: CoverProps) {
   const inputId = useId();
   const [busy, setBusy] = useState(false);
@@ -77,7 +70,7 @@ export function CoverAssetField({ artistId, albumId, value, onUploaded, onError 
     try {
       const converted = await toWebP(file);
       const [asset, suggested] = await Promise.all([
-        upload("album-covers", `${artistId}/${albumId}/cover/${crypto.randomUUID()}.webp`, converted, "image/webp"),
+        uploadAdminAsset("album-covers", `${artistId}/${albumId}/cover/${crypto.randomUUID()}.webp`, converted),
         getSuggestedColor(file),
       ]);
       onUploaded(asset, suggested);
@@ -119,7 +112,7 @@ export function HeroAssetField({ artistId, albumId, value, onUploaded, onClear, 
     try {
       const converted = await toWebP(file);
       const path = `${artistId}/${albumId}/hero/${crypto.randomUUID()}.webp`;
-      onUploaded(await upload("album-covers", path, converted, "image/webp"));
+      onUploaded(await uploadAdminAsset("album-covers", path, converted));
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : "히어로 이미지 업로드에 실패했습니다.");
     } finally {
@@ -196,7 +189,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
             ? "png"
             : "webp";
       const path = `${artistId}/${albumId}/${trackId}/${kind}-${crypto.randomUUID()}.${extension}`;
-      onUploaded(await upload("track-assets", path, file, kind === "audio" ? "audio/mpeg" : isSvg ? "image/svg+xml" : file.type));
+      onUploaded(await uploadAdminAsset("track-assets", path, file));
     } catch (cause) {
       const code = cause instanceof Error ? cause.message : "";
       const message = code === "UNSAFE_SVG"
