@@ -7,7 +7,7 @@ import styles from "@/styles/(public)/pages/artist-scene.module.css";
 type Props = { scene: ArtistScene; members: Member[]; artistName: string; sceneLabel: string; focusMemberId: string | null; groupFocused: boolean; selectedMember: boolean; cameraOffset: { x: number; y: number }; frameSize: { width: number; height: number } | null; stageRef: React.RefObject<HTMLDivElement | null>; onDimensions: (width: number, height: number) => void; onClose: () => void; onHover: (id: string | null) => void; onSelect: (id: string) => void };
 
 export default function SceneCanvas({ scene, members, artistName, sceneLabel, focusMemberId, groupFocused, selectedMember, cameraOffset, frameSize, stageRef, onDimensions, onClose, onHover, onSelect }: Props) {
-  const focusRegions = groupFocused ? [] : focusMemberId ? scene.artist_scene_members.filter((region) => region.member_id === focusMemberId) : [];
+  const focusRegions = groupFocused ? scene.artist_scene_members : focusMemberId ? scene.artist_scene_members.filter((region) => region.member_id === focusMemberId) : [];
   const ratio = (scene.image_width || 16) / (scene.image_height || 9);
   return <>
     <div className={styles.sceneBackdrop} key={`backdrop-${scene.id}`} aria-hidden="true"><Image src={scene.image_url} alt="" fill unoptimized className={styles.sceneImage} /></div>

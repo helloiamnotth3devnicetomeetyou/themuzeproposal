@@ -102,6 +102,25 @@ export default function Sidebar({
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        if (isCollapsed) {
+          event.preventDefault();
+          onToggleCollapse?.();
+          setTimeout(() => {
+            const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
+            if (searchInput) {
+              searchInput.focus();
+            }
+          }, 120);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isCollapsed, onToggleCollapse]);
+
   const isActive = (href: string) => href === "/admin" ? pathname === href : pathname.startsWith(href);
   const leave = async () => { await signOut(); window.location.assign("/login"); };
 
