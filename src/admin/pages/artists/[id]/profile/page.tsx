@@ -35,6 +35,30 @@ export default function ArtistProfileAdmin() {
   const [artistId, setArtistId] = useState<string | null>(() => isNew ? crypto.randomUUID() : null);
   const [tab, setTab] = useState<ProfileTab>("basic");
 
+  useEffect(() => {
+    const handleUrlTab = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as ProfileTab;
+      if (tabParam && ["basic", "visual", "content", "social", "scenes", "gallery", "publish"].includes(tabParam)) {
+        setTab(tabParam);
+      }
+    };
+
+    handleUrlTab();
+
+    const handleCustomEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail as ProfileTab;
+      if (detail && ["basic", "visual", "content", "social", "scenes", "gallery", "publish"].includes(detail)) {
+        setTab(detail);
+      }
+    };
+
+    window.addEventListener("admin-profile-tab-change", handleCustomEvent);
+    return () => {
+      window.removeEventListener("admin-profile-tab-change", handleCustomEvent);
+    };
+  }, []);
+
   const {
     draft,
     setDraft,

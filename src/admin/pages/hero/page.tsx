@@ -28,6 +28,7 @@ import {
   LuSearch,
 } from "react-icons/lu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
@@ -55,6 +56,7 @@ export default function HeroAdminPage() {
   const [notice, setNotice] = useState("");
   const [loadedAt, setLoadedAt] = useState(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [deleteSlideItem, setDeleteSlideItem] = useState<HeroSlide | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 140, tolerance: 6 } }),
@@ -156,13 +158,6 @@ export default function HeroAdminPage() {
   };
 
   const removeSlide = async (slide: HeroSlide) => {
-    const album = albumById.get(slide.album_id);
-    if (!await requestConfirm({
-      title: "메인 목록에서 제외할까요?",
-      description: `‘${album?.title || "이 앨범"}’은 홈 화면에서만 제외되며 앨범과 수록곡 데이터는 그대로 유지됩니다.`,
-      confirmLabel: "메인에서 제외",
-      tone: "danger",
-    })) return;
     setSavingId(slide.id);
     setError("");
     const { error: deleteError } = await supabase.from("home_hero_slides").delete().eq("id", slide.id);
@@ -172,6 +167,7 @@ export default function HeroAdminPage() {
       setNotice("메인 목록에서 제외했습니다.");
     }
     setSavingId(null);
+    setDeleteSlideItem(null);
   };
 
   if (loading) return <LoadingIndicator label="메인 앨범 목록을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
@@ -207,7 +203,7 @@ export default function HeroAdminPage() {
               {slides.map((slide, index) => {
                 const album = albumById.get(slide.album_id);
                 const artist = album ? artistById.get(album.artist_id) : undefined;
-                return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => void removeSlide(slide)} />;
+                 return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => setDeleteSlideItem(slide)} />;
               })}
               {!slides.length && <div className="hero-admin-empty"><LuImage aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>
@@ -245,6 +241,18 @@ export default function HeroAdminPage() {
         </div>
         {!matchingAlbums.length && <div className="hero-admin-empty is-compact"><LuSearch aria-hidden="true" /><b>조건에 맞는 공개 앨범이 없습니다.</b><span>검색어나 아티스트 필터를 바꿔 보세요.</span></div>}
       </section>
+
+      {deleteSlideItem && (
+        <DeleteConfirmDialog
+          title="메인 목록에서 제외할까요?"
+          description="홈 화면에서만 제외되며 앨범과 수록곡 데이터는 그대로 유지됩니다. 이 작업은 되돌릴 수 없습니다."
+          confirmValue={albumById.get(deleteSlideItem.album_id)?.title || "이 앨범"}
+          valueLabel="앨범명"
+          busy={savingId === deleteSlideItem.id}
+          onCancel={() => setDeleteSlideItem(null)}
+          onConfirm={() => void removeSlide(deleteSlideItem)}
+        />
+      )}
     </div>
   );
 }

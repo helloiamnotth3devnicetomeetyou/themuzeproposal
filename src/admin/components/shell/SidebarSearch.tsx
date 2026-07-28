@@ -72,6 +72,13 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     { id: "social", categoryLabel: "사이트 설정", title: "소셜 링크", url: "/admin/settings?tab=social" },
     ...artists.flatMap((artist) => [
       { id: `${artist.id}-profile`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필", url: `/admin/artists/${artist.id}/profile` },
+      { id: `${artist.id}-profile-basic`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 기본 정보", url: `/admin/artists/${artist.id}/profile?tab=basic` },
+      { id: `${artist.id}-profile-visual`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 대표 비주얼", url: `/admin/artists/${artist.id}/profile?tab=visual` },
+      { id: `${artist.id}-profile-content`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 아티스트 소개", url: `/admin/artists/${artist.id}/profile?tab=content` },
+      { id: `${artist.id}-profile-social`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 공식 계정", url: `/admin/artists/${artist.id}/profile?tab=social` },
+      { id: `${artist.id}-profile-scenes`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 인터랙티브 장면", url: `/admin/artists/${artist.id}/profile?tab=scenes` },
+      { id: `${artist.id}-profile-gallery`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 통합 갤러리", url: `/admin/artists/${artist.id}/profile?tab=gallery` },
+      { id: `${artist.id}-profile-publish`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 공개 설정", url: `/admin/artists/${artist.id}/profile?tab=publish` },
       { id: `${artist.id}-members`, categoryLabel: "아티스트", artistName: artist.name, title: "멤버", url: `/admin/artists/${artist.id}/members` },
       { id: `${artist.id}-discography`, categoryLabel: "아티스트", artistName: artist.name, title: "음악 · 디스코그래피", url: `/admin/artists/${artist.id}/discography` },
       { id: `${artist.id}-schedule`, categoryLabel: "아티스트", artistName: artist.name, title: "일정", url: `/admin/artists/${artist.id}/schedule` },
@@ -106,6 +113,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   const select = useCallback((url: string) => {
     router.push(url);
     if (url.includes("settings?tab=")) window.dispatchEvent(new CustomEvent("admin-settings-tab-change", { detail: url.split("tab=")[1] }));
+    if (url.includes("profile?tab=")) window.dispatchEvent(new CustomEvent("admin-profile-tab-change", { detail: url.split("tab=")[1] }));
     setQuery("");
     setIsOpen(false);
     setActiveIndex(-1);
