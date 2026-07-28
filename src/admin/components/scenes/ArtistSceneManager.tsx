@@ -12,6 +12,7 @@ import { normalizeSceneLink, simplifyOutline, type ArtistScene, type ScenePoint 
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import {
   ACCEPTED_MASK_TYPES,
   ACCEPTED_SCENE_TYPES,
@@ -43,6 +44,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
   const [draftOutline, setDraftOutline] = useState<ScenePoint[]>([]);
   const [loading, setLoading] = useState(Boolean(artistId));
   const [busy, setBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [schemaMissing, setSchemaMissing] = useState(false);
 
   const load = useCallback(async (preferredSceneId?: string) => {
@@ -209,7 +211,6 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
 
   const deleteScene = async () => {
     if (!selectedScene) return;
-    if (!window.confirm(`'${selectedScene.title || "장면"}'을 삭제할까요?`)) return;
     setBusy(true);
     const result = await supabase.from("artist_scenes").delete().eq("id", selectedScene.id);
     if (!result.error) {
@@ -220,6 +221,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     }
     setBusy(false);
     if (result.error) return onError(result.error.message);
+    setDeleteOpen(false);
     await load();
     onToast("장면을 삭제했습니다.");
   };
@@ -311,7 +313,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => patchScene({ is_hero: event.target.checked })} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
-          <button type="button" className={styles.danger} disabled={busy} onClick={() => void deleteScene()}><LuTrash2 aria-hidden="true" />삭제</button>
+          <button type="button" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><LuTrash2 aria-hidden="true" />삭제</button>
           <button type="button" disabled={busy} onClick={() => void saveScene()}><LuSave aria-hidden="true" />장면 저장</button>
         </div>}
 
@@ -346,6 +348,17 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           </aside>
         </div>}
       </>}
+      {deleteOpen && selectedScene && (
+        <DeleteConfirmDialog
+          title="장면을 삭제할까요?"
+          description="장면 이미지와 연결된 멤버 외곽선 및 정밀 마스크 파일이 함께 영구적으로 제거됩니다. 이 작업은 되돌릴 수 없습니다."
+          confirmValue={selectedScene.title || "이름 없는 장면"}
+          valueLabel="장면명"
+          busy={busy}
+          onCancel={() => setDeleteOpen(false)}
+          onConfirm={() => void deleteScene()}
+        />
+      )}
     </div>
   );
 }
