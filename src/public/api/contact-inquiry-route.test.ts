@@ -91,12 +91,15 @@ describe("POST /api/contact-inquiries", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
-  it("stops rate-limited submissions before uploading or inserting", async () => {
+  it("stops rate-limited submissions before parsing, uploading, or inserting", async () => {
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 90 });
-    const response = await POST(request(validForm()));
+    const nextRequest = request(validForm());
+    const formDataSpy = vi.spyOn(nextRequest, "formData");
+    const response = await POST(nextRequest);
 
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("90");
+    expect(formDataSpy).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

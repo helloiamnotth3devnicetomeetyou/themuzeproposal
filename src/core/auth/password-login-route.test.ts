@@ -6,12 +6,14 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   signInWithPassword: vi.fn(),
   getConfig: vi.fn(),
-  createClient: vi.fn(),
+  createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({ getPublicSupabaseConfig: mocks.getConfig }));
-vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createClient }));
+vi.mock("@/core/supabase/service", () => ({
+  createServiceRoleClient: mocks.createServiceClient,
+}));
 vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }));
 
 import { POST } from "./password-login-route";
@@ -25,7 +27,7 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
     mocks.getConfig.mockReturnValue({ url: "https://project.supabase.co", anonKey: "anon" });
-    mocks.createClient.mockReturnValue({ rpc: mocks.rpc });
+    mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
     mocks.createServerClient.mockImplementation((_url: string, _key: string, options: { cookies: { setAll: (cookies: Array<{ name: string; value: string; options: object }>) => void } }) => ({
       auth: {
         signInWithPassword: mocks.signInWithPassword.mockImplementation(async () => {
@@ -68,7 +70,7 @@ describe("POST /api/auth/login", () => {
   });
 
   it("returns invalid credentials when Supabase rejects the password", async () => {
-    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null }).mockResolvedValueOnce({ data: null, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
     mocks.signInWithPassword.mockResolvedValueOnce({ error: new Error("invalid") });
     const response = await POST(request({ email: "user@example.com", password: "password" }));
     expect(response.status).toBe(401);
@@ -81,5 +83,12 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.cookies.get("sb-session")?.value).toBe("token");
+  });
+
+  it("fails closed when the server-only rate limiter client is unavailable", async () => {
+    mocks.createServiceClient.mockReturnValueOnce(null);
+    const response = await POST(request({ email: "user@example.com", password: "password" }));
+    expect(response.status).toBe(503);
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 });

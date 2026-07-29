@@ -11,6 +11,27 @@ export interface DiscographyTrack {
   videoUrl?: string;
 }
 
+export interface DiscographyMember {
+  id: string;
+  slug: string;
+  name: string;
+  names: LocalizedText;
+  role?: string;
+  roles: LocalizedText;
+  imageUrl?: string;
+  color: string;
+  sortOrder: number;
+}
+
+export interface DiscographyGalleryItem {
+  id: string;
+  albumId?: string;
+  memberId?: string;
+  imageUrl: string;
+  caption: string;
+  sortOrder: number;
+}
+
 export interface DiscographyAlbum {
   id: string;
   title: string;

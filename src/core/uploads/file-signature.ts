@@ -47,6 +47,8 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
   "audio/mpeg": "mp3",
 };
 
+const SIGNATURE_HEADER_BYTES = 4 * 1024;
+
 function startsWith(bytes: Uint8Array, signature: readonly number[]) {
   return signature.every((value, index) => bytes[index] === value);
 }
@@ -106,8 +108,29 @@ export async function validateFileSignature(
 ): Promise<ValidatedFile | null> {
   if (file.size < 1) return null;
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const mimeType = detectType(bytes);
+  const headerBytes = new Uint8Array(
+    await file.slice(0, Math.min(file.size, SIGNATURE_HEADER_BYTES)).arrayBuffer(),
+  );
+  let mimeType = detectType(headerBytes);
+
+  // Legacy PPT and PPTX validation needs to inspect container metadata that
+  // may live beyond the header. Only the contact profile accepts these types,
+  // and it is rate-limited before parsing with a 20 MB route-level cap.
+  const isOleContainer = startsWith(
+    headerBytes,
+    [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1],
+  );
+  const isZipContainer =
+    startsWith(headerBytes, [0x50, 0x4b, 0x03, 0x04])
+    || startsWith(headerBytes, [0x50, 0x4b, 0x05, 0x06])
+    || startsWith(headerBytes, [0x50, 0x4b, 0x07, 0x08]);
+
+  if (!mimeType
+    && profile === "contact-attachment"
+    && (isOleContainer || isZipContainer)) {
+    mimeType = detectType(new Uint8Array(await file.arrayBuffer()));
+  }
+
   if (!mimeType || !PROFILE_TYPES[profile].has(mimeType)) return null;
 
   return { mimeType, extension: EXTENSIONS[mimeType] };

@@ -37,6 +37,11 @@ drop policy if exists "users insert own protect report attachments" on public.pr
 revoke insert on public.protect_reports from anon, authenticated;
 revoke insert on public.protect_report_attachments from anon, authenticated;
 
+-- The production baseline was generated from the public schema only. Recreate
+-- the private security schema explicitly so a clean local reset is reproducible.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
 create table if not exists private.submission_rate_limits (
   scope text not null check (scope in ('contact_inquiry', 'protect_report')),
   key_hash text not null check (length(key_hash) = 64),

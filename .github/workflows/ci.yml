@@ -73,6 +73,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_STORAGE_URL: https://ci-placeholder.supabase.co/storage/v1/object/public
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
+      SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
     steps:
       - uses: actions/checkout@v4
 

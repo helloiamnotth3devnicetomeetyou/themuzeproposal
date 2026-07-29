@@ -4,7 +4,8 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
 import { SiSpotify } from "react-icons/si";
 
-import type { DiscographyAlbum, DiscographyTab } from "../lib/types";
+import type { DiscographyAlbum, DiscographyGalleryItem, DiscographyMember, DiscographyTab } from "../lib/types";
+import { MemberGallery } from "./MemberGallery";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
 
@@ -16,6 +17,8 @@ interface AlbumDetailsProps {
   hoveredDisc: number | null;
   isPlaying: boolean;
   locale: Locale;
+  members?: DiscographyMember[];
+  gallery?: DiscographyGalleryItem[];
   progress: number;
   time: {
     current: string;
@@ -37,6 +40,8 @@ export function AlbumDetails({
   hoveredDisc,
   isPlaying,
   locale,
+  members = [],
+  gallery = [],
   progress,
   time,
   onNextTrack,
@@ -90,32 +95,33 @@ export function AlbumDetails({
               href={album.links?.spotify || "#"}
               target="_blank"
               aria-label={`${album.title} on Spotify`}
-              className="w-8 h-8 rounded-full border border-[var(--alpha-ffffff-1)] flex items-center justify-center hover:bg-[var(--alpha-ffffff-1)] transition-colors text-[var(--color-static-white)] hover:text-[var(--palette-e5e7eb)]"
+              rel="noreferrer"
+              className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[rgba(255,255,255,0.6)] hover:text-[#1DB954] hover:border-[#1DB954] transition-all duration-300"
             >
-              <SiSpotify className="w-4 h-4" aria-hidden="true" />
+              <SiSpotify className="w-4 h-4" />
             </a>
           </div>
         </div>
-        <p className="text-[11px] text-[var(--palette-6b7280)] font-medium tracking-wider mt-2">
+        <p className="text-xs text-[rgba(255,255,255,0.35)] mt-1 font-mono">
           {album.releaseDate}
         </p>
       </div>
 
-      <div className="flex gap-5 border-b border-[var(--alpha-ffffff-1)] pb-1.5 mt-1 relative shrink-0">
+      <div className="flex border-b border-[rgba(255,255,255,0.08)] shrink-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`font-sans text-[11.5px] tracking-normal transition-all duration-base relative pb-2 font-medium ${
+            className={`px-4 py-2 text-xs font-bold transition-all relative ${
               activeTab === tab.id
-                ? "text-[var(--color-static-white)] font-semibold"
-                : "text-[var(--palette-6b7280)] hover:text-[var(--palette-e5e7eb)]"
+                ? "text-[var(--color-static-white)]"
+                : "text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span
-                className="absolute -bottom-[1.5px] left-0 right-0 h-[2px] rounded-full shadow-[0_0_8px_var(--alpha-ffffff-8)] transition-all duration-base"
+              <div
+                className="absolute bottom-0 left-0 right-0 h-0.5"
                 style={{ backgroundColor: album.color }}
               />
             )}
@@ -123,19 +129,23 @@ export function AlbumDetails({
         ))}
       </div>
 
-      <div className="flex-1 relative min-h-[300px]">
+      <div className="flex-1 min-h-0 relative">
         {activeTab === "concept" && (
-          <div className="absolute inset-0 animate-slideIn flex flex-col">
-            <div className="relative w-full flex-1 rounded-2xl overflow-hidden border border-[var(--alpha-ffffff-1)] shadow-lg group">
-              <Image
-                src={album.titleImage || album.cover}
-                alt={`${album.title} title image`}
-                fill
-                sizes="(max-width: 1024px) 100vw, 500px"
-                className="object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-[var(--alpha-000000-2)] group-hover:bg-transparent transition-colors duration-700 pointer-events-none" />
-            </div>
+          <div className="absolute inset-0 overflow-y-auto pr-1 animate-slideIn">
+            {album.titleImage ? (
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 border border-[rgba(255,255,255,0.1)]">
+                <Image
+                  src={album.titleImage}
+                  alt={album.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+            ) : null}
+            <p className="text-sm text-[var(--palette-9ca3af)] font-light leading-relaxed max-w-md">
+              {localizeText(album.desc, locale, t.discography.noDescription)}
+            </p>
           </div>
         )}
 
@@ -168,11 +178,12 @@ export function AlbumDetails({
 
         {activeTab === "members" && (
           <div className="absolute inset-0 animate-slideIn">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 h-full">
-              <p className="col-span-full self-center text-sm text-[var(--palette-6b7280)]">
-                {t.discography.noMembers}
-              </p>
-            </div>
+            <MemberGallery
+              album={album}
+              members={members}
+              gallery={gallery}
+              albumColor={album.color}
+            />
           </div>
         )}
       </div>

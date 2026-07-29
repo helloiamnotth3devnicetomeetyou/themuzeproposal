@@ -23,6 +23,8 @@ import {
 import type {
   AlbumSort,
   DiscographyAlbum,
+  DiscographyGalleryItem,
+  DiscographyMember,
   DiscographyTab,
   RailPhase,
   SlideDirection,
@@ -39,6 +41,8 @@ export function useDiscographyController(
 ) {
   const { locale, t } = useLocale();
   const [albums, setAlbums] = useState<DiscographyAlbum[]>([]);
+  const [members, setMembers] = useState<DiscographyMember[]>([]);
+  const [gallery, setGallery] = useState<DiscographyGalleryItem[]>([]);
   const [artistName, setArtistName] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -146,6 +150,8 @@ export function useDiscographyController(
       setLoading(true);
       setLoadError(null);
       setAlbums([]);
+      setMembers([]);
+      setGallery([]);
       setArtistName("");
       setAlbumIndex(0);
 
@@ -175,8 +181,16 @@ export function useDiscographyController(
           ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)))
           : 0;
 
+        const localizedMembers = result.members.map((m) => ({
+          ...m,
+          name: localizeText(m.names, locale, m.name),
+          role: m.roles ? localizeText(m.roles, locale, m.role || "") : m.role,
+        }));
+
         setArtistName(localizeText(result.artistNames, locale, result.artistName));
         setAlbums(result.albums);
+        setMembers(localizedMembers);
+        setGallery(result.gallery);
         setAlbumIndex(nextAlbumIndex);
         setCurrentTrackIndex(rememberedTrackIndex);
         restoreTimeRef.current = rememberedAlbumMatches
@@ -399,6 +413,8 @@ export function useDiscographyController(
     isPlaying,
     loading,
     loadError,
+    members,
+    gallery,
     nextTrack: () => moveTrack(1),
     playTrack,
     previousTrack: () => moveTrack(-1),

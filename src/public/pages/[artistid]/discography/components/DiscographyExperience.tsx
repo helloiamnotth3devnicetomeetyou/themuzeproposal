@@ -109,6 +109,8 @@ export function DiscographyExperience() {
           hoveredDisc={discography.hoveredDisc}
           isPlaying={discography.isPlaying}
           locale={locale}
+          members={discography.members}
+          gallery={discography.gallery}
           progress={discography.progress}
           time={discography.time}
           onNextTrack={discography.nextTrack}

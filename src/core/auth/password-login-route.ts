@@ -1,9 +1,9 @@
 import { createHmac } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 16 * 1024;
 
@@ -60,11 +60,10 @@ export async function POST(request: NextRequest) {
 
   const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
   const ipHash = hashIdentifier(`ip:${clientIp(request)}`, limiterSecret);
-  const limiterClient = createClient(url, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const limiterClient = createServiceRoleClient();
+  if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
-  const { data: rateData, error: rateError } = await limiterClient.rpc("check_login_rate_limit", {
+  const { data: rateData, error: rateError } = await limiterClient.rpc("consume_login_rate_limit", {
     p_identifier_hash: identifierHash,
     p_ip_hash: ipHash,
   });
@@ -87,14 +86,12 @@ export async function POST(request: NextRequest) {
 
   const { error: authError } = await authClient.auth.signInWithPassword({ email, password });
   const succeeded = !authError;
-  const { error: recordError } = await limiterClient.rpc("record_login_attempt", {
-    p_identifier_hash: identifierHash,
-    p_ip_hash: ipHash,
-    p_succeeded: succeeded,
-  });
-
-  if (recordError) return jsonError("SERVICE_UNAVAILABLE", 503);
   if (!succeeded) return jsonError("INVALID_CREDENTIALS", 401);
+
+  const { error: resetError } = await limiterClient.rpc("reset_login_rate_limit", {
+    p_identifier_hash: identifierHash,
+  });
+  if (resetError) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const response = NextResponse.json({ ok: true });
   pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));

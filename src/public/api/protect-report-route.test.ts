@@ -57,11 +57,14 @@ describe("POST /api/protect-reports", () => {
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", confirmation: true }));
   });
 
-  it("does not write a rate-limited report", async () => {
+  it("stops a rate-limited report before parsing or writing", async () => {
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 75 });
-    const response = await POST(validRequest());
+    const nextRequest = validRequest();
+    const formDataSpy = vi.spyOn(nextRequest, "formData");
+    const response = await POST(nextRequest);
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("75");
+    expect(formDataSpy).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

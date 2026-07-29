@@ -1,5 +1,7 @@
 begin;
 
+select plan(1);
+
 do $$
 begin
   if to_regclass('public.admin_audit_logs') is null then
@@ -246,5 +248,7 @@ begin
   end;
 end;
 $$;
+
+select pass('admin audit log security checks');
 
 rollback;

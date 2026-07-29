@@ -22,8 +22,7 @@ function hashIdentifier(value: string, secret: string) {
 
 export async function consumeSubmissionRateLimit(request: NextRequest, scope: SubmissionScope) {
   const client = createServiceRoleClient();
-  const secret = process.env.SUBMISSION_RATE_LIMIT_SECRET?.trim()
-    || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const secret = process.env.SUBMISSION_RATE_LIMIT_SECRET?.trim();
   if (!client || !secret) return { error: true as const };
 
   const config = LIMITS[scope];

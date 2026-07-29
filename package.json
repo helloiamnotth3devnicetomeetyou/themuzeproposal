@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "npm run validate:env && next build",
     "start": "next start",
+    "postinstall": "patch-package",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "test": "vitest run",
@@ -14,12 +15,14 @@
     "validate:env": "node scripts/validate-env.mjs",
     "db:status": "supabase migration list --linked",
     "db:push": "supabase db push --linked",
-    "db:dump": "supabase db dump --linked --schema public --file supabase/schema.remote.sql"
+    "db:dump": "supabase db dump --linked --schema public --file supabase/schema.remote.sql",
+    "db:test": "supabase test db"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@next/env": "16.2.12",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "isomorphic-dompurify": "^3.19.0",
@@ -27,8 +30,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.7.0",
-    "sharp": "^0.35.3",
-    "@next/env": "16.2.12"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -43,6 +45,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "jsdom": "^29.1.1",
+    "minimatch": "^3.1.5",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.18",
     "supabase": "^2.109.1",
     "tailwindcss": "^4",
@@ -51,9 +55,6 @@
   },
   "overrides": {
     "brace-expansion": "5.0.8",
-    "minimatch@3.1.5": {
-      "brace-expansion": "2.0.2"
-    },
     "postcss": "^8.5.18",
     "sharp": "^0.35.3"
   }

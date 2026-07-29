@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 4 * 1024;
 
@@ -61,12 +62,11 @@ export async function POST(request: NextRequest) {
 
   const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
   const ipHash = hashIdentifier(`ip:${clientIp(request)}`, limiterSecret);
-  const limiterClient = createClient(url, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const limiterClient = createServiceRoleClient();
+  if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const { data: rateData, error: rateError } = await limiterClient.rpc(
-    "check_login_rate_limit",
+    "consume_login_rate_limit",
     { p_identifier_hash: identifierHash, p_ip_hash: ipHash },
   );
   if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
@@ -92,12 +92,6 @@ export async function POST(request: NextRequest) {
   });
   const succeeded = !authError;
 
-  const { error: recordError } = await limiterClient.rpc(
-    "record_login_attempt",
-    { p_identifier_hash: identifierHash, p_ip_hash: ipHash, p_succeeded: succeeded },
-  );
-  if (recordError) return jsonError("SERVICE_UNAVAILABLE", 503);
-
   if (!succeeded) {
     const isInvalidCredentials =
       authError?.code === "invalid_credentials" ||
@@ -107,6 +101,12 @@ export async function POST(request: NextRequest) {
       isInvalidCredentials ? 401 : 503,
     );
   }
+
+  const { error: resetError } = await limiterClient.rpc(
+    "reset_login_rate_limit",
+    { p_identifier_hash: identifierHash },
+  );
+  if (resetError) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   // No Set-Cookie: the caller's existing session is preserved as-is.
   const response = NextResponse.json({ ok: true });

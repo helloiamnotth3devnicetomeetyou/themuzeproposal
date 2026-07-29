@@ -11,6 +11,7 @@ const required = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "NEXT_PUBLIC_SUPABASE_STORAGE_URL",
   "AUTH_RATE_LIMIT_SECRET",
+  "SUBMISSION_RATE_LIMIT_SECRET",
 ];
 
 const strict = process.env.VERCEL_ENV === "production"

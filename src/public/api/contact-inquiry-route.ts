@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (contentLength > MAX_FILE_BYTES + 64 * 1024) return errorResponse("FILE_TOO_LARGE", 413);
 
+  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry");
+  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+
   let formData: FormData;
   try {
     formData = await request.formData();
@@ -74,10 +78,6 @@ export async function POST(request: NextRequest) {
   if (file && (!validated || !extensionMatches(file.name, validated.extension))) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
-
-  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry");
-  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);

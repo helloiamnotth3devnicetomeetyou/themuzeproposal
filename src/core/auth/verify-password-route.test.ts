@@ -8,11 +8,15 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getConfig: vi.fn(),
   createClient: vi.fn(),
+  createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({ getPublicSupabaseConfig: mocks.getConfig }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createClient }));
+vi.mock("@/core/supabase/service", () => ({
+  createServiceRoleClient: mocks.createServiceClient,
+}));
 vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }));
 
 import { POST } from "./verify-password-route";
@@ -35,9 +39,10 @@ describe("POST /api/auth/verify-password", () => {
       auth: { getUser: mocks.getUser.mockResolvedValue({ data: { user: { email: "user@example.com" } } }) },
     });
 
-    // Anon clients: rate limiter + verifier
+    mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
+
+    // Stateless anon client: verifies the submitted password.
     mocks.createClient.mockReturnValue({
-      rpc: mocks.rpc,
       auth: { signInWithPassword: mocks.signInWithPassword },
     });
   });
@@ -75,9 +80,7 @@ describe("POST /api/auth/verify-password", () => {
   });
 
   it("returns INVALID_CREDENTIALS when Supabase rejects the password", async () => {
-    mocks.rpc
-      .mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null })
-      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
     mocks.signInWithPassword.mockResolvedValueOnce({
       error: { code: "invalid_credentials", status: 400 },
     });
@@ -112,5 +115,12 @@ describe("POST /api/auth/verify-password", () => {
       email: "user@example.com",
       password: "correctpassword",
     });
+  });
+
+  it("fails closed when the server-only rate limiter client is unavailable", async () => {
+    mocks.createServiceClient.mockReturnValueOnce(null);
+    const response = await POST(request({ password: "somepassword" }));
+    expect(response.status).toBe(503);
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 });
