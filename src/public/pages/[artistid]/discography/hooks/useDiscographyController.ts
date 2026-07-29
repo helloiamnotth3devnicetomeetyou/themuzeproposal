@@ -11,6 +11,7 @@ import {
 import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { safeHref } from "@/core/http/safe-href";
 
 import { fetchDiscography } from "../lib/discography-data";
 import {
@@ -84,10 +85,10 @@ export function useDiscographyController(
       title: track.title,
       titles: { ko: track.title_ko ?? track.title, en: track.title_en, ja: track.title_ja },
       isTitle: track.is_title,
-      spotifyUrl: track.spotify_url || undefined,
-      youtubeUrl: track.youtube_url || undefined,
-      audioUrl: track.audio_url || undefined,
-      videoUrl: track.music_video_url || undefined,
+      spotifyUrl: safeHref(track.spotify_url),
+      youtubeUrl: safeHref(track.youtube_url),
+      audioUrl: safeHref(track.audio_url),
+      videoUrl: safeHref(track.music_video_url),
     })),
     desc: {
       ko: preview.album.description_ko,
@@ -98,7 +99,7 @@ export function useDiscographyController(
       spotify: preview.album.spotify_id
         ? `https://open.spotify.com/album/${preview.album.spotify_id}`
         : undefined,
-      youtube: preview.album.youtube_url || undefined,
+      youtube: safeHref(preview.album.youtube_url),
     },
   } : null, [preview]);
   const effectiveAlbums = useMemo(() => {

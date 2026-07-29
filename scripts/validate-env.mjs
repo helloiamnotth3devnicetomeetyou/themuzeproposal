@@ -45,6 +45,10 @@ if (process.env.AUTH_RATE_LIMIT_SECRET && process.env.AUTH_RATE_LIMIT_SECRET.len
   problems.push("AUTH_RATE_LIMIT_SECRET must contain at least 32 characters.");
 }
 
+if (process.env.SUBMISSION_RATE_LIMIT_SECRET && process.env.SUBMISSION_RATE_LIMIT_SECRET.length < 32) {
+  problems.push("SUBMISSION_RATE_LIMIT_SECRET must contain at least 32 characters.");
+}
+
 if (strict && (missing.length || problems.length)) {
   console.error("Production environment validation failed.");
   if (missing.length) console.error(`Missing variables: ${missing.join(", ")}`);

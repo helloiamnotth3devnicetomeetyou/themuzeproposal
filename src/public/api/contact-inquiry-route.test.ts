@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
+  consumeRateLimit: vi.fn(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({
@@ -16,6 +17,9 @@ vi.mock("@/core/supabase/server", () => ({
 }));
 vi.mock("@/core/uploads/service-storage", () => ({
   createServiceRoleClient: mocks.createServiceClient,
+}));
+vi.mock("@/core/http/submission-rate-limit", () => ({
+  consumeSubmissionRateLimit: mocks.consumeRateLimit,
 }));
 
 import { POST } from "./contact-inquiry-route";
@@ -50,6 +54,7 @@ describe("POST /api/contact-inquiries", () => {
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.insert.mockResolvedValue({ error: null });
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, retryAfter: 0 });
     mocks.createServiceClient.mockReturnValue({
       storage: {
         from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })),
@@ -82,6 +87,16 @@ describe("POST /api/contact-inquiries", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_FILE_TYPE" });
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("stops rate-limited submissions before uploading or inserting", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 90 });
+    const response = await POST(request(validForm()));
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("90");
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

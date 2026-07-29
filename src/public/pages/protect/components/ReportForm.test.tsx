@@ -4,20 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const routerReplace = vi.fn();
 const mocks = vi.hoisted(() => ({
-  getUser: vi.fn(),
-  from: vi.fn(),
-  storageFrom: vi.fn(),
-  upload: vi.fn(),
-  remove: vi.fn(),
-  fetchUpload: vi.fn(),
+  fetch: vi.fn(),
   setMyReports: vi.fn(),
   setSubmittedId: vi.fn(),
   setError: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: routerReplace }) }));
-vi.mock("@/core/auth/auth", () => ({ getUser: mocks.getUser }));
-vi.mock("@/core/supabase/client", () => ({ supabase: { from: mocks.from, storage: { from: mocks.storageFrom } } }));
 vi.mock("@/core/components/form/CustomSelect", () => ({
   default: ({ ariaLabel, value, onChange, options }: { ariaLabel: string; value: string; onChange: (value: string) => void; options: Array<{ value: string; label: string }> }) => (
     <select aria-label={ariaLabel} value={value} onChange={(event) => onChange(event.target.value)}>
@@ -58,27 +51,18 @@ const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
 describe("ReportForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("fetch", mocks.fetchUpload);
-    mocks.fetchUpload.mockResolvedValue(new Response(
-      JSON.stringify({ path: "user-1/file.png" }),
+    vi.stubGlobal("fetch", mocks.fetch);
+    mocks.fetch.mockResolvedValue(new Response(
+      JSON.stringify({ id: "report-1", createdAt: "2026-01-01T00:00:00.000Z" }),
       { status: 200, headers: { "content-type": "application/json" } },
     ));
-    mocks.storageFrom.mockReturnValue({ upload: mocks.upload, remove: mocks.remove });
-    mocks.upload.mockResolvedValue({ error: null });
-    mocks.remove.mockResolvedValue({ error: null });
-    mocks.from.mockImplementation((table: string) => {
-      if (table === "protect_reports") return {
-        insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { id: "report-1" }, error: null }) }) }),
-      };
-      return { insert: vi.fn().mockResolvedValue({ error: null }) };
-    });
   });
 
   it("blocks a submission with missing required fields", () => {
     const { container } = renderForm();
     fireEvent.pointerDown(container.querySelector("button[type='button']")!, { button: 0 });
     expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(mocks.fetchUpload).not.toHaveBeenCalled();
+    expect(mocks.fetch).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported evidence files", async () => {
@@ -87,24 +71,22 @@ describe("ReportForm", () => {
     expect(mocks.setError).toHaveBeenCalled();
   });
 
-  it("uploads evidence, creates the report, and attaches the uploaded files", async () => {
+  it("submits the report and evidence through the server route", async () => {
     const user = userEvent.setup();
-    mocks.getUser.mockResolvedValue({ id: "user-1", email: "user@example.com" });
     const { container } = renderForm();
     await fillValidForm(user);
     await act(async () => { fireEvent.submit(container.querySelector("form")!); });
-    expect(mocks.fetchUpload).toHaveBeenCalledTimes(1);
-    expect(mocks.fetchUpload).toHaveBeenCalledWith("/api/uploads/protect-evidence", expect.objectContaining({
+    expect(mocks.fetch).toHaveBeenCalledWith("/api/protect-reports", expect.objectContaining({
       method: "POST",
     }));
-    expect(mocks.from).toHaveBeenCalledWith("protect_reports");
-    expect(mocks.from).toHaveBeenCalledWith("protect_report_attachments");
     expect(mocks.setSubmittedId).toHaveBeenCalledWith("report-1");
   });
 
   it("redirects an unauthenticated reporter to login", async () => {
     const user = userEvent.setup();
-    mocks.getUser.mockResolvedValue(null);
+    mocks.fetch.mockResolvedValue(new Response(JSON.stringify({ code: "UNAUTHORIZED" }), {
+      status: 401, headers: { "content-type": "application/json" },
+    }));
     const { container } = renderForm();
     await fillValidForm(user);
     await act(async () => { fireEvent.submit(container.querySelector("form")!); });

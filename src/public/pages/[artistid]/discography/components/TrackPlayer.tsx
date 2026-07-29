@@ -7,6 +7,7 @@ import {
 } from "react-icons/lu";
 import { SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { safeHref } from "@/core/http/safe-href";
 
 import type { DiscographyTrack } from "../lib/types";
 
@@ -39,6 +40,8 @@ export function TrackPlayer({
   onTogglePlay,
 }: TrackPlayerProps) {
   const { t } = useLocale();
+  const audioHref = safeHref(track?.audioUrl);
+  const youtubeHref = safeHref(track?.youtubeUrl);
   return (
     <div
       className="p-4 rounded-2xl flex flex-col gap-3 shrink-0"
@@ -71,7 +74,7 @@ export function TrackPlayer({
           max="100"
           step="0.1"
           value={progress}
-          disabled={!track?.audioUrl || !audioDuration}
+          disabled={!audioHref || !audioDuration}
           aria-valuetext={`${time.current} / ${time.total}`}
           style={
             {
@@ -95,9 +98,9 @@ export function TrackPlayer({
           </button>
           <button
             onClick={onTogglePlay}
-            disabled={!track?.audioUrl}
+            disabled={!audioHref}
             aria-label={isPlaying ? t.discography.pause : t.discography.play}
-            title={track?.audioUrl ? (isPlaying ? t.discography.pause : t.discography.play) : t.discography.noAudio}
+            title={audioHref ? (isPlaying ? t.discography.pause : t.discography.play) : t.discography.noAudio}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
             style={{
               backgroundColor: albumColor,
@@ -119,12 +122,12 @@ export function TrackPlayer({
             <LuChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
-        {track?.youtubeUrl ? (
+        {youtubeHref ? (
           <a
-            href={track.youtubeUrl}
+            href={youtubeHref}
             target="_blank"
             rel="noreferrer"
-            aria-label={`${track.title} ${t.discography.musicVideo}`}
+            aria-label={`${track?.title ?? ""} ${t.discography.musicVideo}`}
             className="discography-youtube-button justify-self-end"
           >
             <SiYoutube aria-hidden="true" />

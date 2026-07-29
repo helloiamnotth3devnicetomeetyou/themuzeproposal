@@ -1,5 +1,6 @@
 import type { DiscographyAlbum } from "../lib/types";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { safeHref } from "@/core/http/safe-href";
 
 interface TrackListProps {
   album: DiscographyAlbum;
@@ -22,6 +23,8 @@ export function TrackList({
       {album.tracks.map((track, index) => {
         const isActive = currentTrackIndex === index;
         const isHovered = hoveredDisc === index;
+        const spotifyHref = safeHref(track.spotifyUrl);
+        const videoHref = safeHref(track.videoUrl);
 
         return (
           <div
@@ -85,9 +88,9 @@ export function TrackList({
               )}
             </button>
             <div className="flex items-center gap-1.5 shrink-0">
-              {track.spotifyUrl && (
+              {spotifyHref && (
                 <a
-                  href={track.spotifyUrl}
+                  href={spotifyHref}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`${track.title} Spotify`}
@@ -96,9 +99,9 @@ export function TrackList({
                   SP
                 </a>
               )}
-              {track.videoUrl && (
+              {videoHref && (
                 <a
-                  href={track.videoUrl}
+                  href={videoHref}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`${track.title} ${t.discography.musicVideo}`}

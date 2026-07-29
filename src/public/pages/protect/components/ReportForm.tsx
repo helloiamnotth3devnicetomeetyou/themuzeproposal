@@ -11,9 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useRouter } from "next/navigation";
-import { getUser } from "@/core/auth/auth";
 import { useLocale } from "@/core/providers/LocaleContext";
-import { supabase } from "@/core/supabase/client";
 import type { Artist, MyReport } from "../ProtectClient";
 import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
 import styles from "@/styles/(public)/pages/protect.module.css";
@@ -195,74 +193,44 @@ export default function ReportForm({
     }
 
     setSubmitting(true);
-    const user = await getUser();
-    if (!user) {
-      setSubmitting(false);
-      router.replace("/login?redirect=/protect");
-      return;
-    }
-
-    const uploadedPaths: string[] = [];
     try {
-      for (const file of files) {
-        const payload = new FormData();
-        payload.set("file", file);
-        const response = await fetch("/api/uploads/protect-evidence", {
-          method: "POST",
-          body: payload,
-        });
-        const result = await response.json().catch(() => ({})) as { path?: string; code?: string };
-        if (!response.ok || !result.path) throw new Error(result.code || "UPLOAD_FAILED");
-        uploadedPaths.push(result.path);
+      const payload = new FormData();
+      payload.set("artistId", form.artistId);
+      payload.set("reportType", form.reportType);
+      payload.set("title", form.title.trim());
+      payload.set("content", form.content.trim());
+      payload.set("platform", form.platform);
+      payload.set("postUrl", form.postUrl.trim());
+      payload.set("postedAt", form.postedAt);
+      payload.set("authorName", form.authorName.trim());
+      payload.set("postIp", form.postIp.trim());
+      payload.set("confirmation", "true");
+      files.forEach((file) => payload.append("evidence", file));
+
+      const response = await fetch("/api/protect-reports", { method: "POST", body: payload });
+      const result = await response.json().catch(() => ({})) as { id?: string; createdAt?: string; code?: string };
+      if (response.status === 401) {
+        router.replace("/login?redirect=/protect");
+        return;
       }
-
-      const { data, error: insertError } = await supabase
-        .from("protect_reports")
-        .insert({
-          user_id: user.id,
-          reporter_email: user.email || null,
-          artist_id: form.artistId,
-          report_type: form.reportType,
-          title: form.title.trim(),
-          content: form.content.trim(),
-          platform: form.platform,
-          post_url: form.postUrl.trim(),
-          posted_at: form.postedAt,
-          author_name: form.authorName.trim(),
-          post_ip: form.postIp.trim() || null,
-          confirmation: true,
-        })
-        .select("id")
-        .single();
-      if (insertError) throw insertError;
-
-      const { error: attachmentError } = await supabase
-        .from("protect_report_attachments")
-        .insert(uploadedPaths.map((path, index) => ({
-          report_id: data.id,
-          file_path: path,
-          file_name: files[index].name,
-        })));
-      if (attachmentError) throw attachmentError;
+      const reportId = result.id;
+      if (!response.ok || !reportId) throw new Error(result.code || "SUBMISSION_FAILED");
 
       setMyReports((current) => [{
-        id: data.id,
+        id: reportId,
         artist_id: form.artistId,
         report_type: form.reportType,
         title: form.title.trim(),
         platform: form.platform,
         status: "pending",
-        created_at: new Date().toISOString(),
+        created_at: result.createdAt || new Date().toISOString(),
       }, ...current]);
-      setSubmittedId(data.id);
+      setSubmittedId(reportId);
       setForm(initialForm);
       setFileSlots([null, null, null]);
       setConfirmed(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
-      if (uploadedPaths.length) {
-        await supabase.storage.from("protect-evidence").remove(uploadedPaths);
-      }
       setError(submitError instanceof Error
         ? submitError.message
         : t.protect.errors.submitFailed);

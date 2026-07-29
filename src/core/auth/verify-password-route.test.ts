@@ -20,7 +20,7 @@ import { POST } from "./verify-password-route";
 const request = (body: unknown, headers: HeadersInit = {}) =>
   new NextRequest("http://localhost/api/auth/verify-password", {
     method: "POST",
-    headers: { "content-type": "application/json", ...headers },
+    headers: { "content-type": "application/json", origin: "http://localhost", ...headers },
     body: JSON.stringify(body),
   });
 
@@ -47,6 +47,12 @@ describe("POST /api/auth/verify-password", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_REQUEST" });
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-origin requests before reading the session", async () => {
+    const response = await POST(request({ password: "somepassword" }, { origin: "https://attacker.example" }));
+    expect(response.status).toBe(400);
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
   });
 
   it("returns 401 UNAUTHORIZED when no session is present", async () => {

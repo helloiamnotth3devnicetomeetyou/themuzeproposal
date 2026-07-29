@@ -3,6 +3,7 @@ import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
+import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const GENERAL_TYPES = new Set(["account", "notice_event", "goods_md", "site_error", "other"]);
@@ -14,9 +15,10 @@ const BUSINESS_TYPES = new Set([
   "other_business",
 ]);
 
-function errorResponse(code: string, status: number) {
+function errorResponse(code: string, status: number, retryAfter?: number) {
   const response = NextResponse.json({ code }, { status });
   response.headers.set("Cache-Control", "no-store");
+  if (retryAfter) response.headers.set("Retry-After", String(retryAfter));
   return response;
 }
 
@@ -72,6 +74,10 @@ export async function POST(request: NextRequest) {
   if (file && (!validated || !extensionMatches(file.name, validated.extension))) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
+
+  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry");
+  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
