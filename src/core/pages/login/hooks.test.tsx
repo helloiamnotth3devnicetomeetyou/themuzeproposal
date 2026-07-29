@@ -7,7 +7,10 @@ const auth = vi.hoisted(() => ({
   signUp: vi.fn(),
   signInWithGoogle: vi.fn(),
   AuthUserError: class AuthUserError extends Error {
-    constructor(public readonly code: string) { super(code); }
+    constructor(
+      public readonly code: string,
+      public readonly retryAfterSeconds?: number,
+    ) { super(code); }
   },
 }));
 
@@ -32,11 +35,22 @@ describe("useLoginForm", () => {
     expect(push).toHaveBeenCalledWith("/protect");
   });
 
-  it("shows a dedicated rate-limit message", async () => {
-    auth.signIn.mockRejectedValue(new AuthUserError("RATE_LIMITED"));
-    const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
+  it("shows the remaining rate-limit wait in minutes", async () => {
+    auth.signIn.mockRejectedValue(new AuthUserError("RATE_LIMITED", 125));
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }));
     await act(async () => { await result.current.handleLogin({ preventDefault: vi.fn() } as never); });
-    expect(result.current.error).toBe(result.current.t.rateLimited);
+    expect(result.current.error).toContain("약 3분 후");
+  });
+
+  it("explains invalid credentials separately from a service outage", async () => {
+    auth.signIn.mockRejectedValueOnce(new AuthUserError("INVALID_CREDENTIALS"));
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }));
+    await act(async () => { await result.current.handleLogin({ preventDefault: vi.fn() } as never); });
+    expect(result.current.error).toBe(result.current.t.invalidCredentials);
+
+    auth.signIn.mockRejectedValueOnce(new AuthUserError("SERVICE_UNAVAILABLE"));
+    await act(async () => { await result.current.handleLogin({ preventDefault: vi.fn() } as never); });
+    expect(result.current.error).toBe(result.current.t.serviceUnavailable);
   });
 
   it("rejects an invalid sign-up password before calling Supabase", async () => {

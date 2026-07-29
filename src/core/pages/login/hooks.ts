@@ -8,6 +8,23 @@ import { localT, type LocaleKey, type LoginTranslations } from "./locales";
 
 type Mode = "login" | "signup";
 
+function loginErrorMessage(error: unknown, t: LoginTranslations) {
+  if (!(error instanceof AuthUserError)) return t.loginFailed;
+
+  switch (error.code) {
+    case "INVALID_CREDENTIALS":
+      return t.invalidCredentials;
+    case "RATE_LIMITED": {
+      const minutes = Math.max(1, Math.ceil((error.retryAfterSeconds ?? 15 * 60) / 60));
+      return t.rateLimited.replace("{minutes}", String(minutes));
+    }
+    case "SERVICE_UNAVAILABLE":
+      return t.serviceUnavailable;
+    default:
+      return t.loginFailed;
+  }
+}
+
 interface UseLoginFormOptions {
   redirectTo: string;
   oauthFailed: boolean;
@@ -82,11 +99,7 @@ export function useLoginForm({
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
     } catch (err: unknown) {
-      setError(
-        err instanceof AuthUserError && err.code === "RATE_LIMITED"
-          ? t.rateLimited
-          : t.loginFailed,
-      );
+      setError(loginErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

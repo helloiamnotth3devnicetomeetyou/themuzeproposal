@@ -8,7 +8,10 @@ export type AuthErrorCode =
   | 'UPDATE_FAILED';
 
 export class AuthUserError extends Error {
-  constructor(public readonly code: AuthErrorCode) {
+  constructor(
+    public readonly code: AuthErrorCode,
+    public readonly retryAfterSeconds?: number,
+  ) {
     super(code);
     this.name = 'AuthUserError';
   }
@@ -22,7 +25,15 @@ export async function signIn(email: string, password: string) {
   });
   const payload = await response.json().catch(() => ({})) as { code?: AuthErrorCode };
   if (!response.ok) {
-    throw new AuthUserError(payload.code || 'SERVICE_UNAVAILABLE');
+    const retryAfterHeader = Number(response.headers.get('Retry-After'));
+    const retryAfterSeconds =
+      Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
+        ? Math.ceil(retryAfterHeader)
+        : undefined;
+    throw new AuthUserError(
+      payload.code || 'SERVICE_UNAVAILABLE',
+      retryAfterSeconds,
+    );
   }
 }
 

@@ -126,6 +126,8 @@ export default function LoginFormPanel({
         {/* Status Messages */}
         {error && (
           <div
+            role="alert"
+            aria-live="polite"
             className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
             style={{
               backgroundColor: "var(--color-error-subtle)",
