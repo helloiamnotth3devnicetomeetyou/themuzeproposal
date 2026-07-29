@@ -29,6 +29,7 @@ async function resolveNoticeScope(client: SupabaseClient, artistSlug?: string): 
     .from("artists")
     .select("id,name,eng_name")
     .eq("slug", artistSlug)
+    .eq("is_active", true)
     .single();
 
   if (error || !data) throw error ?? new Error("Artist not found");

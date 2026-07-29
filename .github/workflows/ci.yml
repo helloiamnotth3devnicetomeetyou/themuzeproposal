@@ -59,9 +59,37 @@ jobs:
 
       - run: npm run test
 
+  database-drift:
+    name: Database drift
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check database schema drift
+        shell: bash
+        run: |
+          npx supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          schema_diff="$(npx supabase db diff --linked --schema public --use-pg-schema)"
+          if [[ -n "$schema_diff" ]]; then
+            echo "Database schema drift detected:"
+            echo "$schema_diff"
+            exit 1
+          fi
+
   build:
     name: Build
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, database-drift]
     runs-on: ubuntu-latest
     env:
       # Dummy values so next build + validate-env pass in CI.

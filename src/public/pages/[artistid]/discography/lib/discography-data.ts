@@ -1,5 +1,6 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { supabase } from "@/core/supabase/client";
+import { safeHref } from "@/core/http/safe-href";
 
 import type { DiscographyAlbum, RawDiscographyAlbum } from "./types";
 
@@ -11,6 +12,7 @@ export async function fetchDiscography(artistSlug: string) {
     .from("artists")
     .select("id,name,eng_name,name_ko,name_en,name_ja")
     .eq("slug", artistSlug)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (artistResult.error) {
@@ -51,10 +53,10 @@ export async function fetchDiscography(artistSlug: string) {
         title: track.title,
         titles: { ko: track.title_ko ?? track.title, en: track.title_en, ja: track.title_ja },
         isTitle: track.is_title,
-        spotifyUrl: track.spotify_url || undefined,
-        youtubeUrl: track.youtube_url || undefined,
-        audioUrl: track.audio_url || undefined,
-        videoUrl: track.music_video_url || undefined,
+        spotifyUrl: safeHref(track.spotify_url),
+        youtubeUrl: safeHref(track.youtube_url),
+        audioUrl: safeHref(track.audio_url),
+        videoUrl: safeHref(track.music_video_url),
       })),
     desc: {
       ko: item.description_ko || "",
@@ -65,7 +67,7 @@ export async function fetchDiscography(artistSlug: string) {
       spotify: item.spotify_id
         ? `https://open.spotify.com/album/${item.spotify_id}`
         : undefined,
-      youtube: item.youtube_url || undefined,
+      youtube: safeHref(item.youtube_url),
     },
   }));
 

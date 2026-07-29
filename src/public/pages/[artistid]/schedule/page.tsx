@@ -13,6 +13,7 @@ import { localizeText, localeTags } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { supabase } from "@/core/supabase/client";
+import { safeHref } from "@/core/http/safe-href";
 import styles from "@/styles/(public)/pages/artist-schedule.module.css";
 
 type Category = "show" | "release" | "anniversary" | "event" | "etc";
@@ -65,7 +66,7 @@ export default function ArtistSchedulePage() {
       setLoading(true);
       const artistResult = previewArtistId
         ? { data: { id: previewArtistId, color: previewArtistColor }, error: null }
-        : await supabase.from("artists").select("id,color").eq("slug", artistid).maybeSingle();
+        : await supabase.from("artists").select("id,color").eq("slug", artistid).eq("is_active", true).maybeSingle();
       if (cancelled) return;
       if (artistResult.error || !artistResult.data) {
         setError(t.schedule.artistNotFound);
@@ -180,8 +181,9 @@ export default function ArtistSchedulePage() {
                 </div>
               </>;
               const eventStyle = { "--event-color": category.color } as CSSProperties;
-              return event.link_url
-                ? <a key={event.id} className={styles.event} style={eventStyle} href={event.link_url} target="_blank" rel="noreferrer">{content}</a>
+              const href = safeHref(event.link_url);
+              return href
+                ? <a key={event.id} className={styles.event} style={eventStyle} href={href} target="_blank" rel="noreferrer">{content}</a>
                 : <article key={event.id} className={styles.event} style={eventStyle}>{content}</article>;
             })}
             {!visibleEvents.length && !error && <div className={styles.empty}>{t.schedule.empty}</div>}

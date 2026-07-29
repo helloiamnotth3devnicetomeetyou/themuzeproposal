@@ -21,6 +21,7 @@ export const getCachedNavigationArtists = unstable_cache(
     const result = await client
       .from("artists")
       .select("id, slug, name, eng_name, name_ko, name_en, name_ja, logo_url")
+      .eq("is_active", true)
       .order("name", { ascending: true });
 
     if (result.error) return [];
