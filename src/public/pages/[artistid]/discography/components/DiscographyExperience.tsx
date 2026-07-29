@@ -77,7 +77,7 @@ export function DiscographyExperience() {
         preload="metadata"
         onLoadedMetadata={discography.handleLoadedMetadata}
         onTimeUpdate={discography.handleTimeUpdate}
-        onEnded={discography.nextTrack}
+        onEnded={discography.handleEnded}
       />
 
       <DiscographyBackground

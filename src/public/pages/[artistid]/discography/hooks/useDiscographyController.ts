@@ -305,9 +305,15 @@ export function useDiscographyController(
       setAudioDuration(0);
       if (canPlay) setShowDiscs(true);
       setIsPlaying(canPlay);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        if (canPlay && isPlaying) {
+          void audioRef.current.play().catch(() => setIsPlaying(false));
+        }
+      }
       savePlayback(album.id, index, 0);
     },
-    [album, savePlayback, setCurrentTrackIndex, setProgress, setAudioDuration, setShowDiscs, setIsPlaying, restoreTimeRef],
+    [album, audioRef, isPlaying, savePlayback, setCurrentTrackIndex, setProgress, setAudioDuration, setShowDiscs, setIsPlaying, restoreTimeRef],
   );
 
   const togglePlay = useCallback(() => {
@@ -354,6 +360,21 @@ export function useDiscographyController(
     railTimersRef.current.push(exitTimer);
   }, [railPhase, sortedAlbums.length]);
 
+  const handleEnded = useCallback(() => {
+    if (!album?.tracks.length) return;
+    const isLastTrack = currentTrackIndex >= album.tracks.length - 1;
+    if (isLastTrack) {
+      setIsPlaying(false);
+      setProgress(0);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
+      savePlayback(album.id, currentTrackIndex, 0);
+    } else {
+      moveTrack(1);
+    }
+  }, [album, currentTrackIndex, moveTrack, savePlayback, setIsPlaying, setProgress, audioRef]);
+
   const contentClass =
     slideDirection === "left"
       ? "animate-slideOutLeft"
@@ -373,6 +394,7 @@ export function useDiscographyController(
     currentTrackIndex,
     handleLoadedMetadata,
     handleTimeUpdate,
+    handleEnded,
     hoveredDisc,
     isPlaying,
     loading,
