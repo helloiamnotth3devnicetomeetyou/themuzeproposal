@@ -23,6 +23,163 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE OR REPLACE FUNCTION "public"."capture_admin_audit"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare
+  v_mode text := coalesce(tg_argv[1], 'standard');
+  v_primary_key text := coalesce(tg_argv[0], 'id');
+  v_row jsonb;
+  v_old jsonb := '{}'::jsonb;
+  v_new jsonb := '{}'::jsonb;
+  v_before jsonb;
+  v_after jsonb;
+  v_changed_fields text[] := array[]::text[];
+  v_safe_fields text[];
+  v_actor_id uuid := auth.uid();
+  v_actor_email text;
+  v_record_id text;
+  v_record_label text;
+begin
+  if tg_op <> 'INSERT' then
+    v_old := to_jsonb(old) - array['created_at', 'updated_at'];
+  end if;
+
+  if tg_op <> 'DELETE' then
+    v_new := to_jsonb(new) - array['created_at', 'updated_at'];
+  end if;
+
+  v_row := case when tg_op = 'DELETE' then v_old else v_new end;
+  v_record_id := coalesce(v_row ->> v_primary_key, '');
+
+  if v_record_id = '' then
+    raise exception 'Audit target on %.% has no primary key value', tg_table_schema, tg_table_name;
+  end if;
+
+  v_record_label := case tg_table_name
+    when 'contact_inquiries' then '문의 #' || upper(left(v_record_id, 8))
+    when 'protect_reports' then '신고 #' || upper(left(v_record_id, 8))
+    when 'audition_submissions' then '오디션 #' || upper(left(v_record_id, 8))
+    when 'profiles' then '관리자 권한 #' || upper(left(v_record_id, 8))
+    else coalesce(
+      nullif(v_row ->> 'name_ko', ''),
+      nullif(v_row ->> 'name', ''),
+      nullif(v_row ->> 'title_ko', ''),
+      nullif(v_row ->> 'title', ''),
+      nullif(v_row ->> 'key', ''),
+      nullif(v_row ->> 'slug', ''),
+      v_record_id
+    )
+  end;
+
+  if tg_op = 'UPDATE' then
+    select coalesce(array_agg(entry.key order by entry.key), array[]::text[])
+      into v_changed_fields
+    from jsonb_each(v_old) as entry
+    where (v_new -> entry.key) is distinct from entry.value;
+
+    if cardinality(v_changed_fields) = 0 then
+      return new;
+    end if;
+
+    if v_mode = 'sensitive' then
+      v_safe_fields := case tg_table_name
+        when 'contact_inquiries' then array['status', 'admin_note']
+        when 'protect_reports' then array['status', 'admin_note']
+        when 'audition_submissions' then array['status', 'notes']
+        else array[]::text[]
+      end;
+    else
+      v_safe_fields := v_changed_fields;
+    end if;
+
+    select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+      into v_before
+    from jsonb_each(v_old) as entry
+    where entry.key = any(v_changed_fields)
+      and entry.key = any(v_safe_fields);
+
+    select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+      into v_after
+    from jsonb_each(v_new) as entry
+    where entry.key = any(v_changed_fields)
+      and entry.key = any(v_safe_fields);
+  elsif tg_op = 'INSERT' then
+    v_after := v_new;
+    select coalesce(array_agg(entry.key order by entry.key), array[]::text[])
+      into v_changed_fields
+    from jsonb_each(v_new) as entry;
+  else
+    if v_mode = 'sensitive' then
+      v_safe_fields := case tg_table_name
+        when 'contact_inquiries' then array['id', 'category', 'inquiry_type', 'status', 'admin_note']
+        when 'protect_reports' then array['id', 'report_type', 'status', 'admin_note']
+        when 'audition_submissions' then array['id', 'category', 'status', 'notes']
+        else array['id']
+      end;
+
+      select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+        into v_before
+      from jsonb_each(v_old) as entry
+      where entry.key = any(v_safe_fields);
+    else
+      v_before := v_old;
+    end if;
+
+    select coalesce(array_agg(entry.key order by entry.key), array[]::text[])
+      into v_changed_fields
+    from jsonb_each(v_before) as entry;
+  end if;
+
+  begin
+    v_actor_email := nullif(auth.jwt() ->> 'email', '');
+  exception when others then
+    v_actor_email := null;
+  end;
+
+  if v_actor_email is null and v_actor_id is not null then
+    select profile.email
+      into v_actor_email
+    from public.profiles as profile
+    where profile.id = v_actor_id;
+  end if;
+
+  insert into public.admin_audit_logs (
+    actor_id,
+    actor_email,
+    operation,
+    table_name,
+    record_id,
+    record_label,
+    changed_fields,
+    before_values,
+    after_values,
+    transaction_id
+  ) values (
+    v_actor_id,
+    v_actor_email,
+    tg_op,
+    tg_table_name,
+    v_record_id,
+    v_record_label,
+    v_changed_fields,
+    v_before,
+    v_after,
+    txid_current()
+  );
+
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."capture_admin_audit"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") RETURNS TABLE("is_allowed" boolean, "retry_after_seconds" integer)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'private', 'public', 'pg_temp'
@@ -53,6 +210,48 @@ $$;
 
 
 ALTER FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) RETURNS TABLE("is_allowed" boolean, "retry_after_seconds" integer)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'private', 'public', 'pg_temp'
+    AS $$
+declare
+  v_attempt_count integer;
+  v_window_started_at timestamptz;
+begin
+  if p_scope not in ('contact_inquiry', 'protect_report')
+    or length(p_key_hash) <> 64
+    or p_limit < 1 or p_limit > 100
+    or p_window_seconds < 1 or p_window_seconds > 86400 then
+    raise exception 'invalid submission rate-limit arguments' using errcode = '22023';
+  end if;
+
+  insert into private.submission_rate_limits as limits (
+    scope, key_hash, attempt_count, window_started_at, updated_at
+  ) values (p_scope, p_key_hash, 1, now(), now())
+  on conflict (scope, key_hash) do update set
+    attempt_count = case
+      when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then 1
+      else limits.attempt_count + 1
+    end,
+    window_started_at = case
+      when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then now()
+      else limits.window_started_at
+    end,
+    updated_at = now()
+  returning attempt_count, window_started_at into v_attempt_count, v_window_started_at;
+
+  return query select
+    v_attempt_count <= p_limit,
+    case when v_attempt_count <= p_limit then 0
+      else greatest(1, ceil(extract(epoch from (v_window_started_at + make_interval(secs => p_window_seconds) - now())))::integer)
+    end;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."create_profile_for_new_user"() RETURNS "trigger"
@@ -299,6 +498,49 @@ $$;
 ALTER FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."set_contact_attachment_size_from_storage"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'storage', 'pg_temp'
+    AS $_$
+declare
+  v_size bigint;
+begin
+  if new.attachment_path is null then
+    new.attachment_name := null;
+    new.attachment_size := null;
+    return new;
+  end if;
+
+  if new.category <> 'business'
+    or new.attachment_name is null
+    or split_part(new.attachment_path, '/', 1) <> new.id::text then
+    raise exception 'invalid contact attachment' using errcode = '23514';
+  end if;
+
+  select
+    case
+      when metadata->>'size' ~ '^[0-9]+$' then (metadata->>'size')::bigint
+      else null
+    end
+  into v_size
+  from storage.objects
+  where bucket_id = 'contact-attachments'
+    and name = new.attachment_path;
+
+  if v_size is null or v_size < 1 or v_size > 20971520 then
+    raise exception 'contact attachment is missing or has an invalid size'
+      using errcode = '23514';
+  end if;
+
+  new.attachment_size := v_size;
+  return new;
+end;
+$_$;
+
+
+ALTER FUNCTION "public"."set_contact_attachment_size_from_storage"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -314,6 +556,49 @@ ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."admin_audit_logs" (
+    "id" bigint NOT NULL,
+    "occurred_at" timestamp with time zone DEFAULT "clock_timestamp"() NOT NULL,
+    "actor_id" "uuid",
+    "actor_email" "text",
+    "operation" "text" NOT NULL,
+    "table_name" "text" NOT NULL,
+    "record_id" "text" NOT NULL,
+    "record_label" "text" NOT NULL,
+    "changed_fields" "text"[] DEFAULT ARRAY[]::"text"[] NOT NULL,
+    "before_values" "jsonb",
+    "after_values" "jsonb",
+    "transaction_id" bigint DEFAULT "txid_current"() NOT NULL,
+    CONSTRAINT "admin_audit_logs_operation_check" CHECK (("operation" = ANY (ARRAY['INSERT'::"text", 'UPDATE'::"text", 'DELETE'::"text"])))
+);
+
+
+ALTER TABLE "public"."admin_audit_logs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."admin_audit_logs" IS 'Append-only administrator data-change audit trail. No automatic retention policy.';
+
+
+
+COMMENT ON COLUMN "public"."admin_audit_logs"."before_values" IS 'Changed values only for updates; safe row snapshot for deletes.';
+
+
+
+COMMENT ON COLUMN "public"."admin_audit_logs"."after_values" IS 'Changed values only for updates; row snapshot for inserts.';
+
+
+
+ALTER TABLE "public"."admin_audit_logs" ALTER COLUMN "id" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME "public"."admin_audit_logs_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."albums" (
@@ -471,7 +756,8 @@ CREATE TABLE IF NOT EXISTS "public"."artist_schedules" (
     "location_ko" "text",
     "location_en" "text",
     "location_ja" "text",
-    CONSTRAINT "artist_schedules_category_check" CHECK (("category" = ANY (ARRAY['show'::"text", 'release'::"text", 'anniversary'::"text", 'event'::"text", 'etc'::"text"])))
+    CONSTRAINT "artist_schedules_category_check" CHECK (("category" = ANY (ARRAY['show'::"text", 'release'::"text", 'anniversary'::"text", 'event'::"text", 'etc'::"text"]))),
+    CONSTRAINT "artist_schedules_link_url_http_check" CHECK ((("link_url" IS NULL) OR ("btrim"("link_url") ~* '^https?://[^[:space:]]+$'::"text")))
 );
 
 
@@ -515,6 +801,27 @@ COMMENT ON COLUMN "public"."artists"."name" IS 'Legacy canonical Korean/default 
 
 COMMENT ON COLUMN "public"."artists"."eng_name" IS 'Legacy canonical English name; kept for compatibility.';
 
+
+
+CREATE TABLE IF NOT EXISTS "public"."audition_submissions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "birth" "text",
+    "gender" "text",
+    "contact" "text",
+    "email" "text",
+    "category" "text",
+    "intro" "text",
+    "link" "text",
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "notes" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "audition_submissions_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'reviewing'::"text", 'accepted'::"text", 'rejected'::"text"])))
+);
+
+
+ALTER TABLE "public"."audition_submissions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."contact_inquiries" (
@@ -665,7 +972,8 @@ CREATE TABLE IF NOT EXISTS "public"."tracks" (
     "title_ko" "text",
     "title_en" "text",
     "title_ja" "text",
-    CONSTRAINT "tracks_duration_seconds_check" CHECK ((("duration_seconds" IS NULL) OR ("duration_seconds" >= 0)))
+    CONSTRAINT "tracks_duration_seconds_check" CHECK ((("duration_seconds" IS NULL) OR ("duration_seconds" >= 0))),
+    CONSTRAINT "tracks_urls_http_check" CHECK (((("spotify_url" IS NULL) OR ("btrim"("spotify_url") ~* '^https?://[^[:space:]]+$'::"text")) AND (("youtube_url" IS NULL) OR ("btrim"("youtube_url") ~* '^https?://[^[:space:]]+$'::"text")) AND (("audio_url" IS NULL) OR ("btrim"("audio_url") ~* '^https?://[^[:space:]]+$'::"text")) AND (("music_video_url" IS NULL) OR ("btrim"("music_video_url") ~* '^https?://[^[:space:]]+$'::"text"))))
 );
 
 
@@ -673,6 +981,11 @@ ALTER TABLE "public"."tracks" OWNER TO "postgres";
 
 
 COMMENT ON COLUMN "public"."tracks"."title" IS 'Legacy canonical track title; kept for compatibility.';
+
+
+
+ALTER TABLE ONLY "public"."admin_audit_logs"
+    ADD CONSTRAINT "admin_audit_logs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -731,6 +1044,11 @@ ALTER TABLE ONLY "public"."artists"
 
 
 
+ALTER TABLE ONLY "public"."audition_submissions"
+    ADD CONSTRAINT "audition_submissions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."contact_inquiries"
     ADD CONSTRAINT "contact_inquiries_pkey" PRIMARY KEY ("id");
 
@@ -781,6 +1099,22 @@ ALTER TABLE ONLY "public"."tracks"
 
 
 
+CREATE INDEX "admin_audit_logs_actor_index" ON "public"."admin_audit_logs" USING "btree" ("actor_id", "occurred_at" DESC);
+
+
+
+CREATE INDEX "admin_audit_logs_occurred_at_index" ON "public"."admin_audit_logs" USING "btree" ("occurred_at" DESC, "id" DESC);
+
+
+
+CREATE INDEX "admin_audit_logs_operation_index" ON "public"."admin_audit_logs" USING "btree" ("operation", "occurred_at" DESC);
+
+
+
+CREATE INDEX "admin_audit_logs_target_index" ON "public"."admin_audit_logs" USING "btree" ("table_name", "record_id", "occurred_at" DESC);
+
+
+
 CREATE INDEX "albums_public_order_idx" ON "public"."albums" USING "btree" ("artist_id", "is_published", "sort_order", "release_date" DESC);
 
 
@@ -814,6 +1148,10 @@ CREATE UNIQUE INDEX "artist_scenes_one_hero_idx" ON "public"."artist_scenes" USI
 
 
 CREATE INDEX "artist_schedules_public_calendar_idx" ON "public"."artist_schedules" USING "btree" ("artist_id", "is_published", "event_date", "start_time", "sort_order");
+
+
+
+CREATE INDEX "audition_submissions_created_at_index" ON "public"."audition_submissions" USING "btree" ("created_at" DESC);
 
 
 
@@ -857,7 +1195,15 @@ CREATE INDEX "tracks_album_order_idx" ON "public"."tracks" USING "btree" ("album
 
 
 
+CREATE OR REPLACE TRIGGER "albums_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."albums" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "albums_set_updated_at" BEFORE UPDATE ON "public"."albums" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "artist_gallery_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artist_gallery" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
 
@@ -865,7 +1211,15 @@ CREATE OR REPLACE TRIGGER "artist_gallery_set_updated_at" BEFORE UPDATE ON "publ
 
 
 
+CREATE OR REPLACE TRIGGER "artist_members_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artist_members" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "artist_members_set_updated_at" BEFORE UPDATE ON "public"."artist_members" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "artist_scene_members_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artist_scene_members" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
 
@@ -873,7 +1227,15 @@ CREATE OR REPLACE TRIGGER "artist_scene_members_set_updated_at" BEFORE UPDATE ON
 
 
 
+CREATE OR REPLACE TRIGGER "artist_scenes_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artist_scenes" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "artist_scenes_set_updated_at" BEFORE UPDATE ON "public"."artist_scenes" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "artist_schedules_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artist_schedules" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
 
@@ -881,7 +1243,27 @@ CREATE OR REPLACE TRIGGER "artist_schedules_set_updated_at" BEFORE UPDATE ON "pu
 
 
 
+CREATE OR REPLACE TRIGGER "artists_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."artists" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "artists_set_updated_at" BEFORE UPDATE ON "public"."artists" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "audition_submissions_admin_audit" AFTER DELETE OR UPDATE ON "public"."audition_submissions" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'sensitive');
+
+
+
+CREATE OR REPLACE TRIGGER "audition_submissions_set_updated_at" BEFORE UPDATE ON "public"."audition_submissions" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "contact_inquiries_admin_audit" AFTER DELETE OR UPDATE ON "public"."contact_inquiries" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'sensitive');
+
+
+
+CREATE OR REPLACE TRIGGER "contact_inquiries_set_attachment_size" BEFORE INSERT ON "public"."contact_inquiries" FOR EACH ROW EXECUTE FUNCTION "public"."set_contact_attachment_size_from_storage"();
 
 
 
@@ -889,7 +1271,15 @@ CREATE OR REPLACE TRIGGER "contact_inquiries_set_updated_at" BEFORE UPDATE ON "p
 
 
 
+CREATE OR REPLACE TRIGGER "home_hero_slides_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."home_hero_slides" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "home_hero_slides_set_updated_at" BEFORE UPDATE ON "public"."home_hero_slides" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "notices_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."notices" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
 
@@ -897,11 +1287,27 @@ CREATE OR REPLACE TRIGGER "notices_set_updated_at" BEFORE UPDATE ON "public"."no
 
 
 
+CREATE OR REPLACE TRIGGER "profiles_admin_role_audit" AFTER UPDATE OF "is_admin" ON "public"."profiles" FOR EACH ROW WHEN (("old"."is_admin" IS DISTINCT FROM "new"."is_admin")) EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
+
+
+
+CREATE OR REPLACE TRIGGER "protect_reports_admin_audit" AFTER DELETE OR UPDATE ON "public"."protect_reports" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'sensitive');
+
+
+
 CREATE OR REPLACE TRIGGER "protect_reports_set_updated_at" BEFORE UPDATE ON "public"."protect_reports" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
+CREATE OR REPLACE TRIGGER "site_settings_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."site_settings" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('key', 'standard');
+
+
+
 CREATE OR REPLACE TRIGGER "site_settings_set_updated_at" BEFORE UPDATE ON "public"."site_settings" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "tracks_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."tracks" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
 
@@ -994,6 +1400,14 @@ ALTER TABLE ONLY "public"."tracks"
 
 
 
+CREATE POLICY "admin delete artists" ON "public"."artists" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "admin insert artists" ON "public"."artists" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_admin"());
+
+
+
 CREATE POLICY "admin manage albums" ON "public"."albums" TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
 
 
@@ -1018,10 +1432,6 @@ CREATE POLICY "admin manage artist schedules" ON "public"."artist_schedules" TO 
 
 
 
-CREATE POLICY "admin manage artists" ON "public"."artists" TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
-
-
-
 CREATE POLICY "admin manage home hero slides" ON "public"."home_hero_slides" TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
 
 
@@ -1038,6 +1448,17 @@ CREATE POLICY "admin manage tracks" ON "public"."tracks" TO "authenticated" USIN
 
 
 
+CREATE POLICY "admin read all artists" ON "public"."artists" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "admin update artists" ON "public"."artists" FOR UPDATE TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
+
+
+
+ALTER TABLE "public"."admin_audit_logs" ENABLE ROW LEVEL SECURITY;
+
+
 CREATE POLICY "admins delete contact inquiries" ON "public"."contact_inquiries" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
 
 
@@ -1050,7 +1471,19 @@ CREATE POLICY "admins manage all profiles" ON "public"."profiles" TO "authentica
 
 
 
+CREATE POLICY "admins read audit logs" ON "public"."admin_audit_logs" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "admins read audition submissions" ON "public"."audition_submissions" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
 CREATE POLICY "admins read contact inquiries" ON "public"."contact_inquiries" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "admins update audition submissions" ON "public"."audition_submissions" FOR UPDATE TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
 
 
 
@@ -1083,6 +1516,9 @@ ALTER TABLE "public"."artist_schedules" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."artists" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."audition_submissions" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."contact_inquiries" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1101,15 +1537,17 @@ ALTER TABLE "public"."protect_report_attachments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."protect_reports" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "public read active artist members" ON "public"."artist_members" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."artists"
+  WHERE (("artists"."id" = "artist_members"."artist_id") AND ("artists"."is_active" = true)))));
+
+
+
 CREATE POLICY "public read active home hero slides" ON "public"."home_hero_slides" FOR SELECT USING (("is_active" = true));
 
 
 
-CREATE POLICY "public read artist members" ON "public"."artist_members" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "public read artists" ON "public"."artists" FOR SELECT USING (true);
+CREATE POLICY "public read artists" ON "public"."artists" FOR SELECT USING (("is_active" = true));
 
 
 
@@ -1191,10 +1629,6 @@ CREATE POLICY "users update own non-privileged fields" ON "public"."profiles" FO
 
 
 
-CREATE POLICY "visitors create contact inquiries" ON "public"."contact_inquiries" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("privacy_consent" = true) AND ((("auth"."uid"() IS NULL) AND ("user_id" IS NULL)) OR (("auth"."uid"() IS NOT NULL) AND (("user_id" IS NULL) OR ("user_id" = "auth"."uid"()))))));
-
-
-
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
@@ -1202,10 +1636,19 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."capture_admin_audit"() FROM PUBLIC;
+
+
+
 REVOKE ALL ON FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) TO "service_role";
 
 
 
@@ -1246,9 +1689,25 @@ GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tr
 
 
 
+REVOKE ALL ON FUNCTION "public"."set_contact_attachment_size_from_storage"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."set_contact_attachment_size_from_storage"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
+
+
+
+GRANT SELECT ON TABLE "public"."admin_audit_logs" TO "authenticated";
+GRANT SELECT ON TABLE "public"."admin_audit_logs" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."admin_audit_logs_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."admin_audit_logs_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."admin_audit_logs_id_seq" TO "service_role";
 
 
 
@@ -1294,9 +1753,13 @@ GRANT ALL ON TABLE "public"."artists" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."audition_submissions" TO "service_role";
+GRANT SELECT,UPDATE ON TABLE "public"."audition_submissions" TO "authenticated";
+
+
+
 GRANT ALL ON TABLE "public"."contact_inquiries" TO "service_role";
-GRANT INSERT ON TABLE "public"."contact_inquiries" TO "anon";
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."contact_inquiries" TO "authenticated";
+GRANT SELECT,DELETE,UPDATE ON TABLE "public"."contact_inquiries" TO "authenticated";
 
 
 
