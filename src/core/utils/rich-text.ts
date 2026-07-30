@@ -87,7 +87,7 @@ export function richTextToPlainText(value: string): string {
     sanitized
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(new RegExp(`</(?:${BLOCK_TAGS})>`, "gi"), "\n")
-      .replace(/[<>]/g, ""),
+      .replace(/<[^>]+>/g, ""),
   )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
