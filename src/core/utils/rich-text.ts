@@ -82,13 +82,17 @@ function decodeTextEntities(value: string): string {
 }
 
 export function richTextToPlainText(value: string): string {
-  const sanitized = sanitizeRichText(value);
-  return decodeTextEntities(
-    sanitized
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(new RegExp(`</(?:${BLOCK_TAGS})>`, "gi"), "\n")
-      .replace(/<[^>]+>/g, ""),
-  )
+  if (!value) return "";
+  const preProcessed = value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(new RegExp(`</(?:${BLOCK_TAGS})>`, "gi"), "\n");
+
+  const stripped = DOMPurify.sanitize(preProcessed, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+  });
+
+  return decodeTextEntities(stripped)
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

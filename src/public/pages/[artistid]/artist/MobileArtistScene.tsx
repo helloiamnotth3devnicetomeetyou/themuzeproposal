@@ -110,6 +110,7 @@ export default function MobileArtistScene({
       </header>
 
       <section className={styles.mobileSceneStage} aria-label={`${artistName} ${copy.scene}`}>
+        {!selectedMember && <div className={styles.clickHint}>{copy.clickHint}</div>}
         <div ref={railRef} className={styles.mobileSceneRail} onScroll={syncSceneFromScroll}>
           {scenes.map((scene) => {
             const sceneTitle = localizeText(

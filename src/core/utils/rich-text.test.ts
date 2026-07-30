@@ -34,6 +34,16 @@ describe("Rich Text Utilities", () => {
       const input = "<p>Hello &amp; <strong>World</strong></p>";
       expect(richTextToPlainText(input)).toBe("Hello & World");
     });
+
+    it("should strip script tags completely without executing or leaving multi-character bypasses", () => {
+      const input = "<p>Hello <script>alert('xss')</script>World</p>";
+      expect(richTextToPlainText(input)).toBe("Hello World");
+    });
+
+    it("should convert block tags and br tags to newlines", () => {
+      const input = "<p>Line 1<br>Line 2</p><p>Line 3</p>";
+      expect(richTextToPlainText(input)).toBe("Line 1\nLine 2\nLine 3");
+    });
   });
 
   describe("plainTextToRichText", () => {
