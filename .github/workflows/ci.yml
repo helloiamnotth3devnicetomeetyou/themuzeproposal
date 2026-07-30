@@ -17,6 +17,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -32,6 +34,8 @@ jobs:
   typecheck:
     name: Type check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +51,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +69,8 @@ jobs:
     name: Build
     needs: [lint, typecheck, test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       # Dummy values so next build + validate-env pass in CI.
       # Real secrets live in Vercel's environment.

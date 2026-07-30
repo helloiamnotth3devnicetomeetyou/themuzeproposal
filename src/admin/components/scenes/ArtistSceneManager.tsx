@@ -18,7 +18,6 @@ import {
   ACCEPTED_SCENE_TYPES,
   MAX_IMAGE_BYTES,
   imageDimensions,
-  imageDimensionsFromUrl,
   normalizeScene,
   sceneSelect,
   storagePathFromUrl,
@@ -142,20 +141,34 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(true);
     onError("");
     try {
-      const dimensions = await imageDimensionsFromUrl(heroUrl);
+      // Download the source image and upload it as an independent copy so that
+      // later changes to the hero image do not break the scene record.
+      const response = await fetch(heroUrl);
+      if (!response.ok) throw new Error("대표 이미지를 내려받지 못했습니다.");
+      const blob = await response.blob();
+      const sourceFile = new File([blob], "hero", { type: blob.type });
+      const [dimensions, converted] = await Promise.all([
+        imageDimensions(sourceFile),
+        toWebP(sourceFile),
+      ]);
+      const path = `${artistId}/scenes/${crypto.randomUUID()}.webp`;
+      const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
       const result = await supabase.from("artist_scenes").insert({
         artist_id: artistId,
         title: "Main scene",
         title_ko: "메인 장면",
         title_en: "Main scene",
-        image_url: heroUrl,
+        image_url: uploadedAsset.url,
         image_width: dimensions.width,
         image_height: dimensions.height,
         is_hero: scenes.length === 0,
         is_published: true,
         sort_order: scenes.length,
       }).select("id").single();
-      if (result.error) throw result.error;
+      if (result.error) {
+        await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
+        throw result.error;
+      }
       await load(result.data.id);
       onToast("현재 대표 이미지를 인터랙티브 장면으로 가져왔습니다.");
     } catch (importError) {

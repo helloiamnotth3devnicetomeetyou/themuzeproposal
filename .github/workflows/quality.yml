@@ -10,6 +10,8 @@ jobs:
   app-security:
     name: Coverage and dependency audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,6 +25,8 @@ jobs:
   database-security:
     name: Database security tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
