@@ -8,6 +8,8 @@ import { getSiteUrl } from "@/core/config/public-env";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 
 import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
@@ -44,6 +46,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <LocaleProvider initialLocale={initialLocale}>
             <DisclaimerBanner />
             {children}
+            <Analytics />
+            <SpeedInsights />
           </LocaleProvider>
         </ThemeProvider>
       </body>
