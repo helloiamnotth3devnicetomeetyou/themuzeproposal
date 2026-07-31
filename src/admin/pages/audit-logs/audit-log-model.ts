@@ -87,7 +87,7 @@ const FIELD_LABELS: Record<string, string> = {
   status: "상태",
   admin_note: "관리자 메모",
   notes: "관리자 메모",
-  is_admin: "관리자 권한",
+  role: "관리자 역할",
   is_active: "활성 상태",
   is_published: "공개 상태",
   published_at: "공개 시각",

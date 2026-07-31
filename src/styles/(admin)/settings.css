@@ -69,6 +69,38 @@
 .settings-footer-preview > p { margin: 0; color: var(--alpha-ffffff-48); font-size: 8px; line-height: 1.55; }
 .settings-footer-socials { display: flex; align-items: center; justify-content: flex-end; gap: 13px; }
 .settings-footer-socials svg { width: 13px; height: 13px; color: var(--alpha-ffffff-62); }
+.admin-accounts-stack { display: flex; max-width: 840px; flex-direction: column; gap: 18px; }
+.admin-accounts-invite,.admin-accounts-list { border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); }
+.admin-accounts-invite { padding: 21px; }
+.admin-accounts-section-title { display: flex; align-items: center; gap: 11px; }
+.admin-accounts-section-title > span { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--alpha-fc6fcf-24); border-radius: 9px; background: var(--alpha-fc6fcf-05); color: var(--color-brand-pink); }
+.admin-accounts-section-title svg { width: 15px; height: 15px; }
+.admin-accounts-section-title b,.admin-accounts-section-title small { display: block; }
+.admin-accounts-section-title b { font-size: 11px; }
+.admin-accounts-section-title small { margin-top: 3px; color: var(--text-faint); font-size: 8px; }
+.admin-accounts-invite form { display: grid; grid-template-columns: minmax(200px,1fr) 145px auto; gap: 8px; margin-top: 17px; }
+.admin-accounts-invite .admin-input { width: 100%; }
+.admin-accounts-list { overflow: hidden; }
+.admin-accounts-list-head { display: flex; min-height: 59px; align-items: center; justify-content: space-between; padding: 0 17px; border-bottom: 1px solid var(--border-default); }
+.admin-accounts-list-head b,.admin-accounts-list-head small { display: block; }
+.admin-accounts-list-head b { font-size: 11px; }
+.admin-accounts-list-head small { margin-top: 3px; color: var(--text-faint); font-size: 8px; }
+.admin-accounts-list-head button,.admin-account-remove { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--text-faint); cursor: pointer; }
+.admin-accounts-list-head button:hover:not(:disabled),.admin-account-remove:hover:not(:disabled) { background: var(--bg-elevated); color: var(--text-primary); }
+.admin-account-remove:hover:not(:disabled) { color: var(--palette-df7777); }
+.admin-accounts-list-head button:disabled,.admin-account-remove:disabled { cursor: not-allowed; opacity: .35; }
+.admin-accounts-list-head svg,.admin-account-remove svg { width: 13px; height: 13px; }
+.admin-account-row { display: grid; grid-template-columns: 34px minmax(0,1fr) 145px 34px; align-items: center; gap: 11px; min-height: 70px; padding: 10px 17px; border-bottom: 1px solid var(--border-subtle); }
+.admin-account-row:last-child { border-bottom: 0; }
+.admin-account-badge { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border-default); border-radius: 50%; color: var(--text-faint); }
+.admin-account-badge.super_admin { border-color: var(--alpha-fc6fcf-24); background: var(--alpha-fc6fcf-05); color: var(--color-brand-pink); }
+.admin-account-badge svg { width: 14px; height: 14px; }
+.admin-account-identity { min-width: 0; }
+.admin-account-identity b,.admin-account-identity small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-account-identity b { font-size: 10px; }
+.admin-account-identity small { margin-top: 4px; color: var(--text-faint); font-size: 8px; }
+.admin-account-role .admin-input { width: 100%; height: 34px; padding-top: 0; padding-bottom: 0; font-size: 9px; }
+.admin-accounts-empty { padding: 45px 20px; color: var(--text-faint); font-size: 9px; text-align: center; }
 
 @media (max-width: 1024px) {
   .settings-workbench > .content-workbench-rail { height: 210px; max-height: 210px; }
@@ -80,6 +112,7 @@
   .settings-rail-nav em { display: none; }
   .settings-footer-preview { grid-template-columns: 1fr 1.4fr; }
   .settings-footer-socials { grid-column: 2; }
+  .admin-accounts-invite form { grid-template-columns: minmax(180px,1fr) 130px auto; }
 }
 @media (max-width: 480px) {
   .settings-workbench > .content-workbench-rail { height: 176px; max-height: 176px; }
@@ -97,4 +130,9 @@
   .settings-history-item { grid-template-columns: 28px 84px minmax(0,1fr) 34px; gap: 5px; padding: 9px 4px; }
   .settings-footer-preview { grid-template-columns: 1fr; min-height: 220px; align-content: end; gap: 18px; padding: 24px; }
   .settings-footer-socials { grid-column: 1; justify-content: flex-start; }
+  .admin-accounts-invite { padding: 17px; }
+  .admin-accounts-invite form { grid-template-columns: 1fr 112px; }
+  .admin-accounts-invite form .admin-btn { grid-column: 1 / -1; }
+  .admin-account-row { grid-template-columns: 31px minmax(0,1fr) 105px 29px; gap: 7px; padding: 10px; }
+  .admin-account-badge { width: 31px; height: 31px; }
 }

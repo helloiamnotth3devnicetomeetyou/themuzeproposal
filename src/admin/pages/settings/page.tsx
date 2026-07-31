@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuTrash2 } from "react-icons/lu";
+import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
@@ -24,8 +24,9 @@ import {
   type HistoryLanguage,
   type SettingsTab,
 } from "./settings-editor-model";
+import AdminAccountsPanel from "./AdminAccountsPanel";
 
-export default function SettingsAdmin() {
+export default function SettingsAdmin({ canManageAdminAccounts = false }: { canManageAdminAccounts?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<SettingsTab>("company");
@@ -37,6 +38,7 @@ export default function SettingsAdmin() {
   const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const isSuperAdmin = canManageAdminAccounts;
 
   const draft = useMemo(() => ({ company, history, footer, social }), [company, history, footer, social]);
   const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
@@ -99,7 +101,7 @@ export default function SettingsAdmin() {
     const handleUrlTab = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as SettingsTab;
-      if (tabParam && ["company", "history", "footer", "social"].includes(tabParam)) {
+      if (tabParam && ["company", "history", "footer", "social", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
         setTab(tabParam);
       }
     };
@@ -108,7 +110,7 @@ export default function SettingsAdmin() {
 
     const handleCustomEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail as SettingsTab;
-      if (detail && ["company", "history", "footer", "social"].includes(detail)) {
+      if (detail && ["company", "history", "footer", "social", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
         setTab(detail);
       }
     };
@@ -117,7 +119,7 @@ export default function SettingsAdmin() {
     return () => {
       window.removeEventListener("admin-settings-tab-change", handleCustomEvent);
     };
-  }, []);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     const confirmLeave = (event: BeforeUnloadEvent) => {
@@ -191,6 +193,7 @@ export default function SettingsAdmin() {
     { id: "history", label: "연혁", copy: "ABOUT 성장 기록", icon: LuHistory, ready: historyReady, meta: `${history.length}개 항목` },
     { id: "footer", label: "푸터", copy: "하단 저작권 문구", icon: LuGlobe, ready: footerReady, meta: footerReady ? "입력 완료" : "확인 필요" },
     { id: "social", label: "소셜 채널", copy: "공식 채널 바로가기", icon: LuShare2, ready: socialCount > 0, meta: `${socialCount}개 연결` },
+    ...(isSuperAdmin ? [{ id: "admins" as const, label: "관리자 계정", copy: "초대 · 역할 · 권한 해제", icon: LuShieldCheck, ready: true, meta: "슈퍼 관리자" }] : []),
   ];
 
   const rail = (
@@ -231,7 +234,7 @@ export default function SettingsAdmin() {
       rail={rail}
       identity={identity}
       actions={<><PreviewButton onClick={openPreview} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : "변경사항 저장"}</button></>}
-      tabs={settingsTabs}
+      tabs={isSuperAdmin ? settingsTabs : settingsTabs.filter((item) => item.id !== "admins")}
       activeTab={tab}
       onTabChange={setTab}
       error={error}
@@ -292,6 +295,11 @@ export default function SettingsAdmin() {
           <div className="content-section-heading settings-section-heading"><div><h3>소셜 채널</h3><p>사이트 전역에서 연결할 회사 공식 채널 주소를 관리합니다.</p></div><LuShare2 aria-hidden="true" /></div>
           <SocialLinksField value={social} onChange={setSocial} />
         </>}
+
+        {tab === "admins" && isSuperAdmin && <AdminAccountsPanel onError={setError} onSuccess={(message) => {
+          setToast(message);
+          window.setTimeout(() => setToast(""), 2600);
+        }} />}
       </div>
     </ContentWorkbench>
   );

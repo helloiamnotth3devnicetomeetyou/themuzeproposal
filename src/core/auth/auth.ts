@@ -160,5 +160,5 @@ export async function getUserProfile() {
 
 export async function isAdmin(): Promise<boolean> {
   const profile = await getUserProfile();
-  return !!profile?.is_admin;
+  return profile?.role === "super_admin" || profile?.role === "editor";
 }

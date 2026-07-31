@@ -8,7 +8,7 @@ import {
   type HistoryEntry,
 } from "@/core/content/site-content";
 
-export type SettingsTab = "company" | "history" | "footer" | "social";
+export type SettingsTab = "company" | "history" | "footer" | "social" | "admins";
 export type HistoryLanguage = "ko" | "en" | "ja";
 
 export type CompanySettings = {
@@ -49,11 +49,16 @@ export const EMPTY_DRAFT: SettingsDraft = {
   social: EMPTY_SOCIAL,
 };
 
-export const settingsTabs: WorkbenchTab<SettingsTab>[] = [
+const baseSettingsTabs: WorkbenchTab<SettingsTab>[] = [
   { id: "company", label: "회사 정보" },
   { id: "history", label: "연혁" },
   { id: "footer", label: "푸터" },
   { id: "social", label: "소셜 채널" },
+];
+
+export const settingsTabs: WorkbenchTab<SettingsTab>[] = [
+  ...baseSettingsTabs,
+  { id: "admins", label: "관리자 계정" },
 ];
 
 export const normalizeSiteSocial = (value: unknown): SocialLink[] => {

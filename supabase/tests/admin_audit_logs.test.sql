@@ -48,7 +48,7 @@ insert into auth.users (
   );
 
 update public.profiles
-set is_admin = true
+set role = 'super_admin'
 where id = '00000000-0000-0000-0000-000000000101';
 
 truncate table public.admin_audit_logs restart identity;
@@ -185,7 +185,7 @@ end;
 $$;
 
 update public.profiles
-set is_admin = true
+set role = 'editor'
 where id = '00000000-0000-0000-0000-000000000102';
 
 do $$
@@ -195,7 +195,7 @@ begin
     from public.admin_audit_logs
     where table_name = 'profiles'
       and record_id = '00000000-0000-0000-0000-000000000102'
-      and changed_fields = array['is_admin']::text[]
+      and changed_fields = array['role']::text[]
   ) then
     raise exception 'administrator role change was not audited';
   end if;
