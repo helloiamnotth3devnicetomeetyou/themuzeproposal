@@ -25,8 +25,10 @@ export function ThemeProvider({ children, initialTheme }: { children: React.Reac
     const cookieTheme = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=(dark|light)(?:;|$)`))?.[1];
     const savedTheme = cookieTheme ?? localStorage.getItem("theme");
     const nextTheme: Theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : initialTheme;
-    persistTheme(nextTheme);
-    setTheme(nextTheme);
+    queueMicrotask(() => {
+      persistTheme(nextTheme);
+      setTheme(nextTheme);
+    });
   }, [initialTheme]);
 
   const toggleTheme = () => {

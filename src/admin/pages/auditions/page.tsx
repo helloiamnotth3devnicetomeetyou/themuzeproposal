@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuArrowLeft, LuArrowRight, LuExternalLink, LuInbox, LuMail, LuPhone, LuSearch, LuUserRound } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
@@ -38,17 +38,17 @@ export default function AuditionsAdmin() {
   const [viewing, setViewing] = useState<Submission | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const { loading, saving, error, setError, toast, setToast, runLoad, runSave } = useAdminEntityEditor<Submission>({ initialDraft: null });
+  const { loading, saving, error, setError, setToast, runLoad, runSave } = useAdminEntityEditor<Submission>({ initialDraft: null });
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     await runLoad(async () => {
       const { data, error: fetchError } = await supabase.from("audition_submissions").select("*").order("created_at", { ascending: false });
       if (fetchError) throw fetchError;
       setSubmissions((data ?? []) as Submission[]);
     });
-  };
+  }, [runLoad]);
 
-  useEffect(() => { void Promise.resolve().then(fetchSubmissions); }, []);
+  useEffect(() => { void fetchSubmissions(); }, [fetchSubmissions]);
 
   const filteredSubmissions = useMemo(() => {
     const keyword = query.trim().toLowerCase();

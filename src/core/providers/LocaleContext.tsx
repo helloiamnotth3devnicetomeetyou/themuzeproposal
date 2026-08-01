@@ -27,8 +27,10 @@ export function LocaleProvider({ children, initialLocale }: { children: React.Re
     const cookieLocale = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=(ko|en|ja)(?:;|$)`))?.[1];
     const savedLocale = cookieLocale ?? localStorage.getItem("locale");
     const nextLocale: Locale = savedLocale === "ko" || savedLocale === "en" || savedLocale === "ja" ? savedLocale : initialLocale;
-    persistLocale(nextLocale);
-    setLocaleState(nextLocale);
+    queueMicrotask(() => {
+      persistLocale(nextLocale);
+      setLocaleState(nextLocale);
+    });
   }, [initialLocale]);
 
   const setLocale = (nextLocale: Locale) => {
