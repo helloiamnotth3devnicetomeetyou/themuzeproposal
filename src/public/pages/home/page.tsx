@@ -98,6 +98,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
         const isActive = index === currentSlide;
         const isLeaving = index === prevSlide;
         const isVisible = isActive || isLeaving;
+        const isAdjacent = index === currentSlide
+          || index === (currentSlide + 1) % slides.length
+          || index === (currentSlide - 1 + slides.length) % slides.length;
 
         return (
           <div
@@ -126,7 +129,8 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 fill
                 sizes="100vw"
                 priority={index === 0}
-                loading={index === 0 ? undefined : "eager"}
+                loading={index === 0 ? undefined : isAdjacent ? "eager" : "lazy"}
+                quality={60}
                 className="object-cover object-center"
                 style={{
                   animation: isActive ? "kenBurnsIn 6s ease-out forwards" : undefined,

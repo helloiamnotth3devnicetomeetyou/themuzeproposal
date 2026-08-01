@@ -148,7 +148,6 @@ export default function MobileArtistScene({
                     alt={`${artistName} ${sceneTitle || copy.scene}`}
                     fill
                     priority={scene.id === scenes[0]?.id}
-                    unoptimized
                     draggable={false}
                     // Grayscale background when a member is selected
                     style={selectedMember ? { filter: "grayscale(1) brightness(0.28) contrast(1.15)" } : undefined}

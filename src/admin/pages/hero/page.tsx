@@ -41,6 +41,12 @@ import {
 } from "./HeroSlideCard";
 type SortMode = "hero" | "newest" | "title";
 
+const revalidateHomeSlides = () => fetch("/api/admin/revalidate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ tag: "public-home-slides" }),
+}).catch(() => undefined);
+
 export default function HeroAdminPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -127,7 +133,7 @@ export default function HeroAdminPage() {
     const sortOrder = Math.max(0, ...slides.map((slide) => slide.sort_order)) + 1;
     const { error: insertError } = await supabase.from("home_hero_slides").insert({ album_id: album.id, sort_order: sortOrder, is_active: true });
     if (insertError) setError(insertError.message);
-    else { setNotice(`‘${album.title}’을(를) 메인에 추가하고 공개했습니다.`); await load(true); }
+    else { void revalidateHomeSlides(); setNotice(`‘${album.title}’을(를) 메인에 추가하고 공개했습니다.`); await load(true); }
     setSavingId(null);
   };
 
@@ -137,7 +143,7 @@ export default function HeroAdminPage() {
     const results = await Promise.all(next.map((slide) => supabase.from("home_hero_slides").update({ sort_order: slide.sort_order }).eq("id", slide.id)));
     const orderError = results.find((result) => result.error)?.error;
     if (orderError) { setSlides(rollback); setError(orderError.message); }
-    else setNotice("메인 노출 순서를 저장했습니다.");
+    else { void revalidateHomeSlides(); setNotice("메인 노출 순서를 저장했습니다."); }
     setSavingId(null);
   };
 
@@ -161,6 +167,7 @@ export default function HeroAdminPage() {
     const { error: deleteError } = await supabase.from("home_hero_slides").delete().eq("id", slide.id);
     if (deleteError) setError(deleteError.message);
     else {
+      void revalidateHomeSlides();
       setSlides((current) => current.filter((item) => item.id !== slide.id).map((item, index) => ({ ...item, sort_order: index + 1 })));
       setNotice("메인 목록에서 제외했습니다.");
     }
