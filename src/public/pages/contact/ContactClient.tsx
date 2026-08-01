@@ -45,10 +45,12 @@ const EMPTY_ERROR = "";
 export default function ContactClient({
   initialName,
   initialEmail,
+  businessAssets,
 }: {
   initialName: string;
   initialEmail: string;
   initialUserId: string | null;
+  businessAssets: { pressKitUrl: string; profilePdfUrl: string };
 }) {
   const [category, setCategory] = useState<ContactCategory>("general");
   const [form, setForm] = useState<FormValues>({
@@ -250,6 +252,17 @@ export default function ContactClient({
               <span>{error}</span>
               <button type="button" onClick={() => setError(EMPTY_ERROR)} aria-label="오류 메시지 닫기">×</button>
             </div>
+          )}
+
+          {isBusiness && (businessAssets.pressKitUrl || businessAssets.profilePdfUrl) && (
+            <section className={styles.businessDownloads} aria-label="프레스킷 다운로드">
+              <h3>프레스킷 다운로드</h3>
+              <p>협업 검토에 필요한 공식 자료를 내려받을 수 있습니다.</p>
+              <div>
+                {businessAssets.pressKitUrl && <a href={businessAssets.pressKitUrl} download>프레스킷 ZIP</a>}
+                {businessAssets.profilePdfUrl && <a href={businessAssets.profilePdfUrl} download>프로필 PDF</a>}
+              </div>
+            </section>
           )}
 
           <form ref={formRef} className={styles.form} onSubmit={submitInquiry} noValidate>

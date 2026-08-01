@@ -4,6 +4,7 @@ type ValidatedFileType =
   | "image/webp"
   | "image/gif"
   | "application/pdf"
+  | "application/zip"
   | "application/vnd.ms-powerpoint"
   | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
   | "audio/mpeg";
@@ -12,11 +13,12 @@ export type FileValidationProfile =
   | "public-image"
   | "track-asset"
   | "protect-evidence"
-  | "contact-attachment";
+  | "contact-attachment"
+  | "business-asset";
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
-  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "ppt" | "pptx" | "mp3";
+  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "ppt" | "pptx" | "mp3";
 };
 
 const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType>> = {
@@ -34,6 +36,7 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ]),
+  "business-asset": new Set(["application/pdf", "application/zip"]),
 };
 
 const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
@@ -42,6 +45,7 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
   "image/webp": "webp",
   "image/gif": "gif",
   "application/pdf": "pdf",
+  "application/zip": "zip",
   "application/vnd.ms-powerpoint": "ppt",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
   "audio/mpeg": "mp3",
@@ -96,6 +100,7 @@ function detectType(bytes: Uint8Array): ValidatedFileType | null {
   if (isZip && includesAscii(bytes, "[Content_Types].xml") && includesAscii(bytes, "ppt/")) {
     return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
   }
+  if (isZip) return "application/zip";
 
   if (ascii(bytes, 0, 3) === "ID3") return "audio/mpeg";
   if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return "audio/mpeg";

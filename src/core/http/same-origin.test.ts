@@ -20,4 +20,11 @@ describe("isSameOriginRequest", () => {
       headers: { origin: "https://attacker.example" },
     }))).toBe(false);
   });
+
+  it("accepts an origin with a path because only the origin matters", () => {
+    const request = new NextRequest("https://themuze.kr/api/auth/login", {
+      headers: { origin: "https://themuze.kr/some/path" },
+    });
+    expect(isSameOriginRequest(request)).toBe(true);
+  });
 });

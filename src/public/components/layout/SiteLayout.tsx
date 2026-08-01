@@ -10,7 +10,7 @@ import type { ArtistNavigationItem } from "./navbar-types";
 
 export default function MainLayout({
   children,
-  draftModeEnabled = false,
+  draftModeEnabled = true,
   initialArtists,
   initialSettings,
 }: {

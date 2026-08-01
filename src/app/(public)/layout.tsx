@@ -1,4 +1,3 @@
-import { draftMode } from "next/headers";
 import MainLayout from "@/public/components/layout/SiteLayout";
 import {
   getCachedNavigationArtists,
@@ -6,15 +5,13 @@ import {
 } from "@/public/features/layout/server";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [{ isEnabled }, initialArtists, initialSettings] = await Promise.all([
-    draftMode(),
+  const [initialArtists, initialSettings] = await Promise.all([
     getCachedNavigationArtists(),
     getCachedSiteSettings(),
   ]);
 
   return (
     <MainLayout
-      draftModeEnabled={isEnabled}
       initialArtists={initialArtists}
       initialSettings={initialSettings}
     >

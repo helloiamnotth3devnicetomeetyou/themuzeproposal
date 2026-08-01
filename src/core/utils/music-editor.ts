@@ -45,7 +45,7 @@ export type AlbumValidationResult = {
 };
 
 export type UploadedAsset = {
-  bucket: "album-covers" | "track-assets" | "artist-assets";
+  bucket: "album-covers" | "track-assets" | "artist-assets" | "business-assets";
   path: string;
   url: string;
 };

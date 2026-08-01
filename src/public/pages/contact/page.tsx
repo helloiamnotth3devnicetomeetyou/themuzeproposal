@@ -13,6 +13,7 @@ export default async function ContactPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   let profileName = "";
+  let businessAssets = { pressKitUrl: "", profilePdfUrl: "" };
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -22,11 +23,21 @@ export default async function ContactPage() {
     profileName = profile?.name || user.user_metadata?.name || "";
   }
 
+  const { data: businessRow } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "business_assets")
+    .maybeSingle();
+  if (businessRow?.value && typeof businessRow.value === "object") {
+    businessAssets = { ...businessAssets, ...(businessRow.value as Partial<typeof businessAssets>) };
+  }
+
   return (
     <ContactClient
       initialName={profileName}
       initialEmail={user?.email || ""}
       initialUserId={user?.id || null}
+      businessAssets={businessAssets}
     />
   );
 }

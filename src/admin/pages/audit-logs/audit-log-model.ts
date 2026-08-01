@@ -51,6 +51,7 @@ export const AUDIT_TABLES = [
   "protect_reports",
   "audition_submissions",
   "profiles",
+  "storage.objects",
 ] as const;
 
 const TABLE_LABELS: Record<string, string> = {
@@ -69,6 +70,7 @@ const TABLE_LABELS: Record<string, string> = {
   protect_reports: "권익 보호 신고",
   audition_submissions: "오디션 지원",
   profiles: "관리자 권한",
+  "storage.objects": "비즈니스 자료 파일",
 };
 
 const FIELD_LABELS: Record<string, string> = {

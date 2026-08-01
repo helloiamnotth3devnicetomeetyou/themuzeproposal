@@ -83,11 +83,15 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
-.content-workbench-error { display: flex; min-height: 43px; flex: 0 0 auto; align-items: center; gap: 10px; padding: 9px 13px; border-bottom: 1px solid var(--alpha-e46b6b-2); background: var(--alpha-e46b6b-07); color: var(--palette-df7777); }
+.admin-feedback-alert,.content-workbench-error { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border: 1px solid var(--alpha-e46b6b-2); border-radius: 8px; background: var(--alpha-e46b6b-07); color: var(--palette-df7777); }
+.content-workbench-error { min-height: 43px; flex: 0 0 auto; border-width: 0 0 1px; border-radius: 0; }
+.admin-feedback-alert > b { display: grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-size: 9px; font-weight: 800; }
+.admin-feedback-alert > span { flex: 1; font-size: 9px; }
+.admin-feedback-alert button { border: 0; background: transparent; color: currentColor; font-size: 8px; cursor: pointer; }
 .content-workbench-error > span { display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-size: 9px; font-weight: 800; }
 .content-workbench-error p { flex: 1; margin: 0; font-size: 9px; }
 .content-workbench-error button { border: 0; background: transparent; color: currentColor; font-size: 8px; cursor: pointer; }
-.content-workbench-toast { position: fixed; z-index: 100; top: 24px; right: 24px; padding: 11px 15px; border: 1px solid var(--alpha-35a963-25); border-radius: 9px; background: var(--palette-17241b); color: var(--palette-76d59c); box-shadow: 0 14px 40px var(--alpha-000000-22); font-size: 10px; font-weight: 700; }
+.admin-feedback-toast { position: fixed; z-index: 100; top: 24px; right: 24px; padding: 11px 15px; border: 1px solid var(--alpha-35a963-25); border-radius: 9px; background: var(--palette-17241b); color: var(--palette-76d59c); box-shadow: 0 14px 40px var(--alpha-000000-22); font-size: 10px; font-weight: 700; }
 
 /* Rail components */
 .content-rail-heading { display: flex; flex: 0 0 auto; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 22px 20px 16px; }

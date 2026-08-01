@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { clientIp } from "@/core/http/client-ip";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
 export type SubmissionScope = "contact_inquiry" | "protect_report";
@@ -10,11 +11,6 @@ const LIMITS: Record<SubmissionScope, { limit: number; windowSeconds: number }> 
   contact_inquiry: { limit: 5, windowSeconds: 15 * 60 },
   protect_report: { limit: 5, windowSeconds: 15 * 60 },
 };
-
-function clientIp(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
-}
 
 function hashIdentifier(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("hex");

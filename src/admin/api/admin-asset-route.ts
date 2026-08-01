@@ -18,6 +18,7 @@ const BUCKETS = {
   "artist-assets": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },
   "album-covers": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },
   "track-assets": { maxBytes: 100 * 1024 * 1024, profile: "track-asset" },
+  "business-assets": { maxBytes: 100 * 1024 * 1024, profile: "business-asset" },
 } as const satisfies Record<string, { maxBytes: number; profile: FileValidationProfile }>;
 
 function errorResponse(code: string, status: number) {
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
 
   const path = replacePathExtension(requestedPath, validated.extension);
   if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400);
+  if (bucket === "business-assets" && !["press-kit.zip", "profile.pdf"].includes(path)) {
+    return errorResponse("INVALID_FILE", 400);
+  }
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
@@ -68,6 +72,17 @@ export async function POST(request: NextRequest) {
       upsert: formData.get("upsert") === "true",
     });
   if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
+
+  await serviceClient.from("admin_audit_logs").insert({
+    actor_id: user.id,
+    actor_email: user.email ?? null,
+    operation: "UPDATE",
+    table_name: "storage.objects",
+    record_id: `${bucket}/${path}`,
+    record_label: `Business asset: ${path}`,
+    changed_fields: ["name", "metadata"],
+    after_values: { bucket, path, mime_type: validated.mimeType, size: file.size },
+  });
 
   const { storageUrl } = getPublicSupabaseConfig();
   const response = NextResponse.json({

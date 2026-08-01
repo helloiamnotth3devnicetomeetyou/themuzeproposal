@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode, Ref } from "react";
+import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 
 export type WorkbenchTab<T extends string = string> = {
   id: T;
@@ -38,7 +39,7 @@ export default function ContentWorkbench<T extends string>({
 }: ContentWorkbenchProps<T>) {
   return (
     <div className={`content-workbench ${className}`.trim()}>
-      {toast && <div className="content-workbench-toast" role="status">{toast}</div>}
+      <AdminToast message={toast} />
       <aside className="content-workbench-rail">{rail}</aside>
       <section className="content-workbench-stage">
         {error && (

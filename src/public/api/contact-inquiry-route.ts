@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { parseFormDataWithinLimit } from "@/core/http/request-body";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const GENERAL_TYPES = new Set(["account", "notice_event", "goods_md", "site_error", "other"]);
@@ -30,16 +31,15 @@ function textField(formData: FormData, name: string) {
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (contentLength > MAX_FILE_BYTES + 64 * 1024) return errorResponse("FILE_TOO_LARGE", 413);
-
   const rate = await consumeSubmissionRateLimit(request, "contact_inquiry");
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
   let formData: FormData;
   try {
-    formData = await request.formData();
+    const parsed = await parseFormDataWithinLimit(request, MAX_FILE_BYTES + 64 * 1024);
+    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
+    formData = parsed;
   } catch {
     return errorResponse("INVALID_REQUEST", 400);
   }

@@ -145,20 +145,20 @@ export async function updateUserPassword(currentPassword: string, password: stri
   return data.user;
 }
 
-export async function getUserProfile() {
-  const user = await getUser();
-  if (!user) return null;
+export async function getUserProfile(userId?: string) {
+  const id = userId ?? (await getUser())?.id;
+  if (!id) return null;
 
   const { data } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', user.id)
+    .eq('id', id)
     .single();
 
   return data;
 }
 
-export async function isAdmin(): Promise<boolean> {
-  const profile = await getUserProfile();
+export async function isAdmin(userId?: string): Promise<boolean> {
+  const profile = await getUserProfile(userId);
   return profile?.role === "super_admin" || profile?.role === "editor";
 }

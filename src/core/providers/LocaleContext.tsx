@@ -24,13 +24,11 @@ export function LocaleProvider({ children, initialLocale }: { children: React.Re
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
-    document.documentElement.lang = initialLocale;
-    const hasLocaleCookie = document.cookie.split("; ").some((item) => item.startsWith(`${LOCALE_COOKIE}=`));
-    const saved = localStorage.getItem("locale");
-    if (!hasLocaleCookie && (saved === "ko" || saved === "en" || saved === "ja") && saved !== initialLocale) {
-      persistLocale(saved);
-      void Promise.resolve().then(() => setLocaleState(saved));
-    }
+    const cookieLocale = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=(ko|en|ja)(?:;|$)`))?.[1];
+    const savedLocale = cookieLocale ?? localStorage.getItem("locale");
+    const nextLocale: Locale = savedLocale === "ko" || savedLocale === "en" || savedLocale === "ja" ? savedLocale : initialLocale;
+    persistLocale(nextLocale);
+    setLocaleState(nextLocale);
   }, [initialLocale]);
 
   const setLocale = (nextLocale: Locale) => {

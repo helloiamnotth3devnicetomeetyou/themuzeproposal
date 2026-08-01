@@ -8,7 +8,7 @@ import {
   type HistoryEntry,
 } from "@/core/content/site-content";
 
-export type SettingsTab = "company" | "history" | "footer" | "social" | "admins";
+export type SettingsTab = "company" | "history" | "footer" | "social" | "business" | "admins";
 export type HistoryLanguage = "ko" | "en" | "ja";
 
 export type CompanySettings = {
@@ -22,12 +22,14 @@ export type CompanySettings = {
 };
 
 export type FooterSettings = { copyright: string };
+export type BusinessAssets = { pressKitUrl: string; profilePdfUrl: string };
 
 export type SettingsDraft = {
   company: CompanySettings;
   history: HistoryEntry[];
   footer: FooterSettings;
   social: SocialLink[];
+  business: BusinessAssets;
 };
 
 export const EMPTY_COMPANY: CompanySettings = {
@@ -42,11 +44,13 @@ export const EMPTY_COMPANY: CompanySettings = {
 
 export const EMPTY_FOOTER: FooterSettings = { copyright: "" };
 export const EMPTY_SOCIAL: SocialLink[] = [];
+export const EMPTY_BUSINESS: BusinessAssets = { pressKitUrl: "", profilePdfUrl: "" };
 export const EMPTY_DRAFT: SettingsDraft = {
   company: EMPTY_COMPANY,
   history: DEFAULT_HISTORY,
   footer: EMPTY_FOOTER,
   social: EMPTY_SOCIAL,
+  business: EMPTY_BUSINESS,
 };
 
 const baseSettingsTabs: WorkbenchTab<SettingsTab>[] = [
@@ -54,6 +58,7 @@ const baseSettingsTabs: WorkbenchTab<SettingsTab>[] = [
   { id: "history", label: "연혁" },
   { id: "footer", label: "푸터" },
   { id: "social", label: "소셜 채널" },
+  { id: "business", label: "비즈니스 자료" },
 ];
 
 export const settingsTabs: WorkbenchTab<SettingsTab>[] = [

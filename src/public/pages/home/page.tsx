@@ -130,7 +130,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 sizes="100vw"
                 priority={index === 0}
                 loading={index === 0 ? undefined : isAdjacent ? "eager" : "lazy"}
-                quality={60}
+                quality={90}
                 className="object-cover object-center"
                 style={{
                   animation: isActive ? "kenBurnsIn 6s ease-out forwards" : undefined,

@@ -46,6 +46,20 @@ describe("validateFileSignature", () => {
     });
     await expect(validateFileSignature(pdf, "public-image")).resolves.toBeNull();
   });
+
+  it("accepts only ZIP and PDF business assets without inspecting ZIP contents", async () => {
+    const zip = blob("PK\u0003\u0004opaque archive payload");
+    const pdf = blob("%PDF-1.7\nbody");
+
+    await expect(validateFileSignature(zip, "business-asset")).resolves.toEqual({
+      mimeType: "application/zip",
+      extension: "zip",
+    });
+    await expect(validateFileSignature(pdf, "business-asset")).resolves.toEqual({
+      mimeType: "application/pdf",
+      extension: "pdf",
+    });
+  });
 });
 
 describe("extensionMatches", () => {

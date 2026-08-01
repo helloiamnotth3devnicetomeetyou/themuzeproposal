@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
@@ -13,11 +14,6 @@ function jsonError(code: string, status: number, retryAfter?: number) {
   response.headers.set("Cache-Control", "no-store");
   if (retryAfter) response.headers.set("Retry-After", String(retryAfter));
   return response;
-}
-
-function clientIp(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
 function hashIdentifier(value: string, secret: string) {

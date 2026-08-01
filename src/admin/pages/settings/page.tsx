@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { LuBuilding2, LuCheck, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
+import { LuBuilding2, LuCheck, LuFileArchive, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
@@ -10,16 +10,19 @@ import SocialLinksField, { hasInvalidSocialLinks, type SocialLink } from "@/admi
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
 import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 import {
   EMPTY_COMPANY,
+  EMPTY_BUSINESS,
   EMPTY_DRAFT,
   EMPTY_FOOTER,
   EMPTY_SOCIAL,
   normalizeSiteSocial,
   settingsTabs,
   type CompanySettings,
+  type BusinessAssets,
   type FooterSettings,
   type HistoryLanguage,
   type SettingsTab,
@@ -35,12 +38,13 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   const [historyLanguage, setHistoryLanguage] = useState<HistoryLanguage>("ko");
   const [footer, setFooter] = useState<FooterSettings>(EMPTY_FOOTER);
   const [social, setSocial] = useState<SocialLink[]>(EMPTY_SOCIAL);
+  const [business, setBusiness] = useState<BusinessAssets>(EMPTY_BUSINESS);
   const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const isSuperAdmin = canManageAdminAccounts;
 
-  const draft = useMemo(() => ({ company, history, footer, social }), [company, history, footer, social]);
+  const draft = useMemo(() => ({ company, history, footer, social, business }), [business, company, history, footer, social]);
   const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
   const dirty = serializedDraft !== snapshot;
   const previewTarget = tab === "company"
@@ -77,18 +81,21 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
       let nextHistory = DEFAULT_HISTORY;
       let nextFooter = EMPTY_FOOTER;
       let nextSocial: SocialLink[] = EMPTY_SOCIAL;
+      let nextBusiness = EMPTY_BUSINESS;
       data?.forEach((item) => {
         if (item.key === "company") nextCompany = { ...EMPTY_COMPANY, ...(item.value as Partial<CompanySettings>) };
         if (item.key === "history") nextHistory = normalizeHistory(item.value);
         if (item.key === "footer") nextFooter = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
         if (item.key === "social") nextSocial = normalizeSiteSocial(item.value);
+        if (item.key === "business_assets" && item.value && typeof item.value === "object") nextBusiness = { ...EMPTY_BUSINESS, ...(item.value as Partial<BusinessAssets>) };
       });
 
-      const nextDraft = { company: nextCompany, history: nextHistory, footer: nextFooter, social: nextSocial };
+      const nextDraft = { company: nextCompany, history: nextHistory, footer: nextFooter, social: nextSocial, business: nextBusiness };
       setCompany(nextCompany);
       setHistory(nextHistory);
       setFooter(nextFooter);
       setSocial(nextSocial);
+      setBusiness(nextBusiness);
       setSnapshot(JSON.stringify(nextDraft));
       setLoading(false);
     };
@@ -101,7 +108,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     const handleUrlTab = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as SettingsTab;
-      if (tabParam && ["company", "history", "footer", "social", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
+      if (tabParam && ["company", "history", "footer", "social", "business", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
         setTab(tabParam);
       }
     };
@@ -110,7 +117,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
 
     const handleCustomEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail as SettingsTab;
-      if (detail && ["company", "history", "footer", "social", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
+      if (detail && ["company", "history", "footer", "social", "business", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
         setTab(detail);
       }
     };
@@ -145,6 +152,29 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     setHistory((items) => [next, ...items]);
   };
 
+  const uploadBusinessAsset = async (kind: "pressKitUrl" | "profilePdfUrl", file: File) => {
+    const expected = kind === "pressKitUrl" ? "zip" : "pdf";
+    if (file.name.split(".").pop()?.toLowerCase() !== expected) {
+      setError(`${expected.toUpperCase()} 파일을 선택해 주세요.`);
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      setError("파일은 100MB까지 업로드할 수 있습니다.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const asset = await uploadAdminAsset("business-assets", kind === "pressKitUrl" ? "press-kit.zip" : "profile.pdf", file, { upsert: true });
+      setBusiness((current) => ({ ...current, [kind]: asset.url }));
+      setToast("비즈니스 자료를 업로드했습니다. 변경사항을 저장해 공개하세요.");
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "업로드하지 못했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setError("");
     setToast("");
@@ -167,6 +197,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
       { key: "history", value: history },
       { key: "footer", value: footer },
       { key: "social", value: social },
+      { key: "business_assets", value: business },
     ];
     const { error: saveError } = await supabase.from("site_settings").upsert(updates as never[]);
     setSaving(false);
@@ -177,6 +208,11 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     }
 
     setSnapshot(serializedDraft);
+    void fetch("/api/admin/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag: "public-site-settings" }),
+    });
     setToast("사이트 설정을 저장했습니다.");
     window.setTimeout(() => setToast(""), 2600);
   };
@@ -193,6 +229,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     { id: "history", label: "연혁", copy: "ABOUT 성장 기록", icon: LuHistory, ready: historyReady, meta: `${history.length}개 항목` },
     { id: "footer", label: "푸터", copy: "하단 저작권 문구", icon: LuGlobe, ready: footerReady, meta: footerReady ? "입력 완료" : "확인 필요" },
     { id: "social", label: "소셜 채널", copy: "공식 채널 바로가기", icon: LuShare2, ready: socialCount > 0, meta: `${socialCount}개 연결` },
+    { id: "business", label: "비즈니스 자료", copy: "프레스킷 · 프로필 PDF", icon: LuFileArchive, ready: Boolean(business.pressKitUrl || business.profilePdfUrl), meta: business.pressKitUrl && business.profilePdfUrl ? "업로드 완료" : "자료 확인 필요" },
     ...(isSuperAdmin ? [{ id: "admins" as const, label: "관리자 계정", copy: "초대 · 역할 · 권한 해제", icon: LuShieldCheck, ready: true, meta: "슈퍼 관리자" }] : []),
   ];
 
@@ -294,6 +331,14 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         {tab === "social" && <>
           <div className="content-section-heading settings-section-heading"><div><h3>소셜 채널</h3><p>사이트 전역에서 연결할 회사 공식 채널 주소를 관리합니다.</p></div><LuShare2 aria-hidden="true" /></div>
           <SocialLinksField value={social} onChange={setSocial} />
+        </>}
+
+        {tab === "business" && <>
+          <div className="content-section-heading settings-section-heading"><div><h3>비즈니스 자료</h3><p>Contact Business 탭에서 공개할 프레스킷 ZIP과 프로필 PDF입니다. ZIP은 서버에서 압축을 풀지 않습니다.</p></div><LuFileArchive aria-hidden="true" /></div>
+          <section className="settings-panel">
+            <label className="music-field"><span>프레스킷 ZIP (최대 100MB)</span><input type="file" accept=".zip,application/zip" disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadBusinessAsset("pressKitUrl", file); }} /><small>{business.pressKitUrl ? "업로드됨" : "아직 업로드되지 않았습니다."}</small></label>
+            <label className="music-field"><span>프로필 PDF (최대 100MB)</span><input type="file" accept=".pdf,application/pdf" disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadBusinessAsset("profilePdfUrl", file); }} /><small>{business.profilePdfUrl ? "업로드됨" : "아직 업로드되지 않았습니다."}</small></label>
+          </section>
         </>}
 
         {tab === "admins" && isSuperAdmin && <AdminAccountsPanel onError={setError} onSuccess={(message) => {

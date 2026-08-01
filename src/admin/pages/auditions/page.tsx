@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LuArrowLeft, LuArrowRight, LuExternalLink, LuInbox, LuMail, LuPhone, LuSearch, LuUserRound } from "react-icons/lu";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { supabase } from "@/core/supabase/client";
 
 type AuditionStatus = "pending" | "reviewing" | "accepted" | "rejected";
@@ -34,20 +35,17 @@ const formatDate = (value: string, detail = false) => new Intl.DateTimeFormat("k
 
 export default function AuditionsAdmin() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<Submission | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const { loading, saving, error, setError, toast, setToast, runLoad, runSave } = useAdminEntityEditor<Submission>({ initialDraft: null });
 
   const fetchSubmissions = async () => {
-    setLoading(true);
-    setError("");
-    const { data, error: fetchError } = await supabase.from("audition_submissions").select("*").order("created_at", { ascending: false });
-    if (fetchError) setError(fetchError.message);
-    else setSubmissions((data ?? []) as Submission[]);
-    setLoading(false);
+    await runLoad(async () => {
+      const { data, error: fetchError } = await supabase.from("audition_submissions").select("*").order("created_at", { ascending: false });
+      if (fetchError) throw fetchError;
+      setSubmissions((data ?? []) as Submission[]);
+    });
   };
 
   useEffect(() => { void Promise.resolve().then(fetchSubmissions); }, []);
@@ -65,15 +63,13 @@ export default function AuditionsAdmin() {
   const reviewingCount = submissions.filter((submission) => submission.status === "reviewing").length;
 
   const updateStatus = async (id: string, status: AuditionStatus) => {
-    setSaving(true);
-    setError("");
-    const { error: updateError } = await supabase.from("audition_submissions").update({ status }).eq("id", id);
-    if (updateError) setError(updateError.message);
-    else {
+    await runSave(async () => {
+      const { error: updateError } = await supabase.from("audition_submissions").update({ status }).eq("id", id);
+      if (updateError) throw updateError;
       setSubmissions((current) => current.map((item) => item.id === id ? { ...item, status } : item));
       setViewing((current) => current?.id === id ? { ...current, status } : current);
-    }
-    setSaving(false);
+      setToast("지원서 상태를 저장했습니다.");
+    });
   };
 
   if (loading) return <LoadingIndicator label="지원서 목록을 불러오는 중…" className="min-h-[320px] bg-[var(--bg-card)]" />;

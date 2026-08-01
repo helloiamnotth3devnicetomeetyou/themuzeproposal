@@ -22,13 +22,11 @@ export function ThemeProvider({ children, initialTheme }: { children: React.Reac
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", initialTheme);
-    const hasThemeCookie = document.cookie.split("; ").some((item) => item.startsWith(`${THEME_COOKIE}=`));
-    const saved = localStorage.getItem("theme");
-    if (!hasThemeCookie && (saved === "dark" || saved === "light") && saved !== initialTheme) {
-      persistTheme(saved);
-      void Promise.resolve().then(() => setTheme(saved));
-    }
+    const cookieTheme = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=(dark|light)(?:;|$)`))?.[1];
+    const savedTheme = cookieTheme ?? localStorage.getItem("theme");
+    const nextTheme: Theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : initialTheme;
+    persistTheme(nextTheme);
+    setTheme(nextTheme);
   }, [initialTheme]);
 
   const toggleTheme = () => {

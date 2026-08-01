@@ -179,3 +179,10 @@
   .uploadButton,
   .submit { transition: none; }
 }
+:global(.contact-business-downloads-placeholder) { display: none; }
+.businessDownloads { padding: 20px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-subtle); }
+.businessDownloads h3,.businessDownloads p { margin: 0; }
+.businessDownloads h3 { color: var(--text-primary); font-size: 15px; }
+.businessDownloads p { margin-top: 6px; color: var(--text-muted); font-size: 12px; }
+.businessDownloads > div { display: flex; gap: 8px; margin-top: 14px; }
+.businessDownloads a { padding: 9px 12px; border: 1px solid var(--border-default); border-radius: 7px; color: var(--text-primary); font-size: 12px; font-weight: 700; text-decoration: none; }
