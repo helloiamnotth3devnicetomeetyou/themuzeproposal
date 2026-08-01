@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
     unoptimized: false,
     minimumCacheTTL: 604800,
     formats: ["image/avif", "image/webp"],
-    qualities: [60, 75, 85],
+    qualities: [60, 75, 80, 85, 90],
     remotePatterns: storageUrl ? [new URL(`${storageUrl}/**`)] : [],
   },
 };

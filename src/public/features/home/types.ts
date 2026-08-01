@@ -6,6 +6,7 @@ export type HomeSlideDTO = {
   artistNames: { ko: string; en: string | null; ja: string | null };
   titles: { ko: string; en: string | null; ja: string | null };
   type: string;
+  color: string | null;
   imageUrl: string;
   typoLogoUrl: string | null;
   spotifyId: string | null;

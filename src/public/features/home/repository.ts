@@ -11,6 +11,7 @@ type AlbumRow = {
   title_en: string | null;
   title_ja: string | null;
   type: string;
+  color: string | null;
   cover_url: string | null;
   hero_image_url: string | null;
   typo_logo_url: string | null;
@@ -53,7 +54,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
 
   const albumResult = await client
     .from("albums")
-    .select("id, artist_id, title, title_ko, title_en, title_ja, type, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
+    .select("id, artist_id, title, title_ko, title_en, title_ja, type, color, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
     .in("id", albumIds)
     .eq("is_published", true)
     .lte("published_at", new Date().toISOString());
@@ -87,6 +88,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
       title: album.title,
       titles: { ko: album.title_ko ?? album.title, en: album.title_en, ja: album.title_ja },
       type: album.type,
+      color: album.color,
       imageUrl: album.hero_image_url || album.cover_url || "",
       typoLogoUrl: album.typo_logo_url,
       spotifyId: album.spotify_id,
