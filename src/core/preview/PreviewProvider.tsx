@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   parsePreviewEnvelope,
@@ -21,6 +21,10 @@ const PreviewContext = createContext<PreviewContextValue>({
   envelope: null,
 });
 
+const subscribeToLocation = () => () => {};
+const getServerPreviewToken = () => null;
+const getPreviewToken = () => new URLSearchParams(window.location.search).get("preview");
+
 export function PreviewProvider({
   draftModeEnabled,
   children,
@@ -30,14 +34,10 @@ export function PreviewProvider({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [token, setToken] = useState<string | null>(null);
+  const token = useSyncExternalStore(subscribeToLocation, getPreviewToken, getServerPreviewToken);
   const previewRequested = draftModeEnabled && Boolean(token);
   const [envelope, setEnvelope] = useState<PreviewEnvelope | null>(null);
   const [resolved, setResolved] = useState(!previewRequested);
-
-  useEffect(() => {
-    setToken(new URLSearchParams(window.location.search).get("preview"));
-  }, []);
 
   const readEnvelope = useCallback(() => {
     if (!previewRequested || !token) {

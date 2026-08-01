@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Montserrat } from "next/font/google";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
@@ -9,8 +10,6 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-export const dynamic = "force-dynamic";
 
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
@@ -29,6 +28,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  await connection();
   const initialLocale: Locale = "ko";
   const initialTheme: Theme = "dark";
 
