@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
   upload: vi.fn(),
+  insert: vi.fn(),
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
@@ -27,7 +28,10 @@ describe("POST /api/uploads/admin-asset", () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
     mocks.upload.mockResolvedValue({ error: null });
-    mocks.createServiceClient.mockReturnValue({ storage: { from: vi.fn(() => ({ upload: mocks.upload })) } });
+    mocks.createServiceClient.mockReturnValue({
+      storage: { from: vi.fn(() => ({ upload: mocks.upload })) },
+      from: vi.fn(() => ({ insert: mocks.insert })),
+    });
   });
 
   it.each(["artist-assets", "album-covers", "track-assets"] as const)("uploads %s through the validated service-role route", async (bucket) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PreviewProvider } from "@/core/preview/PreviewProvider";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
@@ -103,9 +103,5 @@ export default function MainLayout({
     </>
   );
 
-  return (
-    <Suspense fallback={content}>
-      <PreviewProvider draftModeEnabled={draftModeEnabled}>{content}</PreviewProvider>
-    </Suspense>
-  );
+  return <PreviewProvider draftModeEnabled={draftModeEnabled}>{content}</PreviewProvider>;
 }
