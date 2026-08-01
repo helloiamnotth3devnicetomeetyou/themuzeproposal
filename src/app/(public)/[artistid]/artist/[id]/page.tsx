@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import ArtistMemberPage from "@/public/pages/[artistid]/artist/[id]/page";
+import ArtistSceneExperience from "@/public/pages/[artistid]/artist/ArtistSceneExperience";
+import { getArtistSceneData } from "@/public/pages/[artistid]/artist/artist-scene-server";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { getServerLocale } from "@/core/i18n/server";
 import { displayName, getPublicArtistTitle, getPublicMemberTitle } from "@/public/features/seo/server";
@@ -13,4 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ artistid:
   return createPageMetadata(memberName && artistName ? `${memberName} — ${artistName}` : memberName || artistName || "Artist");
 }
 
-export default ArtistMemberPage;
+export default async function ArtistMemberPage({ params }: { params: Promise<{ artistid: string; id: string }> }) {
+  const { artistid, id } = await params;
+  return <ArtistSceneExperience artistSlug={artistid} initialMemberSlug={id} initialData={await getArtistSceneData(artistid)} />;
+}

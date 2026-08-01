@@ -17,19 +17,19 @@ import SceneDock from "./SceneDock";
 import { useArtistSceneData } from "./useArtistSceneData";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
-import type { Member } from "./artist-scene-types";
+import type { ArtistSceneData, Member } from "./artist-scene-types";
 import type { ArtistScene } from "@/core/utils/artist-scenes";
 
 type Dimensions = Record<string, { width: number; height: number }>;
 const EMPTY_MEMBERS: Member[] = [];
 const EMPTY_SCENES: ArtistScene[] = [];
 
-export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }: { artistSlug: string; initialMemberSlug?: string }) {
+export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, initialData = null }: { artistSlug: string; initialMemberSlug?: string; initialData?: ArtistSceneData | null }) {
   const { locale, t } = useLocale();
   const copy = t.artistScene;
   const profilePreview = usePreviewPayload("artist-profile");
   const memberPreview = usePreviewPayload("artist-member");
-  const { data, loading, error } = useArtistSceneData({ artistSlug, profilePreview, memberPreview });
+  const { data, loading, error } = useArtistSceneData({ artistSlug, profilePreview, memberPreview, initialData });
   const [activeSceneId, setActiveSceneId] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [pendingSceneId, setPendingSceneId] = useState<string | null>(null);
@@ -61,7 +61,10 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug }:
   }, [scenes]);
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
-  useEffect(() => scheduleImagePreload(scenePreloadCandidates, { concurrency: 2 }), [scenePreloadCandidates]);
+  useEffect(() => {
+    void preloadImages(scenePreloadCandidates.slice(0, 1));
+    return scheduleImagePreload(scenePreloadCandidates.slice(1), { concurrency: 2 });
+  }, [scenePreloadCandidates]);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
     const sync = () => setIsMobileExperience(media.matches);

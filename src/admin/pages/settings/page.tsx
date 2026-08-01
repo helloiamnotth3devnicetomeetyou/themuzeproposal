@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type DragEvent, useEffect, useId, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { LuBuilding2, LuCheck, LuFileArchive, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
+import { LuBuilding2, LuCheck, LuFileArchive, LuFileText, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
@@ -28,6 +28,33 @@ import {
   type SettingsTab,
 } from "./settings-editor-model";
 import AdminAccountsPanel from "./AdminAccountsPanel";
+
+function BusinessAssetField({ label, hint, accept, icon: Icon, value, busy, onUpload }: {
+  label: string;
+  hint: string;
+  accept: string;
+  icon: IconType;
+  value: string;
+  busy: boolean;
+  onUpload: (file: File) => void;
+}) {
+  const inputId = useId();
+  const [dragging, setDragging] = useState(false);
+  const upload = (file?: File) => { if (file && !busy) onUpload(file); };
+  const drop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragging(false);
+    upload(event.dataTransfer.files?.[0]);
+  };
+
+  return <div className={`track-asset-field ${value ? "has-file" : ""} ${dragging ? "is-dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={drop}>
+    <span className="track-asset-icon"><Icon aria-hidden="true" /></span>
+    <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
+    {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}
+    <label htmlFor={inputId}>{value ? "교체" : "업로드"}</label>
+    <input id={inputId} className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => { upload(event.target.files?.[0]); event.currentTarget.value = ""; }} />
+  </div>;
+}
 
 export default function SettingsAdmin({ canManageAdminAccounts = false }: { canManageAdminAccounts?: boolean }) {
   const [loading, setLoading] = useState(true);
@@ -336,8 +363,8 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         {tab === "business" && <>
           <div className="content-section-heading settings-section-heading"><div><h3>비즈니스 자료</h3><p>Contact Business 탭에서 공개할 프레스킷 ZIP과 프로필 PDF입니다. ZIP은 서버에서 압축을 풀지 않습니다.</p></div><LuFileArchive aria-hidden="true" /></div>
           <section className="settings-panel">
-            <label className="music-field"><span>프레스킷 ZIP (최대 100MB)</span><input type="file" accept=".zip,application/zip" disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadBusinessAsset("pressKitUrl", file); }} /><small>{business.pressKitUrl ? "업로드됨" : "아직 업로드되지 않았습니다."}</small></label>
-            <label className="music-field"><span>프로필 PDF (최대 100MB)</span><input type="file" accept=".pdf,application/pdf" disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadBusinessAsset("profilePdfUrl", file); }} /><small>{business.profilePdfUrl ? "업로드됨" : "아직 업로드되지 않았습니다."}</small></label>
+            <BusinessAssetField label="프레스킷 ZIP" hint="ZIP · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".zip,application/zip" icon={LuFileArchive} value={business.pressKitUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("pressKitUrl", file)} />
+            <BusinessAssetField label="프로필 PDF" hint="PDF · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".pdf,application/pdf" icon={LuFileText} value={business.profilePdfUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("profilePdfUrl", file)} />
           </section>
         </>}
 

@@ -12,10 +12,10 @@ function normalizeScene(value: ArtistScene): ArtistScene {
   return { ...value, artist_scene_members: (value.artist_scene_members ?? []).map((region) => ({ ...region, outline: normalizeOutline(region.outline) })).filter((region) => region.outline.length >= 3).sort((a, b) => a.sort_order - b.sort_order) };
 }
 
-export function useArtistSceneData({ artistSlug, profilePreview, memberPreview }: { artistSlug: string; profilePreview: unknown; memberPreview: unknown }) {
+export function useArtistSceneData({ artistSlug, profilePreview, memberPreview, initialData = null }: { artistSlug: string; profilePreview: unknown; memberPreview: unknown; initialData?: ArtistSceneData | null }) {
   const previews = useRef({ profilePreview, memberPreview });
-  const [data, setData] = useState<ArtistSceneData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ArtistSceneData | null>(initialData);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
   useEffect(() => { previews.current = { profilePreview, memberPreview }; }, [profilePreview, memberPreview]);
 
@@ -38,6 +38,6 @@ export function useArtistSceneData({ artistSlug, profilePreview, memberPreview }
     setError(result.error?.message || (!artist.image_url && !scenes.length ? "No hero scene has been published." : ""));
     setLoading(false);
   }, [artistSlug]);
-  useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  useEffect(() => { if (profilePreview || memberPreview || !initialData) void Promise.resolve().then(load); }, [initialData, load, memberPreview, profilePreview]);
   return { data, loading, error, reload: load };
 }

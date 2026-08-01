@@ -8,5 +8,14 @@ export function notifyArtistsChanged() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tag: "public-navigation-artists" }),
     });
+    revalidateArtistSceneData();
   }
+}
+
+export function revalidateArtistSceneData() {
+  void fetch("/api/admin/revalidate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag: "artist-scene-data" }),
+  });
 }

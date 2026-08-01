@@ -4,7 +4,7 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
-const ALLOWED_TAGS = new Set(["public-notices", "public-navigation-artists", "public-site-settings"]);
+const ALLOWED_TAGS = new Set(["public-notices", "public-navigation-artists", "public-site-settings", "artist-scene-data"]);
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "invalid request" }, { status: 400 });

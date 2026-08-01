@@ -8,6 +8,7 @@ import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
+import { revalidateArtistSceneData } from "@/core/utils/artist-events";
 import { normalizeSceneLink, simplifyOutline, type ArtistScene, type ScenePoint } from "@/core/utils/artist-scenes";
 import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module.css";
 import SceneCanvas from "./SceneCanvas";
@@ -127,6 +128,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         preferredId = inserted.data.id;
       }
       await load(preferredId);
+      revalidateArtistSceneData();
       onToast(`${list.length}개의 인터랙티브 장면을 추가했습니다.`);
     } catch (uploadError) {
       onError(uploadError instanceof Error ? uploadError.message : "장면 이미지를 업로드하지 못했습니다.");
@@ -170,6 +172,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         throw result.error;
       }
       await load(result.data.id);
+      revalidateArtistSceneData();
       onToast("현재 대표 이미지를 인터랙티브 장면으로 가져왔습니다.");
     } catch (importError) {
       onError(importError instanceof Error ? importError.message : "대표 이미지를 가져오지 못했습니다.");
@@ -188,6 +191,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       .eq("id", selectedScene.id)
       .then(({ error: dimensionError }) => {
         if (dimensionError) onError(dimensionError.message);
+        else revalidateArtistSceneData();
       });
   };
 
@@ -219,6 +223,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(false);
     if (result.error) return onError(result.error.message);
     await load(selectedScene.id);
+    revalidateArtistSceneData();
     onToast("장면 정보를 저장했습니다.");
   };
 
@@ -236,6 +241,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (result.error) return onError(result.error.message);
     setDeleteOpen(false);
     await load();
+    revalidateArtistSceneData();
     onToast("장면을 삭제했습니다.");
   };
 
@@ -252,6 +258,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(false);
     if (result.error) return onError(result.error.message);
     await load(selectedScene.id);
+    revalidateArtistSceneData();
     onToast(`${selectedMember?.name || "멤버"} 외곽선을 저장했습니다.`);
   };
 
@@ -269,6 +276,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(false);
     if (result.error) return onError(result.error.message);
     await load(selectedScene.id);
+    revalidateArtistSceneData();
     onToast("멤버 외곽선을 제거했습니다.");
   };
 
@@ -296,6 +304,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     setBusy(false);
     if (result.error) return onError(result.error.message);
     await load(selectedScene.id);
+    revalidateArtistSceneData();
     onToast("픽셀 단위 정밀 마스크를 적용했습니다.");
     if (maskInputRef.current) maskInputRef.current.value = "";
   };
