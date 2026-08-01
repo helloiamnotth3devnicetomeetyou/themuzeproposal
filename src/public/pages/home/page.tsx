@@ -127,13 +127,13 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 alt={`${slide.artistName} ${slide.title}`}
                 fill
                 sizes="100vw"
-                priority={index === 0}
+                preload={index === 0}
+                fetchPriority={index === 0 ? "high" : undefined}
                 loading={index === 0 ? undefined : "lazy"}
                 quality={80}
                 className="object-cover object-center"
                 style={{
-                  animation: isActive ? "kenBurnsIn 6s ease-out forwards" : undefined,
-                  transform: isLeaving ? "scale(1.02)" : undefined,
+                  animation: isVisible ? "kenBurnsIn 6s ease-out forwards" : undefined,
                 }}
               />
             )}
