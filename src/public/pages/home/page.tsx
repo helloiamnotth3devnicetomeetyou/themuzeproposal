@@ -26,6 +26,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
 
   const [isPageVisible, setIsPageVisible] = useState(true);
+  const [isInteractionPaused, setIsInteractionPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,14 +73,14 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   }, [currentSlide, isTransitioning, slides.length]);
 
   useEffect(() => {
-    if (slides.length <= 1 || isTransitioning || !isPageVisible || prefersReducedMotion) return;
+    if (slides.length <= 1 || isTransitioning || !isPageVisible || isInteractionPaused || prefersReducedMotion) return;
 
     const timer = setTimeout(() => {
       goToSlide(currentSlide + 1);
     }, 6000);
 
     return () => clearTimeout(timer);
-  }, [currentSlide, goToSlide, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
+  }, [currentSlide, goToSlide, isInteractionPaused, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
 
   if (slides.length === 0) {
     return (
@@ -93,6 +94,10 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     <main
       className="relative h-screen w-full overflow-hidden"
       style={{ backgroundColor: "var(--color-static-black)", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
+      onFocusCapture={() => setIsInteractionPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setIsInteractionPaused(false);
+      }}
     >
       <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
       {slides.map((slide, index) => {
@@ -117,9 +122,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               "--slide-accent": slide.color || BRAND_PINK_HEX,
             } as CSSProperties}
           >
-            <div className="absolute inset-x-0 bottom-0 z-10 h-2/5" style={{ background: "linear-gradient(to top, var(--alpha-000000-85) 0%, var(--alpha-000000-2) 60%, transparent 100%)" }} />
-            <div className="absolute inset-x-0 top-0 z-10 h-32" style={{ background: "linear-gradient(to bottom, var(--alpha-000000-45) 0%, transparent 100%)" }} />
-            <div className="absolute inset-y-0 left-0 z-10 w-1/3" style={{ background: "linear-gradient(to right, var(--alpha-000000-55) 0%, transparent 100%)" }} />
+            <div className="home-hero-shade" aria-hidden="true" />
 
             {slide.imageUrl && (
               <Image
@@ -132,21 +135,13 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 loading={index === 0 ? undefined : "lazy"}
                 quality={80}
                 className="object-cover object-center"
-                style={{
-                  animation: isVisible ? "kenBurnsIn 6s ease-out forwards" : undefined,
-                }}
+                style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
               />
             )}
 
-            <div className="absolute inset-x-0 bottom-16 z-20 mx-auto flex max-w-7xl items-end justify-between gap-6 px-6 md:bottom-20">
-              <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
-                <span
-                  className="text-xs font-medium uppercase tracking-wider"
-                  style={{
-                    opacity: isActive ? undefined : 0,
-                    animation: isActive ? "fadeInUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both" : undefined,
-                  }}
-                >
+            <div className="home-hero-content">
+              <div className="home-hero-copy">
+                <span className="home-release-meta">
                   <span style={{ color: "var(--slide-accent)" }}>{slide.artistName}</span>
                   {slide.type && (
                     <>
@@ -155,15 +150,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                     </>
                   )}
                 </span>
-                <h2
-                  className="font-hero text-5xl font-black uppercase leading-none tracking-tight drop-shadow-lg md:text-8xl"
-                  aria-label={slide.title}
-                  style={{
-                    color: "var(--color-static-white)",
-                    opacity: isActive ? undefined : 0,
-                    animation: isActive ? "textShimmer 1s 0.25s cubic-bezier(0.16,1,0.3,1) both" : undefined,
-                  }}
-                >
+                <h2 className="home-release-title" aria-label={slide.title}>
                   {slide.typoLogoUrl ? (
                     <span
                       aria-hidden="true"
@@ -176,27 +163,18 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                   ) : slide.title}
                 </h2>
                 {localizeText(slide.descriptions, locale) && (
-                  <p
-                    className="max-w-lg text-sm font-light leading-relaxed drop-shadow-md md:text-base"
-                    style={{
-                      color: "var(--alpha-ffffff-8)",
-                      opacity: isActive ? undefined : 0,
-                      animation: isActive ? "fadeInUp 0.9s 0.5s cubic-bezier(0.16,1,0.3,1) both" : undefined,
-                    }}
-                  >
+                  <p className="home-release-description">
                     {localizeText(slide.descriptions, locale)}
                   </p>
                 )}
                 <div
-                  className="mt-2 flex flex-wrap items-center gap-3"
-                  style={{
-                    opacity: isActive ? undefined : 0,
-                    animation: isActive ? "fadeInUp 0.9s 0.65s cubic-bezier(0.16,1,0.3,1) both" : undefined,
-                  }}
+                  className="home-release-actions"
+                  onMouseEnter={() => setIsInteractionPaused(true)}
+                  onMouseLeave={() => setIsInteractionPaused(false)}
                 >
                   <Link
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
-                    className="inline-flex min-h-11 items-center rounded-full bg-[var(--slide-accent)] px-7 text-xs font-black tracking-widest text-[var(--color-static-black)] shadow-lg transition-transform duration-slow hover:scale-105 hover:brightness-90"
+                    className="home-primary-link"
                   >
                     {t.hero.exploreBtn}
                   </Link>
@@ -247,8 +225,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             type="button"
             onClick={() => goToSlide(currentSlide - 1)}
             aria-label="Previous album"
-            className="absolute left-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-slow hover:bg-[var(--slide-accent)] hover:text-[var(--color-static-black)]"
-            style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
+            className="home-slide-arrow home-slide-arrow-left"
           >
             <LuChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -256,29 +233,29 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             type="button"
             onClick={() => goToSlide(currentSlide + 1)}
             aria-label="Next album"
-            className="absolute right-6 top-1/2 z-30 -translate-y-1/2 rounded-full border p-3 transition-all duration-slow hover:bg-[var(--slide-accent)] hover:text-[var(--color-static-black)]"
-            style={{ backgroundColor: "var(--alpha-000000-3)", borderColor: "var(--alpha-ffffff-1)", color: "var(--color-static-white)" }}
+            className="home-slide-arrow home-slide-arrow-right"
           >
             <LuChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
 
-          <div className="absolute bottom-6 right-6 z-30 flex items-center gap-3">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.id}
-                type="button"
-                onClick={() => goToSlide(index)}
-                aria-label={`Show ${slide.title}`}
-                aria-current={index === currentSlide ? "true" : undefined}
-                className="group grid h-11 min-w-11 place-items-center"
-              >
-                <span
-                  className={`h-[3px] rounded-full transition-all duration-500 ${index === currentSlide ? "w-8" : "w-3 group-hover:bg-[var(--alpha-ffffff-5)]"}`}
-                  style={{ backgroundColor: index === currentSlide ? "var(--slide-accent)" : "var(--alpha-ffffff-3)" }}
-                  aria-hidden="true"
+          <div className="home-slide-index">
+            <span className="home-slide-count">
+              <b>{String(currentSlide + 1).padStart(2, "0")}</b>
+              <i>/</i>
+              <span>{String(slides.length).padStart(2, "0")}</span>
+            </span>
+            <div className="home-slide-rail">
+              {slides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Show ${slide.title}`}
+                  aria-current={index === currentSlide ? "true" : undefined}
+                  className={index === currentSlide ? "is-active" : undefined}
                 />
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
         </>
       )}

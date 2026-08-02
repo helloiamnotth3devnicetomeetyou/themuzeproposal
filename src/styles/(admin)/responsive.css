@@ -174,3 +174,113 @@
     scroll-behavior: auto;
   }
 }
+
+/* Admin restraint layer. This file loads last so shared behavior stays intact. */
+.admin-root-shell :where(
+  .content-visual-editor,
+  .content-choice,
+  .content-publish-summary > div,
+  .music-publish-summary,
+  .music-publish-check,
+  .music-publish-toggle,
+  .settings-panel,
+  .admin-accounts-invite,
+  .admin-accounts-list,
+  .gallery-card,
+  .gallery-dropzone,
+  .gallery-inspector,
+  .hero-admin-panel,
+  .hero-slide-card,
+  .content-asset-dropzone,
+  .content-asset-preview,
+  .track-asset-field,
+  .music-track-wrap,
+  .notice-preview-card
+) {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.admin-root-shell :where(
+  .content-rail-heading > button,
+  .content-rail-tools > input,
+  .content-filter-row,
+  .content-filter-row button,
+  .content-library-item,
+  .content-library-thumb,
+  .content-rail-quiet-action,
+  .content-color-row input,
+  .music-library-tools button,
+  .music-album-item,
+  .music-header-actions button,
+  .music-upload-button,
+  .music-image-dropzone,
+  .music-track-row,
+  .track-asset-icon,
+  .gallery-filterbar button,
+  .gallery-card-actions button,
+  .hero-admin-refresh,
+  .hero-admin-row-actions button,
+  .settings-rail-nav button,
+  .settings-rail-nav button > span
+) {
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.admin-root-shell :where(
+  .content-workbench-header,
+  .music-editor-header,
+  .content-workbench-rail,
+  .music-library
+) {
+  backdrop-filter: none;
+}
+
+.admin-root-shell :where(
+  .content-library-item.is-selected,
+  .music-album-item.is-selected,
+  .gallery-tile.is-selected,
+  .hero-slide-card.is-selected
+) {
+  background: var(--bg-subtle);
+  box-shadow: inset 2px 0 var(--color-brand-pink);
+  transform: none;
+}
+
+.admin-root-shell :where(
+  .admin-btn,
+  .content-choice,
+  .content-library-item,
+  .music-album-item,
+  .gallery-tile,
+  .hero-slide-card
+):hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.admin-root-shell :where(
+  .content-workbench-actions button,
+  .music-header-actions button,
+  .content-rail-tools > input,
+  .content-library-copy b,
+  .content-library-copy small,
+  .content-section-heading h2,
+  .content-section-heading p,
+  .music-field > label,
+  .music-section-title h2,
+  .music-section-title p,
+  .track-asset-copy b,
+  .track-asset-copy small,
+  .content-asset-copy b,
+  .content-asset-copy small,
+  .gallery-card-body b,
+  .gallery-card-body small,
+  .hero-admin-panel-heading h2,
+  .hero-admin-panel-heading p
+) {
+  font-size: 12px;
+}
+
+.admin-root-shell :where(.settings-footer-preview)::before { display: none; }

@@ -322,6 +322,29 @@
   margin: 0 !important;
 }
 
+/* Catalogue-style navigation: hierarchy comes from rules and type, not cards. */
+.cms-sidebar-desktop-collapse,
+.cms-add-artist,
+.cms-nav-item,
+.cms-artist-heading,
+.cms-artist-link,
+.cms-artist-logo,
+.cms-avatar,
+.cms-account button,
+.cms-empty-artist {
+  border-radius: 2px;
+}
+
+.cms-nav-label { font-size: 10px; letter-spacing: .11em; }
+.cms-nav-item { font-size: 12px; }
+.cms-artist-heading > span,
+.cms-account-copy b { font-size: 12px; }
+.cms-artist-link,
+.cms-account-copy small { font-size: 11px; }
+.cms-nav-item.is-active { background: transparent; }
+.cms-artist-link.is-active { background: transparent; }
+.cms-add-artist:hover { background: transparent; }
+
 .cms-nav-label-row.clickable {
   cursor: pointer;
   user-select: none;

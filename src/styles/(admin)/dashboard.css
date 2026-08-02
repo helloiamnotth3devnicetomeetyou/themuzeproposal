@@ -76,6 +76,44 @@
   .desk-release-panel { padding:18px; }
 }
 
+/* Editorial dashboard: one ruled system instead of a stack of floating cards. */
+.desk-dashboard { gap: 12px; }
+.desk-metrics,
+.desk-release-panel,
+.desk-inbox-card,
+.desk-shortcuts {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.desk-metric { min-height: 138px; padding: 20px 22px; }
+.desk-metric > span,
+.desk-inbox-card > span { font-size: 10px; letter-spacing: .12em; }
+.desk-metric > strong,
+.desk-inbox-card > strong { margin-top: 18px; }
+.desk-metric b,
+.desk-inbox-card h2,
+.desk-shortcuts b,
+.desk-release-copy b { font-size: 12px; }
+.desk-metric i,
+.desk-release-copy small,
+.desk-shortcuts small { font-size: 10px; }
+
+.desk-release-panel { padding: 24px; }
+.desk-release-list > a { min-height: 66px; }
+.desk-release-cover { border-radius: 2px; }
+.desk-inbox-card { padding: 21px 22px; }
+.desk-shortcuts > a > span { border-radius: 2px; }
+
+.desk-metric:hover,
+.desk-inbox-card:hover,
+.desk-shortcuts > a:hover,
+.desk-release-list > a:hover {
+  background: var(--bg-subtle);
+  box-shadow: none;
+  transform: none;
+}
+
 /* Translatable desk fields */
 .desk-translatable-field { display:flex; flex-direction:column; gap:9px; }
 .desk-translatable-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; }

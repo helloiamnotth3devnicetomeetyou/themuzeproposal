@@ -231,3 +231,26 @@
   }
   .cms-page-header h1 { font-size: clamp(21px,6vw,28px); }
 }
+
+/* Quiet, information-first admin chrome. */
+.cms-page-header {
+  background: var(--bg-base);
+}
+
+.cms-page-eyebrow,
+.cms-breadcrumb {
+  font-size: 10px !important;
+  letter-spacing: .11em;
+}
+
+.cms-page-header h1 { font-size: 25px; }
+.cms-page-header > div > p:last-child { font-size: 12px; }
+.cms-header-action { border-radius: 6px; font-size: 12px; }
+.cms-status { font-size: 10px; }
+
+@media (max-width: 1199px) {
+  .admin-mobile-topbar {
+    background: var(--bg-surface);
+    backdrop-filter: none;
+  }
+}
