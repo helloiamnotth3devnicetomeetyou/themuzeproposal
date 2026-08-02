@@ -117,7 +117,11 @@
 
 @media (max-width: 767px) {
   .page { padding: var(--page-top-space) var(--page-gutter) var(--page-bottom-space); }
-  .heading { margin-bottom: 48px; font-size: var(--page-title-size); }
+  .listPanel { display: contents; }
+  .heading { grid-row: 1; margin-bottom: 0; font-size: var(--page-title-size); }
+  .calendarPanel { grid-row: 2; }
+  .list { grid-row: 3; margin-top: 0; }
+  .pager { grid-row: 4; }
   .months { grid-template-columns: repeat(6, 1fr); row-gap: 12px; }
   .weekdays { margin-top: 30px; }
   .weekdays span { font-size: 11px; }
