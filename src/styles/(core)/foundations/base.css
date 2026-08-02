@@ -1,10 +1,28 @@
 @font-face {
-  font-family: "Pretendard Variable";
-  src: url("/fonts/PretendardVariable.woff2") format("woff2");
-  font-weight: 45 920;
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Thin.subset.woff2") format("woff2");
+  font-weight: 100;
   font-style: normal;
   font-display: swap;
 }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-ExtraLight.subset.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Light.subset.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Medium.subset.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-SemiBold.subset.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-ExtraBold.subset.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Black.subset.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
+
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Thin.woff") format("woff"); font-weight: 100; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-ExtraLight.woff") format("woff"); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Light.woff") format("woff"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Regular.woff") format("woff"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Medium.woff") format("woff"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-SemiBold.woff") format("woff"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Bold.woff") format("woff"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-ExtraBold.woff") format("woff"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard Full"; src: url("/fonts/Pretendard/font/Pretendard-Black.woff") format("woff"); font-weight: 900; font-style: normal; font-display: swap; }
 @font-face {
   font-family: "Clash Display";
   src: url("/fonts/ClashDisplay-Bold.woff2") format("woff2");
@@ -30,8 +48,8 @@
   --color-status-danger: var(--palette-e46b6b);
   --color-platform-youtube: var(--palette-ff0033);
   --color-platform-spotify: var(--palette-1db954);
-  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-montserrat), "Montserrat", "Pretendard Variable", sans-serif;
+  --font-sans: "Pretendard Subset", "Pretendard Full", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-montserrat), "Montserrat", "Pretendard Subset", "Pretendard Full", sans-serif;
   --font-hero: "Clash Display", var(--font-montserrat), "Montserrat", sans-serif;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;

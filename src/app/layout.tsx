@@ -34,6 +34,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>
+      <head>
+        <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>
           <LocaleProvider initialLocale={initialLocale}>

@@ -91,7 +91,7 @@ export function AlbumDock({
 
         <div
           ref={railRef}
-          className="discography-album-rail flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1"
+          className="discography-album-rail min-w-0 flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1"
         >
           {albums.map((album, index) => {
             const isCurrent = index === albumIndex;

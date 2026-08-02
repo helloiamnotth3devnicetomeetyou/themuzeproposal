@@ -3,7 +3,7 @@
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type TouchEvent } from "react";
 
 import { useLocale } from "@/core/providers/LocaleContext";
 import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
@@ -20,6 +20,7 @@ export function DiscographyExperience() {
   const preview = usePreviewPayload("album");
   const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
+  const albumSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const discography = useDiscographyController(
     artistid,
     audioRef,
@@ -40,6 +41,21 @@ export function DiscographyExperience() {
     const candidate = coverCandidates[index];
     if (candidate) void preloadImages([candidate]);
   }, [coverCandidates]);
+  const startAlbumSwipe = (event: TouchEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("button, a, input")) return;
+    const touch = event.touches[0];
+    if (touch) albumSwipeStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+  const endAlbumSwipe = (event: TouchEvent<HTMLDivElement>) => {
+    const start = albumSwipeStart.current;
+    albumSwipeStart.current = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+    const x = touch.clientX - start.x;
+    const y = touch.clientY - start.y;
+    if (Math.abs(x) < 56 || Math.abs(x) <= Math.abs(y)) return;
+    discography.switchAlbum(Math.max(0, Math.min(discography.sortedAlbums.length - 1, discography.albumIndex + (x < 0 ? 1 : -1))));
+  };
 
   if (discography.loading || !discography.album) {
     const message =
@@ -87,6 +103,9 @@ export function DiscographyExperience() {
 
       <div
         className={`flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 items-start lg:items-center max-w-[1400px] mx-auto px-5 sm:px-8 pb-8 w-full relative z-10 overflow-y-auto lg:overflow-visible pt-24 lg:pt-28 gap-7 lg:gap-8 ${discography.contentClass}`}
+        onTouchStart={startAlbumSwipe}
+        onTouchEnd={endAlbumSwipe}
+        onTouchCancel={() => { albumSwipeStart.current = null; }}
       >
         <AlbumArtwork
           album={album}
