@@ -4,7 +4,6 @@
 @import "./foundations/animations.css";
 @import "./components/loading.css";
 @import "../(public)/pages/home.css";
-@import "../(public)/pages/notice.css";
 
 @theme {
   /* Raw CSS media queries mirror these values because custom properties cannot

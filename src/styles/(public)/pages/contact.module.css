@@ -179,7 +179,6 @@
   .uploadButton,
   .submit { transition: none; }
 }
-:global(.contact-business-downloads-placeholder) { display: none; }
 .businessDownloads { padding: 20px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-subtle); }
 .businessDownloads h3,.businessDownloads p { margin: 0; }
 .businessDownloads h3 { color: var(--text-primary); font-size: 15px; }

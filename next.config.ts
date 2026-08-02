@@ -5,8 +5,15 @@ const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.replace(/\/+$/,
   || (supabaseUrl ? `${supabaseUrl}/storage/v1/object/public` : "");
 
 const nextConfig: NextConfig = {
+  experimental: { cssChunking: false },
   async headers() {
     return [
+      {
+        source: "/",
+        headers: [
+          { key: "Cache-Control", value: "private, no-cache, max-age=0, must-revalidate" },
+        ],
+      },
       {
         source: "/(.*)",
         headers: [
