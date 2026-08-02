@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
   upload: vi.fn(),
+  createSignedUploadUrl: vi.fn(),
   insert: vi.fn(),
 }));
 
@@ -28,8 +29,9 @@ describe("POST /api/uploads/admin-asset", () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
     mocks.upload.mockResolvedValue({ error: null });
+    mocks.createSignedUploadUrl.mockResolvedValue({ data: { token: "signed-token" }, error: null });
     mocks.createServiceClient.mockReturnValue({
-      storage: { from: vi.fn(() => ({ upload: mocks.upload })) },
+      storage: { from: vi.fn(() => ({ upload: mocks.upload, createSignedUploadUrl: mocks.createSignedUploadUrl })) },
       from: vi.fn(() => ({ insert: mocks.insert })),
     });
   });
@@ -46,5 +48,23 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.upload).toHaveBeenCalledWith("artist-1/asset.png", expect.any(File), expect.objectContaining({ contentType: "image/png" }));
+  });
+
+  it("returns a direct upload token for a large MP3 without proxying its body", async () => {
+    const form = new FormData();
+    form.set("bucket", "track-assets");
+    form.set("path", "artist-1/album-1/track-1/audio.mp3");
+    form.set("file", new File([new Uint8Array([0x49, 0x44, 0x33, 0x04])], "audio.mp3", { type: "audio/mpeg" }));
+    form.set("direct", "true");
+    form.set("size", String(20 * 1024 * 1024));
+
+    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ token: "signed-token", asset: { path: "artist-1/album-1/track-1/audio.mp3" } });
+    expect(mocks.createSignedUploadUrl).toHaveBeenCalledWith("artist-1/album-1/track-1/audio.mp3", { upsert: false });
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
 });

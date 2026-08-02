@@ -45,12 +45,14 @@ export async function POST(request: NextRequest) {
   const bucket = String(formData.get("bucket") || "");
   const requestedPath = String(formData.get("path") || "");
   const file = formData.get("file");
+  const direct = formData.get("direct") === "true";
   const config = BUCKETS[bucket as keyof typeof BUCKETS];
   if (!config || !isSafeStoragePath(requestedPath) || !(file instanceof File)) {
     return errorResponse("INVALID_FILE", 400);
   }
-  if (file.size < 1 || file.size > config.maxBytes) {
-    return errorResponse(file.size > config.maxBytes ? "FILE_TOO_LARGE" : "INVALID_FILE", file.size > config.maxBytes ? 413 : 400);
+  const fileSize = direct ? Number(formData.get("size")) : file.size;
+  if (!Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > config.maxBytes) {
+    return errorResponse(fileSize > config.maxBytes ? "FILE_TOO_LARGE" : "INVALID_FILE", fileSize > config.maxBytes ? 413 : 400);
   }
 
   const validated = await validateFileSignature(file, config.profile);
@@ -58,6 +60,9 @@ export async function POST(request: NextRequest) {
 
   const path = replacePathExtension(requestedPath, validated.extension);
   if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400);
+  if (direct && (bucket !== "track-assets" || validated.mimeType !== "audio/mpeg")) {
+    return errorResponse("INVALID_FILE", 400);
+  }
   if (bucket === "business-assets" && !["press-kit.zip", "profile.pdf"].includes(path)) {
     return errorResponse("INVALID_FILE", 400);
   }
@@ -65,13 +70,20 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
-  const { error: uploadError } = await serviceClient.storage
-    .from(bucket)
-    .upload(path, file, {
+  let token: string | undefined;
+  if (direct) {
+    const { data, error } = await serviceClient.storage.from(bucket).createSignedUploadUrl(path, {
+      upsert: formData.get("upsert") === "true",
+    });
+    if (error || !data) return errorResponse("UPLOAD_FAILED", 503);
+    token = data.token;
+  } else {
+    const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
       contentType: validated.mimeType,
       upsert: formData.get("upsert") === "true",
     });
-  if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
+    if (error) return errorResponse("UPLOAD_FAILED", 503);
+  }
 
   await serviceClient.from("admin_audit_logs").insert({
     actor_id: user.id,
@@ -81,11 +93,12 @@ export async function POST(request: NextRequest) {
     record_id: `${bucket}/${path}`,
     record_label: `Business asset: ${path}`,
     changed_fields: ["name", "metadata"],
-    after_values: { bucket, path, mime_type: validated.mimeType, size: file.size },
+    after_values: { bucket, path, mime_type: validated.mimeType, size: fileSize },
   });
 
   const { storageUrl } = getPublicSupabaseConfig();
   const response = NextResponse.json({
+    token,
     asset: {
       bucket,
       path,

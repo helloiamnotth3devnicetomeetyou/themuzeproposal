@@ -356,9 +356,9 @@ export default function DiscographyAdmin() {
                 </div>
                 {expandedTrack === track.id && <div className="music-track-assets">
                   <div className="music-track-link-grid">
-                    <label className="music-field"><span>곡명 (한국어)</span><input value={track.title_ko} onChange={(event) => patchTrack(track.id, { title_ko: event.target.value })} /></label>
-                    <label className="music-field"><span>곡명 (영어)</span><input value={track.title_en} onChange={(event) => patchTrack(track.id, { title_en: event.target.value })} /></label>
-                    <label className="music-field"><span>곡명 (일본어)</span><input value={track.title_ja} onChange={(event) => patchTrack(track.id, { title_ja: event.target.value })} /></label>
+                    <label className="music-field"><span>곡명 (한국어)</span><input className="admin-input" value={track.title_ko} onChange={(event) => patchTrack(track.id, { title_ko: event.target.value })} /></label>
+                    <label className="music-field"><span>곡명 (영어)</span><input className="admin-input" value={track.title_en} onChange={(event) => patchTrack(track.id, { title_en: event.target.value })} /></label>
+                    <label className="music-field"><span>곡명 (일본어)</span><input className="admin-input" value={track.title_ja} onChange={(event) => patchTrack(track.id, { title_ja: event.target.value })} /></label>
                   </div>
                   <div className="music-track-link-grid"><label className="music-field"><span>곡별 Spotify 링크</span><input type="url" className="admin-input" value={track.spotify_url} onChange={(event) => patchTrack(track.id, { spotify_url: event.target.value })} placeholder="https://open.spotify.com/track/…" /></label><label className="music-field"><span>곡별 YouTube 링크</span><input type="url" className="admin-input" value={track.youtube_url} onChange={(event) => patchTrack(track.id, { youtube_url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label></div>
                   <div className="music-track-asset-grid is-single">
