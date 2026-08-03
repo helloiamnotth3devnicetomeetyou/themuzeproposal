@@ -240,7 +240,7 @@ export default function About() {
               <div 
                 key={item.id} 
                 id={item.id === 1 ? "about-history" : item.id === 3 ? "about-company" : undefined}
-                className={`flex flex-col reveal reveal-delay-${(idx + 1) * 100}`}
+                className="flex flex-col reveal reveal-delay-100"
                 ref={(el) => { itemRefs.current[idx] = el; }}
               >
                 
