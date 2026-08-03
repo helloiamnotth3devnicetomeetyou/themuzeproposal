@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LuArrowRight, LuCircleAlert, LuFileCheck2, LuLockKeyhole } from "react-icons/lu";
+import { ArrowRight, CircleAlert, FileCheck2, LockKeyhole } from "lucide-react";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import styles from "@/styles/(public)/pages/protect.module.css";
@@ -48,7 +48,7 @@ export default function ProtectClient({
     return (
       <main className={styles.page}>
         <section className={styles.success} aria-labelledby="success-title">
-          <LuFileCheck2 aria-hidden="true" />
+          <FileCheck2 aria-hidden="true" />
           <p>{t.protect.receivedEyebrow}</p>
           <h1 id="success-title">{t.protect.receivedTitle}</h1>
           <span>{t.protect.receivedDescription}</span>
@@ -60,7 +60,7 @@ export default function ProtectClient({
             type="button"
             onClick={() => { setSubmittedId(""); setActiveTab("mine"); }}
           >
-            {t.protect.viewReports} <LuArrowRight aria-hidden="true" />
+            {t.protect.viewReports} <ArrowRight aria-hidden="true" />
           </button>
         </section>
       </main>
@@ -91,7 +91,7 @@ export default function ProtectClient({
               </button>
             </nav>
             <div>
-              <LuLockKeyhole aria-hidden="true" />
+              <LockKeyhole aria-hidden="true" />
               <span>{t.protect.privateReport}</span>
               <b>{userEmail}</b>
             </div>
@@ -101,7 +101,7 @@ export default function ProtectClient({
         <div className={styles.contentColumn}>
           {error && (
             <div className={styles.error} role="alert">
-              <LuCircleAlert aria-hidden="true" />
+              <CircleAlert aria-hidden="true" />
               <span>{error}</span>
               <button type="button" onClick={() => setError("")} aria-label={t.protect.closeError}>×</button>
             </div>

@@ -3,7 +3,7 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { type DragEvent, useId, useState } from "react";
-import { LuImage, LuMusic, LuX } from "react-icons/lu";
+import { Image as ImageIcon, Music, X } from "lucide-react";
 import type { UploadedAsset } from "@/core/utils/music-editor";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
@@ -218,11 +218,11 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
   >
     {kind === "logo" && value
       ? <span className="track-asset-logo-preview"><AdminAssetImage src={value} alt="업로드한 타이포 로고" sizes="160px" className={/\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /></span>
-      : <span className="track-asset-icon">{kind === "audio" ? <LuMusic aria-hidden="true" /> : <LuImage aria-hidden="true" />}</span>}
+      : <span className="track-asset-icon">{kind === "audio" ? <Music aria-hidden="true" /> : <ImageIcon aria-hidden="true" />}</span>}
     <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
     {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}
     <label htmlFor={inputId}>{value ? "교체" : "업로드"}</label>
-    {value && <button type="button" onClick={onClear} aria-label={`${label} 제거`}><LuX aria-hidden="true" /></button>}
+    {value && <button type="button" onClick={onClear} aria-label={`${label} 제거`}><X aria-hidden="true" /></button>}
     <input id={inputId} className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => { void choose(event.target.files?.[0]); event.currentTarget.value = ""; }} />
   </div>;
 }

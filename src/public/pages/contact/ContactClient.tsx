@@ -1,14 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  LuArrowRight,
-  LuCheck,
-  LuCircleAlert,
-  LuFileText,
-  LuPaperclip,
-  LuTrash2,
-} from "react-icons/lu";
+import { ArrowRight, Check, CircleAlert, FileText, Paperclip, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import styles from "@/styles/(public)/pages/contact.module.css";
 
@@ -195,7 +188,7 @@ export default function ContactClient({
     return (
       <main className={styles.page}>
         <section className={styles.success} aria-labelledby="contact-success-title">
-          <LuCheck aria-hidden="true" />
+          <Check aria-hidden="true" />
           <h1 id="contact-success-title">문의가 접수되었습니다.</h1>
           <span>남겨주신 이메일로 순차적으로 답변드리겠습니다.</span>
           <dl>
@@ -203,7 +196,7 @@ export default function ContactClient({
             <div><dt>문의 구분</dt><dd>{isBusiness ? "Business" : "일반 문의"}</dd></div>
           </dl>
           <button type="button" onClick={resetForm}>
-            새 문의 작성하기 <LuArrowRight aria-hidden="true" />
+            새 문의 작성하기 <ArrowRight aria-hidden="true" />
           </button>
         </section>
       </main>
@@ -248,7 +241,7 @@ export default function ContactClient({
 
           {error && (
             <div className={styles.error} role="alert">
-              <LuCircleAlert aria-hidden="true" />
+              <CircleAlert aria-hidden="true" />
               <span>{error}</span>
               <button type="button" onClick={() => setError(EMPTY_ERROR)} aria-label="오류 메시지 닫기">×</button>
             </div>
@@ -309,16 +302,16 @@ export default function ContactClient({
                 <div className={styles.fileArea}>
                   {!attachment ? (
                     <label className={styles.uploadButton}>
-                      <LuPaperclip aria-hidden="true" />
+                      <Paperclip aria-hidden="true" />
                       <span><b>파일을 선택해 주세요.</b><small>PDF, PPT · 최대 20MB</small></span>
                       <em>파일 선택</em>
                       <input type="file" accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={handleFile} />
                     </label>
                   ) : (
                     <div className={styles.fileItem}>
-                      <LuFileText aria-hidden="true" />
+                      <FileText aria-hidden="true" />
                       <span><b>{attachment.name}</b><small>{(attachment.size / 1024 / 1024).toFixed(1)}MB</small></span>
-                      <button type="button" onClick={() => setAttachment(null)} aria-label={`${attachment.name} 삭제`}><LuTrash2 aria-hidden="true" /></button>
+                      <button type="button" onClick={() => setAttachment(null)} aria-label={`${attachment.name} 삭제`}><Trash2 aria-hidden="true" /></button>
                     </div>
                   )}
                 </div>
@@ -356,7 +349,7 @@ export default function ContactClient({
                 </div>
                 <label id="contact-consent" className={styles.consent}>
                   <input type="checkbox" checked={consented} onChange={(event) => { setConsented(event.target.checked); setError(EMPTY_ERROR); }} />
-                  <span><LuCheck aria-hidden="true" /></span>
+                  <span><Check aria-hidden="true" /></span>
                   개인정보 수집·이용에 동의합니다.
                 </label>
               </div>
@@ -365,7 +358,7 @@ export default function ContactClient({
             <div className={styles.submitArea}>
               <button className={styles.submit} type="submit" disabled={submitting}>
                 {submitting ? "접수 중..." : "문의하기"}
-                {!submitting && <LuArrowRight aria-hidden="true" />}
+                {!submitting && <ArrowRight aria-hidden="true" />}
               </button>
               <p>남겨주신 이메일로 순차적으로 답변드리고 있으며, 문의량에 따라 답변이 지연될 수 있는 점 양해 부탁드립니다.</p>
             </div>

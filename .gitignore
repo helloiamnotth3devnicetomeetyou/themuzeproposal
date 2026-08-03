@@ -45,3 +45,8 @@ next-env.d.ts
 .playwright-cli/
 output/
 .vscode/
+/playwright-report/
+/test-results/
+/e2e-results/
+/e2e/admin/
+

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LuMail, LuMapPin } from "react-icons/lu";
+import { Mail, MapPin } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
 import { useTheme } from "@/core/providers/ThemeContext";
@@ -198,12 +198,12 @@ export default function About() {
             
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-                <LuMapPin className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
+                <MapPin className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
                 <span className="about-settings-address">{companyAddress}</span>
               </div>
               
               <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
-                <LuMail className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
+                <Mail className="w-4 h-4 text-brand-pink shrink-0" aria-hidden="true" />
                 <a href={`mailto:${companyEmail}`} className="hover:text-brand-pink transition-colors">
                   {companyEmail}
                 </a>

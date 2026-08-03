@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuFileText, LuPlus } from "react-icons/lu";
+import { FileText, Plus } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
@@ -246,7 +246,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   if (loading) return <LoadingIndicator label="공지 라이브러리를 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
 
   const rail = <>
-    <div className="content-rail-heading"><div><h2>{scopeArtistId ? "아티스트 공지" : "전체 공지"}</h2></div><button type="button" onClick={() => void addNotice()} aria-label="공지 작성"><LuPlus aria-hidden="true" /></button></div>
+    <div className="content-rail-heading"><div><h2>{scopeArtistId ? "아티스트 공지" : "전체 공지"}</h2></div><button type="button" onClick={() => void addNotice()} aria-label="공지 작성"><Plus aria-hidden="true" /></button></div>
     <div className="content-rail-tools"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="공지 검색" aria-label="공지 검색" /><div className="content-filter-row">{(["all", "published", "draft"] as NoticeFilter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "비공개"}</button>)}</div></div>
     <div className="content-rail-sort"><span>{visibleNotices.length}개 공지</span><small>{scopeName}</small></div>
     <div className="content-library-list notice-library-list">
@@ -264,7 +264,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || !canSave || saving} onClick={() => void saveNotice()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
 
   return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench">
-    {!draft ? <div className="content-no-selection"><span><LuFileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">
+    {!draft ? <div className="content-no-selection"><span><FileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">
       {tab === "content" && <>
         <div className="content-section-heading"><h3>공지 내용</h3><span>독자가 목록에서 찾고 본문에서 읽게 될 제목과 내용을 작성합니다.</span></div>
         <div className="music-field-grid two">

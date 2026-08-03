@@ -7,7 +7,7 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import type { IconType } from "react-icons";
-import { LuCake, LuCalendarPlus, LuChevronLeft, LuChevronRight, LuDisc3, LuPartyPopper, LuRadio } from "react-icons/lu";
+import { Cake, CalendarPlus, ChevronLeft, ChevronRight, Disc3, PartyPopper, Radio } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { localizeText, localeTags } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
@@ -36,11 +36,11 @@ type ScheduleRow = {
 };
 
 const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
-  show: { icon: LuRadio, color: SCHEDULE_CATEGORY_COLORS.show },
-  release: { icon: LuDisc3, color: SCHEDULE_CATEGORY_COLORS.release },
-  anniversary: { icon: LuCake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
-  event: { icon: LuPartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
-  etc: { icon: LuCalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
+  show: { icon: Radio, color: SCHEDULE_CATEGORY_COLORS.show },
+  release: { icon: Disc3, color: SCHEDULE_CATEGORY_COLORS.release },
+  anniversary: { icon: Cake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
+  event: { icon: PartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
+  etc: { icon: CalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
 };
 const PAGE_SIZE = 5;
 const dateAtLocalMidnight = (value: string) => new Date(`${value}T00:00:00`);
@@ -189,18 +189,18 @@ export default function ArtistSchedulePage() {
             {!visibleEvents.length && !error && <div className={styles.empty}>{t.schedule.empty}</div>}
           </div>
           {monthEvents.length > PAGE_SIZE && <div className={styles.pager} aria-label={t.schedule.pageLabel}>
-            <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0} aria-label={t.schedule.previous}><LuChevronLeft aria-hidden="true" /></button>
+            <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0} aria-label={t.schedule.previous}><ChevronLeft aria-hidden="true" /></button>
             <span>{page + 1} / {totalPages}</span>
-            <button type="button" onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))} disabled={page >= totalPages - 1} aria-label={t.schedule.next}><LuChevronRight aria-hidden="true" /></button>
+            <button type="button" onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))} disabled={page >= totalPages - 1} aria-label={t.schedule.next}><ChevronRight aria-hidden="true" /></button>
           </div>}
         </section>
 
         <section className={styles.calendarPanel} aria-label={t.schedule.calendarLabel(cursor.getFullYear(), cursor.getMonth() + 1)}>
           <div className={styles.calendarTop}>
             <div className={styles.yearControl}>
-              <button type="button" onClick={() => moveYear(-1)} aria-label={t.schedule.previousYear}><LuChevronLeft aria-hidden="true" /></button>
+              <button type="button" onClick={() => moveYear(-1)} aria-label={t.schedule.previousYear}><ChevronLeft aria-hidden="true" /></button>
               <strong>{cursor.getFullYear()}</strong>
-              <button type="button" onClick={() => moveYear(1)} aria-label={t.schedule.nextYear}><LuChevronRight aria-hidden="true" /></button>
+              <button type="button" onClick={() => moveYear(1)} aria-label={t.schedule.nextYear}><ChevronRight aria-hidden="true" /></button>
             </div>
             <button className={styles.todayButton} type="button" onClick={goToday}>{t.schedule.today}</button>
           </div>

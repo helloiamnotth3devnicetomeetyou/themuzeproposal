@@ -21,12 +21,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import {
-  LuImage,
-  LuPlus,
-  LuRefreshCw,
-  LuSearch,
-} from "react-icons/lu";
+import { Image, Plus, RefreshCw, Search } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -173,7 +168,7 @@ export default function HeroAdminPage() {
   return (
     <div className="hero-admin-page">
       <section className="hero-admin-summary">
-        <div className="hero-admin-summary-icon"><LuImage aria-hidden="true" /></div>
+        <div className="hero-admin-summary-icon"><Image aria-hidden="true" /></div>
         <div>
           <h2>공개 앨범의 메인 노출 순서를 관리합니다.</h2>
           <p>앨범의 기본 정렬과 별개로, 홈 화면에 보여줄 앨범과 노출 여부를 이곳에서 지정합니다.</p>
@@ -183,7 +178,7 @@ export default function HeroAdminPage() {
           <div><dt>공개 방식</dt><dd className="is-label">자동</dd></div>
         </dl>
         <button type="button" className="hero-admin-refresh" onClick={() => void load(true)} disabled={Boolean(savingId)}>
-          <LuRefreshCw aria-hidden="true" /> 새로고침
+          <RefreshCw aria-hidden="true" /> 새로고침
         </button>
       </section>
 
@@ -203,7 +198,7 @@ export default function HeroAdminPage() {
                 const artist = album ? artistById.get(album.artist_id) : undefined;
                  return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => setDeleteSlideItem(slide)} />;
               })}
-              {!slides.length && <div className="hero-admin-empty"><LuImage aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
+              {!slides.length && <div className="hero-admin-empty"><Image aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>
           </SortableContext>
           <DragOverlay adjustScale={false} dropAnimation={{ duration: 220, easing: "cubic-bezier(.18,.86,.28,1)" }}>
@@ -218,7 +213,7 @@ export default function HeroAdminPage() {
           <em>{matchingAlbums.length}개 앨범</em>
         </div>
         <div className="hero-admin-filters">
-          <label className="hero-admin-search"><LuSearch aria-hidden="true" /><span className="sr-only">앨범 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="앨범명 또는 아티스트 검색" /></label>
+          <label className="hero-admin-search"><Search aria-hidden="true" /><span className="sr-only">앨범 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="앨범명 또는 아티스트 검색" /></label>
           <CustomSelect ariaLabel="아티스트 선택" value={artistId} onChange={setArtistId} options={[{ value: "all", label: "모든 아티스트" }, ...artists.map((artist) => ({ value: artist.id, label: artist.name }))]} />
           <CustomSelect ariaLabel="정렬 방식" value={sort} onChange={(value) => setSort(value as SortMode)} options={[{ value: "hero", label: "메인 노출 순" }, { value: "newest", label: "발매일 최신순" }, { value: "title", label: "앨범명 가나다순" }]} />
         </div>
@@ -232,12 +227,12 @@ export default function HeroAdminPage() {
                   {album.cover_url ? <AdminAssetImage src={album.cover_url} alt="" sizes="64px" /> : <i />}
                 </span>
                 <div><b>{album.title}</b><small>{artist?.name || "THE MUZE"} · {album.type}</small><em>{album.release_date || "발매일 미지정"}</em></div>
-                <button type="button" disabled={selected || savingId === album.id} onClick={() => void addSlide(album)}>{selected ? <><span>추가됨</span></> : <><LuPlus aria-hidden="true" /><span>메인에 추가</span></>}</button>
+                <button type="button" disabled={selected || savingId === album.id} onClick={() => void addSlide(album)}>{selected ? <><span>추가됨</span></> : <><Plus aria-hidden="true" /><span>메인에 추가</span></>}</button>
               </article>
             );
           })}
         </div>
-        {!matchingAlbums.length && <div className="hero-admin-empty is-compact"><LuSearch aria-hidden="true" /><b>조건에 맞는 공개 앨범이 없습니다.</b><span>검색어나 아티스트 필터를 바꿔 보세요.</span></div>}
+        {!matchingAlbums.length && <div className="hero-admin-empty is-compact"><Search aria-hidden="true" /><b>조건에 맞는 공개 앨범이 없습니다.</b><span>검색어나 아티스트 필터를 바꿔 보세요.</span></div>}
       </section>
 
       {deleteSlideItem && (

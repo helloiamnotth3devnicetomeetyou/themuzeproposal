@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { LuChevronRight } from "react-icons/lu";
+import { ChevronRight } from "lucide-react";
 
 import type { DiscographyAlbum } from "../lib/types";
 import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
@@ -183,7 +183,7 @@ export function AlbumArtwork({
             </span>
           </div>
           <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[var(--alpha-000000-4)] backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-slow border border-[var(--alpha-ffffff-08)]">
-            <LuChevronRight
+            <ChevronRight
               className={`w-3.5 h-3.5 text-[var(--color-static-white)] transition-transform duration-500 ${
                 showDiscs ? "rotate-180" : ""
               }`}

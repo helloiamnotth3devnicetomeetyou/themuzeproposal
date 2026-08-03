@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { LuCheck, LuChevronDown } from "react-icons/lu";
+import { Check, ChevronDown } from "lucide-react";
 import styles from "@/styles/(core)/components/form/CustomSelect.module.css";
 
 export type CustomSelectOption = {
@@ -26,7 +26,7 @@ type CustomSelectProps = {
   ariaLabel: string;
   placeholder?: string;
   className?: string;
-  variant?: "field" | "line";
+  variant?: "field" | "line" | "pill";
   disabled?: boolean;
 };
 
@@ -190,7 +190,7 @@ export default function CustomSelect({
         onKeyDown={handleTriggerKeyDown}
       >
         <span className={!selected ? styles.placeholder : ""}>{selected?.label || placeholder}</span>
-        <LuChevronDown aria-hidden="true" />
+        <ChevronDown aria-hidden="true" />
       </button>
 
       {open && listboxPosition && typeof document !== "undefined" && createPortal(
@@ -223,7 +223,7 @@ export default function CustomSelect({
               onClick={() => selectOption(index)}
             >
               <span>{option.label}</span>
-              {option.value === value && <LuCheck aria-hidden="true" />}
+              {option.value === value && <Check aria-hidden="true" />}
             </div>
           ))}
         </div>,

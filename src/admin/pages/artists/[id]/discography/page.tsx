@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuCheck, LuCircleAlert, LuDisc3, LuGripVertical, LuMusic, LuPlus } from "react-icons/lu";
+import { Check, CircleAlert, Disc3, GripVertical, Music, Plus } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/admin/components/assets/MusicAssetFields";
@@ -284,9 +284,9 @@ export default function DiscographyAdmin() {
   if (loading) return <LoadingIndicator label="앨범 라이브러리를 불러오는 중…" className="min-h-[420px]" />;
 
   return <div className="music-editor-shell">
-    {toast && <div className="music-toast" role="status"><LuCheck aria-hidden="true" /> {toast}</div>}
+    {toast && <div className="music-toast" role="status"><Check aria-hidden="true" /> {toast}</div>}
     <aside className="music-library">
-      <div className="music-library-heading"><div><h2>앨범 라이브러리</h2></div><button type="button" onClick={() => void addAlbum()} aria-label="새 앨범"><LuPlus aria-hidden="true" /></button></div>
+      <div className="music-library-heading"><div><h2>앨범 라이브러리</h2></div><button type="button" onClick={() => void addAlbum()} aria-label="새 앨범"><Plus aria-hidden="true" /></button></div>
       <div className="music-library-tools">
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="앨범 검색" aria-label="앨범 검색" />
         <div className="music-filter-row">{(["all", "published", "draft"] as Filter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "초안"}</button>)}</div>
@@ -294,7 +294,7 @@ export default function DiscographyAdmin() {
       <div className="music-sort-row"><span>{visibleAlbums.length}개 앨범</span><button type="button" onClick={() => { setSorting((value) => !value); setSortDirty(false); }}>{sorting ? "정렬 취소" : "순서 변경"}</button></div>
       <div className="music-album-list">
         {visibleAlbums.map((album) => <button key={album.id} type="button" draggable={sorting} onDragStart={() => setDragAlbum(album.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderAlbum(album.id)} onClick={() => !sorting && void selectAlbum(album)} className={`music-album-item ${draft?.id === album.id ? "is-selected" : ""} ${sorting ? "is-sorting" : ""}`}>
-          <span className="music-album-grip">{sorting ? <LuGripVertical aria-hidden="true" /> : String(albums.indexOf(album) + 1).padStart(2, "0")}</span>
+          <span className="music-album-grip">{sorting ? <GripVertical aria-hidden="true" /> : String(albums.indexOf(album) + 1).padStart(2, "0")}</span>
           <span className="music-album-cover">{album.cover_url ? <AdminAssetImage src={album.cover_url} alt="" sizes="56px" /> : <i />}</span>
           <span className="music-album-copy"><b>{album.title}</b><small>{album.type} · {album.tracks.length}곡</small></span>
           <span className={`cms-status ${album.is_published ? "is-live" : ""}`}>{album.is_published ? "공개" : "초안"}</span>
@@ -306,7 +306,7 @@ export default function DiscographyAdmin() {
 
     <section className="music-workbench">
       {error && <div className="music-error" role="alert"><span>!</span><p>{error}</p><button type="button" onClick={() => setError("")}>닫기</button></div>}
-      {!draft ? <div className="music-no-selection"><span><LuDisc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> : <>
+      {!draft ? <div className="music-no-selection"><span><Disc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> : <>
         <header className="music-editor-header">
           <div className="music-editor-identity">
             <span className="music-header-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="72px" /> : <i />}</span>
@@ -349,7 +349,7 @@ export default function DiscographyAdmin() {
               <div className="music-track-head"><span>순서</span><span>곡 정보</span><span>미디어 상태</span><span /></div>
               {draft.tracks.map((track, index) => <div key={track.id} className={`music-track-wrap ${expandedTrack === track.id ? "is-open" : ""}`} draggable onDragStart={() => setDragTrack(track.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderTrack(track.id)}>
                 <div className="music-track-row">
-                  <button type="button" className="music-track-grip" aria-label={`${track.title || "트랙"} 순서 변경`}><LuGripVertical aria-hidden="true" /><i>{String(index + 1).padStart(2, "0")}</i></button>
+                  <button type="button" className="music-track-grip" aria-label={`${track.title || "트랙"} 순서 변경`}><GripVertical aria-hidden="true" /><i>{String(index + 1).padStart(2, "0")}</i></button>
                   <div className="music-track-title"><input value={track.title} onChange={(event) => patchTrack(track.id, { title: event.target.value })} placeholder="곡명" /><label><input type="checkbox" checked={track.is_title} onChange={(event) => patchTrack(track.id, { is_title: event.target.checked })} /> 타이틀곡</label></div>
                   <div className="music-track-badges"><AssetBadge active={Boolean(track.audio_url)}>MP3</AssetBadge><AssetBadge active={Boolean(track.spotify_url)}>Spotify</AssetBadge><AssetBadge active={Boolean(track.youtube_url)}>YouTube</AssetBadge></div>
                   <div className="music-track-actions"><button type="button" onClick={() => setExpandedTrack(expandedTrack === track.id ? null : track.id)}>{expandedTrack === track.id ? "접기" : "미디어"}</button><button type="button" className="is-danger" onClick={() => patchDraft({ tracks: draft.tracks.filter((item) => item.id !== track.id) })}>삭제</button></div>
@@ -367,7 +367,7 @@ export default function DiscographyAdmin() {
                   {track.audio_url && <audio className="music-audio-preview" controls preload="metadata" src={track.audio_url}>브라우저가 오디오 재생을 지원하지 않습니다.</audio>}
                 </div>}
               </div>)}
-              {!draft.tracks.length && <div className="music-track-empty"><span><LuMusic aria-hidden="true" /></span><b>아직 수록곡이 없습니다.</b><p>한 곡씩 추가하거나 트랙리스트를 한 번에 붙여넣으세요.</p></div>}
+              {!draft.tracks.length && <div className="music-track-empty"><span><Music aria-hidden="true" /></span><b>아직 수록곡이 없습니다.</b><p>한 곡씩 추가하거나 트랙리스트를 한 번에 붙여넣으세요.</p></div>}
             </div>
           </div>}
 
@@ -379,7 +379,7 @@ export default function DiscographyAdmin() {
           {tab === "publish" && <div className="music-section-stack">
             <div className="music-section-title music-release-heading"><div><h3>공개 설정</h3><span>공개 전 필수 정보를 확인하고,<br />연결된 미디어를 마지막으로 점검합니다.</span></div></div>
             <div className="music-publish-summary"><div className="music-publish-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="120px" /> : <span>커버 없음</span>}</div><div><p>{draft.type}</p><h4>{draft.title || "제목 없음"}</h4><span>{draft.release_date || "발매일 미설정"} · {draft.tracks.length}곡</span><div className="music-summary-badges"><AssetBadge active={draft.tracks.some((track) => Boolean(track.audio_url))}>MP3 {draft.tracks.filter((track) => track.audio_url).length}</AssetBadge><AssetBadge active={draft.tracks.some((track) => Boolean(track.youtube_url))}>YouTube {draft.tracks.filter((track) => track.youtube_url).length}</AssetBadge><AssetBadge active={Boolean(draft.typo_logo_url)}>Typo</AssetBadge></div></div></div>
-            <div className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}><span>{validation?.canPublish ? <LuCheck aria-hidden="true" /> : <LuCircleAlert aria-hidden="true" />}</span><div><b>{validation?.canPublish ? "공개할 준비가 되었습니다." : "공개 전 확인이 필요합니다."}</b><p>{validation?.canPublish ? "필수 정보가 모두 입력되었습니다." : validation?.publishIssues.join(" · ")}</p></div></div>
+            <div className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}><span>{validation?.canPublish ? <Check aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}</span><div><b>{validation?.canPublish ? "공개할 준비가 되었습니다." : "공개 전 확인이 필요합니다."}</b><p>{validation?.canPublish ? "필수 정보가 모두 입력되었습니다." : validation?.publishIssues.join(" · ")}</p></div></div>
             <label className="music-publish-toggle"><span><b>웹사이트에 공개</b><small>공개하면 디스코그래피에서 앨범과 업로드한 음원을 볼 수 있습니다.</small></span><input type="checkbox" checked={draft.is_published} onChange={(event) => { if (event.target.checked && !validation?.canPublish) { setError(`공개 전 확인: ${validation?.publishIssues.join(", ")}`); return; } patchDraft({ is_published: event.target.checked }); }} /></label>
           </div>}
         </div>

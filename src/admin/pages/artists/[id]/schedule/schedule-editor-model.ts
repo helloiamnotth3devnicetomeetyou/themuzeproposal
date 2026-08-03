@@ -1,10 +1,4 @@
-import {
-  LuCake,
-  LuCalendarPlus,
-  LuDisc3,
-  LuPartyPopper,
-  LuRadio,
-} from "react-icons/lu";
+import { Cake, CalendarPlus, Disc3, PartyPopper, Radio } from "lucide-react";
 import type { IconType } from "react-icons";
 import type { WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import { SCHEDULE_CATEGORY_COLORS } from "@/core/utils/design-tokens";
@@ -57,27 +51,27 @@ export const CATEGORY: Record<
 > = {
   show: {
     label: "방송 / 공연",
-    icon: LuRadio,
+    icon: Radio,
     color: SCHEDULE_CATEGORY_COLORS.show,
   },
   release: {
     label: "발매",
-    icon: LuDisc3,
+    icon: Disc3,
     color: SCHEDULE_CATEGORY_COLORS.release,
   },
   anniversary: {
     label: "기념일",
-    icon: LuCake,
+    icon: Cake,
     color: SCHEDULE_CATEGORY_COLORS.anniversary,
   },
   event: {
     label: "이벤트",
-    icon: LuPartyPopper,
+    icon: PartyPopper,
     color: SCHEDULE_CATEGORY_COLORS.event,
   },
   etc: {
     label: "기타",
-    icon: LuCalendarPlus,
+    icon: CalendarPlus,
     color: SCHEDULE_CATEGORY_COLORS.etc,
   },
 };

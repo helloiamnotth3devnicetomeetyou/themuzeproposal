@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { LuArrowLeft, LuArrowRight, LuArrowUpRight, LuSearch, LuX } from "react-icons/lu";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Search, X } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -138,7 +138,7 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
                 <span className="sr-only">{copy.search}</span>
                 <input ref={searchInputRef} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={copy.search} tabIndex={searchOpen ? 0 : -1} />
               </label>
-              {searchOpen && search ? <button type="button" onClick={closeSearch} aria-label={copy.closeSearch}><LuX aria-hidden="true" /></button> : <button type="button" onClick={() => setSearchOpen((open) => !open)} aria-label={searchOpen ? copy.closeSearch : copy.search}><LuSearch aria-hidden="true" /></button>}
+              {searchOpen && search ? <button type="button" onClick={closeSearch} aria-label={copy.closeSearch}><X aria-hidden="true" /></button> : <button type="button" onClick={() => setSearchOpen((open) => !open)} aria-label={searchOpen ? copy.closeSearch : copy.search}><Search aria-hidden="true" /></button>}
             </div>
           </div>
 
@@ -155,7 +155,7 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
                   <strong>{localized(notice.title, locale)}</strong>
                   <time dateTime={notice.date}>{notice.date || "—"}</time>
                 </span>
-                <LuArrowUpRight className={styles.itemArrow} aria-hidden="true" />
+                <ArrowUpRight className={styles.itemArrow} aria-hidden="true" />
               </Link>
             ))}
 
@@ -165,11 +165,11 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
           {!loading && !error && visibleNotices.length > NOTICES_PER_PAGE && (
             <nav className={styles.pagination} aria-label="Pagination">
               <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Previous page">
-                <LuArrowLeft aria-hidden="true" />
+                <ArrowLeft aria-hidden="true" />
               </button>
               <span aria-live="polite">{currentPage} / {pageCount}</span>
               <button type="button" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label="Next page">
-                <LuArrowRight aria-hidden="true" />
+                <ArrowRight aria-hidden="true" />
               </button>
             </nav>
           )}

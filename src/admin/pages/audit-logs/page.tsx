@@ -1,16 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuClock3,
-  LuFilter,
-  LuHistory,
-  LuSearch,
-  LuShieldCheck,
-  LuX,
-} from "react-icons/lu";
+import { ChevronLeft, ChevronRight, Clock3, Filter, History, Search, ShieldCheck, X } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/audit-logs/audit-logs.module.css";
@@ -149,7 +140,7 @@ export default function AuditLogsAdminPage() {
 
       <form className={styles.filters} onSubmit={applyFilters}>
         <div className={styles.filterHeading}>
-          <span><LuFilter aria-hidden="true" /> 조회 조건</span>
+          <span><Filter aria-hidden="true" /> 조회 조건</span>
           {activeFilterCount > 0 && <b>{activeFilterCount}개 적용 중</b>}
         </div>
         <div className={styles.filterGrid}>
@@ -188,9 +179,9 @@ export default function AuditLogsAdminPage() {
         </div>
         <div className={styles.filterActions}>
           <button type="button" onClick={clearFilters} disabled={!activeFilterCount && !Object.values(draftFilters).some(Boolean)}>
-            <LuX aria-hidden="true" /> 초기화
+            <X aria-hidden="true" /> 초기화
           </button>
-          <button type="submit"><LuSearch aria-hidden="true" /> 이력 조회</button>
+          <button type="submit"><Search aria-hidden="true" /> 이력 조회</button>
         </div>
       </form>
 
@@ -204,7 +195,7 @@ export default function AuditLogsAdminPage() {
         <section className={styles.logPanel} aria-label="변경 이력 목록">
           <div className={styles.panelHeading}>
             <div>
-              <LuHistory aria-hidden="true" />
+              <History aria-hidden="true" />
               <span><b>변경 기록</b><small>최신 작업부터 표시</small></span>
             </div>
             <span>{page} / {totalPages}</span>
@@ -228,13 +219,13 @@ export default function AuditLogsAdminPage() {
                   {logs.map((log) => (
                     <tr key={log.id} className={selected?.id === log.id ? styles.selectedRow : undefined}>
                       <td>
-                        <span className={styles.time}><LuClock3 aria-hidden="true" />{dateTimeFormatter.format(new Date(log.occurred_at))}</span>
+                        <span className={styles.time}><Clock3 aria-hidden="true" />{dateTimeFormatter.format(new Date(log.occurred_at))}</span>
                         <small>LOG #{String(log.id).padStart(6, "0")}</small>
                       </td>
                       <td><b>{log.actor_email || "시스템 작업"}</b><small>{log.actor_id ? log.actor_id.slice(0, 8).toUpperCase() : "SERVICE"}</small></td>
                       <td><span className={`${styles.operation} ${operationClass(log.operation)}`}>{operationLabel(log.operation)}</span></td>
                       <td><b>{log.record_label}</b><small>{tableLabel(log.table_name)} · {log.record_id}</small></td>
-                      <td><button type="button" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><LuChevronRight aria-hidden="true" /></button></td>
+                      <td><button type="button" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><ChevronRight aria-hidden="true" /></button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -242,7 +233,7 @@ export default function AuditLogsAdminPage() {
             </div>
           ) : (
             <div className={styles.empty}>
-              <LuHistory aria-hidden="true" />
+              <History aria-hidden="true" />
               <b>조건에 맞는 변경 이력이 없습니다.</b>
               <span>필터를 조정하거나 감사 로그가 기록된 뒤 다시 확인해 주세요.</span>
             </div>
@@ -251,8 +242,8 @@ export default function AuditLogsAdminPage() {
           <footer className={styles.pagination}>
             <span>{total ? `${((page - 1) * PAGE_SIZE + 1).toLocaleString("ko-KR")}–${Math.min(page * PAGE_SIZE, total).toLocaleString("ko-KR")} / ${total.toLocaleString("ko-KR")}` : "0건"}</span>
             <div>
-              <button type="button" disabled={page <= 1 || loading} onClick={() => { setPage((current) => current - 1); setSelected(null); }} aria-label="이전 페이지"><LuChevronLeft aria-hidden="true" /></button>
-              <button type="button" disabled={page >= totalPages || loading} onClick={() => { setPage((current) => current + 1); setSelected(null); }} aria-label="다음 페이지"><LuChevronRight aria-hidden="true" /></button>
+              <button type="button" disabled={page <= 1 || loading} onClick={() => { setPage((current) => current - 1); setSelected(null); }} aria-label="이전 페이지"><ChevronLeft aria-hidden="true" /></button>
+              <button type="button" disabled={page >= totalPages || loading} onClick={() => { setPage((current) => current + 1); setSelected(null); }} aria-label="다음 페이지"><ChevronRight aria-hidden="true" /></button>
             </div>
           </footer>
         </section>
@@ -266,7 +257,7 @@ export default function AuditLogsAdminPage() {
                   <h2>{selected.record_label}</h2>
                   <p>{tableLabel(selected.table_name)} · {selected.record_id}</p>
                 </div>
-                <button type="button" onClick={() => setSelected(null)} aria-label="변경 상세 닫기"><LuX aria-hidden="true" /></button>
+                <button type="button" onClick={() => setSelected(null)} aria-label="변경 상세 닫기"><X aria-hidden="true" /></button>
               </header>
 
               <dl className={styles.detailMeta}>
@@ -289,7 +280,7 @@ export default function AuditLogsAdminPage() {
             </>
           ) : (
             <div className={styles.detailEmpty}>
-              <span><LuShieldCheck aria-hidden="true" /></span>
+              <span><ShieldCheck aria-hidden="true" /></span>
               <b>변경 기록을 선택하세요.</b>
               <p>누가 어떤 값을 바꿨는지 필드 단위로 비교할 수 있습니다.</p>
               <small>감사 기록은 이 화면에서 수정하거나 삭제할 수 없습니다.</small>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LuChevronDown, LuLogIn, LuMoon, LuSun, LuUser } from "react-icons/lu";
+import { ChevronDown, LogIn, Moon, Sun, User } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
@@ -44,11 +44,11 @@ export default function MobileNav({
       {isOpen && <>
         <LanguageSwitcher />
         <button type="button" onClick={onToggleTheme} aria-label={isDark ? t.common.lightMode : t.common.darkMode} className={styles.themeToggleBtn}>
-          <div className={`${styles.themeToggleThumb} ${isDark ? styles.themeToggleThumbDark : ""}`}>{isDark ? <LuMoon size={13} /> : <LuSun size={13} />}</div>
-          <div className={styles.themeToggleIcons}><LuSun size={12} className={!isDark ? "opacity-0" : "opacity-60"} /><LuMoon size={12} className={isDark ? "opacity-0" : "opacity-60"} /></div>
+          <div className={`${styles.themeToggleThumb} ${isDark ? styles.themeToggleThumbDark : ""}`}>{isDark ? <Moon size={13} /> : <Sun size={13} />}</div>
+          <div className={styles.themeToggleIcons}><Sun size={12} className={!isDark ? "opacity-0" : "opacity-60"} /><Moon size={12} className={isDark ? "opacity-0" : "opacity-60"} /></div>
         </button>
         <Link href={isLoggedIn ? "/account" : "/login"} onClick={onClose} className={`${styles.accountBtn} ${isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut}`} title={isLoggedIn ? "ACCOUNT" : "LOGIN"}>
-          {isLoggedIn ? <LuUser className={styles.accountBtnIcon} /> : <LuLogIn className={styles.accountBtnIcon} />}
+          {isLoggedIn ? <User className={styles.accountBtnIcon} /> : <LogIn className={styles.accountBtnIcon} />}
         </Link>
       </>}
       <button ref={menuButtonRef} type="button" onClick={onToggle} aria-label={isOpen ? t.common.closeMenu : t.common.openMenu} aria-expanded={isOpen} aria-controls="mobile-menu" className="grid size-9 place-items-center text-[var(--text-primary)]">
@@ -72,7 +72,7 @@ export default function MobileNav({
                   </span>
                   {artist.name}
                 </span>
-                <LuChevronDown className={`${styles.mobileArtistChevron} ${open ? styles.mobileArtistChevronOpen : ""}`} />
+                <ChevronDown className={`${styles.mobileArtistChevron} ${open ? styles.mobileArtistChevronOpen : ""}`} />
               </button>
               {open && <div className={styles.mobileArtistSublist}>
                 {links(artist.slug).map(({ href, label }) => <Link key={href} href={href} onClick={onClose} className={`flex min-h-10 items-center font-display text-xs font-bold tracking-[0.1em] transition-colors hover:text-brand-pink ${pathname === href ? "text-brand-pink" : "text-[var(--text-secondary)]"}`}>{label}</Link>)}

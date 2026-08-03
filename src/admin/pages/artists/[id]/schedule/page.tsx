@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import { LuCalendarDays, LuChevronLeft, LuChevronRight, LuClock3, LuMapPin, LuPlus } from "react-icons/lu";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Plus } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
@@ -203,7 +203,7 @@ export default function ArtistScheduleAdminPage() {
   if (loading) return <LoadingIndicator label="일정 관리 화면을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
 
   const rail = <>
-    <div className="content-rail-heading"><div><h2>일정 캘린더</h2></div><button type="button" onClick={() => add()} aria-label="일정 추가"><LuPlus aria-hidden="true" /></button></div>
+    <div className="content-rail-heading"><div><h2>일정 캘린더</h2></div><button type="button" onClick={() => add()} aria-label="일정 추가"><Plus aria-hidden="true" /></button></div>
     <div className="content-rail-sort"><span>{calendarTitle} · {monthItems.length}개</span><small>{artistName}</small></div>
     <div className="content-library-list">
       {draft && !draft.id && <button type="button" className={`content-library-item is-selected ${styles.railItem}`}><span className={styles.railDate}><b>NEW</b><small>DATE</small></span><span className="content-library-copy"><b>{draft.titleKo || "새 일정"}</b><small>{draft.eventDate}</small></span><i className="content-library-dot" /></button>}
@@ -219,16 +219,16 @@ export default function ArtistScheduleAdminPage() {
       {tab === "calendar" ? <section className={styles.calendarView} aria-label={`${calendarTitle} 일정 달력`}>
         <header className={styles.calendarToolbar}>
           <div className={styles.calendarHeading}>
-            <span><LuCalendarDays aria-hidden="true" /></span>
+            <span><CalendarDays aria-hidden="true" /></span>
             <div><small>{artistName} SCHEDULE</small><h3>{calendarTitle}</h3></div>
           </div>
           <div className={styles.calendarControls}>
             <button type="button" className={styles.todayButton} onClick={showToday}>오늘</button>
             <div className={styles.monthButtons}>
-              <button type="button" onClick={() => moveMonth(-1)} aria-label="이전 달"><LuChevronLeft aria-hidden="true" /></button>
-              <button type="button" onClick={() => moveMonth(1)} aria-label="다음 달"><LuChevronRight aria-hidden="true" /></button>
+              <button type="button" onClick={() => moveMonth(-1)} aria-label="이전 달"><ChevronLeft aria-hidden="true" /></button>
+              <button type="button" onClick={() => moveMonth(1)} aria-label="다음 달"><ChevronRight aria-hidden="true" /></button>
             </div>
-            <button type="button" className={styles.addScheduleButton} onClick={() => add()}><LuPlus aria-hidden="true" /> 일정 추가</button>
+            <button type="button" className={styles.addScheduleButton} onClick={() => add()}><Plus aria-hidden="true" /> 일정 추가</button>
           </div>
         </header>
         <div className={styles.calendarViewport}>
@@ -250,7 +250,7 @@ export default function ArtistScheduleAdminPage() {
                 >
                   <div className={styles.dayHeader}>
                     <button type="button" className={index % 7 > 4 ? styles.weekend : ""} onClick={() => add(dateKey)} aria-label={`${dateKey}에 일정 추가`}>{date.getDate()}</button>
-                    <button type="button" className={styles.dayAdd} onClick={() => add(dateKey)} aria-label={`${dateKey}에 일정 추가`}><LuPlus aria-hidden="true" /></button>
+                    <button type="button" className={styles.dayAdd} onClick={() => add(dateKey)} aria-label={`${dateKey}에 일정 추가`}><Plus aria-hidden="true" /></button>
                   </div>
                   <div className={styles.dayEvents}>
                     {dateItems.slice(0, 3).map((item) => <button
@@ -274,9 +274,9 @@ export default function ArtistScheduleAdminPage() {
         </div>
         <footer className={styles.calendarFooter}>
           <div className={styles.legend}>{(Object.keys(CATEGORY) as Category[]).map((key) => <span key={key} style={{ "--legend-color": CATEGORY[key].color } as CSSProperties}><i />{CATEGORY[key].label}</span>)}</div>
-          <p><span><LuClock3 aria-hidden="true" /> 시간</span><span><LuMapPin aria-hidden="true" /> 장소는 일정 편집에서 관리</span></p>
+          <p><span><Clock3 aria-hidden="true" /> 시간</span><span><MapPin aria-hidden="true" /> 장소는 일정 편집에서 관리</span></p>
         </footer>
-      </section> : !draft ? <div className="content-no-selection"><span><LuCalendarDays aria-hidden="true" /></span><h2>일정을 선택하세요</h2><p>월간 달력에서 일정을 고르거나 날짜를 눌러 새 일정을 추가하세요.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button></div> : <div className="content-editor-stack">
+      </section> : !draft ? <div className="content-no-selection"><span><CalendarDays aria-hidden="true" /></span><h2>일정을 선택하세요</h2><p>월간 달력에서 일정을 고르거나 날짜를 눌러 새 일정을 추가하세요.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button></div> : <div className="content-editor-stack">
         {tab === "details" && <>
           <div className="content-section-heading"><h3>일정 기본 정보</h3><span>공개 캘린더에서 날짜순으로 표시할 일정의 핵심 정보입니다.</span></div>
           <FormField label="일정명" valueKo={draft.titleKo} valueEn={draft.titleEn} valueJa={draft.titleJa} onChangeKo={(titleKo) => patch({ titleKo })} onChangeEn={(titleEn) => patch({ titleEn })} onChangeJa={(titleJa) => patch({ titleJa })} required />

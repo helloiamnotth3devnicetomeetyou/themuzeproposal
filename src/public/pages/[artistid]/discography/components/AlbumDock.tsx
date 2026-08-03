@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { RefObject } from "react";
-import { LuCalendar, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 
 import type {
@@ -61,7 +61,7 @@ export function AlbumDock({
             backgroundColor: "var(--alpha-ffffff-03)",
           }}
         >
-          <LuCalendar
+          <Calendar
             className="w-3 h-3 text-[var(--palette-9ca3af)]"
             aria-hidden="true"
           />
@@ -83,7 +83,7 @@ export function AlbumDock({
             backgroundColor: "var(--alpha-ffffff-03)",
           }}
         >
-          <LuChevronLeft
+          <ChevronLeft
             className="w-4 h-4 text-[var(--color-static-white)]"
             aria-hidden="true"
           />
@@ -185,7 +185,7 @@ export function AlbumDock({
             backgroundColor: "var(--alpha-ffffff-03)",
           }}
         >
-          <LuChevronRight
+          <ChevronRight
             className="w-4 h-4 text-[var(--color-static-white)]"
             aria-hidden="true"
           />

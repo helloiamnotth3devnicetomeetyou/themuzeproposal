@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LuLink } from "react-icons/lu";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
 import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
@@ -63,7 +62,7 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
             <div className="flex flex-wrap justify-center gap-4 md:justify-end">
               {socialLinks.map((item) => {
                 const platform = detectSocialPlatform(item.url) !== "other" ? detectSocialPlatform(item.url) : item.platform;
-                const SocialIcon = SOCIAL_ICONS[platform] || LuLink;
+                const SocialIcon = SOCIAL_ICONS[platform] || Link;
                 const accessibleLabel = item.label || SOCIAL_LABELS[platform] || "Official link";
                 return (
                   <a

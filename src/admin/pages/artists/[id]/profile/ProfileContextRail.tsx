@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { LuCheck, LuMinus } from "react-icons/lu";
+import { Check, Minus } from "lucide-react";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import type { ProfileDraft } from "./profile-editor-model";
 
@@ -29,7 +29,7 @@ export default function ProfileContextRail({
         <p>프로필 준비 상태</p>
         {completion.map((item) => (
           <div key={item.label} className={item.ready ? "is-ready" : ""}>
-            <i>{item.ready ? <LuCheck aria-hidden="true" /> : <LuMinus aria-hidden="true" />}</i>
+            <i>{item.ready ? <Check aria-hidden="true" /> : <Minus aria-hidden="true" />}</i>
             <span>{item.label}</span>
           </div>
         ))}

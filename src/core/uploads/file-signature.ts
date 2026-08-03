@@ -14,7 +14,8 @@ export type FileValidationProfile =
   | "track-asset"
   | "protect-evidence"
   | "contact-attachment"
-  | "business-asset";
+  | "business-asset"
+  | "audition-attachment";
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
@@ -37,6 +38,14 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ]),
   "business-asset": new Set(["application/pdf", "application/zip"]),
+  // Images (portfolio screenshots, photos) and PDF for audition attachments.
+  "audition-attachment": new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "application/pdf",
+  ]),
 };
 
 const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {

@@ -3,7 +3,7 @@
 import { type CSSProperties } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { LuGripVertical, LuTrash2 } from "react-icons/lu";
+import { GripVertical, Trash2 } from "lucide-react";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 
 export type HeroArtist = {
@@ -80,14 +80,14 @@ export function SortableSlideCard({
         {album?.hero_image_url || album?.cover_url ? <AdminAssetImage src={album.hero_image_url || album.cover_url || ""} alt="" sizes="420px" /> : <i className="hero-slide-placeholder" />}
         <span className="hero-slide-shade" />
         <span className="hero-slide-position"><small>SLIDE</small><b>{String(index + 1).padStart(2, "0")}</b></span>
-        <button ref={setActivatorNodeRef} type="button" className="hero-slide-grab" disabled={disabled} title="끌어서 순서 변경" {...attributes} {...listeners}><LuGripVertical aria-hidden="true" /><span>끌어서 이동</span></button>
+        <button ref={setActivatorNodeRef} type="button" className="hero-slide-grab" disabled={disabled} title="끌어서 순서 변경" {...attributes} {...listeners}><GripVertical aria-hidden="true" /><span>끌어서 이동</span></button>
         {!live && <span className="hero-slide-unavailable">앨범 비공개</span>}
         <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
       </div>
       <footer className="hero-slide-footer">
         <span>드래그해 노출 순서 변경</span>
         <div>
-          <button type="button" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><LuTrash2 /></button>
+          <button type="button" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><Trash2 /></button>
         </div>
       </footer>
     </article>
@@ -106,7 +106,7 @@ export function SlideDragOverlay({
         {album?.hero_image_url || album?.cover_url ? <AdminAssetImage src={album.hero_image_url || album.cover_url || ""} alt="" sizes="420px" /> : <i className="hero-slide-placeholder" />}
         <span className="hero-slide-shade" />
         <span className="hero-slide-position"><small>SLIDE</small><b>{String(index + 1).padStart(2, "0")}</b></span>
-        <span className="hero-slide-grab is-overlay-handle"><LuGripVertical aria-hidden="true" /><span>이동 중</span></span>
+        <span className="hero-slide-grab is-overlay-handle"><GripVertical aria-hidden="true" /><span>이동 중</span></span>
         <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
       </div>
     </article>

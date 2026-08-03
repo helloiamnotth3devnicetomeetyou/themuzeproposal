@@ -1,21 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  LuBold,
-  LuHeading2,
-  LuHeading3,
-  LuItalic,
-  LuLink,
-  LuList,
-  LuListOrdered,
-  LuQuote,
-  LuRedo2,
-  LuRemoveFormatting,
-  LuStrikethrough,
-  LuUnderline,
-  LuUndo2,
-} from "react-icons/lu";
+import { Bold, Heading2, Heading3, Italic, Link, List, ListOrdered, Quote, Redo2, RemoveFormatting, Strikethrough, Underline, Undo2 } from "lucide-react";
 import { escapeHtml, sanitizeRichText } from "@/core/utils/rich-text";
 
 type RichTextEditorProps = {
@@ -148,25 +134,25 @@ export default function RichTextEditor({
       <div className="rich-text-shell">
         <div className="rich-text-toolbar" role="toolbar" aria-label="본문 서식">
           <div className="rich-text-tool-group">
-            {formatButton("h2", <LuHeading2 aria-hidden="true" />)}
-            {formatButton("h3", <LuHeading3 aria-hidden="true" />)}
+            {formatButton("h2", <Heading2 aria-hidden="true" />)}
+            {formatButton("h3", <Heading3 aria-hidden="true" />)}
           </div>
           <div className="rich-text-tool-group">
-            {formatButton("bold", <LuBold aria-hidden="true" />)}
-            {formatButton("italic", <LuItalic aria-hidden="true" />)}
-            {formatButton("underline", <LuUnderline aria-hidden="true" />)}
-            {formatButton("strikeThrough", <LuStrikethrough aria-hidden="true" />)}
+            {formatButton("bold", <Bold aria-hidden="true" />)}
+            {formatButton("italic", <Italic aria-hidden="true" />)}
+            {formatButton("underline", <Underline aria-hidden="true" />)}
+            {formatButton("strikeThrough", <Strikethrough aria-hidden="true" />)}
           </div>
           <div className="rich-text-tool-group">
-            <button type="button" aria-label="글머리 목록" title="글머리 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertUnorderedList")}><LuList aria-hidden="true" /></button>
-            <button type="button" aria-label="번호 목록" title="번호 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertOrderedList")}><LuListOrdered aria-hidden="true" /></button>
-            {formatButton("blockquote", <LuQuote aria-hidden="true" />)}
-            <button type="button" aria-label="링크" title="링크" onMouseDown={(event) => event.preventDefault()} onClick={addLink}><LuLink aria-hidden="true" /></button>
+            <button type="button" aria-label="글머리 목록" title="글머리 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertUnorderedList")}><List aria-hidden="true" /></button>
+            <button type="button" aria-label="번호 목록" title="번호 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertOrderedList")}><ListOrdered aria-hidden="true" /></button>
+            {formatButton("blockquote", <Quote aria-hidden="true" />)}
+            <button type="button" aria-label="링크" title="링크" onMouseDown={(event) => event.preventDefault()} onClick={addLink}><Link aria-hidden="true" /></button>
           </div>
           <div className="rich-text-tool-group rich-text-history-tools">
-            <button type="button" aria-label="실행 취소" title="실행 취소" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("undo")}><LuUndo2 aria-hidden="true" /></button>
-            <button type="button" aria-label="다시 실행" title="다시 실행" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("redo")}><LuRedo2 aria-hidden="true" /></button>
-            <button type="button" aria-label="서식 지우기" title="서식 지우기" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("removeFormat")}><LuRemoveFormatting aria-hidden="true" /></button>
+            <button type="button" aria-label="실행 취소" title="실행 취소" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("undo")}><Undo2 aria-hidden="true" /></button>
+            <button type="button" aria-label="다시 실행" title="다시 실행" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("redo")}><Redo2 aria-hidden="true" /></button>
+            <button type="button" aria-label="서식 지우기" title="서식 지우기" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("removeFormat")}><RemoveFormatting aria-hidden="true" /></button>
           </div>
         </div>
         <div

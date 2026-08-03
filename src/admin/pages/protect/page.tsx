@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  LuArrowLeft,
-  LuArrowRight,
-  LuExternalLink,
-  LuFileImage,
-  LuInbox,
-  LuLink,
-  LuPaperclip,
-  LuSearch,
-  LuShieldCheck,
-} from "react-icons/lu";
+import { ArrowLeft, ArrowRight, ExternalLink, FileImage, Inbox, Link, Paperclip, Search, ShieldCheck } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
@@ -136,12 +126,12 @@ export default function ProtectAdminPage() {
   if (viewing) {
     return (
       <div className={`${styles.page} ${styles.detailPage}`}>
-        <button type="button" className={styles.back} onClick={() => setViewing(null)}><LuArrowLeft aria-hidden="true" /> 접수 목록</button>
+        <button type="button" className={styles.back} onClick={() => setViewing(null)}><ArrowLeft aria-hidden="true" /> 접수 목록</button>
         {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
 
         <article className={styles.detailCard}>
           <header className={styles.detailHeader}>
-            <span className={styles.detailIcon}><LuShieldCheck aria-hidden="true" /></span>
+            <span className={styles.detailIcon}><ShieldCheck aria-hidden="true" /></span>
             <div><p>{reportTypeLabels[viewing.report_type] || "기타"}</p><h1>{viewing.title}</h1><small>{formatDate(viewing.created_at, true)} 접수 · {viewing.id.slice(0, 8).toUpperCase()}</small></div>
             <span className={`${styles.status} ${statusClass(viewing.status)}`}><i />{statusLabel(viewing.status)}</span>
           </header>
@@ -162,7 +152,7 @@ export default function ProtectAdminPage() {
                 <div><dt>게시물 IP</dt><dd>{viewing.post_ip || "미입력"}</dd></div>
                 <div><dt>제보 계정</dt><dd>{viewing.reporter_email || "확인 불가"}</dd></div>
               </dl>
-              <a className={styles.sourceLink} href={viewing.post_url} target="_blank" rel="noreferrer"><LuLink aria-hidden="true" /><span><b>원문 게시물 열기</b><small>{viewing.post_url}</small></span><LuExternalLink aria-hidden="true" /></a>
+              <a className={styles.sourceLink} href={viewing.post_url} target="_blank" rel="noreferrer"><Link aria-hidden="true" /><span><b>원문 게시물 열기</b><small>{viewing.post_url}</small></span><ExternalLink aria-hidden="true" /></a>
             </section>
 
             <section>
@@ -174,10 +164,10 @@ export default function ProtectAdminPage() {
                     <span className={styles.evidencePreview}>
                       {url && isImage(file_name)
                         ? <AdminAssetImage src={url} alt="" sizes="96px" />
-                        : isImage(file_name) ? <LuFileImage aria-hidden="true" /> : <LuPaperclip aria-hidden="true" />}
+                        : isImage(file_name) ? <FileImage aria-hidden="true" /> : <Paperclip aria-hidden="true" />}
                     </span>
                     <span><b>{file_name}</b><small>{url ? "새 창에서 원본 열기" : "보안 링크 생성 중…"}</small></span>
-                    <LuExternalLink aria-hidden="true" />
+                    <ExternalLink aria-hidden="true" />
                   </a>;
                 })}
               </div>
@@ -206,7 +196,7 @@ export default function ProtectAdminPage() {
     <div className={styles.page}>
       {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
       <section className={styles.summary}>
-        <div><span className={styles.summaryIcon}><LuShieldCheck aria-hidden="true" /></span><p><small>전체 제보</small><strong>{reports.length}</strong></p></div>
+        <div><span className={styles.summaryIcon}><ShieldCheck aria-hidden="true" /></span><p><small>전체 제보</small><strong>{reports.length}</strong></p></div>
         <dl><div><dt>새 제보</dt><dd>{pendingCount}</dd></div><div><dt>검토 중</dt><dd>{reviewingCount}</dd></div></dl>
         <p>접수된 권익 침해 내용과 비공개 증거 자료를 확인하고 처리 상태를 기록합니다.</p>
       </section>
@@ -215,7 +205,7 @@ export default function ProtectAdminPage() {
         <header className={styles.toolbar}>
           <div><h1>권익 보호 접수함</h1><p>{filteredReports.length}건의 제보</p></div>
           <div className={styles.filters}>
-            <label className={styles.search}><LuSearch aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
+            <label className={styles.search}><Search aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
             <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={setFilter} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
           </div>
         </header>
@@ -229,10 +219,10 @@ export default function ProtectAdminPage() {
               <td data-label="제보 내용"><b>{report.title}</b><small>{report.author_name}</small></td>
               <td data-label="플랫폼">{report.platform}</td>
               <td data-label="상태"><span className={`${styles.status} ${statusClass(report.status)}`}><i />{statusLabel(report.status)}</span></td>
-              <td><button type="button" tabIndex={-1}>열기 <span><LuArrowRight aria-hidden="true" /></span></button></td>
+              <td><button type="button" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
             </tr>)}</tbody>
           </table>
-          {!filteredReports.length && <div className={styles.empty}><LuInbox aria-hidden="true" /><b>{reports.length ? "조건에 맞는 제보가 없습니다." : "아직 접수된 제보가 없습니다."}</b><span>{reports.length ? "검색어나 상태 필터를 바꿔 보세요." : "새 제보가 접수되면 이곳에 표시됩니다."}</span></div>}
+          {!filteredReports.length && <div className={styles.empty}><Inbox aria-hidden="true" /><b>{reports.length ? "조건에 맞는 제보가 없습니다." : "아직 접수된 제보가 없습니다."}</b><span>{reports.length ? "검색어나 상태 필터를 바꿔 보세요." : "새 제보가 접수되면 이곳에 표시됩니다."}</span></div>}
         </div>
       </section>
     </div>

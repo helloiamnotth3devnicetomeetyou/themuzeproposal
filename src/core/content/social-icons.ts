@@ -1,5 +1,5 @@
 import type { IconType } from "react-icons";
-import { LuGlobe, LuLink, LuUsers } from "react-icons/lu";
+import { Globe, Link, Users } from "lucide-react";
 import {
   SiApplemusic,
   SiFacebook,
@@ -18,12 +18,12 @@ export const SOCIAL_ICONS: Record<string, IconType> = {
   twitter: SiX,
   tiktok: SiTiktok,
   spotify: SiSpotify,
-  weverse: LuUsers,
+  weverse: Users,
   facebook: SiFacebook,
   soundcloud: SiSoundcloud,
   "apple-music": SiApplemusic,
-  homepage: LuGlobe,
-  other: LuLink,
+  homepage: Globe,
+  other: Link,
 };
 
 export const SOCIAL_LABELS: Record<string, string> = {

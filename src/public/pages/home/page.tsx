@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LuChevronDown, LuChevronLeft, LuChevronRight, LuHeadphones } from "react-icons/lu";
+import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
 import { SiSpotify, SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
@@ -187,9 +187,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                         onClick={() => setOpenStreamingSlideId((current) => current === slide.id ? null : slide.id)}
                         className={`home-listen-trigger ${openStreamingSlideId === slide.id ? "is-open" : ""}`}
                       >
-                        <span className="home-listen-icon" aria-hidden="true"><LuHeadphones /></span>
+                        <span className="home-listen-icon" aria-hidden="true"><Headphones /></span>
                         <span>{t.hero.listenBtn}</span>
-                        <LuChevronDown className="home-listen-chevron" aria-hidden="true" />
+                        <ChevronDown className="home-listen-chevron" aria-hidden="true" />
                       </button>
                       <div
                         id={`streaming-${slide.id}`}
@@ -227,7 +227,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             aria-label="Previous album"
             className="home-slide-arrow home-slide-arrow-left"
           >
-            <LuChevronLeft className="h-5 w-5" aria-hidden="true" />
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -235,7 +235,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             aria-label="Next album"
             className="home-slide-arrow home-slide-arrow-right"
           >
-            <LuChevronRight className="h-5 w-5" aria-hidden="true" />
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
 
           <div className="home-slide-index">

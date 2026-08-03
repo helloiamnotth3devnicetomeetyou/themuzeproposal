@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LuPlus } from "react-icons/lu";
+import { Plus } from "lucide-react";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import type { Member, MemberDraft } from "./member-editor-model";
@@ -139,7 +139,7 @@ export default function MemberLibraryRail({
           <h2>멤버 라이브러리</h2>
         </div>
         <button type="button" onClick={onAdd} aria-label="멤버 추가">
-          <LuPlus aria-hidden="true" />
+          <Plus aria-hidden="true" />
         </button>
       </div>
       <div className="content-rail-sort">

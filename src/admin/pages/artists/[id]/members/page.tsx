@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LuUserRound } from "react-icons/lu";
+import { UserRound } from "lucide-react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
@@ -315,7 +315,7 @@ export default function ArtistMembersAdmin() {
   const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void saveMember()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button>;
 
   return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={memberTabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="member-workbench">
-    {!draft ? <div className="content-no-selection"><span><LuUserRound aria-hidden="true" /></span><h2>멤버를 선택하세요</h2><p>왼쪽 라이브러리에서 멤버를 선택하거나 새 멤버를 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button></div> : <MemberEditorSections
+    {!draft ? <div className="content-no-selection"><span><UserRound aria-hidden="true" /></span><h2>멤버를 선택하세요</h2><p>왼쪽 라이브러리에서 멤버를 선택하거나 새 멤버를 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addMember()}>첫 멤버 추가</button></div> : <MemberEditorSections
       artistId={artistId}
       draft={draft}
       newMemberId={newMemberId}

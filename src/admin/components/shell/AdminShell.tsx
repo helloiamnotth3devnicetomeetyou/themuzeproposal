@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { LuExternalLink, LuMenu } from "react-icons/lu";
+import { ExternalLink, Menu } from "lucide-react";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import Navbar from "@/public/components/layout/Navbar";
@@ -108,14 +108,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             aria-controls="admin-navigation"
             onClick={() => setIsNavigationOpen(true)}
           >
-            <LuMenu aria-hidden="true" />
+            <Menu aria-hidden="true" />
           </button>
           <div className="admin-mobile-title">
             <span>THE MUZE / ADMIN</span>
             <strong>{getPageLabel(pathname)}</strong>
           </div>
           <Link href="/" className="admin-mobile-site-link" aria-label="공개 사이트 열기">
-            <LuExternalLink aria-hidden="true" />
+            <ExternalLink aria-hidden="true" />
           </Link>
         </header>
         <div className="admin-app-frame">

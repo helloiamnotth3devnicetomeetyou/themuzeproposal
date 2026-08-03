@@ -1,10 +1,5 @@
 import type { CSSProperties } from "react";
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuPause,
-  LuPlay,
-} from "react-icons/lu";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
@@ -94,7 +89,7 @@ export function TrackPlayer({
             className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
             aria-label={t.discography.previousTrack}
           >
-            <LuChevronLeft className="w-5 h-5" aria-hidden="true" />
+            <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
             onClick={onTogglePlay}
@@ -109,9 +104,9 @@ export function TrackPlayer({
             }}
           >
             {isPlaying ? (
-              <LuPause className="w-5 h-5" aria-hidden="true" />
+              <Pause className="w-5 h-5" aria-hidden="true" />
             ) : (
-              <LuPlay className="w-5 h-5 pl-0.5" aria-hidden="true" />
+              <Play className="w-5 h-5 pl-0.5" aria-hidden="true" />
             )}
           </button>
           <button
@@ -119,7 +114,7 @@ export function TrackPlayer({
             className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
             aria-label={t.discography.nextTrack}
           >
-            <LuChevronRight className="w-5 h-5" aria-hidden="true" />
+            <ChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         {youtubeHref ? (

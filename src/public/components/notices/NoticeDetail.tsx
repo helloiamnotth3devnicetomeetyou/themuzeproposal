@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LuArrowLeft } from "react-icons/lu";
+import { ArrowLeft } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -48,7 +48,7 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
         <header className={styles.titleColumn}>
           <div className={styles.titleSticky}>
             <p className={styles.detailEyebrow}>{heading}</p>
-            <Link href={listHref} className={styles.backLink}><LuArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
+            <Link href={listHref} className={styles.backLink}><ArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
           </div>
         </header>
 
@@ -68,7 +68,7 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
                 aria-label={pageCopy.article}
                 dangerouslySetInnerHTML={{ __html: sanitizeRichText(localized(notice.content, locale)) }}
               />
-              <Link href={listHref} className={styles.articleBack}><LuArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
+              <Link href={listHref} className={styles.articleBack}><ArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
             </article>
           )}
         </div>

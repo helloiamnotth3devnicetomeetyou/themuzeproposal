@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { LuCheck, LuSearch } from "react-icons/lu";
+import { Check, Search } from "lucide-react";
 
 type NoticeCategoryInputProps = {
   value: string;
@@ -72,7 +72,7 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
 
   return (
     <div ref={rootRef} className="notice-category-combobox">
-      <LuSearch aria-hidden="true" />
+      <Search aria-hidden="true" />
       <input
         className="admin-input"
         value={value}
@@ -112,7 +112,7 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
               onClick={() => choose(category)}
             >
               <span>{category}</span>
-              {category === value && <LuCheck aria-hidden="true" />}
+              {category === value && <Check aria-hidden="true" />}
             </button>
           ))}
           {!exactMatch && value.trim() && (

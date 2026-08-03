@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  LuArrowLeft,
-  LuArrowRight,
-  LuBriefcaseBusiness,
-  LuExternalLink,
-  LuInbox,
-  LuMail,
-  LuMessageSquareText,
-  LuPaperclip,
-  LuSearch,
-} from "react-icons/lu";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, ExternalLink, Inbox, Mail, MessageSquareText, Paperclip, Search } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
@@ -171,7 +161,7 @@ export default function ContactAdminPage() {
     return (
       <div className={`${base.page} ${base.detailPage} ${styles.fullPage}`}>
         <button type="button" className={`${base.back} ${styles.fullWidth}`} onClick={() => setViewing(null)}>
-          <LuArrowLeft aria-hidden="true" /> 문의 목록
+          <ArrowLeft aria-hidden="true" /> 문의 목록
         </button>
         {error && (
           <div className={`${base.error} ${styles.fullWidth}`} role="alert">
@@ -183,7 +173,7 @@ export default function ContactAdminPage() {
         <article className={`${base.detailCard} ${styles.fullWidth}`}>
           <header className={base.detailHeader}>
             <span className={base.detailIcon}>
-              {isBusiness ? <LuBriefcaseBusiness aria-hidden="true" /> : <LuMessageSquareText aria-hidden="true" />}
+              {isBusiness ? <BriefcaseBusiness aria-hidden="true" /> : <MessageSquareText aria-hidden="true" />}
             </span>
             <div>
               <p>{typeLabels[viewing.inquiry_type] || "기타 문의"}</p>
@@ -209,9 +199,9 @@ export default function ContactAdminPage() {
                 <div><dt>로그인 제출</dt><dd>{viewing.user_id ? "로그인 계정" : "비회원"}</dd></div>
               </dl>
               <a className={base.sourceLink} href={`mailto:${viewing.email}`}>
-                <LuMail aria-hidden="true" />
+                <Mail aria-hidden="true" />
                 <span><b>이메일로 답변하기</b><small>{viewing.email}</small></span>
-                <LuExternalLink aria-hidden="true" />
+                <ExternalLink aria-hidden="true" />
               </a>
             </section>
 
@@ -221,9 +211,9 @@ export default function ContactAdminPage() {
                 {viewing.attachment_path ? (
                   <div className={base.evidenceGrid}>
                     <a className={base.evidenceCard} href={attachmentUrl || undefined} target="_blank" rel="noreferrer" aria-disabled={!attachmentUrl}>
-                      <span className={base.evidencePreview}><LuPaperclip aria-hidden="true" /></span>
+                      <span className={base.evidencePreview}><Paperclip aria-hidden="true" /></span>
                       <span><b>{viewing.attachment_name || "첨부 파일"}</b><small>{attachmentUrl ? `${formatBytes(viewing.attachment_size)} · 새 창에서 열기` : "보안 링크 생성 중..."}</small></span>
-                      <LuExternalLink aria-hidden="true" />
+                      <ExternalLink aria-hidden="true" />
                     </a>
                   </div>
                 ) : <p className={styles.noAttachment}>첨부된 제안서가 없습니다.</p>}
@@ -277,7 +267,7 @@ export default function ContactAdminPage() {
 
       <section className={`${base.summary} ${styles.fullWidth}`}>
         <div>
-          <span className={base.summaryIcon}><LuMail aria-hidden="true" /></span>
+          <span className={base.summaryIcon}><Mail aria-hidden="true" /></span>
           <p><small>전체 문의</small><strong>{inquiries.length}</strong></p>
         </div>
         <div className={styles.summaryTabs} role="tablist" aria-label="문의 구분">
@@ -308,7 +298,7 @@ export default function ContactAdminPage() {
           <div><h1>문의 접수함</h1><p>{category === "business" ? "Business" : "일반 문의"} · {filteredInquiries.length}건</p></div>
           <div className={base.filters}>
             <label className={base.search}>
-              <LuSearch aria-hidden="true" />
+              <Search aria-hidden="true" />
               <span className="sr-only">문의 검색</span>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 회사명, 내용 검색" />
             </label>
@@ -326,13 +316,13 @@ export default function ContactAdminPage() {
                 <td data-label="문의 내용"><b>{typeLabels[inquiry.inquiry_type] || "기타 문의"}</b><small>{inquiry.message}</small></td>
                 <td data-label="이메일">{inquiry.email}</td>
                 <td data-label="상태"><span className={`${base.status} ${statusClass(inquiry.status)}`}><i />{statusLabel(inquiry.status)}</span></td>
-                <td><button type="button" tabIndex={-1}>열기 <span><LuArrowRight aria-hidden="true" /></span></button></td>
+                <td><button type="button" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
               </tr>
             ))}</tbody>
           </table>
           {!filteredInquiries.length && (
             <div className={base.empty}>
-              <LuInbox aria-hidden="true" />
+              <Inbox aria-hidden="true" />
               <b>{categoryInquiries.length ? "조건에 맞는 문의가 없습니다." : "아직 접수된 문의가 없습니다."}</b>
               <span>{categoryInquiries.length ? "검색어나 상태 필터를 바꿔 보세요." : "새 문의가 접수되면 이곳에 표시됩니다."}</span>
             </div>

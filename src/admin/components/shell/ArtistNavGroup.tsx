@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { LuChevronDown } from "react-icons/lu";
+import { ChevronDown } from "lucide-react";
 
 interface Artist {
   id: string;
@@ -61,7 +61,7 @@ export default function ArtistNavGroup({
           {artist.name}
         </span>
         <b>
-          <LuChevronDown aria-hidden="true" />
+          <ChevronDown aria-hidden="true" />
         </b>
       </button>
       {isExpanded && (

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEventHandler } from "react";
-import { LuCheck } from "react-icons/lu";
+import { Check } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { useLocale } from "@/core/providers/LocaleContext";
 import type { Artist } from "../ProtectClient";
@@ -100,7 +100,7 @@ export default function ReportFormFields({
       <p className={styles.guide}>{t.protect.evidenceGuide}</p>
       <label className={styles.confirm}>
         <input id="reportConfirmation" type="checkbox" checked={confirmed} onChange={(event) => onConfirmedChange(event.target.checked)} />
-        <span><LuCheck aria-hidden="true" /></span>
+        <span><Check aria-hidden="true" /></span>
         {t.protect.confirmation}
       </label>
       {missingFields.length > 0 && <div className={styles.validationSummary} role="alert"><b>{t.protect.missingTitle}</b><p>{missingFields.join(" · ")}</p></div>}

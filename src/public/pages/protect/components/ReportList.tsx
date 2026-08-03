@@ -1,6 +1,6 @@
 "use client";
 
-import { LuArrowRight } from "react-icons/lu";
+import { ArrowRight } from "lucide-react";
 import { localeTags } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import type { Artist, MyReport } from "../ProtectClient";
@@ -45,7 +45,7 @@ export default function ReportList({
           <p>{t.protect.emptyTitle}</p>
           <span>{t.protect.emptyDescription}</span>
           <button type="button" onClick={onNavigateToReport}>
-            {t.protect.report} <LuArrowRight aria-hidden="true" />
+            {t.protect.report} <ArrowRight aria-hidden="true" />
           </button>
         </div>
       ) : (

@@ -3,7 +3,7 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuImagePlus, LuRefreshCcw, LuSave, LuTrash2, LuUpload } from "react-icons/lu";
+import { ImagePlus, RefreshCcw, Save, Trash2, Upload } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
@@ -309,20 +309,20 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (maskInputRef.current) maskInputRef.current.value = "";
   };
 
-  if (!artistId) return <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>아티스트를 먼저 저장하세요.</b></div>;
+  if (!artistId) return <div className={styles.empty}><ImagePlus aria-hidden="true" /><b>아티스트를 먼저 저장하세요.</b></div>;
   if (loading) return <LoadingIndicator label="인터랙티브 장면을 불러오는 중" className="min-h-[360px]" />;
-  if (schemaMissing) return <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>019_artist_scenes.sql 적용이 필요합니다.</b><span>스키마 적용 후 이 탭에서 장면과 멤버 실루엣을 편집할 수 있습니다.</span></div>;
+  if (schemaMissing) return <div className={styles.empty}><ImagePlus aria-hidden="true" /><b>019_artist_scenes.sql 적용이 필요합니다.</b><span>스키마 적용 후 이 탭에서 장면과 멤버 실루엣을 편집할 수 있습니다.</span></div>;
 
   return (
     <div className={styles.manager}>
       <div className={styles.toolbar}>
         <div><b>Interactive scenes</b><span>장면마다 멤버 외곽선을 직접 그리고 정밀 마스크를 연결합니다.</span></div>
-        {heroUrl && <button type="button" disabled={busy} onClick={() => void importHero()}><LuImagePlus aria-hidden="true" />대표 이미지 가져오기</button>}
-        <button type="button" disabled={busy} onClick={() => sceneInputRef.current?.click()}><LuUpload aria-hidden="true" />장면 추가</button>
+        {heroUrl && <button type="button" disabled={busy} onClick={() => void importHero()}><ImagePlus aria-hidden="true" />대표 이미지 가져오기</button>}
+        <button type="button" disabled={busy} onClick={() => sceneInputRef.current?.click()}><Upload aria-hidden="true" />장면 추가</button>
         <input ref={sceneInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => event.target.files && void uploadScenes(event.target.files)} />
       </div>
 
-      {!scenes.length ? <div className={styles.empty}><LuImagePlus aria-hidden="true" /><b>인터랙티브 장면이 없습니다.</b><span>대표 이미지를 가져오거나 새 콘셉트 이미지를 추가하세요.</span></div> : <>
+      {!scenes.length ? <div className={styles.empty}><ImagePlus aria-hidden="true" /><b>인터랙티브 장면이 없습니다.</b><span>대표 이미지를 가져오거나 새 콘셉트 이미지를 추가하세요.</span></div> : <>
         <div className={styles.sceneTabs}>
           {scenes.map((scene) => <button type="button" key={scene.id} className={scene.id === selectedSceneId ? styles.isSelected : ""} onClick={() => setSelectedSceneId(scene.id)}><AdminAssetImage src={scene.image_url} alt="" sizes="120px" /><span>{scene.title || "이름 없는 장면"}</span>{scene.is_hero && <i>HERO</i>}</button>)}
         </div>
@@ -335,8 +335,8 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => patchScene({ is_hero: event.target.checked })} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
-          <button type="button" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><LuTrash2 aria-hidden="true" />삭제</button>
-          <button type="button" disabled={busy} onClick={() => void saveScene()}><LuSave aria-hidden="true" />장면 저장</button>
+          <button type="button" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><Trash2 aria-hidden="true" />삭제</button>
+          <button type="button" disabled={busy} onClick={() => void saveScene()}><Save aria-hidden="true" />장면 저장</button>
         </div>}
 
         {selectedScene && <div className={styles.editor}>
@@ -361,12 +361,12 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
 
           <aside className={styles.outlineTools}>
             <div><span>선택 멤버</span><b>{selectedMember?.eng_name || selectedMember?.name || "멤버 선택"}</b><small>{draftOutline.length ? `${draftOutline.length}개 윤곽 포인트` : "아직 외곽선이 없습니다."}</small></div>
-            <button type="button" disabled={!draftOutline.length || busy} onClick={() => setDraftOutline([])}><LuRefreshCcw aria-hidden="true" />다시 그리기</button>
-            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => void saveOutline()}><LuSave aria-hidden="true" />외곽선 저장</button>
-            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => maskInputRef.current?.click()}><LuUpload aria-hidden="true" />정밀 마스크 덮어쓰기</button>
+            <button type="button" disabled={!draftOutline.length || busy} onClick={() => setDraftOutline([])}><RefreshCcw aria-hidden="true" />다시 그리기</button>
+            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => void saveOutline()}><Save aria-hidden="true" />외곽선 저장</button>
+            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => maskInputRef.current?.click()}><Upload aria-hidden="true" />정밀 마스크 덮어쓰기</button>
             <input ref={maskInputRef} type="file" accept="image/png,image/webp" hidden onChange={(event) => event.target.files?.[0] && void uploadMask(event.target.files[0])} />
             {selectedRegion?.mask_url && <p>알파 마스크 적용됨</p>}
-            <button type="button" className={styles.danger} disabled={busy || (!draftOutline.length && !selectedRegion)} onClick={() => void removeOutline()}><LuTrash2 aria-hidden="true" />멤버 영역 제거</button>
+            <button type="button" className={styles.danger} disabled={busy || (!draftOutline.length && !selectedRegion)} onClick={() => void removeOutline()}><Trash2 aria-hidden="true" />멤버 영역 제거</button>
           </aside>
         </div>}
       </>}

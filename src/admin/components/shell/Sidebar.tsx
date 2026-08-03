@@ -3,21 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuFileText,
-  LuHistory,
-  LuImage,
-  LuInbox,
-  LuLayoutDashboard,
-  LuLogOut,
-  LuMail,
-  LuPlus,
-  LuSettings,
-  LuShieldCheck,
-  LuX,
-} from "react-icons/lu";
+import { ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
@@ -27,20 +13,19 @@ import ArtistNavGroup from "./ArtistNavGroup";
 type Artist = { id: string; name: string; logo_url: string | null };
 
 const dashboardLinks = [
-  { label: "대시보드", href: "/admin", icon: LuLayoutDashboard },
-  { label: "변경 이력", href: "/admin/audit-logs", icon: LuHistory },
+  { label: "대시보드", href: "/admin", icon: LayoutDashboard },
+  { label: "변경 이력", href: "/admin/audit-logs", icon: History },
 ];
 
 const contentLinks = [
-  { label: "메인 앨범 정렬", href: "/admin/hero", icon: LuImage },
-  { label: "전체 공지", href: "/admin/notices", icon: LuFileText },
-  { label: "오디션", href: "/admin/auditions", icon: LuInbox },
-  { label: "권익 보호", href: "/admin/protect", icon: LuShieldCheck },
-  { label: "문의 관리", href: "/admin/contact", icon: LuMail },
+  { label: "메인 앨범 정렬", href: "/admin/hero", icon: Image },
+  { label: "전체 공지", href: "/admin/notices", icon: FileText },
+  { label: "권익 보호", href: "/admin/protect", icon: ShieldCheck },
+  { label: "문의 관리", href: "/admin/contact", icon: Mail },
 ];
 
 const systemLinks = [
-  { label: "사이트 설정", href: "/admin/settings", icon: LuSettings },
+  { label: "사이트 설정", href: "/admin/settings", icon: Settings },
 ];
 
 const artistLinks = [
@@ -137,7 +122,7 @@ export default function Sidebar({
           </div>
         )}
         <button type="button" className="cms-sidebar-mobile-close" onClick={onClose} aria-label="관리 메뉴 닫기">
-          <LuX aria-hidden="true" />
+          <X aria-hidden="true" />
         </button>
         {onToggleCollapse && (
           <button
@@ -146,7 +131,7 @@ export default function Sidebar({
             onClick={onToggleCollapse}
             aria-label={isCollapsed ? "관리 메뉴 펼치기" : "관리 메뉴 접기"}
           >
-            {isCollapsed ? <LuChevronRight aria-hidden="true" /> : <LuChevronLeft aria-hidden="true" />}
+            {isCollapsed ? <ChevronRight aria-hidden="true" /> : <ChevronLeft aria-hidden="true" />}
           </button>
         )}
       </div>
@@ -251,7 +236,7 @@ export default function Sidebar({
                 aria-label="아티스트 추가"
                 onClick={(e) => e.stopPropagation()}
               >
-                <LuPlus aria-hidden="true" />
+                <Plus aria-hidden="true" />
               </Link>
             )}
           </div>
@@ -287,7 +272,7 @@ export default function Sidebar({
             <small>관리자 계정</small>
           </span>
           <button type="button" onClick={leave} aria-label="로그아웃" title="로그아웃">
-            <LuLogOut aria-hidden="true" />
+            <LogOut aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LuExternalLink } from "react-icons/lu";
+import { ExternalLink } from "lucide-react";
 
 export default function PreviewButton({
   onClick,
@@ -16,7 +16,7 @@ export default function PreviewButton({
       disabled={disabled}
       onClick={onClick}
     >
-      <LuExternalLink aria-hidden="true" />
+      <ExternalLink aria-hidden="true" />
       미리보기
     </button>
   );

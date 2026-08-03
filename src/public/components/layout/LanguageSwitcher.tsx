@@ -19,7 +19,7 @@ export default function LanguageSwitcher() {
         options={languageOptions}
         onChange={(val) => setLocale(val as Locale)}
         ariaLabel={t.common.language}
-        variant="field"
+        variant="pill"
       />
     </div>
   );

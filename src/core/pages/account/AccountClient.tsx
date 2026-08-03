@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuLogOut, LuShieldCheck } from "react-icons/lu";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import {
   CurrentPasswordError,
@@ -303,7 +303,7 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
               {sections.map((item) => <button key={item.id} type="button" className={activeSection === item.id ? styles.activeTab : ""} onClick={() => setActiveSection(item.id)}>{item.label}</button>)}
             </nav>
             <div className={styles.accountMeta}>
-              <LuShieldCheck aria-hidden="true" />
+              <ShieldCheck aria-hidden="true" />
               <span>{name || "THE MUZE"}</span>
               <b>{originalEmail}</b>
             </div>
@@ -343,7 +343,7 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
 
           {activeSection === "session" && <section className={styles.session}>
             <div><span>CURRENT DEVICE</span><h3>{originalEmail}</h3><p>{t.sessionDescription}</p></div>
-            <button className={styles.signOut} type="button" onClick={handleSignOut} disabled={saving !== null}><LuLogOut aria-hidden="true" />{saving === "logout" ? t.saving : t.signOut}</button>
+            <button className={styles.signOut} type="button" onClick={handleSignOut} disabled={saving !== null}><LogOut aria-hidden="true" />{saving === "logout" ? t.saving : t.signOut}</button>
           </section>}
         </div>
       </section>

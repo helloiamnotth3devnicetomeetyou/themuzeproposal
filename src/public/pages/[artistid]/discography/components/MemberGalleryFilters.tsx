@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { LuImage } from "react-icons/lu";
+import { Image as LucideImage } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import type { DiscographyMember } from "../lib/types";
 
@@ -27,7 +27,7 @@ export function MemberGalleryFilters({ albumColor, selectedMemberId, selectedMem
   return <>
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none shrink-0">
       <button type="button" onClick={() => onSelect("all")} className="px-3 py-1.2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 shrink-0 border" style={chipStyle("all")}>
-        <LuImage className="w-3.5 h-3.5" style={{ color: selected("all") ? albumColor : "inherit" }} />
+        <LucideImage className="w-3.5 h-3.5" style={{ color: selected("all") ? albumColor : "inherit" }} />
         <span>{t.discography.allMembers}</span>
         <span className="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold" style={{ backgroundColor: selected("all") ? albumColor : "var(--alpha-ffffff-1)", color: selected("all") ? "#000" : "var(--palette-9ca3af)" }}>{totalPhotos}</span>
       </button>

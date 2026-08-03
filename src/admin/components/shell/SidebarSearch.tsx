@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { LuCommand, LuSearch, LuX } from "react-icons/lu";
+import { Command, Search, X } from "lucide-react";
 import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
 
 interface Artist { id: string; name: string; }
@@ -62,7 +62,6 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     { id: "hero", categoryLabel: "워크스페이스", title: "메인 히어로", url: "/admin/hero" },
     { id: "notices", categoryLabel: "워크스페이스", title: "전체 공지", url: "/admin/notices" },
     { id: "audit-logs", categoryLabel: "워크스페이스", title: "관리자 변경 이력", url: "/admin/audit-logs" },
-    { id: "auditions", categoryLabel: "워크스페이스", title: "오디션 지원 내역", url: "/admin/auditions" },
     { id: "protect", categoryLabel: "워크스페이스", title: "권익 보호 신고", url: "/admin/protect" },
     { id: "settings", categoryLabel: "사이트 설정", title: "사이트 설정", url: "/admin/settings" },
     { id: "new-artist", categoryLabel: "워크스페이스", title: "새 아티스트 추가", url: "/admin/artists/new/profile" },
@@ -134,9 +133,9 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <div className={`${styles.field} ${isOpen ? styles.fieldOpen : ""}`}>
-        <LuSearch className={styles.searchIcon} aria-hidden="true" />
+        <Search className={styles.searchIcon} aria-hidden="true" />
         <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => setIsOpen(true)} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
-        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><LuX aria-hidden="true" /></button> : <span className={styles.shortcut} aria-hidden="true"><LuCommand />K</span>}
+        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <span className={styles.shortcut} aria-hidden="true"><Command />K</span>}
       </div>
       {isShowingResults && resultsPosition && typeof document !== "undefined" && createPortal(
         <div id="admin-search-results" className={styles.results} ref={resultsRef} style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">

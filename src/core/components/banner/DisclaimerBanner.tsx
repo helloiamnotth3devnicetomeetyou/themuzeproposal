@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { FiX } from "react-icons/fi";
+import { X } from "lucide-react";
 
 const STORAGE_KEY = "muze_not_official_banner_dismissed";
 const DISMISS_EVENT = "muze_banner_dismiss";
@@ -71,7 +71,7 @@ export default function DisclaimerBanner() {
         className="ml-3 flex shrink-0 items-center gap-1 rounded px-2 py-1 text-xs font-bold text-[#78350f] transition-colors hover:bg-[#fde68a]/70 focus:outline-none focus:ring-2 focus:ring-[#b45309]"
       >
         <span>닫기</span>
-        <FiX className="h-3.5 w-3.5" aria-hidden="true" />
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </aside>
   );

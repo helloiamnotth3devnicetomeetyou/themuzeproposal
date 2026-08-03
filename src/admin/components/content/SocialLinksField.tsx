@@ -1,6 +1,6 @@
 "use client";
 
-import { LuLink, LuPlus, LuTrash2 } from "react-icons/lu";
+import { Link, Plus, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
 
@@ -53,17 +53,17 @@ export default function SocialLinksField({ value, onChange }: { value: SocialLin
     <div className="social-link-editor">
       <div className="social-link-toolbar">
         <span>등록된 계정 <b>{value.length}</b></span>
-        <button type="button" onClick={() => onChange([...value, createLink()])}><LuPlus aria-hidden="true" />계정 추가</button>
+        <button type="button" onClick={() => onChange([...value, createLink()])}><Plus aria-hidden="true" />계정 추가</button>
       </div>
       {!value.length && (
         <button type="button" className="social-link-empty" onClick={() => onChange([createLink()])}>
-          <LuPlus aria-hidden="true" /><span>공식 계정이 아직 없습니다.</span><b>첫 계정 추가</b>
+          <Plus aria-hidden="true" /><span>공식 계정이 아직 없습니다.</span><b>첫 계정 추가</b>
         </button>
       )}
       <div className="social-link-list">
         {value.map((link, index) => {
           const platform = detectSocialPlatform(link.url) !== "other" ? detectSocialPlatform(link.url) : link.platform;
-          const PlatformIcon = SOCIAL_ICONS[platform] || LuLink;
+          const PlatformIcon = SOCIAL_ICONS[platform] || Link;
           const invalid = Boolean(link.url) && !isValidLink(link.url);
           return (
             <div className="social-link-row" key={link.id}>
@@ -86,7 +86,7 @@ export default function SocialLinksField({ value, onChange }: { value: SocialLin
                 }} placeholder="https://..." />
                 {invalid && <small>http:// 또는 https://로 시작하는 링크를 입력하세요.</small>}
               </label>
-              <button type="button" className="social-link-remove" aria-label={`${SOCIAL_LABELS[platform] || "소셜"} 계정 삭제`} onClick={() => onChange(value.filter((item) => item.id !== link.id))}><LuTrash2 aria-hidden="true" /></button>
+              <button type="button" className="social-link-remove" aria-label={`${SOCIAL_LABELS[platform] || "소셜"} 계정 삭제`} onClick={() => onChange(value.filter((item) => item.id !== link.id))}><Trash2 aria-hidden="true" /></button>
             </div>
           );
         })}

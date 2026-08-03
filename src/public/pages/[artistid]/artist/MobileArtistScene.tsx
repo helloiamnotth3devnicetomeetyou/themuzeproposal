@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
-import { LuArrowLeft, LuArrowRight, LuDisc3, LuExternalLink, LuX } from "react-icons/lu";
+import { ArrowLeft, ArrowRight, Disc3, ExternalLink, X } from "lucide-react";
 import { localizeText } from "@/core/i18n/localized";
 import { normalizeSceneLink, outlineToPath, outlineCentroid, type ArtistScene } from "@/core/utils/artist-scenes";
 import type { Locale } from "@/core/i18n/translations";
@@ -99,12 +99,12 @@ export default function MobileArtistScene({
               {faviconUrl ? (
                 <span className={styles.mobileSceneLinkFavicon} style={{ backgroundImage: `url(${JSON.stringify(faviconUrl)})` }} aria-hidden="true" />
               ) : (
-                <LuExternalLink aria-hidden="true" />
+                <ExternalLink aria-hidden="true" />
               )}
             </a>
           )}
           <Link href={`/${artist.slug}/discography`} className={styles.mobileHeaderDiscography} aria-label={copy.discography}>
-            <LuDisc3 aria-hidden="true" />
+            <Disc3 aria-hidden="true" />
           </Link>
         </div>
       </header>
@@ -214,18 +214,18 @@ export default function MobileArtistScene({
                 {selectedMember.name !== getEnglishFirstMemberName(selectedMember) && <p>{selectedMember.name}</p>}
               </div>
               <button type="button" className={styles.mobileInlineClose} onClick={onCloseMember} aria-label={copy.close}>
-                <LuX aria-hidden="true" />
+                <X aria-hidden="true" />
               </button>
             </div>
             {memberBio && <p className={styles.mobileInlineMemberBio}>{memberBio}</p>}
             <div className={styles.mobileInlineSheetNavigation}>
               <button type="button" onClick={() => onNavigateMember(-1)}>
-                <LuArrowLeft aria-hidden="true" />
+                <ArrowLeft aria-hidden="true" />
                 {copy.previous}
               </button>
               <button type="button" onClick={() => onNavigateMember(1)}>
                 {copy.next}
-                <LuArrowRight aria-hidden="true" />
+                <ArrowRight aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function MobileArtistScene({
                 onClick={() => onChangeScene(scenes[Math.max(0, activeIndex - 1)].id)}
                 aria-label={copy.previous}
               >
-                <LuArrowLeft aria-hidden="true" />
+                <ArrowLeft aria-hidden="true" />
               </button>
               {groupBio && <p>{groupBio}</p>}
               <button
@@ -266,7 +266,7 @@ export default function MobileArtistScene({
                 onClick={() => onChangeScene(scenes[Math.min(scenes.length - 1, activeIndex + 1)].id)}
                 aria-label={copy.next}
               >
-                <LuArrowRight aria-hidden="true" />
+                <ArrowRight aria-hidden="true" />
               </button>
             </div>
           </>

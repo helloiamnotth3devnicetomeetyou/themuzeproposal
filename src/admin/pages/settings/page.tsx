@@ -2,7 +2,7 @@
 
 import { type DragEvent, useEffect, useId, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { LuBuilding2, LuCheck, LuFileArchive, LuFileText, LuGlobe, LuHistory, LuMail, LuPlus, LuSettings2, LuShare2, LuShieldCheck, LuTrash2 } from "react-icons/lu";
+import { Building2, Check, FileArchive, FileText, Globe, History, Mail, Plus, Settings2, Share2, ShieldCheck, Trash2 } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
@@ -252,12 +252,12 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   const socialCount = social.length;
 
   const railItems: Array<{ id: SettingsTab; label: string; copy: string; icon: IconType; ready: boolean; meta: string }> = [
-    { id: "company", label: "회사 정보", copy: "주소 · 대표 메일", icon: LuBuilding2, ready: companyReady, meta: companyReady ? "입력 완료" : "확인 필요" },
-    { id: "history", label: "연혁", copy: "ABOUT 성장 기록", icon: LuHistory, ready: historyReady, meta: `${history.length}개 항목` },
-    { id: "footer", label: "푸터", copy: "하단 저작권 문구", icon: LuGlobe, ready: footerReady, meta: footerReady ? "입력 완료" : "확인 필요" },
-    { id: "social", label: "소셜 채널", copy: "공식 채널 바로가기", icon: LuShare2, ready: socialCount > 0, meta: `${socialCount}개 연결` },
-    { id: "business", label: "비즈니스 자료", copy: "프레스킷 · 프로필 PDF", icon: LuFileArchive, ready: Boolean(business.pressKitUrl || business.profilePdfUrl), meta: business.pressKitUrl && business.profilePdfUrl ? "업로드 완료" : "자료 확인 필요" },
-    ...(isSuperAdmin ? [{ id: "admins" as const, label: "관리자 계정", copy: "초대 · 역할 · 권한 해제", icon: LuShieldCheck, ready: true, meta: "슈퍼 관리자" }] : []),
+    { id: "company", label: "회사 정보", copy: "주소 · 대표 메일", icon: Building2, ready: companyReady, meta: companyReady ? "입력 완료" : "확인 필요" },
+    { id: "history", label: "연혁", copy: "ABOUT 성장 기록", icon: History, ready: historyReady, meta: `${history.length}개 항목` },
+    { id: "footer", label: "푸터", copy: "하단 저작권 문구", icon: Globe, ready: footerReady, meta: footerReady ? "입력 완료" : "확인 필요" },
+    { id: "social", label: "소셜 채널", copy: "공식 채널 바로가기", icon: Share2, ready: socialCount > 0, meta: `${socialCount}개 연결` },
+    { id: "business", label: "비즈니스 자료", copy: "프레스킷 · 프로필 PDF", icon: FileArchive, ready: Boolean(business.pressKitUrl || business.profilePdfUrl), meta: business.pressKitUrl && business.profilePdfUrl ? "업로드 완료" : "자료 확인 필요" },
+    ...(isSuperAdmin ? [{ id: "admins" as const, label: "관리자 계정", copy: "초대 · 역할 · 권한 해제", icon: ShieldCheck, ready: true, meta: "슈퍼 관리자" }] : []),
   ];
 
   const rail = (
@@ -267,7 +267,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         <span className={`settings-sync-dot ${dirty ? "is-dirty" : ""}`} aria-label={dirty ? "저장 필요" : "동기화됨"} />
       </div>
       <div className="settings-rail-summary">
-        <LuSettings2 aria-hidden="true" />
+        <Settings2 aria-hidden="true" />
         <p>공개 사이트 전반에서 함께 사용하는 기본 정보를 관리합니다.</p>
       </div>
       <nav className="settings-rail-nav" aria-label="사이트 설정 섹션">
@@ -277,7 +277,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
             <button key={item.id} type="button" className={tab === item.id ? "is-active" : ""} onClick={() => setTab(item.id)}>
               <span><Icon aria-hidden="true" /></span>
               <div><b>{item.label}</b><small>{item.copy}</small></div>
-              <em className={item.ready ? "is-ready" : ""}>{item.ready && <LuCheck aria-hidden="true" />}{item.meta}</em>
+              <em className={item.ready ? "is-ready" : ""}>{item.ready && <Check aria-hidden="true" />}{item.meta}</em>
             </button>
           );
         })}
@@ -286,7 +286,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   );
 
   const identity = <>
-    <span className="content-identity-art settings-identity-art"><LuSettings2 aria-hidden="true" /></span>
+    <span className="content-identity-art settings-identity-art"><Settings2 aria-hidden="true" /></span>
     <div className="content-identity-copy">
       {dirty && <p><em>저장하지 않은 변경사항</em></p>}
       <h2>사이트 공통 설정</h2>
@@ -308,23 +308,23 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     >
       <div className="content-editor-stack settings-editor-stack">
         {tab === "company" && <>
-          <div className="content-section-heading settings-section-heading"><div><h3>회사 정보</h3><p>회사명은 기존 값을 유지하고, 사이트에 표시할 주소와 대표 연락처만 관리합니다.</p></div><LuBuilding2 aria-hidden="true" /></div>
+          <div className="content-section-heading settings-section-heading"><div><h3>회사 정보</h3><p>회사명은 기존 값을 유지하고, 사이트에 표시할 주소와 대표 연락처만 관리합니다.</p></div><Building2 aria-hidden="true" /></div>
           <section className="settings-panel">
             <FormField label="주소" valueKo={company.address_ko} valueEn={company.address_en} valueJa={company.address_ja} onChangeKo={(value) => setCompany({ ...company, address_ko: value })} onChangeEn={(value) => setCompany({ ...company, address_en: value })} onChangeJa={(value) => setCompany({ ...company, address_ja: value })} />
             <div className="settings-panel-divider" />
-            <label className="music-field content-field-short"><span>대표 이메일</span><div className="settings-input-with-icon"><LuMail aria-hidden="true" /><input type="email" value={company.email} onChange={(event) => setCompany({ ...company, email: event.target.value })} className="admin-input" placeholder="contact@example.com" /></div><small>방문자가 회사에 연락할 때 사용하는 공개 이메일입니다.</small></label>
+            <label className="music-field content-field-short"><span>대표 이메일</span><div className="settings-input-with-icon"><Mail aria-hidden="true" /><input type="email" value={company.email} onChange={(event) => setCompany({ ...company, email: event.target.value })} className="admin-input" placeholder="contact@example.com" /></div><small>방문자가 회사에 연락할 때 사용하는 공개 이메일입니다.</small></label>
           </section>
         </>}
 
         {tab === "history" && <>
-          <div className="content-section-heading settings-section-heading"><div><h3>ABOUT 연혁</h3><p>공개 ABOUT 페이지에 표시할 성장 기록을 관리합니다. 현재 목록 순서대로 사이트에 노출됩니다.</p></div><LuHistory aria-hidden="true" /></div>
+          <div className="content-section-heading settings-section-heading"><div><h3>ABOUT 연혁</h3><p>공개 ABOUT 페이지에 표시할 성장 기록을 관리합니다. 현재 목록 순서대로 사이트에 노출됩니다.</p></div><History aria-hidden="true" /></div>
           <div className="settings-history-toolbar">
             <span>총 {history.length}개 항목 · 최신순 자동 정렬</span>
             <div className="settings-history-tools">
               <div className="settings-history-languages" aria-label="연혁 편집 언어">
                 {(["ko", "en", "ja"] as HistoryLanguage[]).map((language) => <button key={language} type="button" className={historyLanguage === language ? "is-active" : ""} onClick={() => setHistoryLanguage(language)}>{language.toUpperCase()}</button>)}
               </div>
-              <button type="button" className="admin-btn admin-btn-secondary" onClick={addHistory}><LuPlus aria-hidden="true" /> 연혁 추가</button>
+              <button type="button" className="admin-btn admin-btn-secondary" onClick={addHistory}><Plus aria-hidden="true" /> 연혁 추가</button>
             </div>
           </div>
           <div className="settings-history-columns" aria-hidden="true"><span>순서</span><span>시점</span><span>{historyLanguage.toUpperCase()} 내용</span><span>관리</span></div>
@@ -335,36 +335,36 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
                 <label><span className="sr-only">시점</span><input value={item.date} onChange={(event) => patchHistory(item.id, { date: event.target.value })} onBlur={() => setHistory((items) => sortHistoryNewestFirst(items))} className="settings-history-date" placeholder="2026. 07" /></label>
                 <label><span className="sr-only">{historyLanguage.toUpperCase()} 내용</span><input value={item[historyEventKey]} onChange={(event) => patchHistory(item.id, { [historyEventKey]: event.target.value } as Partial<HistoryEntry>)} className="settings-history-event" placeholder={historyLanguage === "ko" ? "연혁 내용을 입력하세요" : `${historyLanguage.toUpperCase()} 번역을 입력하세요`} /></label>
                 <div className="settings-history-actions">
-                  <button type="button" className="is-danger" onClick={() => setHistory((items) => items.filter((entry) => entry.id !== item.id))} aria-label="연혁 삭제"><LuTrash2 aria-hidden="true" /></button>
+                  <button type="button" className="is-danger" onClick={() => setHistory((items) => items.filter((entry) => entry.id !== item.id))} aria-label="연혁 삭제"><Trash2 aria-hidden="true" /></button>
                 </div>
               </article>
             ))}
-            {!history.length && <div className="settings-history-empty"><LuHistory aria-hidden="true" /><b>등록된 연혁이 없습니다.</b><span>연혁 추가 버튼으로 첫 기록을 만들어 주세요.</span></div>}
+            {!history.length && <div className="settings-history-empty"><History aria-hidden="true" /><b>등록된 연혁이 없습니다.</b><span>연혁 추가 버튼으로 첫 기록을 만들어 주세요.</span></div>}
           </section>
         </>}
 
         {tab === "footer" && <>
-          <div className="content-section-heading settings-section-heading"><div><h3>푸터</h3><p>모든 공개 페이지 하단에 반복해서 표시되는 저작권 문구입니다.</p></div><LuGlobe aria-hidden="true" /></div>
+          <div className="content-section-heading settings-section-heading"><div><h3>푸터</h3><p>모든 공개 페이지 하단에 반복해서 표시되는 저작권 문구입니다.</p></div><Globe aria-hidden="true" /></div>
           <section className="settings-panel">
             <label className="music-field"><span>저작권 문구</span><input value={footer.copyright} onChange={(event) => setFooter({ copyright: event.target.value })} className="admin-input" placeholder="© THE MUZE ENTERTAINMENT. ALL RIGHTS RESERVED." /><small>연도와 회사명을 포함한 최종 문구를 입력해 주세요.</small></label>
           </section>
           <section className="settings-footer-preview" aria-label="푸터 미리보기">
             <div><strong>{company.name_en || company.name_ko || "THE MUZE"}</strong></div>
             <p>{footer.copyright || "저작권 문구가 이곳에 표시됩니다."}</p>
-            <div className="settings-footer-socials">{social.map((item) => { const Icon = SOCIAL_ICONS[item.platform] || LuGlobe; return <Icon key={item.id} aria-label={item.label || item.platform} />; })}</div>
+            <div className="settings-footer-socials">{social.map((item) => { const Icon = SOCIAL_ICONS[item.platform] || Globe; return <Icon key={item.id} aria-label={item.label || item.platform} />; })}</div>
           </section>
         </>}
 
         {tab === "social" && <>
-          <div className="content-section-heading settings-section-heading"><div><h3>소셜 채널</h3><p>사이트 전역에서 연결할 회사 공식 채널 주소를 관리합니다.</p></div><LuShare2 aria-hidden="true" /></div>
+          <div className="content-section-heading settings-section-heading"><div><h3>소셜 채널</h3><p>사이트 전역에서 연결할 회사 공식 채널 주소를 관리합니다.</p></div><Share2 aria-hidden="true" /></div>
           <SocialLinksField value={social} onChange={setSocial} />
         </>}
 
         {tab === "business" && <>
-          <div className="content-section-heading settings-section-heading"><div><h3>비즈니스 자료</h3><p>Contact Business 탭에서 공개할 프레스킷 ZIP과 프로필 PDF입니다. ZIP은 서버에서 압축을 풀지 않습니다.</p></div><LuFileArchive aria-hidden="true" /></div>
+          <div className="content-section-heading settings-section-heading"><div><h3>비즈니스 자료</h3><p>Contact Business 탭에서 공개할 프레스킷 ZIP과 프로필 PDF입니다. ZIP은 서버에서 압축을 풀지 않습니다.</p></div><FileArchive aria-hidden="true" /></div>
           <section className="settings-panel">
-            <BusinessAssetField label="프레스킷 ZIP" hint="ZIP · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".zip,application/zip" icon={LuFileArchive} value={business.pressKitUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("pressKitUrl", file)} />
-            <BusinessAssetField label="프로필 PDF" hint="PDF · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".pdf,application/pdf" icon={LuFileText} value={business.profilePdfUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("profilePdfUrl", file)} />
+            <BusinessAssetField label="프레스킷 ZIP" hint="ZIP · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".zip,application/zip" icon={FileArchive} value={business.pressKitUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("pressKitUrl", file)} />
+            <BusinessAssetField label="프로필 PDF" hint="PDF · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".pdf,application/pdf" icon={FileText} value={business.profilePdfUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("profilePdfUrl", file)} />
           </section>
         </>}
 
