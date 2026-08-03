@@ -16,10 +16,13 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     pool: "threads",
+    include: ["src/**/*.test.{ts,tsx}", "test/**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", "e2e/**", ".next/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      exclude: ["test/**", ".next/**"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["test/**", "e2e/**", ".next/**", "src/**/*.test.{ts,tsx}"],
     },
   },
 });
