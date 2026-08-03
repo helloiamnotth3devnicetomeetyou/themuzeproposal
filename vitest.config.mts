@@ -20,6 +20,7 @@ export default defineConfig({
     exclude: ["node_modules/**", "e2e/**", ".next/**"],
     coverage: {
       provider: "v8",
+      clean: true,
       reporter: ["text", "html"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["test/**", "e2e/**", ".next/**", "src/**/*.test.{ts,tsx}"],
