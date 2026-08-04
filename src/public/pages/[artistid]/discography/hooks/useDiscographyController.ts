@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { localizeText } from "@/core/i18n/localized";
+import type { LocalizedText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
 
@@ -44,8 +45,14 @@ export function useDiscographyController(
   const [members, setMembers] = useState<DiscographyMember[]>([]);
   const [gallery, setGallery] = useState<DiscographyGalleryItem[]>([]);
   const [artistName, setArtistName] = useState("");
+  const [artistNames, setArtistNames] = useState<LocalizedText | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const loadErrorMessageRef = useRef(t.discography.loadError);
+
+  useEffect(() => {
+    loadErrorMessageRef.current = t.discography.loadError;
+  }, [t.discography.loadError]);
 
   const [albumIndex, setAlbumIndex] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
@@ -60,7 +67,6 @@ export function useDiscographyController(
 
   const {
     isPlaying,
-    progress,
     audioDuration,
     showDiscs,
     currentTrackIndex,
@@ -73,7 +79,6 @@ export function useDiscographyController(
     restoreTimeRef,
     handleLoadedMetadata,
     handleTimeUpdate: rawHandleTimeUpdate,
-    seek: rawSeek,
   } = useAudioPlayback(audioRef);
 
   const previewAlbum = useMemo<DiscographyAlbum | null>(() => preview ? {
@@ -126,6 +131,14 @@ export function useDiscographyController(
       ),
     [effectiveAlbums, locale, sortBy],
   );
+  const localizedMembers = useMemo(
+    () => members.map((member) => ({
+      ...member,
+      name: localizeText(member.names, locale, member.name),
+      role: localizeText(member.roles, locale, member.role || ""),
+    })),
+    [locale, members],
+  );
   const album = sortedAlbums[albumIndex];
 
   useEffect(() => {
@@ -153,6 +166,7 @@ export function useDiscographyController(
       setMembers([]);
       setGallery([]);
       setArtistName("");
+      setArtistNames(null);
       setAlbumIndex(0);
 
       try {
@@ -181,15 +195,10 @@ export function useDiscographyController(
           ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)))
           : 0;
 
-        const localizedMembers = result.members.map((m) => ({
-          ...m,
-          name: localizeText(m.names, locale, m.name),
-          role: m.roles ? localizeText(m.roles, locale, m.role || "") : m.role,
-        }));
-
-        setArtistName(localizeText(result.artistNames, locale, result.artistName));
+        setArtistName(result.artistName);
+        setArtistNames(result.artistNames);
         setAlbums(result.albums);
-        setMembers(localizedMembers);
+        setMembers(result.members);
         setGallery(result.gallery);
         setAlbumIndex(nextAlbumIndex);
         setCurrentTrackIndex(rememberedTrackIndex);
@@ -204,7 +213,7 @@ export function useDiscographyController(
           setLoadError(
             error instanceof Error
               ? error.message
-              : t.discography.loadError,
+              : loadErrorMessageRef.current,
           );
         }
       } finally {
@@ -214,7 +223,7 @@ export function useDiscographyController(
 
     void load();
     return () => { cancelled = true; };
-  }, [artistSlug, locale, setCurrentTrackIndex, restoreTimeRef, t.discography.loadError]);
+  }, [artistSlug, setCurrentTrackIndex, restoreTimeRef]);
 
   const switchAlbum = useCallback(
     (newIndex: number) => {
@@ -352,13 +361,6 @@ export function useDiscographyController(
     [rawHandleTimeUpdate, album, currentTrackIndex, savePlayback],
   );
 
-  const seek = useCallback(
-    (nextProgress: number) => {
-      rawSeek(nextProgress, audioRef, album?.id, currentTrackIndex, savePlayback);
-    },
-    [rawSeek, audioRef, album, currentTrackIndex, savePlayback],
-  );
-
   const toggleSort = useCallback(() => {
     if (railPhase !== "idle") return;
     const exitTime = 80 + sortedAlbums.length * 28;
@@ -402,7 +404,7 @@ export function useDiscographyController(
     activeTab,
     album,
     albumIndex,
-    artistName: preview?.artist.name || artistName,
+    artistName: preview?.artist.name || localizeText(artistNames || {}, locale, artistName),
     audioDuration,
     contentClass,
     currentTrackIndex,
@@ -413,14 +415,12 @@ export function useDiscographyController(
     isPlaying,
     loading,
     loadError,
-    members,
+    members: localizedMembers,
     gallery,
     nextTrack: () => moveTrack(1),
     playTrack,
     previousTrack: () => moveTrack(-1),
-    progress,
     railPhase,
-    seek,
     setActiveTab,
     setHoveredDisc,
     setShowDiscs,

@@ -29,7 +29,7 @@ export function AlbumArtwork({
 }: AlbumArtworkProps) {
   return (
     <div
-      className="lg:col-span-7 flex justify-center items-center relative"
+      className="hidden lg:col-span-7 lg:flex justify-center items-center relative"
       style={{ perspective: "1600px" }}
     >
       <div

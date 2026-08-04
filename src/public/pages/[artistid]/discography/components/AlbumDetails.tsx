@@ -12,14 +12,12 @@ import { TrackPlayer } from "./TrackPlayer";
 interface AlbumDetailsProps {
   activeTab: DiscographyTab;
   album: DiscographyAlbum;
-  audioDuration: number;
   currentTrackIndex: number;
   hoveredDisc: number | null;
   isPlaying: boolean;
   locale: Locale;
   members?: DiscographyMember[];
   gallery?: DiscographyGalleryItem[];
-  progress: number;
   time: {
     current: string;
     total: string;
@@ -27,7 +25,6 @@ interface AlbumDetailsProps {
   onNextTrack: () => void;
   onPlayTrack: (index: number) => void;
   onPreviousTrack: () => void;
-  onSeek: (progress: number) => void;
   onTabChange: (tab: DiscographyTab) => void;
   onTogglePlay: () => void;
 }
@@ -35,19 +32,16 @@ interface AlbumDetailsProps {
 export function AlbumDetails({
   activeTab,
   album,
-  audioDuration,
   currentTrackIndex,
   hoveredDisc,
   isPlaying,
   locale,
   members = [],
   gallery = [],
-  progress,
   time,
   onNextTrack,
   onPlayTrack,
   onPreviousTrack,
-  onSeek,
   onTabChange,
   onTogglePlay,
 }: AlbumDetailsProps) {
@@ -60,7 +54,7 @@ export function AlbumDetails({
   ];
 
   return (
-    <div className="lg:col-span-5 flex flex-col gap-4 w-full relative z-20 h-auto min-h-[480px] lg:h-full lg:min-h-0 lg:max-h-[600px]">
+    <div className="hidden lg:col-span-5 lg:flex flex-col gap-4 w-full relative z-20 h-auto min-h-[620px] lg:h-full lg:min-h-0 lg:max-h-[600px]">
       <div className="shrink-0">
         <span
           className="text-[10px] font-medium uppercase text-[var(--color-static-white)]"
@@ -156,14 +150,11 @@ export function AlbumDetails({
             </p>
             <TrackPlayer
               albumColor={album.color}
-              audioDuration={audioDuration}
               isPlaying={isPlaying}
-              progress={progress}
               time={time}
               track={currentTrack}
               onNext={onNextTrack}
               onPrevious={onPreviousTrack}
-              onSeek={onSeek}
               onTogglePlay={onTogglePlay}
             />
             <TrackList

@@ -63,6 +63,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     { id: "notices", categoryLabel: "워크스페이스", title: "전체 공지", url: "/admin/notices" },
     { id: "audit-logs", categoryLabel: "워크스페이스", title: "관리자 변경 이력", url: "/admin/audit-logs" },
     { id: "protect", categoryLabel: "워크스페이스", title: "권익 보호 신고", url: "/admin/protect" },
+    { id: "auditions", categoryLabel: "워크스페이스", title: "오디션 캠페인", url: "/admin/auditions/campaigns" },
     { id: "settings", categoryLabel: "사이트 설정", title: "사이트 설정", url: "/admin/settings" },
     { id: "new-artist", categoryLabel: "워크스페이스", title: "새 아티스트 추가", url: "/admin/artists/new/profile" },
     { id: "company", categoryLabel: "사이트 설정", title: "회사 정보", url: "/admin/settings?tab=company" },

@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
@@ -8,9 +7,7 @@ import type { DiscographyTrack } from "../lib/types";
 
 interface TrackPlayerProps {
   albumColor: string;
-  audioDuration: number;
   isPlaying: boolean;
-  progress: number;
   time: {
     current: string;
     total: string;
@@ -18,20 +15,16 @@ interface TrackPlayerProps {
   track?: DiscographyTrack;
   onNext: () => void;
   onPrevious: () => void;
-  onSeek: (progress: number) => void;
   onTogglePlay: () => void;
 }
 
 export function TrackPlayer({
   albumColor,
-  audioDuration,
   isPlaying,
-  progress,
   time,
   track,
   onNext,
   onPrevious,
-  onSeek,
   onTogglePlay,
 }: TrackPlayerProps) {
   const { t } = useLocale();
@@ -39,7 +32,7 @@ export function TrackPlayer({
   const youtubeHref = safeHref(track?.youtubeUrl);
   return (
     <div
-      className="p-4 rounded-2xl flex flex-col gap-3 shrink-0"
+      className="p-5 sm:p-4 rounded-2xl flex flex-col gap-4 sm:gap-3 shrink-0"
       style={{
         backgroundColor: "var(--alpha-ffffff-025)",
         border: "1px solid var(--alpha-ffffff-05)",
@@ -60,43 +53,22 @@ export function TrackPlayer({
         </span>
       </div>
 
-      <label className="discography-progress-wrap">
-        <span className="sr-only">{track?.title} {t.discography.progress}</span>
-        <input
-          className="discography-progress"
-          type="range"
-          min="0"
-          max="100"
-          step="0.1"
-          value={progress}
-          disabled={!audioHref || !audioDuration}
-          aria-valuetext={`${time.current} / ${time.total}`}
-          style={
-            {
-              "--progress": `${progress}%`,
-              "--album-accent": albumColor,
-            } as CSSProperties
-          }
-          onChange={(event) => onSeek(Number(event.currentTarget.value))}
-        />
-      </label>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center mt-1">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center py-1 sm:py-0">
         <span aria-hidden="true" />
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center justify-center gap-8 sm:gap-6">
           <button
             onClick={onPrevious}
-            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
+            className="w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-[var(--color-static-white)] hover:bg-[var(--alpha-ffffff-06)] active:scale-95 transition-all duration-base"
             aria-label={t.discography.previousTrack}
           >
-            <ChevronLeft className="w-5 h-5" aria-hidden="true" />
+            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
           </button>
           <button
             onClick={onTogglePlay}
             disabled={!audioHref}
             aria-label={isPlaying ? t.discography.pause : t.discography.play}
             title={audioHref ? (isPlaying ? t.discography.pause : t.discography.play) : t.discography.noAudio}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+            className="w-14 h-14 sm:w-10 sm:h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
             style={{
               backgroundColor: albumColor,
               color: "var(--color-static-black)",
@@ -104,17 +76,17 @@ export function TrackPlayer({
             }}
           >
             {isPlaying ? (
-              <Pause className="w-5 h-5" aria-hidden="true" />
+              <Pause className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
             ) : (
-              <Play className="w-5 h-5 pl-0.5" aria-hidden="true" />
+              <Play className="w-6 h-6 sm:w-5 sm:h-5 pl-0.5" aria-hidden="true" />
             )}
           </button>
           <button
             onClick={onNext}
-            className="text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] transition-colors duration-base"
+            className="w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-[var(--color-static-white)] hover:bg-[var(--alpha-ffffff-06)] active:scale-95 transition-all duration-base"
             aria-label={t.discography.nextTrack}
           >
-            <ChevronRight className="w-5 h-5" aria-hidden="true" />
+            <ChevronRight className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
           </button>
         </div>
         {youtubeHref ? (

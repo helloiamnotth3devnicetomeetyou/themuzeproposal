@@ -39,14 +39,14 @@ export function AlbumDock({
   };
   return (
     <div
-      className="w-full py-3 border-t z-10 relative shrink-0"
+      className="hidden lg:block w-full py-3 border-t z-10 relative shrink-0"
       style={{
         backgroundColor: "var(--alpha-080808-65)",
         backdropFilter: "blur(24px) saturate(1.3)",
         borderColor: "var(--alpha-ffffff-04)",
       }}
     >
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-8 flex items-center gap-2 sm:gap-3">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-8 flex items-center gap-1.5 sm:gap-3">
         <button
           onClick={onToggleSort}
           aria-label={
@@ -55,7 +55,7 @@ export function AlbumDock({
               : t.discography.sortDescending
           }
           title={sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
-          className="flex min-h-11 items-center gap-1 px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
+          className="flex w-11 h-11 sm:w-auto min-h-11 items-center justify-center gap-1 px-1 sm:px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -65,7 +65,7 @@ export function AlbumDock({
             className="w-3 h-3 text-[var(--palette-9ca3af)]"
             aria-hidden="true"
           />
-          <span className="text-[8px] font-sans font-semibold tracking-wider text-[var(--palette-9ca3af)]">
+          <span className="hidden sm:inline text-[8px] font-sans font-semibold tracking-wider text-[var(--palette-9ca3af)]">
             {sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
           </span>
         </button>
@@ -91,7 +91,7 @@ export function AlbumDock({
 
         <div
           ref={railRef}
-          className="discography-album-rail min-w-0 flex-1 flex items-center gap-2.5 overflow-x-auto scrollbar-none py-1"
+          className="discography-album-rail min-w-0 flex-1 flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto scrollbar-none py-1"
         >
           {albums.map((album, index) => {
             const isCurrent = index === albumIndex;
@@ -104,7 +104,7 @@ export function AlbumDock({
                 onClick={() => selectAlbum(index)}
                 data-album-index={index}
                 aria-pressed={isCurrent}
-                className="flex min-h-11 items-center gap-2.5 px-2.5 py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
+                className="flex min-h-11 items-center gap-2 sm:gap-2.5 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
                 style={{
                   backgroundColor: isCurrent
                     ? "var(--alpha-ffffff-06)"
@@ -147,7 +147,7 @@ export function AlbumDock({
                     sizes="40px"
                   />
                 </div>
-                <div className="text-left shrink-0 pr-1">
+                <div className="text-left shrink-0 pr-1 max-w-24 sm:max-w-none">
                   <p
                     className={`text-[10px] font-black leading-none tracking-tight transition-colors duration-base ${
                       isCurrent
@@ -158,7 +158,8 @@ export function AlbumDock({
                     {album.title}
                   </p>
                   <p
-                    className={`text-[7px] uppercase font-medium mt-0.5 tracking-wider transition-colors duration-base ${
+                    aria-hidden="true"
+                    className={`hidden sm:block text-[7px] uppercase font-medium mt-0.5 tracking-wider transition-colors duration-base ${
                       isCurrent
                         ? "text-[var(--palette-9ca3af)]"
                         : "text-[var(--palette-4b5563)] group-hover:text-[var(--palette-6b7280)]"

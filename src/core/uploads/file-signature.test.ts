@@ -60,6 +60,11 @@ describe("validateFileSignature", () => {
       extension: "pdf",
     });
   });
+
+  it("recognizes audition audio and MP4 containers by signature", async () => {
+    await expect(validateFileSignature(blob("ID3audio"), "audition-attachment")).resolves.toEqual({ mimeType: "audio/mpeg", extension: "mp3" });
+    await expect(validateFileSignature(blob([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]), "audition-attachment")).resolves.toEqual({ mimeType: "video/mp4", extension: "mp4" });
+  });
 });
 
 describe("extensionMatches", () => {

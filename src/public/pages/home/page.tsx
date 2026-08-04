@@ -129,7 +129,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 src={slide.imageUrl}
                 alt={`${slide.artistName} ${slide.title}`}
                 fill
-                sizes="100vw"
+                sizes="(max-width: 768px) 768px, 100vw"
                 preload={index === 0}
                 fetchPriority={index === 0 ? "high" : undefined}
                 loading={index === 0 ? undefined : "lazy"}

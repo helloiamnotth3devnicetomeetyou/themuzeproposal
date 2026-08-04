@@ -3,7 +3,7 @@
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, type TouchEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useLocale } from "@/core/providers/LocaleContext";
 import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
@@ -13,6 +13,7 @@ import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
 import { DiscographyBackground } from "./DiscographyBackground";
+import { MobileDiscographyPlayer } from "./MobileDiscographyPlayer";
 
 export function DiscographyExperience() {
   const { locale, t } = useLocale();
@@ -20,7 +21,7 @@ export function DiscographyExperience() {
   const preview = usePreviewPayload("album");
   const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
-  const albumSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const [mobileView, setMobileView] = useState<"album" | "tracks">("album");
   const discography = useDiscographyController(
     artistid,
     audioRef,
@@ -41,21 +42,6 @@ export function DiscographyExperience() {
     const candidate = coverCandidates[index];
     if (candidate) void preloadImages([candidate]);
   }, [coverCandidates]);
-  const startAlbumSwipe = (event: TouchEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button, a, input")) return;
-    const touch = event.touches[0];
-    if (touch) albumSwipeStart.current = { x: touch.clientX, y: touch.clientY };
-  };
-  const endAlbumSwipe = (event: TouchEvent<HTMLDivElement>) => {
-    const start = albumSwipeStart.current;
-    albumSwipeStart.current = null;
-    const touch = event.changedTouches[0];
-    if (!start || !touch) return;
-    const x = touch.clientX - start.x;
-    const y = touch.clientY - start.y;
-    if (Math.abs(x) < 56 || Math.abs(x) <= Math.abs(y)) return;
-    discography.switchAlbum(Math.max(0, Math.min(discography.sortedAlbums.length - 1, discography.albumIndex + (x < 0 ? 1 : -1))));
-  };
 
   if (discography.loading || !discography.album) {
     const message =
@@ -85,7 +71,7 @@ export function DiscographyExperience() {
 
   return (
     <main
-      className="h-[100dvh] w-full relative overflow-hidden flex flex-col"
+      className="min-h-[100dvh] lg:h-[100dvh] w-full relative overflow-x-hidden lg:overflow-hidden flex flex-col"
       style={{ backgroundColor: "var(--palette-050505)" }}
     >
       <audio
@@ -101,12 +87,30 @@ export function DiscographyExperience() {
         isPlaying={discography.isPlaying}
       />
 
-      <div
-        className={`flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 items-start lg:items-center max-w-[1400px] mx-auto px-5 sm:px-8 pb-8 w-full relative z-10 overflow-y-auto lg:overflow-visible pt-24 lg:pt-28 gap-7 lg:gap-8 ${discography.contentClass}`}
-        onTouchStart={startAlbumSwipe}
-        onTouchEnd={endAlbumSwipe}
-        onTouchCancel={() => { albumSwipeStart.current = null; }}
-      >
+      <div className="lg:hidden min-h-[100dvh] w-full max-w-[640px] mx-auto px-5 pb-8 pt-24 relative z-10">
+        <MobileDiscographyPlayer
+          album={album}
+          albumIndex={discography.albumIndex}
+          albums={discography.sortedAlbums}
+          artistName={discography.artistName}
+          currentTrackIndex={discography.currentTrackIndex}
+          gallery={discography.gallery}
+          hoveredDisc={discography.hoveredDisc}
+          isPlaying={discography.isPlaying}
+          locale={locale}
+          members={discography.members}
+          time={discography.time}
+          view={mobileView}
+          onIntentAlbum={preloadAlbum}
+          onNextTrack={discography.nextTrack}
+          onPlayTrack={discography.playTrack}
+          onPreviousTrack={discography.previousTrack}
+          onSelectAlbum={discography.switchAlbum}
+          onTogglePlay={discography.togglePlay}
+          onViewChange={setMobileView}
+        />
+      </div>
+      <div className={`hidden lg:grid lg:flex-1 lg:min-h-0 lg:grid-cols-12 lg:items-center max-w-[1400px] mx-auto px-8 pb-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}>
         <AlbumArtwork
           album={album}
           artistName={discography.artistName}
@@ -123,19 +127,16 @@ export function DiscographyExperience() {
         <AlbumDetails
           activeTab={discography.activeTab}
           album={album}
-          audioDuration={discography.audioDuration}
           currentTrackIndex={discography.currentTrackIndex}
           hoveredDisc={discography.hoveredDisc}
           isPlaying={discography.isPlaying}
           locale={locale}
           members={discography.members}
           gallery={discography.gallery}
-          progress={discography.progress}
           time={discography.time}
           onNextTrack={discography.nextTrack}
           onPlayTrack={discography.playTrack}
           onPreviousTrack={discography.previousTrack}
-          onSeek={discography.seek}
           onTabChange={discography.setActiveTab}
           onTogglePlay={discography.togglePlay}
         />

@@ -50,6 +50,8 @@ export const AUDIT_TABLES = [
   "contact_inquiries",
   "protect_reports",
   "audition_submissions",
+  "audition_campaigns",
+  "audition_form_fields",
   "profiles",
   "storage.objects",
 ] as const;
@@ -69,6 +71,8 @@ const TABLE_LABELS: Record<string, string> = {
   contact_inquiries: "문의",
   protect_reports: "권익 보호 신고",
   audition_submissions: "오디션 지원",
+  audition_campaigns: "오디션 캠페인",
+  audition_form_fields: "오디션 폼 필드",
   profiles: "관리자 권한",
   "storage.objects": "비즈니스 자료 파일",
 };
@@ -89,6 +93,9 @@ const FIELD_LABELS: Record<string, string> = {
   status: "상태",
   admin_note: "관리자 메모",
   notes: "관리자 메모",
+  reviewer_notes: "심사 메모",
+  field_key: "필드 키",
+  field_type: "필드 유형",
   role: "관리자 역할",
   is_active: "활성 상태",
   is_published: "공개 상태",

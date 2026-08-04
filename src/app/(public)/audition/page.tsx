@@ -1,3 +1,3 @@
-import { createPageMetadata } from "@/core/seo/metadata";
+import { createPrivatePageMetadata } from "@/core/seo/metadata";
 export { default } from "@/public/pages/audition/page";
-export const metadata = createPageMetadata("Audition");
+export const metadata = createPrivatePageMetadata("Audition");

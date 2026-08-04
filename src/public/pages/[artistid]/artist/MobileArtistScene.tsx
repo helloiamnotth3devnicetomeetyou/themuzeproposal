@@ -259,7 +259,7 @@ export default function MobileArtistScene({
               >
                 <ArrowLeft aria-hidden="true" />
               </button>
-              {groupBio && <p>{groupBio}</p>}
+              <span aria-hidden="true" />
               <button
                 type="button"
                 disabled={activeIndex === scenes.length - 1}
@@ -269,6 +269,7 @@ export default function MobileArtistScene({
                 <ArrowRight aria-hidden="true" />
               </button>
             </div>
+            {groupBio && <div className={styles.mobileGroupBio}><strong>{copy.groupProfile}</strong><p>{groupBio}</p></div>}
           </>
         )}
       </section>

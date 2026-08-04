@@ -203,8 +203,10 @@
 .mobileSceneActions button { display:grid; width:44px; height:44px; place-items:center; border:1px solid var(--alpha-ffffff-14); border-radius:50%; background:transparent; color:var(--color-static-white); transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease; }
 .mobileSceneActions button:active:not(:disabled) { transform: scale(0.92); }
 .mobileSceneActions button:disabled { opacity:.25; }
-.mobileSceneActions p { display:-webkit-box; margin:0; overflow:hidden; color:var(--alpha-ffffff-58); font-size:9px; line-height:1.55; text-align:center; word-break:keep-all; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .mobileSceneActions svg { width:16px; height:16px; }
+.mobileGroupBio { padding:14px 2px 2px; border-top:1px solid var(--alpha-ffffff-12); }
+.mobileGroupBio strong { color:var(--artist-accent); font-size:8px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.mobileGroupBio p { margin:10px 0 0; color:var(--alpha-ffffff-76); font-size:13px; line-height:1.7; word-break:keep-all; }
 .mobileExternalLink { display:inline-flex; min-height:30px; align-items:center; align-self:center; gap:7px; color:var(--artist-accent); font-size:8px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
 .mobileExternalLink svg { width:13px; height:13px; }
 .mobileSheetLayer { position:absolute; z-index:20; inset:0; display:flex; align-items:flex-end; }

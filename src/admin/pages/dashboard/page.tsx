@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Disc3, FilePlus2, ListMusic, Lock } from "lucide-react";
+import { ArrowRight, Disc3, FilePlus2, ListMusic } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
 
 type Stats = { artists: number; albums: number; members: number; notices: number; auditions: number; protectReports: number; protectActive: number };
@@ -48,17 +48,14 @@ export default function AdminDashboard() {
         <div className="desk-release-list">{recentAlbums.map((album, index) => <Link key={album.id} href={`/admin/artists/${album.artist?.id || primaryArtistId || "new"}/discography?album=${album.id}`}><span className="desk-release-number">{String(index + 1).padStart(2, "0")}</span><span className="desk-release-cover">{album.cover_url ? <span style={{ backgroundImage: `url(${album.cover_url})` }} /> : <i />}</span><span className="desk-release-copy"><b>{album.title}</b><small>{album.artist?.name || "THE MUZE"} · {album.type}</small></span><span className={`cms-status ${album.is_published ? "is-live" : ""}`}>{album.is_published ? "공개" : "초안"}</span><span className="desk-release-arrow"><ArrowRight aria-hidden="true" /></span></Link>)}{!recentAlbums.length && <div className="desk-empty-row">아직 등록된 앨범이 없습니다.</div>}</div>
       </div>
       <aside className="desk-inbox-stack">
-        <div className="desk-inbox-card is-locked">
+        <Link href="/admin/auditions/campaigns" className="desk-inbox-card">
           <span>AUDITION</span>
           <strong>{stats.auditions}</strong>
           <div>
             <h2>접수된 지원서</h2>
-            <i className="text-[var(--text-faint)]"><Lock className="w-3 h-3" aria-hidden="true" /></i>
+            <i><ArrowRight aria-hidden="true" /></i>
           </div>
-          <div className="desk-inbox-locked-overlay">
-            <span>협의 후 개발</span>
-          </div>
-        </div>
+        </Link>
         <Link href="/admin/protect" className="desk-inbox-card is-protect"><span>PROTECT · 전체 {stats.protectReports}</span><strong>{stats.protectActive}</strong><div><h2>확인 필요한 신고</h2><i><ArrowRight aria-hidden="true" /></i></div></Link>
       </aside>
     </section>

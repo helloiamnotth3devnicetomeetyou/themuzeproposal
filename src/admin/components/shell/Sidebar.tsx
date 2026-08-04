@@ -22,6 +22,7 @@ const contentLinks = [
   { label: "전체 공지", href: "/admin/notices", icon: FileText },
   { label: "권익 보호", href: "/admin/protect", icon: ShieldCheck },
   { label: "문의 관리", href: "/admin/contact", icon: Mail },
+  { label: "오디션", href: "/admin/auditions/campaigns", icon: Inbox },
 ];
 
 const systemLinks = [

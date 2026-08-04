@@ -7,6 +7,7 @@ interface TrackListProps {
   currentTrackIndex: number;
   hoveredDisc: number | null;
   isPlaying: boolean;
+  layout?: "panel" | "flow";
   onPlayTrack: (index: number) => void;
 }
 
@@ -15,11 +16,12 @@ export function TrackList({
   currentTrackIndex,
   hoveredDisc,
   isPlaying,
+  layout = "panel",
   onPlayTrack,
 }: TrackListProps) {
   const { t } = useLocale();
   return (
-    <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-none pr-1 min-h-0">
+    <div className={`flex flex-col gap-1 pr-1 ${layout === "panel" ? "flex-1 min-h-0 overflow-y-auto scrollbar-none" : "overflow-visible"}`}>
       {album.tracks.map((track, index) => {
         const isActive = currentTrackIndex === index;
         const isHovered = hoveredDisc === index;

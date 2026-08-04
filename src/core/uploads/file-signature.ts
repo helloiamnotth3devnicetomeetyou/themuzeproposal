@@ -7,7 +7,8 @@ type ValidatedFileType =
   | "application/zip"
   | "application/vnd.ms-powerpoint"
   | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  | "audio/mpeg";
+  | "audio/mpeg"
+  | "video/mp4";
 
 export type FileValidationProfile =
   | "public-image"
@@ -19,7 +20,7 @@ export type FileValidationProfile =
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
-  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "ppt" | "pptx" | "mp3";
+  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "ppt" | "pptx" | "mp3" | "mp4";
 };
 
 const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType>> = {
@@ -45,6 +46,8 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
     "image/webp",
     "image/gif",
     "application/pdf",
+    "audio/mpeg",
+    "video/mp4",
   ]),
 };
 
@@ -58,6 +61,7 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
   "application/vnd.ms-powerpoint": "ppt",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
   "audio/mpeg": "mp3",
+  "video/mp4": "mp4",
 };
 
 const SIGNATURE_HEADER_BYTES = 4 * 1024;
@@ -113,6 +117,7 @@ function detectType(bytes: Uint8Array): ValidatedFileType | null {
 
   if (ascii(bytes, 0, 3) === "ID3") return "audio/mpeg";
   if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return "audio/mpeg";
+  if (ascii(bytes, 4, 4) === "ftyp") return "video/mp4";
   return null;
 }
 

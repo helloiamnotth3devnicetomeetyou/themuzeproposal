@@ -5,11 +5,12 @@ import type { NextRequest } from "next/server";
 import { clientIp } from "@/core/http/client-ip";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
-export type SubmissionScope = "contact_inquiry" | "protect_report";
+export type SubmissionScope = "contact_inquiry" | "protect_report" | "audition_submission";
 
 const LIMITS: Record<SubmissionScope, { limit: number; windowSeconds: number }> = {
   contact_inquiry: { limit: 5, windowSeconds: 15 * 60 },
   protect_report: { limit: 5, windowSeconds: 15 * 60 },
+  audition_submission: { limit: 3, windowSeconds: 24 * 60 * 60 },
 };
 
 function hashIdentifier(value: string, secret: string) {

@@ -9,7 +9,7 @@ export type ArtistNavigationItem = {
   logo_url: string | null;
 };
 export type NavTranslations = {
-  nav: { about: string; notice: string };
+  nav: { about: string; audition: string; notice: string };
   common: {
     openMenu: string;
     closeMenu: string;
