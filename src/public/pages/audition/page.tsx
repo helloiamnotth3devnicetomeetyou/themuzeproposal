@@ -11,7 +11,7 @@ export default async function AuditionPage() {
   const [campaignResult, fieldResult, submissionResult] = await Promise.all([
     supabase.from("audition_campaigns").select("*").order("starts_at", { ascending: false }),
     supabase.from("audition_form_fields").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("audition_submissions").select("id,campaign_id,user_id,answers,form_snapshot,status,created_at,updated_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.rpc("get_my_audition_submissions"),
   ]);
 
   return <AuditionClient
