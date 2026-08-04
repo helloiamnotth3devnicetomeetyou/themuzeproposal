@@ -46,7 +46,7 @@ describe("POST /api/audition/submit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.SUBMISSION_RATE_LIMIT_SECRET = "test-secret";
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "applicant@example.com" } }, error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "applicant@example.com", email_confirmed_at: "2026-08-01T00:00:00.000Z" } }, error: null });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, retryAfter: 0 });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.update.mockReturnValue(chain({ error: null }));
@@ -75,6 +75,16 @@ describe("POST /api/audition/submit", () => {
     const response = await POST(request("연기"));
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_OPTION" });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an application email that does not belong to the authenticated account", async () => {
+    const forged = request();
+    const form = await forged.formData();
+    form.set("answers[email]", "victim@example.com");
+    const response = await POST(new NextRequest(forged.url, { method: "POST", headers: { origin: "http://localhost" }, body: form }));
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ code: "EMAIL_ACCOUNT_MISMATCH" });
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 

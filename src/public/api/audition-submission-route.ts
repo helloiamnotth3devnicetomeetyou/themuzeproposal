@@ -130,9 +130,12 @@ export async function POST(request: NextRequest) {
   const emailField = fields.find((field) => EMAIL_KEYS.has(field.field_key));
   const email = emailField ? text(formData, emailField.field_key).toLowerCase() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return errorResponse("VALID_EMAIL_REQUIRED", 422);
+  const accountEmail = user.email?.trim().toLowerCase() ?? "";
+  if (!accountEmail || !user.email_confirmed_at || email !== accountEmail) return errorResponse("EMAIL_ACCOUNT_MISMATCH", 422);
+  answers[emailField!.field_key] = accountEmail;
   const secret = process.env.SUBMISSION_RATE_LIMIT_SECRET?.trim();
   if (!secret) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  const emailHash = createHmac("sha256", secret).update(`${campaignId}:${email}`).digest("hex");
+  const emailHash = createHmac("sha256", secret).update(`${campaignId}:${accountEmail}`).digest("hex");
   let duplicateQuery = service.from("audition_submissions").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("applicant_email_hash", emailHash);
   if (existing) duplicateQuery = duplicateQuery.neq("id", existing.id);
   const { count, error: duplicateError } = await duplicateQuery;
