@@ -58,6 +58,7 @@ describe("POST /api/audition/submit", () => {
   it("builds the snapshot server-side and ties the service-role insert to the signed-in user", async () => {
     const response = await POST(request());
     expect(response.status).toBe(201);
+    expect(mocks.consumeRateLimit).toHaveBeenCalledWith(expect.anything(), "audition_submission", "user-1");
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ campaign_id: campaign.id, user_id: "user-1", answers: expect.objectContaining({ email: "applicant@example.com", part: "보컬", privacy: "true" }), form_snapshot: fields, applicant_email_hash: expect.any(String) }));
   });
 

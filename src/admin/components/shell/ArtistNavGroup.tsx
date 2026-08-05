@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
@@ -21,7 +22,7 @@ interface ArtistNavGroupProps {
   onToggle: () => void;
   pathname: string;
   artistLinks: ArtistLink[];
-  BRAND_PINK_HEX?: string;
+  isCollapsed?: boolean;
 }
 
 export default function ArtistNavGroup({
@@ -30,14 +31,40 @@ export default function ArtistNavGroup({
   onToggle,
   pathname,
   artistLinks,
+  isCollapsed = false,
 }: ArtistNavGroupProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number } | null>(null);
+  const headingRef = useRef<HTMLButtonElement>(null);
+
+  const updatePosition = useCallback(() => {
+    if (headingRef.current) {
+      const rect = headingRef.current.getBoundingClientRect();
+      const popupHeight = 180;
+      const top = Math.min(rect.top, window.innerHeight - popupHeight - 12);
+      setPopupPos({ top: Math.max(12, top), left: rect.right + 10 });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isHovered && isCollapsed) {
+      updatePosition();
+    }
+  }, [isHovered, isCollapsed, updatePosition]);
+
   return (
-    <div className={`cms-artist-group ${isExpanded ? "is-expanded" : ""}`}>
+    <div
+      className={`cms-artist-group ${isExpanded ? "is-expanded" : ""}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <button
+        ref={headingRef}
         type="button"
         className="cms-artist-heading"
         onClick={onToggle}
         aria-expanded={isExpanded}
+        title={isCollapsed ? artist.name : undefined}
       >
         <span>
           <span className="cms-artist-logo">
@@ -64,7 +91,9 @@ export default function ArtistNavGroup({
           <ChevronDown aria-hidden="true" />
         </b>
       </button>
-      {isExpanded && (
+
+      {/* Expanded links for non-collapsed sidebar */}
+      {!isCollapsed && isExpanded && (
         <div className="cms-artist-links">
           {artistLinks.map((item) => {
             const href = `/admin/artists/${artist.id}/${item.segment}`;
@@ -84,6 +113,44 @@ export default function ArtistNavGroup({
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating popup for collapsed sidebar */}
+      {isCollapsed && isHovered && popupPos && (
+        <div
+          className="cms-artist-collapsed-popup"
+          style={{
+            position: "fixed",
+            top: popupPos.top,
+            left: popupPos.left,
+            zIndex: 9999,
+          }}
+        >
+          <div className="cms-artist-collapsed-popup-header">
+            {artist.name}
+          </div>
+          <div className="cms-artist-collapsed-popup-links">
+            {artistLinks.map((item) => {
+              const href = `/admin/artists/${artist.id}/${item.segment}`;
+              return (
+                <Link
+                  key={item.label}
+                  href={href}
+                  className={`cms-artist-link ${
+                    pathname === href ||
+                    (item.label === "음악 · 디스코그래피" &&
+                      pathname.includes(`/artists/${artist.id}/tracks`))
+                      ? "is-active"
+                      : ""
+                  }`}
+                  onClick={() => setIsHovered(false)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

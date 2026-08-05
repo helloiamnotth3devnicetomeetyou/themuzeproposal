@@ -1,7 +1,9 @@
 import type { NextRequest } from "next/server";
 
 export function clientIp(request: NextRequest) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  const segments = request.headers.get("x-forwarded-for")
+    ?.split(",").map((s) => s.trim()).filter(Boolean);
+  return segments?.at(-1)
     || request.headers.get("x-real-ip")?.trim()
     || "unknown";
 }

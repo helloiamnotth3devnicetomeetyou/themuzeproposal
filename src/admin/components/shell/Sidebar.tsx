@@ -254,6 +254,7 @@ export default function Sidebar({
                   onToggle={() => setExpandedArtist(isExpanded ? "" : artist.id)}
                   pathname={pathname}
                   artistLinks={artistLinks}
+                  isCollapsed={isCollapsed}
                 />
               );
             })}

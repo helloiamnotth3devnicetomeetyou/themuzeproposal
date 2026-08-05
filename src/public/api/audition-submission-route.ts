@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   const session = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await session.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  const rate = await consumeSubmissionRateLimit(request, "audition_submission");
+  const rate = await consumeSubmissionRateLimit(request, "audition_submission", user.id);
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: userError } = await sessionClient.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
 
-  const rate = await consumeSubmissionRateLimit(request, "protect_report");
+  const rate = await consumeSubmissionRateLimit(request, "protect_report", user.id);
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 

@@ -99,6 +99,26 @@ export default function LoginFormPanel({
     <div className="w-full md:w-[45%] flex items-center justify-start px-8 md:px-16 lg:px-24 py-24 z-10">
       <div className="w-full max-w-sm flex flex-col items-start text-left">
 
+        {/* Top Back Link */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-brand-pink"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>{t.backToHome}</span>
+          </Link>
+        </div>
+
         {/* Brand Logo */}
         <div className="flex flex-col items-start mb-12">
           <Link href="/" className="relative w-44 h-11 block transition-transform duration-slow hover:scale-105">
@@ -233,17 +253,6 @@ export default function LoginFormPanel({
               </button>
             </p>
           )}
-        </div>
-
-        {/* Back Link */}
-        <div className="mt-10">
-          <Link
-            href="/"
-            className="text-[10px] font-bold tracking-widest transition-colors hover:text-brand-pink"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t.backToHome}
-          </Link>
         </div>
 
       </div>

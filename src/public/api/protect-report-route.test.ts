@@ -53,6 +53,7 @@ describe("POST /api/protect-reports", () => {
   it("creates the report and its validated evidence on the server", async () => {
     const response = await POST(validRequest());
     expect(response.status).toBe(200);
+    expect(mocks.consumeRateLimit).toHaveBeenCalledWith(expect.anything(), "protect_report", "user-1");
     expect(mocks.upload).toHaveBeenCalledWith(expect.stringMatching(/^user-1\/.+\.png$/), expect.any(File), expect.objectContaining({ contentType: "image/png" }));
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", confirmation: true }));
   });
