@@ -113,12 +113,13 @@ export function MobileDiscographyPlayer({
     swipeStart.current = null;
     const el = swipeContainerRef.current;
     const touch = event.changedTouches[0];
-    if (!start || !touch || !el) return;
+    if (!start || !touch) return;
     const x = touch.clientX - start.x;
     const y = touch.clientY - start.y;
 
     // 원위치 스냅 (스프링감)
     const snapBack = () => {
+      if (!el) return;
       el.style.transition = "transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)";
       el.style.transform = "translateX(0px)";
     };
@@ -134,24 +135,28 @@ export function MobileDiscographyPlayer({
       snapBack();
       return;
     }
-    // 화면 밖으로 슥 날린 뒤 앨범 전환
-    const exitX = dir < 0 ? 120 : -120;
-    el.style.transition = "transform 0.18s cubic-bezier(0.4, 0, 1, 1)";
-    el.style.transform = `translateX(${exitX}px)`;
-    const onEnd = () => {
-      el.removeEventListener("transitionend", onEnd);
-      el.style.transition = "none";
-      el.style.transform = `translateX(${-exitX}px)`;
-      selectAlbum(nextIndex);
-      // 살짝 딜레이 후 원위치 슬라이드인
-      requestAnimationFrame(() => {
+
+    // 앨범 전환은 즉시 — 이미지가 캐시에 있으므로 빈 화면 없음
+    selectAlbum(nextIndex);
+
+    // 시각적 exit → enter 애니메이션 (fire-and-forget, 테스트에 영향 없음)
+    if (el) {
+      const exitX = dir < 0 ? 120 : -120;
+      el.style.transition = "transform 0.18s cubic-bezier(0.4, 0, 1, 1)";
+      el.style.transform = `translateX(${exitX}px)`;
+      const onEnd = () => {
+        el.removeEventListener("transitionend", onEnd);
+        el.style.transition = "none";
+        el.style.transform = `translateX(${-exitX}px)`;
         requestAnimationFrame(() => {
-          el.style.transition = "transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)";
-          el.style.transform = "translateX(0px)";
+          requestAnimationFrame(() => {
+            el.style.transition = "transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)";
+            el.style.transform = "translateX(0px)";
+          });
         });
-      });
-    };
-    el.addEventListener("transitionend", onEnd, { once: true });
+      };
+      el.addEventListener("transitionend", onEnd, { once: true });
+    }
   };
 
   const tabClass = (tab: MobileView) => `relative min-h-11 px-4 py-2 text-xs font-bold transition-colors ${view === tab ? "text-[var(--color-static-white)]" : "text-[var(--palette-6b7280)]"}`;
