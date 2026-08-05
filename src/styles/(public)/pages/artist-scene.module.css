@@ -24,7 +24,7 @@
 .sceneFrame { position:relative; width:auto; min-width:100%; height:auto; min-height:100%; aspect-ratio:var(--scene-ratio); flex:0 0 auto; overflow:hidden; box-shadow:0 0 100px var(--alpha-000000-28); transition:transform 1.05s cubic-bezier(.22,.68,.24,1),filter .7s ease; will-change:transform; }
 .sceneImage { display:block; width:100%; height:100%; object-fit:cover; background:var(--palette-080808); filter:saturate(.94) contrast(1.02); animation:scene-enter .7s cubic-bezier(.2,.75,.25,1) both; transition:filter .7s cubic-bezier(.22,.68,.24,1),opacity .7s ease; user-select:none; -webkit-user-drag:none; pointer-events:none; }
 .hasSelection .sceneImage { filter:brightness(.35) saturate(.34) contrast(1.08); }
-.scenePreloader { position:fixed; top:0; left:-200vw; width:100vw; height:100vh; visibility:hidden; pointer-events:none; }
+.scenePreloader { position:fixed; top:0; left:-200vw; width:1px; height:1px; overflow:hidden; visibility:hidden; pointer-events:none; }
 
 
 .focusExposure,.hitMap { position:absolute; inset:0; width:100%; height:100%; }

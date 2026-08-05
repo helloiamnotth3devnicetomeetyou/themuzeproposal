@@ -59,6 +59,7 @@ export function MobileDiscographyPlayer({
 }: MobileDiscographyPlayerProps) {
   const { t } = useLocale();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swipeContainerRef = useRef<HTMLDivElement | null>(null);
   const track = album.tracks[currentTrackIndex];
   const canPlay = Boolean(safeHref(track?.audioUrl));
   const previousAlbum = albums[albumIndex - 1];
@@ -87,16 +88,70 @@ export function MobileDiscographyPlayer({
     ).finished.then(finish, finish);
   };
 
+  /** 드래그 중 커버 컨테이너를 손가락을 따라 translateX (rubber-band 적용) */
+  const onSwipeMove = (event: TouchEvent<HTMLDivElement>) => {
+    const start = swipeStart.current;
+    if (!start) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    // 세로 스크롤이 주 방향이면 무시
+    if (Math.abs(dy) > Math.abs(dx) * 1.2) return;
+    event.stopPropagation();
+    const el = swipeContainerRef.current;
+    if (!el) return;
+    // 끝에서 당기면 저항감 (rubber-band)
+    const atEdge = (dx > 0 && !previousAlbum) || (dx < 0 && !nextAlbum);
+    const damped = atEdge ? dx * 0.25 : dx * 0.82;
+    el.style.transition = "none";
+    el.style.transform = `translateX(${damped}px)`;
+  };
+
   const endSwipe = (event: TouchEvent<HTMLDivElement>) => {
     const start = swipeStart.current;
     swipeStart.current = null;
+    const el = swipeContainerRef.current;
     const touch = event.changedTouches[0];
-    if (!start || !touch) return;
+    if (!start || !touch || !el) return;
     const x = touch.clientX - start.x;
     const y = touch.clientY - start.y;
-    if (Math.abs(x) < 56 || Math.abs(x) <= Math.abs(y)) return;
+
+    // 원위치 스냅 (스프링감)
+    const snapBack = () => {
+      el.style.transition = "transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)";
+      el.style.transform = "translateX(0px)";
+    };
+
+    if (Math.abs(x) < 52 || Math.abs(x) <= Math.abs(y)) {
+      snapBack();
+      return;
+    }
     event.preventDefault();
-    selectAlbum(albumIndex + (x < 0 ? 1 : -1));
+    const dir = x < 0 ? 1 : -1;
+    const nextIndex = albumIndex + dir;
+    if (!albums[nextIndex]) {
+      snapBack();
+      return;
+    }
+    // 화면 밖으로 슥 날린 뒤 앨범 전환
+    const exitX = dir < 0 ? 120 : -120;
+    el.style.transition = "transform 0.18s cubic-bezier(0.4, 0, 1, 1)";
+    el.style.transform = `translateX(${exitX}px)`;
+    const onEnd = () => {
+      el.removeEventListener("transitionend", onEnd);
+      el.style.transition = "none";
+      el.style.transform = `translateX(${-exitX}px)`;
+      selectAlbum(nextIndex);
+      // 살짝 딜레이 후 원위치 슬라이드인
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)";
+          el.style.transform = "translateX(0px)";
+        });
+      });
+    };
+    el.addEventListener("transitionend", onEnd, { once: true });
   };
 
   const tabClass = (tab: MobileView) => `relative min-h-11 px-4 py-2 text-xs font-bold transition-colors ${view === tab ? "text-[var(--color-static-white)]" : "text-[var(--palette-6b7280)]"}`;
@@ -115,13 +170,22 @@ export function MobileDiscographyPlayer({
       {view === "album" ? (
         <div className="animate-slideIn pb-8 pt-5">
           <div
-            className="relative -mx-5 overflow-hidden px-5 py-3 touch-pan-y"
+            ref={swipeContainerRef}
+            className="relative -mx-5 overflow-hidden px-5 py-3 touch-pan-y will-change-transform"
             onTouchStart={(event) => {
               const touch = event.touches[0];
               if (touch) swipeStart.current = { x: touch.clientX, y: touch.clientY };
             }}
+            onTouchMove={onSwipeMove}
             onTouchEnd={endSwipe}
-            onTouchCancel={() => { swipeStart.current = null; }}
+            onTouchCancel={() => {
+              swipeStart.current = null;
+              const el = swipeContainerRef.current;
+              if (el) {
+                el.style.transition = "transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)";
+                el.style.transform = "translateX(0px)";
+              }
+            }}
           >
             {previousAlbum && (
               <button type="button" onClick={() => selectAlbum(albumIndex - 1)} aria-label={t.discography.previousAlbum} className="absolute left-[-68%] top-[11%] z-0 aspect-square w-[76%] overflow-hidden rounded-2xl border border-[var(--alpha-ffffff-05)] opacity-35">

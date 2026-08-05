@@ -31,12 +31,10 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
   const { data, loading, error } = useArtistSceneData({ artistSlug, profilePreview, memberPreview, initialData });
   const [activeSceneId, setActiveSceneId] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [pendingSceneId, setPendingSceneId] = useState<string | null>(null);
   const [groupFocused, setGroupFocused] = useState(false);
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   const [isMobileExperience, setIsMobileExperience] = useState(false);
   const focusWasOpenedHere = useRef(false);
-  const pendingSceneIdRef = useRef<string | null>(null);
 
   const artist = data?.artist;
   const members = data?.members ?? EMPTY_MEMBERS;
@@ -45,7 +43,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const focusMemberId = hoveredMemberId || selectedMemberId;
   const selectedRegion = activeScene?.artist_scene_members.find((region) => region.member_id === selectedMemberId);
-  const pendingScene = scenes.find((scene) => scene.id === pendingSceneId) ?? null;
+
   const artistName = artist ? localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name) : artistSlug.toUpperCase();
   const scenePreloadCandidates = useMemo(() => {
     const urls = [
@@ -72,33 +70,9 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
 
   const memberScenes = useMemo(() => selectedMemberId ? scenes.filter((scene) => scene.artist_scene_members.some((region) => region.member_id === selectedMemberId)) : scenes, [scenes, selectedMemberId]);
   const activeSceneMembers = useMemo(() => members.filter((member) => activeScene?.artist_scene_members.some((region) => region.member_id === member.id)), [activeScene, members]);
-  const warmScene = (id: string) => {
-    const scene = scenes.find((item) => item.id === id);
-    if (!scene) return;
-    const candidates = [
-      { src: scene.image_url },
-      ...scene.artist_scene_members
-        .map((region) => region.mask_url)
-        .filter((src): src is string => Boolean(src))
-        .map((src) => ({ src })),
-    ];
-    void preloadImages(candidates, { concurrency: 2 });
-  };
   const requestSceneChange = (id: string) => {
     setHoveredMemberId(null);
-    if (id === activeScene?.id) {
-      pendingSceneIdRef.current = null;
-      setPendingSceneId(null);
-      return;
-    }
-    warmScene(id);
-    pendingSceneIdRef.current = id;
-    setPendingSceneId(id);
-  };
-  const completeSceneChange = (id: string) => {
-    if (pendingSceneIdRef.current !== id) return;
-    pendingSceneIdRef.current = null;
-    setPendingSceneId(null);
+    if (id === activeScene?.id) return;
     setActiveSceneId(id);
   };
   const selectMember = (memberId: string) => { const member = members.find((item) => item.id === memberId); if (!member || !artist) return; const matchingScene = activeScene?.artist_scene_members.some((region) => region.member_id === memberId) ? activeScene : scenes.find((scene) => scene.artist_scene_members.some((region) => region.member_id === memberId)); if (matchingScene) setActiveSceneId(matchingScene.id); const path = `/${artist.slug}/artist/${member.slug}`; if (!selectedMemberId) { window.history.pushState({ artistMemberFocus: true }, "", path); focusWasOpenedHere.current = true; } else window.history.replaceState({ artistMemberFocus: true }, "", path); setSelectedMemberId(memberId); setGroupFocused(false); setHoveredMemberId(null); };
@@ -125,9 +99,6 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
     locale={locale}
     copy={copy}
     onChangeScene={(id) => {
-      warmScene(id);
-      pendingSceneIdRef.current = null;
-      setPendingSceneId(null);
       setActiveSceneId(id);
     }}
     onSelectMember={selectMember}
@@ -139,8 +110,20 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
     <SceneCanvas scene={localizedScene} members={members} artistName={artistName} sceneLabel={copy.scene} focusMemberId={focusMemberId} groupFocused={groupFocused} selectedMember={Boolean(selectedMember)} cameraOffset={{ x: (50 - centroid.x) * .14, y: (50 - centroid.y) * .1 }} onClose={() => { if (selectedMember || groupFocused) closeMember(); }} onHover={setHoveredMemberId} onSelect={selectMember} />
     {!selectedMember && <div className={`${styles.artistIdentity} ${groupFocused ? styles.artistIdentityFocused : ""}`}><button type="button" className={styles.artistWordmark} onClick={(event) => { event.stopPropagation(); setHoveredMemberId(null); setSelectedMemberId(null); setGroupFocused((current) => !current); }} aria-label={`${artistName} ${copy.profile}`} aria-expanded={groupFocused} aria-controls={groupBio ? "group-artist-bio" : undefined}>{artist.logo_url && <Image src={artist.logo_url} alt={`${artistName} logo`} width={240} height={80} /> }<h1>{artistName}</h1></button>{groupBio && <div id="group-artist-bio" className={styles.artistBioReveal} aria-hidden={!groupFocused}><p>{groupBio}</p></div>}</div>}
     <MemberDetailOverlay member={selectedMember} memberBio={memberBio || ""} panelLeft={Boolean(selectedRegion && outlineCentroid(selectedRegion.outline).x > 56)} copy={copy} onClose={closeMember} onNavigate={navigate} />
-    <SceneDock artist={artist} member={selectedMember} scenes={memberScenes} activeSceneId={pendingSceneId || activeScene.id} copy={copy} showReset={Boolean(selectedMember || groupFocused || activeScene.id !== scenes[0]?.id)} onChangeScene={requestSceneChange} onReset={reset} />
-    {pendingScene && <div className={styles.scenePreloader} aria-hidden="true"><Image key={`preload-${pendingScene.id}`} src={pendingScene.image_url} alt="" fill preload onLoad={() => completeSceneChange(pendingScene.id)} onError={() => completeSceneChange(pendingScene.id)} /></div>}
+    <SceneDock artist={artist} member={selectedMember} scenes={memberScenes} activeSceneId={activeScene.id} copy={copy} showReset={Boolean(selectedMember || groupFocused || activeScene.id !== scenes[0]?.id)} onChangeScene={requestSceneChange} onReset={reset} />
+    <div className={styles.scenePreloader} aria-hidden="true">
+      {scenes.map((scene, index) => (
+        <Image
+          key={scene.id}
+          src={scene.image_url}
+          alt=""
+          width={scene.image_width || 1600}
+          height={scene.image_height || 900}
+          fetchPriority={index === 0 ? "high" : undefined}
+          loading={index === 0 ? undefined : "lazy"}
+        />
+      ))}
+    </div>
     <div className={styles.sceneSweep} key={`sweep-${activeScene.id}`} aria-hidden="true" />
   </main>;
 }
