@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock3, Filter, History, Search, ShieldCheck, X } from "lucide-react";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/audit-logs/audit-logs.module.css";
 import {
@@ -138,7 +138,7 @@ export default function AuditLogsAdminPage() {
         </div>
       </header>
 
-      <form className={styles.filters} onSubmit={applyFilters}>
+      <form className={styles.filters} data-tour-id="audit-filters" onSubmit={applyFilters}>
         <div className={styles.filterHeading}>
           <span><Filter aria-hidden="true" /> 조회 조건</span>
           {activeFilterCount > 0 && <b>{activeFilterCount}개 적용 중</b>}
@@ -202,7 +202,7 @@ export default function AuditLogsAdminPage() {
           </div>
 
           {loading ? (
-            <LoadingIndicator label="변경 이력을 불러오는 중..." className={styles.loading} />
+            <AdminSkeleton variant="table" className={styles.loading} rows={5} />
           ) : logs.length ? (
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -248,7 +248,7 @@ export default function AuditLogsAdminPage() {
           </footer>
         </section>
 
-        <aside className={styles.detailPanel} aria-label="변경 상세">
+        <aside className={styles.detailPanel} data-tour-id="audit-detail" aria-label="변경 상세">
           {selected ? (
             <>
               <header className={styles.detailHeading}>

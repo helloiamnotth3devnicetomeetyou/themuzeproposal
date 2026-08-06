@@ -107,6 +107,12 @@
     justify-content: flex-end;
     padding: 8px 0;
     background: linear-gradient(180deg,transparent,var(--bg-card) 28%);
+    flex-wrap: wrap;
+  }
+
+  .content-workbench-actions .draft-save-button,
+  .music-header-actions .draft-save-button {
+    flex: 1 0 132px;
   }
 
   .content-workbench-tabs,

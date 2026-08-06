@@ -113,6 +113,10 @@
 .table td:last-child button { border: 0; background: transparent; color: var(--text-muted); font-size: 8px; font-weight: 700; cursor: pointer; }
 .table td:last-child button span { margin-left: 5px; color: var(--color-brand-pink); }
 
+.pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 15px; border-top: 1px solid var(--border-default); color: var(--text-faint); font-size: 9px; }
+.pagination button { min-width: 54px; height: 30px; border: 1px solid var(--border-default); border-radius: 7px; background: var(--bg-card); color: var(--text-secondary); font-size: 8px; cursor: pointer; }
+.pagination button:disabled { cursor: not-allowed; opacity: .4; }
+
 .status { display: inline-flex; width: max-content; align-items: center; gap: 6px; color: var(--text-faint); font-size: 8px; font-weight: 700; }
 .status i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .status_pending { color: var(--text-muted); }
@@ -133,6 +137,9 @@
 .detailHeader { display: grid; min-height: 112px; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--border-default); }
 .detailIcon { display: grid; width: 56px; height: 56px; place-items: center; border: 1px solid var(--border-default); border-radius: 9px; background: var(--bg-subtle); color: var(--color-brand-pink); }
 .detailIcon svg { width: 22px; height: 22px; }
+.detailIcon { overflow: hidden; }
+.detailIcon img { width: 100%; height: 100%; object-fit: cover; }
+.detailIcon b { font-family: var(--font-display); font-size: 17px; }
 .detailHeader > div { min-width: 0; }
 .detailHeader p { margin: 0; color: var(--color-brand-pink); font-size: 8px; font-weight: 750; }
 .detailHeader h1 { margin: 6px 0 0; overflow: hidden; color: var(--text-primary); font-size: var(--text-lg); letter-spacing: -.03em; text-overflow: ellipsis; white-space: nowrap; }

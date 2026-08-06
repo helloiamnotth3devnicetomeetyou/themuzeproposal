@@ -75,7 +75,7 @@ export function SortableSlideCard({
   } as CSSProperties;
 
   return (
-    <article ref={setNodeRef} style={style} className={`hero-slide-card ${isDragging ? "is-dragging" : ""} ${isOver ? "is-over" : ""}`}>
+    <article ref={setNodeRef} style={style} data-tour-id="hero-reorder" className={`hero-slide-card ${isDragging ? "is-dragging" : ""} ${isOver ? "is-over" : ""}`}>
       <div className="hero-slide-frame">
         {album?.hero_image_url || album?.cover_url ? <AdminAssetImage src={album.hero_image_url || album.cover_url || ""} alt="" sizes="420px" /> : <i className="hero-slide-placeholder" />}
         <span className="hero-slide-shade" />
@@ -87,7 +87,7 @@ export function SortableSlideCard({
       <footer className="hero-slide-footer">
         <span>드래그해 노출 순서 변경</span>
         <div>
-          <button type="button" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><Trash2 /></button>
+          <button type="button" data-tour-id="hero-remove" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><Trash2 /></button>
         </div>
       </footer>
     </article>

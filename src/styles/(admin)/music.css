@@ -38,7 +38,7 @@
 .music-editor-identity > div { min-width:0; }.music-editor-identity p { display:flex; align-items:center; gap:8px; margin:0; }.music-editor-identity em { color:var(--palette-e5a32f); font-size:8px; font-style:normal; font-weight:700; }
 .music-editor-identity h2 { overflow:hidden; margin:7px 0 2px; color:var(--text-primary); font-size: var(--text-lg); letter-spacing:-.03em; text-overflow:ellipsis; white-space:nowrap; }
 .music-editor-identity small { display:block; overflow:hidden; color:var(--text-faint); font-family:var(--font-sans); font-size:9px; line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
-.music-header-actions { display:flex; align-items:center; gap:8px; }.music-delete-button { border:0; background:transparent; color:var(--text-faint); font-size:9px; font-weight:700; cursor:pointer; }.music-delete-button:hover { color:var(--color-status-danger); }
+.music-header-actions { display:flex; align-items:center; gap:8px; }.music-delete-button { white-space:nowrap; }
 .music-editor-tabs { display:flex; height:46px; align-items:flex-end; gap:25px; padding:0 25px; border-bottom:1px solid var(--border-default); }
 .music-editor-tabs button { position:relative; height:46px; padding:0; border:0; background:transparent; color:var(--text-faint); font-size:10px; font-weight:700; cursor:pointer; }
 .music-editor-tabs button.is-active { color:var(--text-primary); }.music-editor-tabs button.is-active::after { content:""; position:absolute; right:0; bottom:-1px; left:0; height:2px; border-radius:2px; background:var(--color-brand-pink); }

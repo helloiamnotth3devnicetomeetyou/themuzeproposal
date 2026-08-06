@@ -1,15 +1,17 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import type { DraftDiffItem } from "@/admin/utils/draft-diff";
 
 type ConfirmTone = "default" | "danger";
 
-type ConfirmOptions = {
+export type ConfirmOptions = {
   title: string;
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: ConfirmTone;
+  details?: DraftDiffItem[];
 };
 
 type PendingConfirm = ConfirmOptions & {
@@ -42,6 +44,17 @@ function ConfirmDialog({ dialog, onClose }: { dialog: PendingConfirm; onClose: (
           <span>{danger ? "주의가 필요한 작업" : "계속하기 전 확인"}</span>
           <h2 id="admin-confirm-title">{dialog.title}</h2>
           <p id="admin-confirm-description">{dialog.description}</p>
+          {dialog.details && dialog.details.length > 0 && (
+            <ul className="admin-confirm-diff">
+              {dialog.details.map((item, index) => (
+                <li key={`${item.field}-${index}`}>
+                  <span data-kind={item.kind}>{({ change: "변경", add: "추가", delete: "삭제", order: "순서" } as const)[item.kind]}</span>
+                  <b>{item.field}</b>
+                  <small>{item.before} → {item.after}</small>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="admin-confirm-actions">
           <button ref={cancelButton} type="button" className="admin-btn admin-btn-secondary" onClick={() => onClose(false)}>{dialog.cancelLabel || "취소"}</button>

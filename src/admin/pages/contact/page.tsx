@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, ExternalLink, Inbox, Mail, MessageSquareText, Paperclip, Search } from "lucide-react";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
@@ -64,6 +64,8 @@ const formatDate = (value: string, detail = false) => new Intl.DateTimeFormat(
 ).format(new Date(value));
 const formatBytes = (value: number | null) =>
   value ? `${(value / 1024 / 1024).toFixed(1)}MB` : "";
+const PAGE_SIZE = 20;
+const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ContactAdminPage() {
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
@@ -71,26 +73,49 @@ export default function ContactAdminPage() {
   const [category, setCategory] = useState<ContactCategory>("general");
   const [viewing, setViewing] = useState<ContactInquiry | null>(null);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<ContactCategory, number>>({ general: 0, business: 0 });
   const [note, setNote] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     setLoading(true);
     setError("");
-    const { data, error: fetchError } = await supabase
+    let request = supabase
       .from("contact_inquiries")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .overrideTypes<ContactInquiry[], { merge: false }>();
+      .select("*", { count: "exact" })
+      .eq("category", category)
+      .order("created_at", { ascending: false });
+    if (filter !== "all") request = request.eq("status", filter);
+    const keyword = searchTerm(debouncedQuery);
+    if (keyword) request = request.or(`contact_name.ilike.%${keyword}%,email.ilike.%${keyword}%,phone.ilike.%${keyword}%,company_name.ilike.%${keyword}%,message.ilike.%${keyword}%`);
+    const [{ data, count, error: fetchError }, general, business] = await Promise.all([
+      request.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ContactInquiry[], { merge: false }>(),
+      supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "general"),
+      supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "business"),
+    ]);
     if (fetchError) setError(fetchError.message);
-    else setInquiries(data ?? []);
+    else {
+      setInquiries(data ?? []);
+      setTotal(count ?? 0);
+      setCategoryCounts({ general: general.count ?? 0, business: business.count ?? 0 });
+    }
     setLoading(false);
-  };
+  }, [category, debouncedQuery, filter, page]);
 
-  useEffect(() => { void Promise.resolve().then(fetchInquiries); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedQuery(query); setPage(1); }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchInquiries(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchInquiries]);
 
   const openInquiry = (inquiry: ContactInquiry) => {
     setNote(inquiry.admin_note || "");
@@ -111,27 +136,6 @@ export default function ContactAdminPage() {
     return () => { active = false; };
   }, [viewing]);
 
-  const categoryInquiries = useMemo(
-    () => inquiries.filter((inquiry) => inquiry.category === category),
-    [category, inquiries],
-  );
-
-  const filteredInquiries = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    return categoryInquiries.filter((inquiry) => {
-      const matchesStatus = filter === "all" || inquiry.status === filter;
-      const searchTarget = [
-        inquiry.contact_name,
-        inquiry.email,
-        inquiry.phone || "",
-        inquiry.company_name || "",
-        inquiry.message,
-        typeLabels[inquiry.inquiry_type] || inquiry.inquiry_type,
-      ].join(" ").toLowerCase();
-      return matchesStatus && (!keyword || searchTarget.includes(keyword));
-    });
-  }, [categoryInquiries, filter, query]);
-
   const updateInquiry = async (
     changes: Partial<Pick<ContactInquiry, "status" | "admin_note">>,
   ) => {
@@ -148,12 +152,13 @@ export default function ContactAdminPage() {
       const updated = { ...viewing, ...changes };
       setViewing(updated);
       setInquiries((current) => current.map((item) => item.id === viewing.id ? updated : item));
+      window.dispatchEvent(new Event("admin-inbox-changed"));
     }
     setSaving(false);
   };
 
   if (loading) {
-    return <LoadingIndicator label="문의 내역을 불러오는 중..." className="min-h-[320px]" />;
+    return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
   }
 
   if (viewing) {
@@ -170,7 +175,7 @@ export default function ContactAdminPage() {
           </div>
         )}
 
-        <article className={`${base.detailCard} ${styles.fullWidth}`}>
+        <article className={`${base.detailCard} ${styles.fullWidth}`} data-tour-id="contact-workspace">
           <header className={base.detailHeader}>
             <span className={base.detailIcon}>
               {isBusiness ? <BriefcaseBusiness aria-hidden="true" /> : <MessageSquareText aria-hidden="true" />}
@@ -243,7 +248,7 @@ export default function ContactAdminPage() {
           </div>
 
           <footer className={base.statusBar}>
-            <div><span>STATUS</span><b>처리 상태 변경</b></div>
+            <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
             <div>{statuses.map((status) => (
               <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? base.active : ""} onClick={() => void updateInquiry({ status: status.value })}>{status.label}</button>
             ))}</div>
@@ -253,8 +258,7 @@ export default function ContactAdminPage() {
     );
   }
 
-  const generalCount = inquiries.filter((item) => item.category === "general").length;
-  const businessCount = inquiries.filter((item) => item.category === "business").length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className={`${base.page} ${styles.fullPage}`}>
@@ -268,26 +272,26 @@ export default function ContactAdminPage() {
       <section className={`${base.summary} ${styles.fullWidth}`}>
         <div>
           <span className={base.summaryIcon}><Mail aria-hidden="true" /></span>
-          <p><small>전체 문의</small><strong>{inquiries.length}</strong></p>
+          <p><small>전체 문의</small><strong>{categoryCounts.general + categoryCounts.business}</strong></p>
         </div>
-        <div className={styles.summaryTabs} role="tablist" aria-label="문의 구분">
+        <div className={styles.summaryTabs} data-tour-id="contact-category" role="tablist" aria-label="문의 구분">
           <button
             type="button"
             role="tab"
             aria-selected={category === "general"}
             className={category === "general" ? styles.active : ""}
-            onClick={() => { setCategory("general"); setQuery(""); setFilter("all"); }}
+            onClick={() => { setCategory("general"); setQuery(""); setFilter("all"); setPage(1); }}
           >
-            <span>일반 문의</span><strong>{generalCount}</strong>
+            <span>일반 문의</span><strong>{categoryCounts.general}</strong>
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={category === "business"}
             className={category === "business" ? styles.active : ""}
-            onClick={() => { setCategory("business"); setQuery(""); setFilter("all"); }}
+            onClick={() => { setCategory("business"); setQuery(""); setFilter("all"); setPage(1); }}
           >
-            <span>Business</span><strong>{businessCount}</strong>
+            <span>Business</span><strong>{categoryCounts.business}</strong>
           </button>
         </div>
         <p>{category === "business" ? "협업·광고·제휴 제안을 검토하고 담당자 응대 상태를 기록합니다." : "팬과 고객이 남긴 일반 문의를 확인하고 답변 상태를 기록합니다."}</p>
@@ -295,39 +299,44 @@ export default function ContactAdminPage() {
 
       <section className={`${base.inbox} ${styles.fullWidth}`}>
         <header className={base.toolbar}>
-          <div><h1>문의 접수함</h1><p>{category === "business" ? "Business" : "일반 문의"} · {filteredInquiries.length}건</p></div>
-          <div className={base.filters}>
+          <div><h1>문의 접수함</h1><p>{category === "business" ? "Business" : "일반 문의"} · {total}건</p></div>
+          <div className={base.filters} data-tour-id="contact-filters">
             <label className={base.search}>
               <Search aria-hidden="true" />
               <span className="sr-only">문의 검색</span>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 회사명, 내용 검색" />
             </label>
-            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={setFilter} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
+            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
           </div>
         </header>
 
         <div className={base.tableWrap}>
           <table className={base.table}>
             <thead><tr><th>접수일</th><th>{category === "business" ? "회사 / 담당자" : "문의자"}</th><th>문의 내용</th><th>이메일</th><th>상태</th><th><span className="sr-only">보기</span></th></tr></thead>
-            <tbody>{filteredInquiries.map((inquiry) => (
+            <tbody>{inquiries.map((inquiry) => (
               <tr key={inquiry.id} tabIndex={0} onClick={() => openInquiry(inquiry)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openInquiry(inquiry); }}>
                 <td data-label="접수일">{formatDate(inquiry.created_at)}</td>
                 <td data-label="문의자"><b>{inquiry.company_name || inquiry.contact_name}</b><small>{inquiry.company_name ? inquiry.contact_name : typeLabels[inquiry.inquiry_type]}</small></td>
                 <td data-label="문의 내용"><b>{typeLabels[inquiry.inquiry_type] || "기타 문의"}</b><small>{inquiry.message}</small></td>
                 <td data-label="이메일">{inquiry.email}</td>
                 <td data-label="상태"><span className={`${base.status} ${statusClass(inquiry.status)}`}><i />{statusLabel(inquiry.status)}</span></td>
-                <td><button type="button" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
+                <td><button type="button" data-tour-id="contact-open" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
               </tr>
             ))}</tbody>
           </table>
-          {!filteredInquiries.length && (
+          {!inquiries.length && (
             <div className={base.empty}>
               <Inbox aria-hidden="true" />
-              <b>{categoryInquiries.length ? "조건에 맞는 문의가 없습니다." : "아직 접수된 문의가 없습니다."}</b>
-              <span>{categoryInquiries.length ? "검색어나 상태 필터를 바꿔 보세요." : "새 문의가 접수되면 이곳에 표시됩니다."}</span>
+              <b>{total ? "조건에 맞는 문의가 없습니다." : "아직 접수된 문의가 없습니다."}</b>
+              <span>{total ? "검색어나 상태 필터를 바꿔 보세요." : "새 문의가 접수되면 이곳에 표시됩니다."}</span>
             </div>
           )}
         </div>
+        {totalPages > 1 && <nav className={base.pagination} aria-label="문의 페이지">
+          <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>이전</button>
+          <span>{page} / {totalPages}</span>
+          <button type="button" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)}>다음</button>
+        </nav>}
       </section>
     </div>
   );

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ExternalLink, FileImage, Inbox, Link, Paperclip, Search, ShieldCheck } from "lucide-react";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
+import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 
@@ -12,6 +13,7 @@ type ReportStatus = "pending" | "reviewing" | "resolved" | "rejected";
 type ReportAttachment = { file_path: string; file_name: string };
 type ProtectReport = {
   id: string;
+  user_id: string;
   reporter_email: string | null;
   report_type: string;
   title: string;
@@ -50,32 +52,59 @@ const formatDate = (value: string, detail = false) => new Intl.DateTimeFormat("k
   ? { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }
   : { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 const isImage = (name: string) => /\.(?:jpe?g|png|webp|gif)$/i.test(name);
+const PAGE_SIZE = 20;
+const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ProtectAdminPage() {
   const [reports, setReports] = useState<ProtectReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<ProtectReport | null>(null);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, reviewing: 0 });
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     setError("");
-    const { data, error: fetchError } = await supabase
+    let request = supabase
       .from("protect_reports")
-      .select("*, artists(name), protect_report_attachments(file_path, file_name)")
-      .order("created_at", { ascending: false })
-      .overrideTypes<ProtectReport[], { merge: false }>();
+      .select("*, artists(name), protect_report_attachments(file_path, file_name)", { count: "exact" })
+      .order("created_at", { ascending: false });
+    if (filter !== "all") request = request.eq("status", filter);
+    const keyword = searchTerm(debouncedQuery);
+    if (keyword) request = request.or(`title.ilike.%${keyword}%,reporter_email.ilike.%${keyword}%,author_name.ilike.%${keyword}%,platform.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+    const [{ data, count, error: fetchError }, pending, reviewing] = await Promise.all([
+      request.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ProtectReport[], { merge: false }>(),
+      supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "reviewing"),
+    ]);
     if (fetchError) setError(fetchError.message);
-    else setReports(data ?? []);
+    else {
+      const nextReports = data ?? [];
+      setReports(nextReports);
+      setTotal(count ?? 0);
+      setStatusCounts({ pending: pending.count ?? 0, reviewing: reviewing.count ?? 0 });
+      setAvatarUrls(await loadAccountAvatarUrls(nextReports.map((report) => report.user_id)));
+    }
     setLoading(false);
-  };
+  }, [debouncedQuery, filter, page]);
 
-  useEffect(() => { void Promise.resolve().then(fetchReports); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedQuery(query); setPage(1); }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchReports(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchReports]);
 
   const openReport = (report: ProtectReport) => {
     setNote(report.admin_note || "");
@@ -98,15 +127,6 @@ export default function ProtectAdminPage() {
     return () => { active = false; };
   }, [viewing]);
 
-  const filteredReports = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    return reports.filter((report) => {
-      const matchesStatus = filter === "all" || report.status === filter;
-      const searchTarget = `${report.title} ${report.reporter_email || ""} ${report.author_name} ${report.platform} ${report.artists?.name || ""}`.toLowerCase();
-      return matchesStatus && (!keyword || searchTarget.includes(keyword));
-    });
-  }, [filter, query, reports]);
-
   const updateReport = async (changes: Partial<Pick<ProtectReport, "status" | "admin_note">>) => {
     if (!viewing) return;
     setSaving(true);
@@ -117,11 +137,12 @@ export default function ProtectAdminPage() {
       const updated = { ...viewing, ...changes };
       setViewing(updated);
       setReports((current) => current.map((report) => report.id === viewing.id ? updated : report));
+      window.dispatchEvent(new Event("admin-inbox-changed"));
     }
     setSaving(false);
   };
 
-  if (loading) return <LoadingIndicator label="권익 보호 접수함을 불러오는 중…" className="min-h-[320px]" />;
+  if (loading) return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
 
   if (viewing) {
     return (
@@ -129,9 +150,9 @@ export default function ProtectAdminPage() {
         <button type="button" className={styles.back} onClick={() => setViewing(null)}><ArrowLeft aria-hidden="true" /> 접수 목록</button>
         {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
 
-        <article className={styles.detailCard}>
+        <article className={styles.detailCard} data-tour-id="protect-workspace">
           <header className={styles.detailHeader}>
-            <span className={styles.detailIcon}><ShieldCheck aria-hidden="true" /></span>
+            <span className={styles.detailIcon}>{avatarUrls[viewing.user_id] ? <AdminAssetImage src={avatarUrls[viewing.user_id]} alt="제보자 아바타" sizes="56px" /> : <b aria-hidden="true">{(viewing.reporter_email?.[0] || "A").toUpperCase()}</b>}</span>
             <div><p>{reportTypeLabels[viewing.report_type] || "기타"}</p><h1>{viewing.title}</h1><small>{formatDate(viewing.created_at, true)} 접수 · {viewing.id.slice(0, 8).toUpperCase()}</small></div>
             <span className={`${styles.status} ${statusClass(viewing.status)}`}><i />{statusLabel(viewing.status)}</span>
           </header>
@@ -181,7 +202,7 @@ export default function ProtectAdminPage() {
           </div>
 
           <footer className={styles.statusBar}>
-            <div><span>STATUS</span><b>처리 상태 변경</b></div>
+            <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
             <div>{statuses.map((status) => <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? styles.active : ""} onClick={() => void updateReport({ status: status.value })}>{status.label}</button>)}</div>
           </footer>
         </article>
@@ -189,41 +210,45 @@ export default function ProtectAdminPage() {
     );
   }
 
-  const pendingCount = reports.filter((report) => report.status === "pending").length;
-  const reviewingCount = reports.filter((report) => report.status === "reviewing").length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className={styles.page}>
       {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
       <section className={styles.summary}>
         <div><span className={styles.summaryIcon}><ShieldCheck aria-hidden="true" /></span><p><small>전체 제보</small><strong>{reports.length}</strong></p></div>
-        <dl><div><dt>새 제보</dt><dd>{pendingCount}</dd></div><div><dt>검토 중</dt><dd>{reviewingCount}</dd></div></dl>
+        <dl><div><dt>새 제보</dt><dd>{statusCounts.pending}</dd></div><div><dt>검토 중</dt><dd>{statusCounts.reviewing}</dd></div></dl>
         <p>접수된 권익 침해 내용과 비공개 증거 자료를 확인하고 처리 상태를 기록합니다.</p>
       </section>
 
       <section className={styles.inbox}>
         <header className={styles.toolbar}>
-          <div><h1>권익 보호 접수함</h1><p>{filteredReports.length}건의 제보</p></div>
-          <div className={styles.filters}>
+          <div><h1>권익 보호 접수함</h1><p>{total}건의 제보</p></div>
+          <div className={styles.filters} data-tour-id="protect-filters">
             <label className={styles.search}><Search aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
-            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={setFilter} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
+            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
           </div>
         </header>
 
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead><tr><th>접수일</th><th>보호 대상</th><th>제보 내용</th><th>플랫폼</th><th>상태</th><th><span className="sr-only">보기</span></th></tr></thead>
-            <tbody>{filteredReports.map((report) => <tr key={report.id} tabIndex={0} onClick={() => openReport(report)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openReport(report); }}>
+            <tbody>{reports.map((report) => <tr key={report.id} tabIndex={0} onClick={() => openReport(report)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openReport(report); }}>
               <td data-label="접수일">{formatDate(report.created_at)}</td>
               <td data-label="보호 대상"><b>{report.artists?.name || "-"}</b><small>{reportTypeLabels[report.report_type] || "기타"}</small></td>
               <td data-label="제보 내용"><b>{report.title}</b><small>{report.author_name}</small></td>
               <td data-label="플랫폼">{report.platform}</td>
               <td data-label="상태"><span className={`${styles.status} ${statusClass(report.status)}`}><i />{statusLabel(report.status)}</span></td>
-              <td><button type="button" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
+              <td><button type="button" data-tour-id="protect-open" tabIndex={-1}>열기 <span><ArrowRight aria-hidden="true" /></span></button></td>
             </tr>)}</tbody>
           </table>
-          {!filteredReports.length && <div className={styles.empty}><Inbox aria-hidden="true" /><b>{reports.length ? "조건에 맞는 제보가 없습니다." : "아직 접수된 제보가 없습니다."}</b><span>{reports.length ? "검색어나 상태 필터를 바꿔 보세요." : "새 제보가 접수되면 이곳에 표시됩니다."}</span></div>}
+          {!reports.length && <div className={styles.empty}><Inbox aria-hidden="true" /><b>{total ? "조건에 맞는 제보가 없습니다." : "아직 접수된 제보가 없습니다."}</b><span>{total ? "검색어나 상태 필터를 바꿔 보세요." : "새 제보가 접수되면 이곳에 표시됩니다."}</span></div>}
         </div>
+        {totalPages > 1 && <nav className={styles.pagination} aria-label="신고 페이지">
+          <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>이전</button>
+          <span>{page} / {totalPages}</span>
+          <button type="button" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)}>다음</button>
+        </nav>}
       </section>
     </div>
   );

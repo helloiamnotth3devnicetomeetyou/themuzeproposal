@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { Check, CircleAlert, Disc3, GripVertical, Music, Plus } from "lucide-react";
+import { Check, CircleAlert, Disc3, GripVertical, Music, Plus, Trash2 } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/admin/components/assets/MusicAssetFields";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import PreviewButton from "@/admin/components/content/PreviewButton";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import {
   ALBUM_TYPES,
@@ -22,8 +24,10 @@ import {
   validateAlbum,
 } from "@/core/utils/music-editor";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
+import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
   albumSelect,
   albumToDraft,
@@ -59,11 +63,13 @@ export default function DiscographyAdmin() {
   const [sortDirty, setSortDirty] = useState(false);
   const [dragAlbum, setDragAlbum] = useState<string | null>(null);
   const [dragTrack, setDragTrack] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState(false);
   const uploadedAssets = useRef<UploadedAsset[]>([]);
 
   const {
     draft,
     setDraft,
+    snapshot = "",
     setSnapshot,
     dirty,
     loading,
@@ -79,9 +85,13 @@ export default function DiscographyAdmin() {
     toast,
     setToast,
     patchDraft,
-  } = useAdminEntityEditor<AlbumEditorDraft>({ initialDraft: null });
+    recovery = null,
+    restoreDraft = () => {},
+    discardDraftBackup = () => {},
+  } = useAdminEntityEditor<AlbumEditorDraft>({ initialDraft: null, storageKey: `admin-draft:discography:${routeArtistId}` });
 
   const validation = useMemo(() => draft ? validateAlbum(draft) : null, [draft]);
+  const nestedDrafts = usePageDrafts();
 
   const previewPayload = useMemo(() => draft && artistId && artistSlug ? {
     artist: { id: artistId, slug: artistSlug, name: artistName },
@@ -160,25 +170,25 @@ export default function DiscographyAdmin() {
   };
 
   const selectAlbum = async (album: AlbumEditorDraft) => {
-    if (dirty && !await requestConfirm({
+    if ((dirty || pendingDelete) && !await requestConfirm({
       title: "변경사항을 버릴까요?",
       description: "현재 앨범에서 저장하지 않은 정보와 업로드 대기 파일이 사라집니다. 다른 앨범을 열기 전에 한 번 더 확인해 주세요.",
       confirmLabel: "버리고 열기",
       tone: "danger",
     })) return;
-    await discardQueuedUploads(); setDraft(album); setSnapshot(JSON.stringify(album)); setTab("basic"); setError(""); setExpandedTrack(null); syncUrl(album.id, "basic");
+    await discardQueuedUploads(); setPendingDelete(false); setDraft(album); setSnapshot(JSON.stringify(album)); setTab("basic"); setError(""); setExpandedTrack(null); syncUrl(album.id, "basic");
   };
 
   const addAlbum = async () => {
     if (!artistId) return;
-    if (dirty && !await requestConfirm({
+    if ((dirty || pendingDelete) && !await requestConfirm({
       title: "새 앨범을 만들까요?",
       description: "현재 앨범에서 저장하지 않은 정보와 업로드 대기 파일이 사라지고 새 앨범 작성 화면으로 이동합니다.",
       confirmLabel: "버리고 새로 만들기",
       tone: "danger",
     })) return;
     await discardQueuedUploads();
-    const next = createAlbumDraft(artistId, albums.length + 1); setDraft(next); setSnapshot(JSON.stringify(next)); setTab("basic"); setExpandedTrack(null); syncUrl(next.id, "basic");
+    const next = createAlbumDraft(artistId, albums.length + 1); setPendingDelete(false); setDraft(next); setSnapshot(JSON.stringify(next)); setTab("basic"); setExpandedTrack(null); syncUrl(next.id, "basic");
   };
 
   const changeTab = (next: EditorTab) => { if (!draft) return; setTab(next); syncUrl(draft.id, next); };
@@ -209,7 +219,7 @@ export default function DiscographyAdmin() {
       title_ja: track.title_ja.trim() || null,
     }));
     const { data, error: saveError } = await supabase.rpc("save_album_with_tracks", { p_album: albumPayload, p_tracks: localizedTracks });
-    if (saveError) { setSaving(false); setError(saveError.code === "23505" ? "같은 앨범 ID를 사용하는 앨범이 있습니다." : saveError.message); return; }
+    if (saveError) { setSaving(false); setError(adminDbError(saveError, "앨범을 저장하지 못했습니다.")); return; }
 
     const savedAlbumId = String(data ?? draft.id);
     const [{ error: localizedAlbumError }, ...localizedTrackResults] = await Promise.all([
@@ -238,7 +248,7 @@ export default function DiscographyAdmin() {
     const stale = original ? [...collectAssetUrls(original)].filter((url) => !referenced.has(url)).map(managedAssetFromUrl).filter(Boolean) : [];
     await Promise.all(stale.map((asset) => supabase.storage.from(asset!.bucket).remove([asset!.path])));
     uploadedAssets.current = [];
-    setSaving(false); setToast("변경사항을 저장했습니다."); await loadAlbums(savedAlbumId);
+    setSaving(false); setToast("변경사항을 저장했습니다."); discardDraftBackup(); await loadAlbums(savedAlbumId);
   };
 
   const removeAlbum = async () => {
@@ -281,17 +291,22 @@ export default function DiscographyAdmin() {
     return matchesSearch && (filter === "all" || (filter === "published" ? album.is_published : !album.is_published));
   });
 
-  if (loading) return <LoadingIndicator label="앨범 라이브러리를 불러오는 중…" className="min-h-[420px]" />;
+  if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
-  return <div className="music-editor-shell">
-    {toast && <div className="music-toast" role="status"><Check aria-hidden="true" /> {toast}</div>}
-    <aside className="music-library">
-      <div className="music-library-heading"><div><h2>앨범 라이브러리</h2></div><button type="button" onClick={() => void addAlbum()} aria-label="새 앨범"><Plus aria-hidden="true" /></button></div>
+  const workbenchTabs: WorkbenchTab<EditorTab>[] = [
+    { id: "basic", label: "기본 정보", complete: Boolean(draft?.title && draft.release_date && draft.cover_url) },
+    { id: "content", label: "콘텐츠", complete: Boolean(draft?.description_ko) },
+    { id: "tracks", label: `트랙 ${draft?.tracks.length || 0}`, complete: Boolean(draft?.tracks.length) },
+    { id: "gallery", label: "갤러리", complete: Boolean(draft && albums.some((album) => album.id === draft.id)) },
+    { id: "publish", label: "공개 설정", complete: Boolean(validation?.canPublish) },
+  ];
+  const rail = <>
+      <div className="music-library-heading" data-tour-id="entity-create"><div><h2>앨범 라이브러리</h2></div><button type="button" onClick={() => void addAlbum()} aria-label="새 앨범"><Plus aria-hidden="true" /></button></div>
       <div className="music-library-tools">
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="앨범 검색" aria-label="앨범 검색" />
         <div className="music-filter-row">{(["all", "published", "draft"] as Filter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "초안"}</button>)}</div>
       </div>
-      <div className="music-sort-row"><span>{visibleAlbums.length}개 앨범</span><button type="button" onClick={() => { setSorting((value) => !value); setSortDirty(false); }}>{sorting ? "정렬 취소" : "순서 변경"}</button></div>
+      <div className="music-sort-row" data-tour-id="album-sort"><span>{visibleAlbums.length}개 앨범</span><button type="button" onClick={() => { setSorting((value) => !value); setSortDirty(false); }}>{sorting ? "정렬 취소" : "순서 변경"}</button></div>
       <div className="music-album-list">
         {visibleAlbums.map((album) => <button key={album.id} type="button" draggable={sorting} onDragStart={() => setDragAlbum(album.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderAlbum(album.id)} onClick={() => !sorting && void selectAlbum(album)} className={`music-album-item ${draft?.id === album.id ? "is-selected" : ""} ${sorting ? "is-sorting" : ""}`}>
           <span className="music-album-grip">{sorting ? <GripVertical aria-hidden="true" /> : String(albums.indexOf(album) + 1).padStart(2, "0")}</span>
@@ -301,24 +316,17 @@ export default function DiscographyAdmin() {
         </button>)}
         {!visibleAlbums.length && <div className="music-empty"><b>표시할 앨범이 없습니다.</b><span>검색 조건을 바꾸거나 새 앨범을 추가해 보세요.</span></div>}
       </div>
-      {sorting && <div className="music-order-footer"><button type="button" className="admin-btn admin-btn-primary" disabled={!sortDirty} onClick={() => void saveOrder()}>순서 저장</button></div>}
-    </aside>
-
-    <section className="music-workbench">
-      {error && <div className="music-error" role="alert"><span>!</span><p>{error}</p><button type="button" onClick={() => setError("")}>닫기</button></div>}
-      {!draft ? <div className="music-no-selection"><span><Disc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> : <>
-        <header className="music-editor-header">
-          <div className="music-editor-identity">
+      {sorting && sortDirty && <div className="music-order-footer">변경한 순서는 상단 저장 버튼으로 반영됩니다.</div>}
+    </>;
+  const identity = draft ? <>
             <span className="music-header-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="72px" /> : <i />}</span>
-            <div><p><span className={`cms-status ${draft.is_published ? "is-live" : ""}`}>{draft.is_published ? "공개" : "초안"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 새 앨범"}</h2></div>
-          </div>
-          <div className="music-header-actions">{albums.some((album) => album.id === draft.id) && <button type="button" className="music-delete-button" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving || !validation?.canSave} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></div>
-        </header>
+            <div><p><span className={`cms-status ${draft.is_published ? "is-live" : ""}`}>{draft.is_published ? "공개" : "초안"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 새 앨범"}</h2><small>{artistName}</small></div>
+  </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>앨범을 선택하세요</h2><small>{artistName}</small></div>;
+  const actions = draft ? <div className="music-header-actions">{albums.some((album) => album.id === draft.id) && <button type="button" className="admin-btn admin-btn-danger music-delete-button" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || sortDirty || nestedDrafts.dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !validation?.canSave && dirty} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "앨범", before: draft.title, after: "삭제" }] : []), ...(sortDirty ? [{ kind: "order" as const, field: "앨범 노출 순서", before: "기존 순서", after: "변경된 순서" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return removeAlbum(); if (dirty) await save(); if (sortDirty) await saveOrder(); await nestedDrafts.commit(); }} /></div> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button>;
 
-        <nav className="music-editor-tabs" aria-label="앨범 편집 탭">
-          {([{ id: "basic", label: "기본 정보" }, { id: "content", label: "콘텐츠" }, { id: "tracks", label: `트랙 ${draft.tracks.length}` }, { id: "gallery", label: "갤러리" }, { id: "publish", label: "공개 설정" }] as { id: EditorTab; label: string }[]).map((item) => <button key={item.id} type="button" className={tab === item.id ? "is-active" : ""} onClick={() => changeTab(item.id)}>{item.label}</button>)}
-        </nav>
-
+  return <>
+    <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={workbenchTabs} activeTab={tab} onTabChange={changeTab} error={error} onDismissError={() => setError("")} toast={toast} className="music-editor-shell" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
+      {!draft ? <div className="music-no-selection"><span><Disc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> :
         <div className="music-editor-body">
           {tab === "basic" && <div className="music-section-stack">
             <div className="music-section-title music-release-heading"><div><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div></div>
@@ -344,7 +352,7 @@ export default function DiscographyAdmin() {
           </div>}
 
           {tab === "tracks" && <div className="music-section-stack music-track-section">
-            <div className="music-section-title"><div><h3>수록곡과 미디어</h3><span>곡명, MP3, Spotify, YouTube 음원을 한곳에서 관리합니다.</span></div><div><button type="button" className="admin-btn admin-btn-secondary" onClick={() => setBulkOpen(true)}>여러 곡 붙여넣기</button><button type="button" className="admin-btn admin-btn-primary" onClick={() => { const track = createTrackDraft(); patchDraft({ tracks: [...draft.tracks, track] }); setExpandedTrack(track.id); }}>+ 트랙 추가</button></div></div>
+            <div className="music-section-title" data-tour-id="track-add"><div><h3>수록곡과 미디어</h3><span>곡명, MP3, Spotify, YouTube 음원을 한곳에서 관리합니다.</span></div><div><button type="button" data-tour-id="track-bulk" className="admin-btn admin-btn-secondary" onClick={() => setBulkOpen(true)}>여러 곡 붙여넣기</button><button type="button" className="admin-btn admin-btn-primary" onClick={() => { const track = createTrackDraft(); patchDraft({ tracks: [...draft.tracks, track] }); setExpandedTrack(track.id); }}>+ 트랙 추가</button></div></div>
             <div className="music-track-table">
               <div className="music-track-head"><span>순서</span><span>곡 정보</span><span>미디어 상태</span><span /></div>
               {draft.tracks.map((track, index) => <div key={track.id} className={`music-track-wrap ${expandedTrack === track.id ? "is-open" : ""}`} draggable onDragStart={() => setDragTrack(track.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderTrack(track.id)}>
@@ -352,7 +360,7 @@ export default function DiscographyAdmin() {
                   <button type="button" className="music-track-grip" aria-label={`${track.title || "트랙"} 순서 변경`}><GripVertical aria-hidden="true" /><i>{String(index + 1).padStart(2, "0")}</i></button>
                   <div className="music-track-title"><input value={track.title} onChange={(event) => patchTrack(track.id, { title: event.target.value })} placeholder="곡명" /><label><input type="checkbox" checked={track.is_title} onChange={(event) => patchTrack(track.id, { is_title: event.target.checked })} /> 타이틀곡</label></div>
                   <div className="music-track-badges"><AssetBadge active={Boolean(track.audio_url)}>MP3</AssetBadge><AssetBadge active={Boolean(track.spotify_url)}>Spotify</AssetBadge><AssetBadge active={Boolean(track.youtube_url)}>YouTube</AssetBadge></div>
-                  <div className="music-track-actions"><button type="button" onClick={() => setExpandedTrack(expandedTrack === track.id ? null : track.id)}>{expandedTrack === track.id ? "접기" : "미디어"}</button><button type="button" className="is-danger" onClick={() => patchDraft({ tracks: draft.tracks.filter((item) => item.id !== track.id) })}>삭제</button></div>
+                  <div className="music-track-actions" data-tour-id="track-actions"><button type="button" onClick={() => setExpandedTrack(expandedTrack === track.id ? null : track.id)}>{expandedTrack === track.id ? "접기" : "미디어"}</button><button type="button" className="is-danger" onClick={() => patchDraft({ tracks: draft.tracks.filter((item) => item.id !== track.id) })}>삭제</button></div>
                 </div>
                 {expandedTrack === track.id && <div className="music-track-assets">
                   <div className="music-track-link-grid">
@@ -382,11 +390,10 @@ export default function DiscographyAdmin() {
             <div className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}><span>{validation?.canPublish ? <Check aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}</span><div><b>{validation?.canPublish ? "공개할 준비가 되었습니다." : "공개 전 확인이 필요합니다."}</b><p>{validation?.canPublish ? "필수 정보가 모두 입력되었습니다." : validation?.publishIssues.join(" · ")}</p></div></div>
             <label className="music-publish-toggle"><span><b>웹사이트에 공개</b><small>공개하면 디스코그래피에서 앨범과 업로드한 음원을 볼 수 있습니다.</small></span><input type="checkbox" checked={draft.is_published} onChange={(event) => { if (event.target.checked && !validation?.canPublish) { setError(`공개 전 확인: ${validation?.publishIssues.join(", ")}`); return; } patchDraft({ is_published: event.target.checked }); }} /></label>
           </div>}
-        </div>
-      </>}
-    </section>
+        </div>}
+    </ContentWorkbench>
 
     {bulkOpen && <div className="music-crop-modal" role="dialog" aria-modal="true" aria-label="여러 트랙 붙여넣기"><div className="music-bulk-card"><h3>여러 곡 붙여넣기</h3><p>한 줄에 한 곡씩 입력하세요. 앞의 트랙 번호는 자동으로 제거합니다.</p><pre>01. Lucky You{"\n"}02. Glow Up</pre><textarea className="admin-input" rows={10} value={bulkValue} onChange={(event) => setBulkValue(event.target.value)} autoFocus placeholder="한 줄에 한 곡씩 입력" /><div><button type="button" className="admin-btn admin-btn-secondary" onClick={() => setBulkOpen(false)}>취소</button><button type="button" className="admin-btn admin-btn-primary" onClick={applyBulk}>트랙 추가</button></div></div></div>}
-    {deleteOpen && draft && <DeleteConfirmDialog title="앨범을 삭제할까요?" description={`수록곡 ${draft.tracks.length}곡과 연결된 파일이 함께 영구적으로 제거됩니다. 이 작업은 되돌릴 수 없습니다.`} confirmValue={draft.title} valueLabel="앨범명" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => void removeAlbum()} />}
-  </div>;
+    {deleteOpen && draft && <DeleteConfirmDialog title="앨범을 삭제할까요?" description="삭제 작업은 상단 저장 전까지 서버에 반영되지 않습니다." confirmValue={draft.title} valueLabel="앨범명" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => { setPendingDelete(true); setDeleteOpen(false); }} />}
+  </>;
 }

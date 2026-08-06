@@ -12,7 +12,8 @@ export default function PreviewButton({
   return (
     <button
       type="button"
-      className="admin-btn admin-btn-secondary"
+      data-tour-id="preview"
+      className="admin-btn admin-btn-secondary preview-button"
       disabled={disabled}
       onClick={onClick}
     >

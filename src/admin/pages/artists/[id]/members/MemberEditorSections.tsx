@@ -71,7 +71,6 @@ export default function MemberEditorSections({
             onChangeKo={(value) => patchDraft({ roleKo: value })}
             onChangeEn={(value) => patchDraft({ roleEn: value })}
             onChangeJa={(value) => patchDraft({ roleJa: value })}
-            required
           />
         </>
       )}

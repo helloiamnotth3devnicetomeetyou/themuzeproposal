@@ -1,0 +1,352 @@
+/* ─── Hero Curation Admin ─── */
+.hero-admin-page {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 30px clamp(24px, 3vw, 42px) 58px;
+  background: var(--bg-card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.hero-admin-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hero-admin-page::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background: var(--border-strong);
+  background-clip: padding-box;
+}
+
+.hero-admin-page button:focus-visible,
+.hero-admin-page input:focus-visible {
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: 2px;
+}
+
+.hero-admin-summary {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 17px;
+  max-width: 1320px;
+  min-height: 112px;
+  margin: 0 auto 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--border-default);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--bg-surface) 62%, var(--bg-card));
+}
+
+.hero-admin-summary-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--alpha-fc6fcf-24);
+  border-radius: 9px;
+  background: var(--alpha-fc6fcf-07);
+  color: var(--color-brand-pink);
+}
+
+.hero-admin-summary-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-admin-summary > div:nth-child(2) {
+  min-width: 0;
+}
+
+.hero-admin-summary > div:nth-child(2) > span,
+.hero-admin-panel-heading > div > span {
+  display: block;
+  color: var(--color-brand-pink);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.hero-admin-summary h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  letter-spacing: -.025em;
+}
+
+.hero-admin-summary p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.hero-admin-summary dl {
+  display: flex;
+  margin: 0;
+}
+
+.hero-admin-summary dl > div {
+  min-width: 72px;
+  padding: 3px 17px;
+  border-left: 1px solid var(--border-default);
+}
+
+.hero-admin-summary dt {
+  color: var(--text-faint);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.hero-admin-summary dd {
+  margin: 7px 0 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.06em;
+}
+
+.hero-admin-summary dd.is-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.hero-admin-refresh {
+  min-width: 132px;
+  white-space: nowrap;
+}
+
+.hero-admin-refresh:hover {
+  border-color: var(--color-brand-pink);
+  color: var(--color-brand-pink);
+}
+
+.hero-admin-refresh:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+.hero-admin-refresh svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2;
+}
+
+.hero-admin-alert {
+  display: flex;
+  max-width: 1320px;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 14px;
+  padding: 9px 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.hero-admin-page > .content-draft-recovery {
+  max-width: 1320px;
+  margin: 0 auto 14px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+}
+
+.hero-admin-alert.is-error {
+  border-color: var(--alpha-e46b6b-2);
+  background: var(--alpha-e46b6b-07);
+  color: var(--palette-df7777);
+}
+
+.hero-admin-alert > b {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 8px;
+}
+
+.hero-admin-alert > span {
+  flex: 1;
+}
+
+.hero-admin-alert > button {
+  border: 0;
+  background: transparent;
+  color: currentColor;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.hero-admin-panel {
+  max-width: 1320px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 11px;
+  background: var(--bg-card);
+}
+
+.hero-admin-panel + .hero-admin-panel {
+  margin-top: 14px;
+}
+
+.hero-admin-panel-heading {
+  display: flex;
+  min-height: 87px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 21px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.hero-admin-panel-heading h3 {
+  margin: 5px 0 0;
+  color: var(--text-primary);
+  font-size: 17px;
+  letter-spacing: -.03em;
+}
+
+.hero-admin-panel-heading p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.hero-admin-panel-heading > em {
+  padding: 5px 8px;
+  border-radius: 99px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.hero-admin-queue-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 110px 164px;
+  min-height: 35px;
+  align-items: center;
+  padding: 0 17px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface) 68%, transparent);
+  color: var(--text-faint);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.hero-admin-queue-head span:nth-child(2) {
+  padding-left: 64px;
+}
+
+.hero-admin-queue-head span:last-child {
+  text-align: right;
+}
+
+.hero-admin-queue-list {
+  padding: 0 17px;
+}
+
+.hero-admin-queue-item {
+  display: grid;
+  grid-template-columns: 48px 48px minmax(170px, 1fr) 110px auto 164px;
+  min-height: 70px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: transform var(--duration-fast) ease, opacity var(--duration-fast) ease, background var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.hero-admin-queue-item:last-child {
+  border-bottom: 0;
+}
+
+.hero-admin-queue-item[draggable=true] {
+  cursor: grab;
+}
+
+.hero-admin-queue-item[draggable=true]:active {
+  cursor: grabbing;
+}
+
+.hero-admin-queue-item.is-dragging {
+  z-index: 2;
+  opacity: .38;
+  background: var(--alpha-fc6fcf-06);
+  box-shadow: inset 3px 0 var(--color-brand-pink);
+  transform: scale(.99);
+}
+
+.hero-admin-order {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.hero-admin-order svg {
+  width: 12px;
+  height: 12px;
+  color: var(--color-brand-pink);
+}
+
+.hero-admin-cover,
+.hero-admin-catalog-cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--album-color, var(--color-brand-pink)) 27%, var(--bg-subtle)), var(--bg-subtle));
+}
+
+.hero-admin-cover {
+  width: 46px;
+  height: 46px;
+}
+
+.hero-admin-cover img,
+.hero-admin-catalog-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-admin-cover i,
+.hero-admin-catalog-cover i {
+  position: absolute;
+  inset: 28%;
+  border: 1px solid color-mix(in srgb, var(--album-color, var(--color-brand-pink)) 56%, var(--border-default));
+  border-radius: 50%;
+}
+
+.hero-admin-album-copy {
+  min-width: 0;
+}
+
+.hero-admin-album-copy b,
+.hero-admin-album-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-admin-album-copy b {
+  color: var(--text-primary);
+  font-size: 10px;
+}

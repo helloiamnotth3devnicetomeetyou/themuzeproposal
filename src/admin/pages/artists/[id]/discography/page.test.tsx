@@ -17,7 +17,7 @@ vi.mock("@/admin/components/shell/DeleteConfirmDialog", () => ({ default: () => 
 vi.mock("@/admin/components/assets/MusicAssetFields", () => ({ CoverAssetField: () => null, HeroAssetField: () => null, TrackAssetField: () => null }));
 vi.mock("@/admin/components/assets/GalleryManager", () => ({ default: () => null }));
 vi.mock("@/admin/components/content/PreviewButton", () => ({ default: () => null }));
-vi.mock("@/core/components/feedback/LoadingIndicator", () => ({ default: () => null }));
+vi.mock("@/admin/components/shell/AdminSkeleton", () => ({ default: () => null }));
 vi.mock("@/core/components/form/CustomSelect", () => ({ default: () => <select aria-label="album type" /> }));
 vi.mock("@/admin/hooks/useAdminPreview", () => ({ useAdminPreview: () => ({ openPreview: vi.fn(), canPreview: true }) }));
 vi.mock("@/admin/hooks/useAdminEntityEditor", () => ({

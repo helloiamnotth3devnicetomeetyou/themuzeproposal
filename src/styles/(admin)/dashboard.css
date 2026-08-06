@@ -121,6 +121,8 @@
 .desk-release-panel { padding: 24px; }
 .desk-release-list > a { min-height: 66px; }
 .desk-release-cover { border-radius: 2px; }
+.desk-release-cover { display: grid; place-items: center; color: var(--text-faint); }
+.desk-release-cover > svg { width: 16px; height: 16px; }
 .desk-inbox-card { padding: 21px 22px; }
 .desk-shortcuts > a > span { border-radius: 2px; }
 

@@ -17,7 +17,7 @@ export default function ProfileContextRail({
   onCancel,
 }: ProfileContextRailProps) {
   return (
-    <div className="profile-context-rail">
+    <div className="profile-context-rail" data-tour-id="artist-profile-context">
       <div className="profile-context-portrait" style={{ "--artist-color": draft.color } as CSSProperties}>
         {draft.imageUrl ? <AdminAssetImage src={draft.imageUrl} alt="" sizes="280px" /> : <div><span>프로필 이미지</span>{draft.engName && <b>{draft.engName.slice(0, 2)}</b>}</div>}
       </div>

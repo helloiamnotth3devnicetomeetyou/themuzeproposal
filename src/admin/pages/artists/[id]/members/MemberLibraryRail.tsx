@@ -26,14 +26,12 @@ import { CSS } from "@dnd-kit/utilities";
 interface MemberLibraryRailProps {
   draft: MemberDraft | null;
   members: Member[];
-  saving: boolean;
   sorting: boolean;
   sortDirty: boolean;
   onAdd: () => void;
   onSelect: (member: Member) => void;
   onReorder: (activeId: string, overId: string) => void;
   onToggleSorting: () => void;
-  onSaveOrder: () => void;
 }
 
 function SortableMemberItem({
@@ -100,14 +98,12 @@ function SortableMemberItem({
 export default function MemberLibraryRail({
   draft,
   members,
-  saving,
   sorting,
   sortDirty,
   onAdd,
   onSelect,
   onReorder,
   onToggleSorting,
-  onSaveOrder,
 }: MemberLibraryRailProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
@@ -218,18 +214,7 @@ export default function MemberLibraryRail({
         </DragOverlay>
       </DndContext>
 
-      {sorting && (
-        <div className="content-rail-footer">
-          <button
-            type="button"
-            className="admin-btn admin-btn-primary"
-            disabled={!sortDirty || saving}
-            onClick={onSaveOrder}
-          >
-            {saving ? "저장 중…" : "순서 저장"}
-          </button>
-        </div>
-      )}
+      {sorting && sortDirty && <p className="content-rail-draft-note">변경한 순서는 상단 저장 버튼으로 반영됩니다.</p>}
     </>
   );
 }

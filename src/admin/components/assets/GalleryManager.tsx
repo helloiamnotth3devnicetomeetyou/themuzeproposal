@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Filter, ImagePlus, Save, Trash2, Upload, X } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
+import { finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
+import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
+import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import AdminAssetImage from "./AdminAssetImage";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 
 type GalleryScope = "artist" | "album" | "member";
 
@@ -40,25 +44,21 @@ type GalleryManagerProps = {
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function storagePathFromUrl(url: string) {
-  const match = url.match(/\/storage\/v1\/object\/public\/artist-assets\/(.+)$/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
 export default function GalleryManager({ artistId, scope, albumId, memberId, onError, onToast }: GalleryManagerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<GalleryItem[]>([]);
+  const [snapshot, setSnapshot] = useState<GalleryItem[]>([]);
+  const uploadedAssets = useRef<{ bucket: "artist-assets"; path: string; url: string }[]>([]);
   const [albums, setAlbums] = useState<LookupItem[]>([]);
   const [members, setMembers] = useState<LookupItem[]>([]);
   const [albumFilter, setAlbumFilter] = useState("all");
   const [memberFilter, setMemberFilter] = useState("all");
   const [loading, setLoading] = useState(Boolean(artistId));
+  const [schemaMissing, setSchemaMissing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteItem, setDeleteItem] = useState<GalleryItem | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const loadGallery = useCallback(async () => {
     if (!artistId) {
@@ -80,11 +80,14 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
     const { data, error } = await query;
     setLoading(false);
     if (error) {
-      onError(error.message.includes("artist_gallery") ? "갤러리 테이블이 없습니다. 006_artist_gallery.sql을 먼저 적용하세요." : error.message);
+      setSchemaMissing(/artist_gallery|schema cache|does not exist/i.test(error.message));
+      onError(adminDbError(error, "갤러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."));
       return;
     }
+    setSchemaMissing(false);
     const nextItems = (data as GalleryItem[] | null) ?? [];
     setItems(nextItems);
+    setSnapshot(nextItems);
     setSelectedId((current) => current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id ?? null);
   }, [albumId, artistId, memberId, onError, scope]);
 
@@ -96,6 +99,31 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
     return albumMatch && memberMatch;
   }), [albumFilter, items, memberFilter]);
   const selectedItem = selectedId ? visibleItems.find((item) => item.id === selectedId) ?? null : null;
+  const dirty = JSON.stringify(items) !== JSON.stringify(snapshot);
+  const restoreItems = useCallback((saved: GalleryItem[]) => setItems(saved), []);
+  const backupKey = `admin-draft:gallery:${scope}:${artistId}:${albumId || memberId || "all"}`;
+  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: backupKey, draft: items, snapshot: JSON.stringify(snapshot), dirty, restore: restoreItems });
+
+  useEffect(() => {
+    if (!dirty || !artistId) return;
+    return registerPageDraft(backupKey, {
+      diff: [{ kind: items.length > snapshot.length ? "add" : items.length < snapshot.length ? "delete" : "change", field: "갤러리", before: `${snapshot.length}개`, after: `${items.length}개` }],
+      commit: async () => {
+        const removed = snapshot.filter((item) => !items.some((current) => current.id === item.id));
+        const results = await Promise.all([
+          ...(removed.length ? [supabase.from("artist_gallery").delete().in("id", removed.map((item) => item.id))] : []),
+          ...items.map((item) => supabase.from("artist_gallery").upsert(item)),
+        ]);
+        const error = results.find((result) => result.error)?.error;
+        if (error) throw error;
+        await finalizeDraftImageAssets(supabase, uploadedAssets.current, items.map((item) => item.image_url), removed.map((item) => item.image_url));
+        uploadedAssets.current = [];
+        setSnapshot(items);
+        discardBackup();
+        onToast("갤러리 변경사항을 저장했습니다.");
+      },
+    });
+  }, [artistId, backupKey, dirty, discardBackup, items, onToast, snapshot]);
 
   const patchItem = (id: string, patch: Partial<GalleryItem>) => {
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
@@ -117,22 +145,20 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
         const converted = await toWebP(file);
         const path = `${artistId}/gallery/${crypto.randomUUID()}.webp`;
         const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
-        const { error: insertError } = await supabase.from("artist_gallery").insert({
+        uploadedAssets.current.push({ bucket: "artist-assets", path: uploadedAsset.path, url: uploadedAsset.url });
+        trackDraftImageAsset({ bucket: "artist-assets", path: uploadedAsset.path, url: uploadedAsset.url });
+        setItems((current) => [...current, {
+          id: crypto.randomUUID(),
           artist_id: artistId,
-          album_id: scope === "album" ? albumId : null,
-          member_id: scope === "member" ? memberId : null,
+          album_id: scope === "album" ? albumId ?? null : null,
+          member_id: scope === "member" ? memberId ?? null : null,
           image_url: uploadedAsset.url,
           caption: "",
           sort_order: items.length + index + 1,
           is_published: true,
-        });
-        if (insertError) {
-          await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
-          throw insertError;
-        }
+        }]);
       }
-      await loadGallery();
-      onToast(`${files.length}개의 이미지를 추가했습니다.`);
+      onToast(`${files.length}개의 이미지를 임시 목록에 추가했습니다. 상단 저장 시 반영됩니다.`);
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : "이미지를 업로드하지 못했습니다.";
       onError(message.includes("artist_gallery") ? "갤러리 테이블이 없습니다. 006_artist_gallery.sql을 먼저 적용하세요." : message.includes("Bucket") ? "이미지 저장소가 없습니다. 004_artist_assets.sql을 먼저 적용하세요." : message);
@@ -142,33 +168,16 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
     }
   };
 
-  const saveItem = async (item: GalleryItem) => {
-    setSavingId(item.id);
-    const { error } = await supabase.from("artist_gallery").update({
-      album_id: scope === "album" ? albumId : item.album_id || null,
-      member_id: scope === "member" ? memberId : item.member_id || null,
-      caption: item.caption.trim(),
-      is_published: item.is_published,
-    }).eq("id", item.id);
-    setSavingId(null);
-    if (error) return onError(error.message);
-    onToast("이미지 정보를 저장했습니다.");
-    await loadGallery();
+  const saveItem = (item: GalleryItem) => {
+    patchItem(item.id, { caption: item.caption.trim() });
+    onToast("이미지 정보를 임시 작업에 적용했습니다. 상단 저장 시 반영됩니다.");
   };
 
-  const removeItem = async () => {
+  const removeItem = () => {
     if (!deleteItem) return;
-    setDeleting(true);
-    const { error } = await supabase.from("artist_gallery").delete().eq("id", deleteItem.id);
-    if (!error) {
-      const path = storagePathFromUrl(deleteItem.image_url);
-      if (path) await supabase.storage.from("artist-assets").remove([path]);
-    }
-    setDeleting(false);
+    setItems((current) => current.filter((item) => item.id !== deleteItem.id));
     setDeleteItem(null);
-    if (error) return onError(error.message);
-    onToast("갤러리 이미지를 삭제했습니다.");
-    await loadGallery();
+    onToast("갤러리 이미지를 임시 목록에서 삭제했습니다. 상단 저장 시 반영됩니다.");
   };
 
   const albumName = (id: string | null) => albums.find((album) => album.id === id)?.name;
@@ -178,9 +187,11 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
   if (!artistId || (scope === "album" && !albumId) || (scope === "member" && !memberId)) {
     return <div className="gallery-save-first"><ImagePlus aria-hidden="true" /><h3>{scope === "album" ? "앨범" : scope === "member" ? "멤버" : "아티스트"}를 먼저 저장하세요.</h3><p>저장 후 이미지를 여러 장 선택하거나 드롭해 갤러리를 만들 수 있습니다.</p></div>;
   }
+  if (schemaMissing) return <div className="gallery-save-first"><ImagePlus aria-hidden="true" /><h3>갤러리 테이블 적용이 필요합니다.</h3><p>마이그레이션 적용 후 이 탭을 사용할 수 있습니다.</p></div>;
 
   return <>
-    <div className="gallery-manager">
+    <div className="gallery-manager" data-tour-id={scope === "artist" ? "artist-gallery" : undefined}>
+      {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 갤러리 작업이 있습니다.</b></p><button type="button" onClick={discardBackup}>삭제</button><button type="button" onClick={restoreBackup}>복구</button></div>}
       <div
         className={`gallery-dropzone ${dragging ? "is-dragging" : ""}`}
         onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
@@ -190,7 +201,7 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
       >
         <Upload aria-hidden="true" />
         <div><b>{uploading ? "이미지를 업로드하는 중…" : "갤러리 이미지 추가"}</b><span>JPG, PNG, WebP · 파일당 최대 10MB · 여러 장 선택 가능</span></div>
-        <button type="button" disabled={uploading} onClick={() => inputRef.current?.click()}>{uploading ? "업로드 중" : "파일 선택"}</button>
+        <button type="button" data-tour-id="gallery-upload" disabled={uploading} onClick={() => inputRef.current?.click()}>{uploading ? "업로드 중" : "파일 선택"}</button>
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => event.target.files && void uploadFiles(event.target.files)} />
       </div>
 
@@ -201,7 +212,7 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
         <span>{visibleItems.length}장</span>
       </div>}
 
-      {loading ? <LoadingIndicator label="갤러리를 불러오는 중…" className="min-h-[250px] rounded-[11px] border border-[var(--border-default)] bg-[var(--bg-card)]" /> : !visibleItems.length ? <div className="gallery-empty"><ImagePlus aria-hidden="true" /><b>등록된 이미지가 없습니다.</b><span>위 영역에 이미지를 드롭해 첫 갤러리를 만드세요.</span></div> : <div className={`gallery-contact-sheet ${selectedItem ? "has-inspector" : ""}`}>
+      {loading ? <AdminSkeleton variant="media" className="min-h-[250px]" /> : !visibleItems.length ? <div className="gallery-empty"><ImagePlus aria-hidden="true" /><b>등록된 이미지가 없습니다.</b><span>위 영역에 이미지를 드롭해 첫 갤러리를 만드세요.</span></div> : <div className={`gallery-contact-sheet ${selectedItem ? "has-inspector" : ""}`}>
         <div className="gallery-grid">
           {visibleItems.map((item) => {
             const itemAlbum = albumName(item.album_id);
@@ -227,10 +238,10 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
             {scope !== "member" && <div className="music-field"><span>멤버</span><CustomSelect ariaLabel="멤버 지정" value={selectedItem.member_id || ""} onChange={(value) => patchItem(selectedItem.id, { member_id: value || null })} options={[{ value: "", label: "멤버 미지정" }, ...members.map((member) => ({ value: member.id, label: member.name }))]} /></div>}
             <label className="gallery-publish-toggle"><input type="checkbox" checked={selectedItem.is_published} onChange={(event) => patchItem(selectedItem.id, { is_published: event.target.checked })} /><span>공개 갤러리에 표시</span></label>
           </div>
-          <div className="gallery-inspector-actions"><button type="button" className="gallery-delete-button" onClick={() => setDeleteItem(selectedItem)}><Trash2 aria-hidden="true" />삭제</button><button type="button" className="admin-btn admin-btn-primary" disabled={savingId === selectedItem.id} onClick={() => void saveItem(selectedItem)}><Save aria-hidden="true" />{savingId === selectedItem.id ? "저장 중" : "정보 저장"}</button></div>
+          <div className="gallery-inspector-actions"><button type="button" data-tour-id="gallery-delete" className="gallery-delete-button" onClick={() => setDeleteItem(selectedItem)}><Trash2 aria-hidden="true" />삭제</button><button type="button" data-tour-id="gallery-apply" className="admin-btn admin-btn-primary" onClick={() => saveItem(selectedItem)}><Save aria-hidden="true" />정보 적용</button></div>
         </aside>}
       </div>}
     </div>
-    {deleteItem && <DeleteConfirmDialog title="갤러리 이미지를 삭제할까요?" description="이미지 파일과 분류 정보가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다." confirmValue={deleteName} valueLabel="이미지 이름" busy={deleting} onCancel={() => setDeleteItem(null)} onConfirm={() => void removeItem()} />}
+    {deleteItem && <DeleteConfirmDialog title="갤러리 이미지를 삭제할까요?" description="상단 저장 시 이미지 파일과 분류 정보가 함께 삭제됩니다." confirmValue={deleteName} valueLabel="이미지 이름" busy={false} onCancel={() => setDeleteItem(null)} onConfirm={removeItem} />}
   </>;
 }

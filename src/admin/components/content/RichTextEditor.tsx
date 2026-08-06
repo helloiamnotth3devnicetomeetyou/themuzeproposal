@@ -9,6 +9,7 @@ type RichTextEditorProps = {
   onChange: (value: string) => void;
   label?: string;
   placeholder?: string;
+  required?: boolean;
 };
 
 type FormatName = "bold" | "italic" | "underline" | "strikeThrough" | "h2" | "h3" | "blockquote";
@@ -28,6 +29,7 @@ export default function RichTextEditor({
   onChange,
   label = "내용",
   placeholder = "공지 내용을 입력하세요.",
+  required = true,
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<Set<FormatName>>(new Set());
@@ -128,7 +130,7 @@ export default function RichTextEditor({
   return (
     <div className="rich-text-field">
       <div className="rich-text-label">
-        <span>{label} <b>*</b></span>
+        <span>{label}{required && <> <b>*</b></>}</span>
         <small>텍스트를 선택한 뒤 서식을 적용하세요.</small>
       </div>
       <div className="rich-text-shell">

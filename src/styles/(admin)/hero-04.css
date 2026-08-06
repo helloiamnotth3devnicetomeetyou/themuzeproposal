@@ -1,0 +1,9 @@
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-admin-catalog-item,
+  .hero-admin-queue-item,
+  .hero-slide-card,
+  .hero-slide-card::after {
+    transition: none !important;
+  }
+}

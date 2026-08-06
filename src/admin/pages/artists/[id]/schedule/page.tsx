@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Plus, Trash2 } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 import styles from "@/styles/(admin)/pages/artist-schedule/schedule-admin.module.css";
 import {
   CATEGORY,
@@ -31,6 +34,7 @@ import {
 
 export default function ArtistScheduleAdminPage() {
   const artistId = useParams<{ id: string }>()?.id;
+  const requestConfirm = useAdminConfirm();
   const [artistName, setArtistName] = useState("");
   const [artistSlug, setArtistSlug] = useState("");
   const [artistColor, setArtistColor] = useState<string | null>(null);
@@ -38,10 +42,12 @@ export default function ArtistScheduleAdminPage() {
   const [items, setItems] = useState<ScheduleRow[]>([]);
   const [tab, setTab] = useState<ScheduleTab>("calendar");
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDateKey(today()));
+  const [pendingDelete, setPendingDelete] = useState(false);
 
   const {
     draft,
     setDraft,
+    snapshot,
     setSnapshot,
     dirty,
     loading,
@@ -56,7 +62,10 @@ export default function ArtistScheduleAdminPage() {
     setError,
     toast,
     setToast,
-  } = useAdminEntityEditor<ScheduleDraft>({ initialDraft: null });
+    recovery,
+    restoreDraft,
+    discardDraftBackup,
+  } = useAdminEntityEditor<ScheduleDraft>({ initialDraft: null, storageKey: `admin-draft:schedule:${artistId}` });
   const currentMonthKey = monthKey(calendarMonth);
   const calendarTitle = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(calendarMonth);
   const calendarDays = useMemo(() => {
@@ -111,8 +120,8 @@ export default function ArtistScheduleAdminPage() {
   }, [dirty]);
 
   const patch = (value: Partial<ScheduleDraft>) => setDraft((current) => current ? { ...current, ...value } : current);
-  const add = (eventDate = today()) => { const next = emptyScheduleDraft(eventDate); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(eventDate)); setTab("details"); setError(""); };
-  const select = (item: ScheduleRow) => { const next = scheduleToDraft(item); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(item.event_date)); setTab("details"); setError(""); };
+  const add = (eventDate = today()) => { const next = emptyScheduleDraft(eventDate); setPendingDelete(false); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(eventDate)); setTab("details"); setError(""); };
+  const select = async (item: ScheduleRow) => { if ((dirty || pendingDelete) && !await requestConfirm({ title: "다른 일정을 열까요?", description: "현재 변경사항은 브라우저 임시 작업에 남지만 편집 화면에서는 전환됩니다.", confirmLabel: "전환" })) return; const next = scheduleToDraft(item); setPendingDelete(false); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(item.event_date)); setTab("details"); setError(""); };
   const moveMonth = (offset: number) => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   const showToday = () => setCalendarMonth(monthFromDateKey(today()));
   const validation = useMemo(() => {
@@ -185,8 +194,9 @@ export default function ArtistScheduleAdminPage() {
       ? await supabase.from("artist_schedules").update(payload).eq("id", draft.id).select("id").single()
       : await supabase.from("artist_schedules").insert(payload).select("id").single();
     setSaving(false);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(adminDbError(result.error, "일정을 저장하지 못했습니다.")); return; }
     setToast(draft.id ? "일정 변경사항을 저장했습니다." : "새 일정을 추가했습니다.");
+    discardDraftBackup();
     await loadItems(result.data.id);
   };
 
@@ -196,14 +206,14 @@ export default function ArtistScheduleAdminPage() {
     const result = await supabase.from("artist_schedules").delete().eq("id", draft.id);
     setDeleting(false);
     setDeleteOpen(false);
-    if (result.error) { setError(result.error.message); return; }
+    if (result.error) { setError(adminDbError(result.error, "일정을 삭제하지 못했습니다.")); return; }
     setDraft(null); setSnapshot(""); setTab("calendar"); setToast("일정을 삭제했습니다."); await loadItems();
   };
 
-  if (loading) return <LoadingIndicator label="일정 관리 화면을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
+  if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
   const rail = <>
-    <div className="content-rail-heading"><div><h2>일정 캘린더</h2></div><button type="button" onClick={() => add()} aria-label="일정 추가"><Plus aria-hidden="true" /></button></div>
+    <div className="content-rail-heading" data-tour-id="schedule-add"><div><h2>일정 캘린더</h2></div><button type="button" onClick={() => add()} aria-label="일정 추가"><Plus aria-hidden="true" /></button></div>
     <div className="content-rail-sort"><span>{calendarTitle} · {monthItems.length}개</span><small>{artistName}</small></div>
     <div className="content-library-list">
       {draft && !draft.id && <button type="button" className={`content-library-item is-selected ${styles.railItem}`}><span className={styles.railDate}><b>NEW</b><small>DATE</small></span><span className="content-library-copy"><b>{draft.titleKo || "새 일정"}</b><small>{draft.eventDate}</small></span><i className="content-library-dot" /></button>}
@@ -211,11 +221,11 @@ export default function ArtistScheduleAdminPage() {
       {!monthItems.length && !(draft && !draft.id) && <div className="content-library-empty"><b>이 달의 일정이 없습니다.</b><span>달력에서 날짜를 골라 새 일정을 추가하세요.</span></div>}
     </div>
   </>;
-  const identity = draft ? <><span className={styles.dateArt}><b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b><small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small></span><div className="content-identity-copy"><p><span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>{draft.isPublished ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.titleKo || "이름 없는 일정"}</h2></div></> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>일정을 선택하세요</h2><small>{artistName}</small></div>;
-  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void save()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
+  const identity = draft ? <><span className={styles.dateArt}><b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b><small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small></span><div className="content-identity-copy"><p><span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>{draft.isPublished ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.titleKo || "이름 없는 일정"}</h2><small>{artistName}</small></div></> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>일정을 선택하세요</h2><small>{artistName}</small></div>;
+  const actions = draft ? <>{draft.id && <button type="button" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} onSave={() => pendingDelete ? remove() : save()} disabled={!pendingDelete && Boolean(validation)} extraDiff={pendingDelete ? [{ kind: "delete", field: "일정", before: draft.titleKo, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
 
   return <>
-    <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={scheduleTabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench">
+    <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={scheduleTabs.map((item) => ({ ...item, complete: item.id === "calendar" ? items.length > 0 : item.id === "details" ? Boolean(draft?.eventDate && draft.titleKo.trim()) : Boolean(draft && !validation) }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
       {tab === "calendar" ? <section className={styles.calendarView} aria-label={`${calendarTitle} 일정 달력`}>
         <header className={styles.calendarToolbar}>
           <div className={styles.calendarHeading}>
@@ -295,6 +305,6 @@ export default function ArtistScheduleAdminPage() {
         </>}
       </div>}
     </ContentWorkbench>
-    {deleteOpen && draft?.id && <DeleteConfirmDialog title="일정을 삭제할까요?" description="공개 캘린더와 관리자 목록에서 일정이 제거됩니다. 이 작업은 되돌릴 수 없습니다." confirmValue={draft.titleKo} valueLabel="일정명" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove()} />}
+    {deleteOpen && draft?.id && <DeleteConfirmDialog title="일정을 삭제할까요?" description="삭제 작업은 상단 저장 전까지 서버에 반영되지 않습니다." confirmValue={draft.titleKo} valueLabel="일정명" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => { setPendingDelete(true); setDeleteOpen(false); }} />}
   </>;
 }

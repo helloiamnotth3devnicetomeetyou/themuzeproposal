@@ -14,6 +14,7 @@ import {
 
 interface ProfileEditorSectionsProps {
   artistId: string | null;
+  isNew: boolean;
   draft: ProfileDraft;
   saveIssues: string[];
   tab: ProfileTab;
@@ -28,6 +29,7 @@ interface ProfileEditorSectionsProps {
 
 export default function ProfileEditorSections({
   artistId,
+  isNew,
   draft,
   saveIssues,
   tab,
@@ -135,7 +137,8 @@ export default function ProfileEditorSections({
           </div>
           <FormField
             label="아티스트 소개"
-            type="textarea"
+            type="richtext"
+            required
             valueKo={draft.descKo}
             valueEn={draft.descEn}
             valueJa={draft.descJa}
@@ -162,7 +165,7 @@ export default function ProfileEditorSections({
             <h3>인터랙티브 멤버 장면</h3>
             <span>한 화면 안에서 전환할 콘셉트 이미지와 멤버별 정밀 실루엣을 편집합니다.</span>
           </div>
-          <ArtistSceneManager artistId={artistId} heroUrl={draft.imageUrl} onError={onError} onToast={onToast} />
+          <ArtistSceneManager artistId={isNew ? null : artistId} heroUrl={draft.imageUrl} onError={onError} onToast={onToast} />
         </>
       )}
 
@@ -172,7 +175,7 @@ export default function ProfileEditorSections({
             <h3>아티스트 통합 갤러리</h3>
             <span>앨범과 멤버에 등록된 이미지를 한곳에서 보고, 두 분류를 교차해 정리합니다.</span>
           </div>
-          <GalleryManager artistId={artistId} scope="artist" onError={onError} onToast={onToast} />
+          <GalleryManager artistId={isNew ? null : artistId} scope="artist" onError={onError} onToast={onToast} />
         </>
       )}
 

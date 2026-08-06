@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Disc3, FilePlus2, ListMusic } from "lucide-react";
+import { ArrowRight, CalendarDays, Disc3, FilePlus2, FileText, ListMusic, UserRound } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
+import { latestRecentItems, type RecentItem } from "./dashboard-model";
 
 type Stats = { artists: number; albums: number; members: number; notices: number; auditions: number; protectReports: number; protectActive: number };
-type RecentAlbum = { id: string; title: string; type: string; cover_url: string | null; is_published: boolean; artist: { id: string; name: string } | null };
+type ArtistRef = { id: string; name: string } | null;
 const empty: Stats = { artists: 0, albums: 0, members: 0, notices: 0, auditions: 0, protectReports: 0, protectActive: 0 };
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(empty);
-  const [recentAlbums, setRecentAlbums] = useState<RecentAlbum[]>([]);
+  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
   const [primaryArtistId, setPrimaryArtistId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,11 +24,18 @@ export default function AdminDashboard() {
       supabase.from("audition_submissions").select("id", { count: "exact", head: true }),
       supabase.from("protect_reports").select("id", { count: "exact", head: true }),
       supabase.from("protect_reports").select("id", { count: "exact", head: true }).in("status", ["pending", "reviewing"]),
-      supabase.from("albums").select("id,title,type,cover_url,is_published,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(5),
+      supabase.from("albums").select("id,title,type,cover_url,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(5),
+      supabase.from("artist_members").select("id,name,image_url,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(5),
+      supabase.from("artist_schedules").select("id,title_ko,event_date,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(5),
+      supabase.from("notices").select("id,title_ko,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(5),
       supabase.from("artists").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    ]).then(([artists, albums, members, notices, auditions, protectReports, protectActive, recent, primaryArtist]) => {
+    ]).then(([artists, albums, members, notices, auditions, protectReports, protectActive, recentAlbums, recentMembers, recentSchedules, recentNotices, primaryArtist]) => {
       setStats({ artists: artists.count || 0, albums: albums.count || 0, members: members.count || 0, notices: notices.count || 0, auditions: auditions.count || 0, protectReports: protectReports.count || 0, protectActive: protectActive.count || 0 });
-      setRecentAlbums((recent.data ?? []) as unknown as RecentAlbum[]);
+      const albumItems = (recentAlbums.data ?? []).map((item) => { const artist = item.artist as unknown as ArtistRef; return { id: item.id, kind: "album" as const, title: item.title, detail: `${artist?.name || "THE MUZE"} · ${item.type}`, updatedAt: item.updated_at, href: `/admin/artists/${artist?.id || "new"}/discography?album=${item.id}`, imageUrl: item.cover_url, published: item.is_published }; });
+      const memberItems = (recentMembers.data ?? []).map((item) => { const artist = item.artist as unknown as ArtistRef; return { id: item.id, kind: "member" as const, title: item.name, detail: `${artist?.name || "아티스트"} · 멤버`, updatedAt: item.updated_at, href: `/admin/artists/${artist?.id || "new"}/members`, imageUrl: item.image_url }; });
+      const scheduleItems = (recentSchedules.data ?? []).map((item) => { const artist = item.artist as unknown as ArtistRef; return { id: item.id, kind: "schedule" as const, title: item.title_ko, detail: `${artist?.name || "아티스트"} · ${item.event_date}`, updatedAt: item.updated_at, href: `/admin/artists/${artist?.id || "new"}/schedule`, published: item.is_published }; });
+      const noticeItems = (recentNotices.data ?? []).map((item) => { const artist = item.artist as unknown as ArtistRef; return { id: item.id, kind: "notice" as const, title: item.title_ko, detail: artist?.name || "전체 공지", updatedAt: item.updated_at, href: artist ? `/admin/artists/${artist.id}/notices` : "/admin/notices", published: item.is_published }; });
+      setRecentItems(latestRecentItems([albumItems, memberItems, scheduleItems, noticeItems]));
       setPrimaryArtistId(primaryArtist.data?.id ?? null);
     });
   }, []);
@@ -44,8 +52,8 @@ export default function AdminDashboard() {
     <section className="desk-metrics">{metrics.map((item) => <Link key={item.label} href={item.href} className="desk-metric"><span>{item.code}</span><strong>{item.value}</strong><div><b>{item.label}</b><i>관리하기 →</i></div></Link>)}</section>
     <section className="desk-dashboard-main">
       <div className="desk-release-panel">
-        <div className="desk-panel-heading"><div><h2>최근 수정한 앨범</h2></div><Link href={artistHref("discography")}><span>앨범 라이브러리 열기</span><ArrowRight aria-hidden="true" /></Link></div>
-        <div className="desk-release-list">{recentAlbums.map((album, index) => <Link key={album.id} href={`/admin/artists/${album.artist?.id || primaryArtistId || "new"}/discography?album=${album.id}`}><span className="desk-release-number">{String(index + 1).padStart(2, "0")}</span><span className="desk-release-cover">{album.cover_url ? <span style={{ backgroundImage: `url(${album.cover_url})` }} /> : <i />}</span><span className="desk-release-copy"><b>{album.title}</b><small>{album.artist?.name || "THE MUZE"} · {album.type}</small></span><span className={`cms-status ${album.is_published ? "is-live" : ""}`}>{album.is_published ? "공개" : "초안"}</span><span className="desk-release-arrow"><ArrowRight aria-hidden="true" /></span></Link>)}{!recentAlbums.length && <div className="desk-empty-row">아직 등록된 앨범이 없습니다.</div>}</div>
+        <div className="desk-panel-heading"><div><h2>최근 편집</h2></div><Link href="/admin/audit-logs"><span>변경 이력 열기</span><ArrowRight aria-hidden="true" /></Link></div>
+        <div className="desk-release-list">{recentItems.map((item, index) => <Link key={`${item.kind}-${item.id}`} href={item.href}><span className="desk-release-number">{String(index + 1).padStart(2, "0")}</span><span className="desk-release-cover">{item.imageUrl ? <span style={{ backgroundImage: `url(${item.imageUrl})` }} /> : item.kind === "member" ? <UserRound aria-hidden="true" /> : item.kind === "schedule" ? <CalendarDays aria-hidden="true" /> : item.kind === "notice" ? <FileText aria-hidden="true" /> : <Disc3 aria-hidden="true" />}</span><span className="desk-release-copy"><b>{item.title}</b><small>{item.detail}</small></span>{item.published === undefined ? <span /> : <span className={`cms-status ${item.published ? "is-live" : ""}`}>{item.published ? "공개" : "초안"}</span>}<span className="desk-release-arrow"><ArrowRight aria-hidden="true" /></span></Link>)}{!recentItems.length && <div className="desk-empty-row">아직 편집한 콘텐츠가 없습니다.</div>}</div>
       </div>
       <aside className="desk-inbox-stack">
         <Link href="/admin/auditions/campaigns" className="desk-inbox-card">
@@ -59,6 +67,6 @@ export default function AdminDashboard() {
         <Link href="/admin/protect" className="desk-inbox-card is-protect"><span>PROTECT · 전체 {stats.protectReports}</span><strong>{stats.protectActive}</strong><div><h2>확인 필요한 신고</h2><i><ArrowRight aria-hidden="true" /></i></div></Link>
       </aside>
     </section>
-    <section className="desk-shortcuts"><div><h2>바로 시작하기</h2></div><Link href={artistHref("discography")}><span><Disc3 aria-hidden="true" /></span><b>새 앨범 만들기</b><small>앨범 정보와 트랙 등록</small></Link><Link href={artistHref("discography")}><span><ListMusic aria-hidden="true" /></span><b>메인 앨범 정렬</b><small>공개 앨범 상위 5개 노출 관리</small></Link><Link href="/admin/notices"><span><FilePlus2 aria-hidden="true" /></span><b>공지 작성하기</b><small>새 소식 발행</small></Link></section>
+    <section className="desk-shortcuts"><div><h2>바로 시작하기</h2></div><Link href={artistHref("discography")}><span><Disc3 aria-hidden="true" /></span><b>새 앨범 만들기</b><small>앨범 정보와 트랙 등록</small></Link><Link href="/admin/hero"><span><ListMusic aria-hidden="true" /></span><b>메인 앨범 정렬</b><small>공개 앨범 상위 5개 노출 관리</small></Link><Link href="/admin/notices"><span><FilePlus2 aria-hidden="true" /></span><b>공지 작성하기</b><small>새 소식 발행</small></Link></section>
   </div>;
 }

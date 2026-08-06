@@ -4,7 +4,7 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, RefreshCcw, Save, Trash2, Upload } from "lucide-react";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
@@ -14,6 +14,11 @@ import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module
 import SceneCanvas from "./SceneCanvas";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
+import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
+import { finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
+import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
   ACCEPTED_MASK_TYPES,
   ACCEPTED_SCENE_TYPES,
@@ -21,7 +26,6 @@ import {
   imageDimensions,
   normalizeScene,
   sceneSelect,
-  storagePathFromUrl,
   type MemberLookup,
 } from "./artist-scene-editor-model";
 
@@ -37,7 +41,9 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
   const sceneInputRef = useRef<HTMLInputElement>(null);
   const maskInputRef = useRef<HTMLInputElement>(null);
   const drawingRef = useRef(false);
+  const uploadedAssets = useRef<UploadedImageAsset[]>([]);
   const [scenes, setScenes] = useState<ArtistScene[]>([]);
+  const [snapshot, setSnapshot] = useState<ArtistScene[]>([]);
   const [members, setMembers] = useState<MemberLookup[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -61,12 +67,13 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (sceneResult.error) {
       const missing = sceneResult.error.message.includes("artist_scenes");
       setSchemaMissing(missing);
-      onError(missing ? "인터랙티브 장면 테이블이 없습니다. 019_artist_scenes.sql을 먼저 적용하세요." : sceneResult.error.message);
+      onError(missing ? "인터랙티브 장면 테이블이 없습니다. 019_artist_scenes.sql을 먼저 적용하세요." : adminDbError(sceneResult.error, "장면을 불러오지 못했습니다."));
       return;
     }
     setSchemaMissing(false);
     const nextScenes = (sceneResult.data ?? []).map(normalizeScene);
     setScenes(nextScenes);
+    setSnapshot(nextScenes);
     setMembers((memberResult.data as MemberLookup[] | null) ?? []);
     setSelectedSceneId((current) => {
       const candidate = preferredSceneId || current;
@@ -80,6 +87,10 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
   const selectedRegion = selectedScene?.artist_scene_members.find((region) => region.member_id === selectedMemberId) ?? null;
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const sceneRatio = selectedScene?.image_width && selectedScene.image_height ? selectedScene.image_width / selectedScene.image_height : 16 / 9;
+  const dirty = JSON.stringify(scenes) !== JSON.stringify(snapshot);
+  const backupKey = `admin-draft:scenes:${artistId || "none"}`;
+  const restoreScenes = useCallback((saved: ArtistScene[]) => setScenes(saved), []);
+  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: backupKey, draft: scenes, snapshot: JSON.stringify(snapshot), dirty, restore: restoreScenes });
 
   useEffect(() => {
     void Promise.resolve().then(() => setDraftOutline(selectedRegion?.outline ?? []));
@@ -108,9 +119,14 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         const converted = await toWebP(file);
         const path = `${artistId}/scenes/${crypto.randomUUID()}.webp`;
         const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
+        const tracked = { bucket: "artist-assets" as const, path: uploadedAsset.path, url: uploadedAsset.url };
+        uploadedAssets.current.push(tracked);
+        trackDraftImageAsset(tracked);
         const publicUrl = uploadedAsset.url;
         const canonicalTitle = file.name.replace(/\.[^.]+$/, "");
-        const inserted = await supabase.from("artist_scenes").insert({
+        preferredId = crypto.randomUUID();
+        setScenes((current) => [...current, {
+          id: preferredId,
           artist_id: artistId,
           title: canonicalTitle,
           title_ko: canonicalTitle,
@@ -120,16 +136,14 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           is_hero: scenes.length === 0 && index === 0,
           is_published: true,
           sort_order: scenes.length + index,
-        }).select("id").single();
-        if (inserted.error) {
-          await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
-          throw inserted.error;
-        }
-        preferredId = inserted.data.id;
+          title_en: null,
+          title_ja: null,
+          link_url: null,
+          artist_scene_members: [],
+        }]);
       }
-      await load(preferredId);
-      revalidateArtistSceneData();
-      onToast(`${list.length}개의 인터랙티브 장면을 추가했습니다.`);
+      setSelectedSceneId(preferredId);
+      onToast(`${list.length}개의 인터랙티브 장면을 임시 작업에 추가했습니다.`);
     } catch (uploadError) {
       onError(uploadError instanceof Error ? uploadError.message : "장면 이미지를 업로드하지 못했습니다.");
     } finally {
@@ -155,7 +169,12 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       ]);
       const path = `${artistId}/scenes/${crypto.randomUUID()}.webp`;
       const uploadedAsset = await uploadAdminAsset("artist-assets", path, converted);
-      const result = await supabase.from("artist_scenes").insert({
+      const tracked = { bucket: "artist-assets" as const, path: uploadedAsset.path, url: uploadedAsset.url };
+      uploadedAssets.current.push(tracked);
+      trackDraftImageAsset(tracked);
+      const sceneId = crypto.randomUUID();
+      setScenes((current) => [...current, {
+        id: sceneId,
         artist_id: artistId,
         title: "Main scene",
         title_ko: "메인 장면",
@@ -166,14 +185,12 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         is_hero: scenes.length === 0,
         is_published: true,
         sort_order: scenes.length,
-      }).select("id").single();
-      if (result.error) {
-        await supabase.storage.from("artist-assets").remove([uploadedAsset.path]);
-        throw result.error;
-      }
-      await load(result.data.id);
-      revalidateArtistSceneData();
-      onToast("현재 대표 이미지를 인터랙티브 장면으로 가져왔습니다.");
+        title_ja: null,
+        link_url: null,
+        artist_scene_members: [],
+      }]);
+      setSelectedSceneId(sceneId);
+      onToast("현재 대표 이미지를 인터랙티브 장면 임시 작업으로 가져왔습니다.");
     } catch (importError) {
       onError(importError instanceof Error ? importError.message : "대표 이미지를 가져오지 못했습니다.");
     } finally {
@@ -185,99 +202,77 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (!selectedScene || !width || !height) return;
     if (selectedScene.image_width === width && selectedScene.image_height === height) return;
     patchScene({ image_width: width, image_height: height });
-    void supabase
-      .from("artist_scenes")
-      .update({ image_width: width, image_height: height })
-      .eq("id", selectedScene.id)
-      .then(({ error: dimensionError }) => {
-        if (dimensionError) onError(dimensionError.message);
-        else revalidateArtistSceneData();
-      });
   };
 
-  const saveScene = async () => {
-    if (!selectedScene) return;
-    setBusy(true);
-    onError("");
-    const linkUrl = selectedScene.link_url?.trim() || null;
-    if (linkUrl && !normalizeSceneLink(linkUrl)) {
-      setBusy(false);
-      return onError("장면 링크는 https:// 주소 또는 /로 시작하는 내부 경로를 입력해 주세요.");
-    }
-    if (selectedScene.is_hero) {
-      const unsetResult = await supabase.from("artist_scenes").update({ is_hero: false }).eq("artist_id", selectedScene.artist_id).neq("id", selectedScene.id);
-      if (unsetResult.error) {
-        setBusy(false);
-        return onError(unsetResult.error.message);
-      }
-    }
-    const result = await supabase.from("artist_scenes").update({
-      title: selectedScene.title.trim(),
-      title_ko: selectedScene.title_ko?.trim() || selectedScene.title.trim(),
-      title_en: selectedScene.title_en?.trim() || null,
-      title_ja: selectedScene.title_ja?.trim() || null,
-      link_url: linkUrl,
-      is_hero: selectedScene.is_hero,
-      is_published: selectedScene.is_published,
-    }).eq("id", selectedScene.id);
-    setBusy(false);
-    if (result.error) return onError(result.error.message);
-    await load(selectedScene.id);
+  const applyOutline = () => {
+    if (!selectedScene || !selectedMemberId || draftOutline.length < 3) return;
+    setScenes((current) => current.map((scene) => scene.id !== selectedScene.id ? scene : {
+      ...scene,
+      artist_scene_members: selectedRegion
+        ? scene.artist_scene_members.map((region) => region.id === selectedRegion.id ? { ...region, outline: draftOutline } : region)
+        : [...scene.artist_scene_members, { id: crypto.randomUUID(), member_id: selectedMemberId, outline: draftOutline, mask_url: null, sort_order: selectedMember?.sort_order || 0 }],
+    }));
+    onToast(`${selectedMember?.name || "멤버"} 외곽선을 임시 작업에 적용했습니다.`);
+  };
+
+  const commitScenes = useCallback(async () => {
+    const removedScenes = snapshot.filter((scene) => !scenes.some((item) => item.id === scene.id));
+    const previousRegions = snapshot.flatMap((scene) => scene.artist_scene_members);
+    const currentRegions = scenes.flatMap((scene) => scene.artist_scene_members);
+    const removedRegionIds = previousRegions.filter((region) => !currentRegions.some((item) => item.id === region.id)).map((region) => region.id);
+    const sceneResults = await Promise.all([
+      ...(removedScenes.length ? [supabase.from("artist_scenes").delete().in("id", removedScenes.map((scene) => scene.id))] : []),
+      ...scenes.map((scene) => supabase.from("artist_scenes").upsert({
+        id: scene.id, artist_id: scene.artist_id, image_url: scene.image_url,
+        title: scene.title.trim(), title_ko: scene.title_ko?.trim() || scene.title.trim(), title_en: scene.title_en?.trim() || null,
+        title_ja: scene.title_ja?.trim() || null, link_url: scene.link_url?.trim() || null, image_width: scene.image_width,
+        image_height: scene.image_height, is_hero: scene.is_hero, is_published: scene.is_published, sort_order: scene.sort_order,
+      })),
+    ]);
+    const sceneError = sceneResults.find((result) => result.error)?.error;
+    if (sceneError) { onError(adminDbError(sceneError)); throw sceneError; }
+    const regionResults = await Promise.all([
+      ...(removedRegionIds.length ? [supabase.from("artist_scene_members").delete().in("id", removedRegionIds)] : []),
+      ...scenes.flatMap((scene) => scene.artist_scene_members.map((region) => supabase.from("artist_scene_members").upsert({ ...region, scene_id: scene.id }, { onConflict: "scene_id,member_id" }))),
+    ]);
+    const error = regionResults.find((result) => result.error)?.error;
+    if (error) { onError(error.message); throw error; }
+    await finalizeDraftImageAssets(
+      supabase,
+      uploadedAssets.current,
+      scenes.flatMap((scene) => [scene.image_url, ...scene.artist_scene_members.map((region) => region.mask_url || "")]),
+      removedScenes.flatMap((scene) => [scene.image_url, ...scene.artist_scene_members.map((region) => region.mask_url || "")]),
+    );
+    uploadedAssets.current = [];
+    setSnapshot(scenes);
+    discardBackup();
     revalidateArtistSceneData();
-    onToast("장면 정보를 저장했습니다.");
-  };
+    onToast("장면과 외곽선 변경사항을 저장했습니다.");
+  }, [discardBackup, onError, onToast, scenes, snapshot]);
 
-  const deleteScene = async () => {
+  useEffect(() => {
+    if (!dirty || !artistId) return;
+    return registerPageDraft(backupKey, {
+      diff: [{ kind: "change", field: "인터랙티브 장면", before: `${snapshot.length}개`, after: `${scenes.length}개` }],
+      commit: commitScenes,
+    });
+  }, [artistId, backupKey, commitScenes, dirty, scenes.length, snapshot.length]);
+
+  const deleteScene = () => {
     if (!selectedScene) return;
-    setBusy(true);
-    const result = await supabase.from("artist_scenes").delete().eq("id", selectedScene.id);
-    if (!result.error) {
-      const paths = [selectedScene.image_url, ...selectedScene.artist_scene_members.map((region) => region.mask_url).filter((url): url is string => Boolean(url))]
-        .map(storagePathFromUrl)
-        .filter((path): path is string => Boolean(path));
-      if (paths.length) await supabase.storage.from("artist-assets").remove(paths);
-    }
-    setBusy(false);
-    if (result.error) return onError(result.error.message);
+    setScenes((current) => current.filter((scene) => scene.id !== selectedScene.id));
     setDeleteOpen(false);
-    await load();
-    revalidateArtistSceneData();
-    onToast("장면을 삭제했습니다.");
+    onToast("장면을 임시 작업에서 삭제했습니다. 상단 저장 시 반영됩니다.");
   };
 
-  const saveOutline = async () => {
-    if (!selectedScene || !selectedMemberId || draftOutline.length < 3) return onError("멤버 외곽선을 먼저 한 바퀴 그려주세요.");
-    setBusy(true);
-    const result = await supabase.from("artist_scene_members").upsert({
-      scene_id: selectedScene.id,
-      member_id: selectedMemberId,
-      outline: draftOutline,
-      mask_url: selectedRegion?.mask_url || null,
-      sort_order: selectedMember?.sort_order || 0,
-    }, { onConflict: "scene_id,member_id" });
-    setBusy(false);
-    if (result.error) return onError(result.error.message);
-    await load(selectedScene.id);
-    revalidateArtistSceneData();
-    onToast(`${selectedMember?.name || "멤버"} 외곽선을 저장했습니다.`);
-  };
-
-  const removeOutline = async () => {
+  const removeOutline = () => {
     if (!selectedRegion || !selectedScene) {
       setDraftOutline([]);
       return;
     }
-    setBusy(true);
-    const result = await supabase.from("artist_scene_members").delete().eq("id", selectedRegion.id);
-    if (!result.error && selectedRegion.mask_url) {
-      const path = storagePathFromUrl(selectedRegion.mask_url);
-      if (path) await supabase.storage.from("artist-assets").remove([path]);
-    }
-    setBusy(false);
-    if (result.error) return onError(result.error.message);
-    await load(selectedScene.id);
-    revalidateArtistSceneData();
-    onToast("멤버 외곽선을 제거했습니다.");
+    setScenes((current) => current.map((scene) => scene.id === selectedScene.id ? { ...scene, artist_scene_members: scene.artist_scene_members.filter((region) => region.id !== selectedRegion.id) } : scene));
+    setDraftOutline([]);
+    onToast("멤버 외곽선을 임시 작업에서 제거했습니다.");
   };
 
   const uploadMask = async (file: File) => {
@@ -294,31 +289,31 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       return onError(uploadError instanceof Error ? uploadError.message : "UPLOAD_FAILED");
     }
     const url = `${uploadedAsset.url}?v=${Date.now()}`;
-    const result = await supabase.from("artist_scene_members").upsert({
-      scene_id: selectedScene.id,
-      member_id: selectedMemberId,
-      outline: draftOutline,
-      mask_url: url,
-      sort_order: selectedMember?.sort_order || 0,
-    }, { onConflict: "scene_id,member_id" });
+    const tracked = { bucket: "artist-assets" as const, path: uploadedAsset.path, url };
+    uploadedAssets.current.push(tracked);
+    trackDraftImageAsset(tracked);
     setBusy(false);
-    if (result.error) return onError(result.error.message);
-    await load(selectedScene.id);
-    revalidateArtistSceneData();
-    onToast("픽셀 단위 정밀 마스크를 적용했습니다.");
+    setScenes((current) => current.map((scene) => scene.id !== selectedScene.id ? scene : {
+      ...scene,
+      artist_scene_members: selectedRegion
+        ? scene.artist_scene_members.map((region) => region.id === selectedRegion.id ? { ...region, outline: draftOutline, mask_url: url } : region)
+        : [...scene.artist_scene_members, { id: crypto.randomUUID(), member_id: selectedMemberId, outline: draftOutline, mask_url: url, sort_order: selectedMember?.sort_order || 0 }],
+    }));
+    onToast("픽셀 단위 정밀 마스크를 임시 작업에 적용했습니다.");
     if (maskInputRef.current) maskInputRef.current.value = "";
   };
 
   if (!artistId) return <div className={styles.empty}><ImagePlus aria-hidden="true" /><b>아티스트를 먼저 저장하세요.</b></div>;
-  if (loading) return <LoadingIndicator label="인터랙티브 장면을 불러오는 중" className="min-h-[360px]" />;
+  if (loading) return <AdminSkeleton variant="media" className="min-h-[360px]" />;
   if (schemaMissing) return <div className={styles.empty}><ImagePlus aria-hidden="true" /><b>019_artist_scenes.sql 적용이 필요합니다.</b><span>스키마 적용 후 이 탭에서 장면과 멤버 실루엣을 편집할 수 있습니다.</span></div>;
 
   return (
-    <div className={styles.manager}>
+    <div className={styles.manager} data-tour-id="artist-scenes">
+      {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 장면 작업이 있습니다.</b></p><button type="button" onClick={discardBackup}>삭제</button><button type="button" onClick={restoreBackup}>복구</button></div>}
       <div className={styles.toolbar}>
         <div><b>Interactive scenes</b><span>장면마다 멤버 외곽선을 직접 그리고 정밀 마스크를 연결합니다.</span></div>
-        {heroUrl && <button type="button" disabled={busy} onClick={() => void importHero()}><ImagePlus aria-hidden="true" />대표 이미지 가져오기</button>}
-        <button type="button" disabled={busy} onClick={() => sceneInputRef.current?.click()}><Upload aria-hidden="true" />장면 추가</button>
+        {heroUrl && <button type="button" data-tour-id="scene-import" disabled={busy} onClick={() => void importHero()}><ImagePlus aria-hidden="true" />대표 이미지 가져오기</button>}
+        <button type="button" data-tour-id="scene-add" disabled={busy} onClick={() => sceneInputRef.current?.click()}><Upload aria-hidden="true" />장면 추가</button>
         <input ref={sceneInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => event.target.files && void uploadScenes(event.target.files)} />
       </div>
 
@@ -327,16 +322,16 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           {scenes.map((scene) => <button type="button" key={scene.id} className={scene.id === selectedSceneId ? styles.isSelected : ""} onClick={() => setSelectedSceneId(scene.id)}><AdminAssetImage src={scene.image_url} alt="" sizes="120px" /><span>{scene.title || "이름 없는 장면"}</span>{scene.is_hero && <i>HERO</i>}</button>)}
         </div>
 
-        {selectedScene && <div className={styles.sceneSettings}>
+        {selectedScene && <div className={styles.sceneSettings} data-tour-id="scene-settings">
           <label><span>장면 이름</span><input className="admin-input" value={selectedScene.title} onChange={(event) => patchScene({ title: event.target.value })} /></label>
           <label><span>장면 이름 (한국어)</span><input className="admin-input" value={selectedScene.title_ko || ""} onChange={(event) => patchScene({ title_ko: event.target.value })} /></label>
           <label><span>장면 이름 (영어)</span><input className="admin-input" value={selectedScene.title_en || ""} onChange={(event) => patchScene({ title_en: event.target.value })} /></label>
           <label><span>장면 이름 (일본어)</span><input className="admin-input" value={selectedScene.title_ja || ""} onChange={(event) => patchScene({ title_ja: event.target.value })} /></label>
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
-          <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => patchScene({ is_hero: event.target.checked })} /><span>대표 장면</span></label>
+          <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => { const checked = event.target.checked; setScenes((current) => current.map((scene) => ({ ...scene, is_hero: scene.id === selectedScene.id ? checked : checked ? false : scene.is_hero }))); }} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
           <button type="button" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><Trash2 aria-hidden="true" />삭제</button>
-          <button type="button" disabled={busy} onClick={() => void saveScene()}><Save aria-hidden="true" />장면 저장</button>
+          <button type="button" disabled={busy} onClick={() => { const link = selectedScene.link_url?.trim(); if (link && !normalizeSceneLink(link)) onError("장면 링크는 https:// 주소 또는 /로 시작하는 내부 경로를 입력해 주세요."); else onToast("장면 설정을 임시 작업에 적용했습니다."); }}><Save aria-hidden="true" />장면 적용</button>
         </div>}
 
         {selectedScene && <div className={styles.editor}>
@@ -362,11 +357,11 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           <aside className={styles.outlineTools}>
             <div><span>선택 멤버</span><b>{selectedMember?.eng_name || selectedMember?.name || "멤버 선택"}</b><small>{draftOutline.length ? `${draftOutline.length}개 윤곽 포인트` : "아직 외곽선이 없습니다."}</small></div>
             <button type="button" disabled={!draftOutline.length || busy} onClick={() => setDraftOutline([])}><RefreshCcw aria-hidden="true" />다시 그리기</button>
-            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => void saveOutline()}><Save aria-hidden="true" />외곽선 저장</button>
-            <button type="button" disabled={draftOutline.length < 3 || busy} onClick={() => maskInputRef.current?.click()}><Upload aria-hidden="true" />정밀 마스크 덮어쓰기</button>
+            <button type="button" data-tour-id="scene-outline-apply" disabled={draftOutline.length < 3 || busy} onClick={applyOutline}><Save aria-hidden="true" />외곽선 적용</button>
+            <button type="button" data-tour-id="scene-mask" disabled={draftOutline.length < 3 || busy} onClick={() => maskInputRef.current?.click()}><Upload aria-hidden="true" />정밀 마스크 덮어쓰기</button>
             <input ref={maskInputRef} type="file" accept="image/png,image/webp" hidden onChange={(event) => event.target.files?.[0] && void uploadMask(event.target.files[0])} />
             {selectedRegion?.mask_url && <p>알파 마스크 적용됨</p>}
-            <button type="button" className={styles.danger} disabled={busy || (!draftOutline.length && !selectedRegion)} onClick={() => void removeOutline()}><Trash2 aria-hidden="true" />멤버 영역 제거</button>
+            <button type="button" data-tour-id="scene-region-delete" className={styles.danger} disabled={busy || (!draftOutline.length && !selectedRegion)} onClick={() => void removeOutline()}><Trash2 aria-hidden="true" />멤버 영역 제거</button>
           </aside>
         </div>}
       </>}

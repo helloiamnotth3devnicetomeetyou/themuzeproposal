@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import RichTextEditor from "./RichTextEditor";
 
 interface FormFieldProps {
   label: string;
-  type?: "text" | "textarea" | "number" | "url" | "date";
+  type?: "text" | "textarea" | "richtext" | "number" | "url" | "date";
   valueKo: string;
   valueEn: string;
   valueJa: string;
@@ -57,7 +58,16 @@ export default function FormField({
       </div>
 
       <div className="desk-translatable-control">
-        {type === "textarea" ? (
+        {type === "richtext" ? (
+          <RichTextEditor
+            key={activeLang}
+            label={activeLang === "ko" ? "한국어" : activeLang === "en" ? "영어" : "일본어"}
+            value={activeLang === "ko" ? valueKo : activeLang === "en" ? valueEn : valueJa}
+            onChange={activeLang === "ko" ? onChangeKo : activeLang === "en" ? onChangeEn : onChangeJa}
+            placeholder={`${label}를 입력하세요.`}
+            required={required && activeLang === "ko"}
+          />
+        ) : type === "textarea" ? (
           <>
             <textarea required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} rows={4} />
             <textarea value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />

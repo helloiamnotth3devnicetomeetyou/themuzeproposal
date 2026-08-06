@@ -21,10 +21,13 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Image, Plus, RefreshCw, Search } from "lucide-react";
+import { Image as ImageIcon, Plus, RefreshCw, Search } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
+import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
 import {
@@ -40,6 +43,7 @@ export default function HeroAdminPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [orderSnapshot, setOrderSnapshot] = useState("[]");
   const [artistId, setArtistId] = useState("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("hero");
@@ -76,7 +80,9 @@ export default function HeroAdminPage() {
         const { error: activationError } = await supabase.from("home_hero_slides").update({ is_active: true }).in("id", hiddenIds);
         if (activationError) setError(activationError.message);
       }
-      setSlides(nextSlides.map((slide) => ({ ...slide, is_active: true })));
+      const normalizedSlides = nextSlides.map((slide) => ({ ...slide, is_active: true }));
+      setSlides(normalizedSlides);
+      setOrderSnapshot(JSON.stringify(normalizedSlides));
       setLoadedAt(Date.now());
     }
     if (!silent) setLoading(false);
@@ -115,60 +121,55 @@ export default function HeroAdminPage() {
   const activeSlide = draggingId ? slides.find((slide) => slide.id === draggingId) : undefined;
   const activeAlbum = activeSlide ? albumById.get(activeSlide.album_id) : undefined;
   const activeArtist = activeAlbum ? artistById.get(activeAlbum.artist_id) : undefined;
+  const orderDirty = JSON.stringify(slides) !== orderSnapshot;
+  const restoreSlides = useCallback((saved: HeroSlide[]) => setSlides(saved), []);
+  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: "admin-draft:hero", draft: slides, snapshot: orderSnapshot, dirty: orderDirty, restore: restoreSlides });
 
-  const addSlide = async (album: Album) => {
-    setSavingId(album.id);
-    setError("");
+  const addSlide = (album: Album) => {
     const sortOrder = Math.max(0, ...slides.map((slide) => slide.sort_order)) + 1;
-    const { error: insertError } = await supabase.from("home_hero_slides").insert({ album_id: album.id, sort_order: sortOrder, is_active: true });
-    if (insertError) setError(insertError.message);
-    else { setNotice(`‘${album.title}’을(를) 메인에 추가하고 공개했습니다.`); await load(true); }
-    setSavingId(null);
+    setSlides((current) => [...current, { id: crypto.randomUUID(), album_id: album.id, sort_order: sortOrder, is_active: true }]);
+    setNotice(`‘${album.title}’을(를) 임시 목록에 추가했습니다.`);
   };
 
-  const persistOrder = async (next: HeroSlide[], rollback: HeroSlide[] = slides) => {
+  const saveSlides = async () => {
     setSavingId("order");
     setError("");
-    const results = await Promise.all(next.map((slide) => supabase.from("home_hero_slides").update({ sort_order: slide.sort_order }).eq("id", slide.id)));
-    const orderError = results.find((result) => result.error)?.error;
-    if (orderError) { setSlides(rollback); setError(orderError.message); }
-    else setNotice("메인 노출 순서를 저장했습니다.");
+    const previous = JSON.parse(orderSnapshot) as HeroSlide[];
+    const removedIds = previous.filter((slide) => !slides.some((item) => item.id === slide.id)).map((slide) => slide.id);
+    const results = await Promise.all([
+      ...(removedIds.length ? [supabase.from("home_hero_slides").delete().in("id", removedIds)] : []),
+      ...slides.map((slide) => supabase.from("home_hero_slides").upsert(slide)),
+    ]);
+    const saveError = results.find((result) => result.error)?.error;
+    if (saveError) setError(saveError.message);
+    else { setOrderSnapshot(JSON.stringify(slides)); discardBackup(); setNotice("메인 노출 변경사항을 저장했습니다."); }
     setSavingId(null);
   };
 
   const handleDragStart = ({ active }: DragStartEvent) => setDraggingId(String(active.id));
   const handleDragCancel = () => setDraggingId(null);
-  const handleDragEnd = async ({ active, over }: DragEndEvent) => {
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setDraggingId(null);
     if (!over || active.id === over.id) return;
     const fromIndex = slides.findIndex((slide) => slide.id === active.id);
     const toIndex = slides.findIndex((slide) => slide.id === over.id);
     if (fromIndex < 0 || toIndex < 0) return;
-    const previous = [...slides];
     const next = arrayMove(slides, fromIndex, toIndex).map((slide, position) => ({ ...slide, sort_order: position + 1 }));
     setSlides(next);
-    await persistOrder(next, previous);
   };
 
-  const removeSlide = async (slide: HeroSlide) => {
-    setSavingId(slide.id);
-    setError("");
-    const { error: deleteError } = await supabase.from("home_hero_slides").delete().eq("id", slide.id);
-    if (deleteError) setError(deleteError.message);
-    else {
-      setSlides((current) => current.filter((item) => item.id !== slide.id).map((item, index) => ({ ...item, sort_order: index + 1 })));
-      setNotice("메인 목록에서 제외했습니다.");
-    }
-    setSavingId(null);
+  const removeSlide = (slide: HeroSlide) => {
+    setSlides((current) => current.filter((item) => item.id !== slide.id).map((item, index) => ({ ...item, sort_order: index + 1 })));
+    setNotice("임시 목록에서 제외했습니다. 상단 저장 시 반영됩니다.");
     setDeleteSlideItem(null);
   };
 
-  if (loading) return <LoadingIndicator label="메인 앨범 목록을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
+  if (loading) return <AdminSkeleton variant="cards" className="min-h-[420px]" rows={4} />;
 
   return (
     <div className="hero-admin-page">
       <section className="hero-admin-summary">
-        <div className="hero-admin-summary-icon"><Image aria-hidden="true" /></div>
+        <div className="hero-admin-summary-icon"><ImageIcon aria-hidden="true" /></div>
         <div>
           <h2>공개 앨범의 메인 노출 순서를 관리합니다.</h2>
           <p>앨범의 기본 정렬과 별개로, 홈 화면에 보여줄 앨범과 노출 여부를 이곳에서 지정합니다.</p>
@@ -177,17 +178,20 @@ export default function HeroAdminPage() {
           <div><dt>등록</dt><dd>{slides.length}</dd></div>
           <div><dt>공개 방식</dt><dd className="is-label">자동</dd></div>
         </dl>
-        <button type="button" className="hero-admin-refresh" onClick={() => void load(true)} disabled={Boolean(savingId)}>
+        <button type="button" data-tour-id="hero-refresh" className="admin-btn admin-btn-secondary hero-admin-refresh" onClick={() => void load(true)} disabled={Boolean(savingId)}>
           <RefreshCw aria-hidden="true" /> 새로고침
         </button>
+        <DraftSaveButton snapshot={orderSnapshot} draft={slides} dirty={orderDirty} saving={savingId === "order"} onSave={saveSlides} />
       </section>
 
+      {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={discardBackup}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={restoreBackup}>복구</button></div>}
+
       {error && <div className="hero-admin-alert is-error" role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
-      {notice && <div className="content-workbench-toast" role="status">{notice}</div>}
+      <AdminToast message={notice} />
 
       <section className="hero-admin-panel hero-admin-queue">
         <div className="hero-admin-panel-heading">
-          <div><h3>메인 슬라이드 순서</h3><p>슬라이드를 잡아 원하는 위치에 놓으면 주변 카드가 자리를 만들고 순서가 저장됩니다.</p></div>
+          <div><h3>메인 슬라이드 순서</h3><p>드래그한 순서는 브라우저 임시 작업에 적용되며 상단 저장 시 공개됩니다.</p></div>
           <em>총 {slides.length}개</em>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragEnd={(event) => void handleDragEnd(event)}>
@@ -198,7 +202,7 @@ export default function HeroAdminPage() {
                 const artist = album ? artistById.get(album.artist_id) : undefined;
                  return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => setDeleteSlideItem(slide)} />;
               })}
-              {!slides.length && <div className="hero-admin-empty"><Image aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
+              {!slides.length && <div className="hero-admin-empty"><ImageIcon aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>
           </SortableContext>
           <DragOverlay adjustScale={false} dropAnimation={{ duration: 220, easing: "cubic-bezier(.18,.86,.28,1)" }}>
@@ -227,7 +231,7 @@ export default function HeroAdminPage() {
                   {album.cover_url ? <AdminAssetImage src={album.cover_url} alt="" sizes="64px" /> : <i />}
                 </span>
                 <div><b>{album.title}</b><small>{artist?.name || "THE MUZE"} · {album.type}</small><em>{album.release_date || "발매일 미지정"}</em></div>
-                <button type="button" disabled={selected || savingId === album.id} onClick={() => void addSlide(album)}>{selected ? <><span>추가됨</span></> : <><Plus aria-hidden="true" /><span>메인에 추가</span></>}</button>
+                <button type="button" data-tour-id="hero-add" disabled={selected || savingId === album.id} onClick={() => addSlide(album)}>{selected ? <><span>추가됨</span></> : <><Plus aria-hidden="true" /><span>메인에 추가</span></>}</button>
               </article>
             );
           })}
@@ -243,7 +247,7 @@ export default function HeroAdminPage() {
           valueLabel="앨범명"
           busy={savingId === deleteSlideItem.id}
           onCancel={() => setDeleteSlideItem(null)}
-          onConfirm={() => void removeSlide(deleteSlideItem)}
+          onConfirm={() => removeSlide(deleteSlideItem)}
         />
       )}
     </div>

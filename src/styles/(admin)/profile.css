@@ -100,3 +100,7 @@
 @media (prefers-reduced-motion:reduce) {
   .profile-workbench .profile-completion { transition: none; }
 }
+
+.artist-create-wizard .content-workbench-tabs button { flex: 1; justify-content: center; }
+.artist-create-ready { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; color: var(--text-muted); font-size: 12px; }
+.artist-create-ready svg { width: 15px; height: 15px; color: var(--color-brand-pink); }

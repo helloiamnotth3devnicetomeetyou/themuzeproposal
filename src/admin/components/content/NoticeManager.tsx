@@ -1,18 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Trash2 } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import NoticeCategoryInput from "@/admin/components/content/NoticeCategoryInput";
 import RichTextEditor from "@/admin/components/content/RichTextEditor";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
 import { supabase } from "@/core/supabase/client";
 
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 type Notice = {
   id: string;
   title_ko: string;
@@ -72,12 +74,15 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [previewNoticeId] = useState(() => `preview-${crypto.randomUUID()}`);
 
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
   const dirty = Boolean(draft && serializedDraft !== snapshot);
+  const restoreNotice = useCallback((saved: NoticeDraft) => setDraft(saved), []);
+  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: `admin-draft:notices:${scopeArtistId || "global"}`, draft, snapshot, dirty, restore: restoreNotice });
   const canSave = Boolean(draft?.title.trim() && hasRichTextContent(draft.content) && draft.category.trim() && draft.date);
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -173,7 +178,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   });
 
   const selectNotice = async (notice: Notice) => {
-    if (dirty && !await requestConfirm({
+    if ((dirty || pendingDelete) && !await requestConfirm({
       title: "변경사항을 버릴까요?",
       description: "현재 공지에서 저장하지 않은 내용이 사라집니다. 다른 공지를 열기 전에 한 번 더 확인해 주세요.",
       confirmLabel: "버리고 열기",
@@ -181,13 +186,14 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     })) return;
     const nextDraft = fromNotice(notice);
     setDraft(nextDraft);
+    setPendingDelete(false);
     setSnapshot(JSON.stringify(nextDraft));
     setTab("content");
     setError("");
   };
 
   const addNotice = async () => {
-    if (dirty && !await requestConfirm({
+    if ((dirty || pendingDelete) && !await requestConfirm({
       title: "새 공지를 작성할까요?",
       description: "현재 공지에서 저장하지 않은 내용이 사라지고 새 작성 화면으로 이동합니다.",
       confirmLabel: "버리고 새로 작성",
@@ -195,6 +201,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     })) return;
     const nextDraft = emptyNotice();
     setDraft(nextDraft);
+    setPendingDelete(false);
     setSnapshot(JSON.stringify(nextDraft));
     setTab("content");
     setError("");
@@ -225,6 +232,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       return;
     }
     setToast(draft.id ? "공지를 저장했습니다." : "새 공지를 작성했습니다.");
+    discardBackup();
     await loadNotices(result.data.id);
   };
 
@@ -243,11 +251,11 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     await loadNotices();
   };
 
-  if (loading) return <LoadingIndicator label="공지 라이브러리를 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
+  if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
   const rail = <>
-    <div className="content-rail-heading"><div><h2>{scopeArtistId ? "아티스트 공지" : "전체 공지"}</h2></div><button type="button" onClick={() => void addNotice()} aria-label="공지 작성"><Plus aria-hidden="true" /></button></div>
-    <div className="content-rail-tools"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="공지 검색" aria-label="공지 검색" /><div className="content-filter-row">{(["all", "published", "draft"] as NoticeFilter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "비공개"}</button>)}</div></div>
+    <div className="content-rail-heading" data-tour-id="notice-create"><div><h2>{scopeArtistId ? "아티스트 공지" : "전체 공지"}</h2></div><button type="button" onClick={() => void addNotice()} aria-label="공지 작성"><Plus aria-hidden="true" /></button></div>
+    <div className="content-rail-tools" data-tour-id="notice-filters"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="공지 검색" aria-label="공지 검색" /><div className="content-filter-row">{(["all", "published", "draft"] as NoticeFilter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "비공개"}</button>)}</div></div>
     <div className="content-rail-sort"><span>{visibleNotices.length}개 공지</span><small>{scopeName}</small></div>
     <div className="content-library-list notice-library-list">
       {draft && !draft.id && <button type="button" className="content-library-item notice-library-item is-selected"><span className="notice-library-date"><b>NEW</b><small>{draft.date.slice(5).replace("-", ".")}</small></span><span className="content-library-copy"><b>{draft.title || "새 공지"}</b><small>{draft.category} · {draft.published ? "공개 예정" : "비공개"}</small></span></button>}
@@ -261,9 +269,9 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     <div className="content-identity-copy"><p><span className={`cms-status ${draft.published ? "is-live" : ""}`}>{draft.published ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 공지"}</h2><small>{scopeName} · {draft.category || "분류 미설정"}</small></div>
   </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>공지를 선택하세요</h2><small>{scopeName} notice desk</small></div>;
 
-  const actions = draft ? <>{draft.id && <button type="button" className="content-delete-action" onClick={() => setDeleteOpen(true)}>삭제</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || !canSave || saving} onClick={() => void saveNotice()}>{saving ? "저장 중…" : "변경사항 저장"}</button></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
+  const actions = draft ? <>{draft.id && <button type="button" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !canSave} onSave={() => pendingDelete ? removeNotice() : saveNotice()} extraDiff={pendingDelete ? [{ kind: "delete", field: "공지", before: draft.title, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
 
-  return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench">
+  return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs.map((item) => ({ ...item, complete: item.id === "content" ? Boolean(draft?.title.trim() && hasRichTextContent(draft.content) && draft.category.trim()) : Boolean(draft?.date) }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreBackup, onDiscard: discardBackup } : null}>
     {!draft ? <div className="content-no-selection"><span><FileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">
       {tab === "content" && <>
         <div className="content-section-heading"><h3>공지 내용</h3><span>독자가 목록에서 찾고 본문에서 읽게 될 제목과 내용을 작성합니다.</span></div>
@@ -283,5 +291,5 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
         <div className="content-choice-grid"><label className="content-choice"><input type="radio" checked={draft.published} onChange={() => patchDraft({ published: true })} /><span><b>공개</b><small>저장 즉시 사이트 공지 목록에 표시합니다.</small></span></label><label className="content-choice"><input type="radio" checked={!draft.published} onChange={() => patchDraft({ published: false })} /><span><b>비공개</b><small>관리자에만 저장하고 사이트에는 표시하지 않습니다.</small></span></label></div>
       </>}
     </div>}
-  </ContentWorkbench>{deleteOpen && draft?.id && <DeleteConfirmDialog title="공지를 삭제할까요?" description="공지가 관리자와 공개 목록에서 영구적으로 제거됩니다. 이 작업은 되돌릴 수 없습니다." confirmValue={draft.title} valueLabel="공지 제목" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => void removeNotice()} />}</>;
+  </ContentWorkbench>{deleteOpen && draft?.id && <DeleteConfirmDialog title="공지를 삭제할까요?" description="삭제 작업은 상단 저장 전까지 서버에 반영되지 않습니다." confirmValue={draft.title} valueLabel="공지 제목" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => { setPendingDelete(true); setDeleteOpen(false); }} />}</>;
 }
