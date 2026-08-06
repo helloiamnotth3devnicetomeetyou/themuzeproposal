@@ -63,6 +63,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     { id: "notices", categoryLabel: "워크스페이스", title: "전체 공지", url: "/admin/notices" },
     { id: "audit-logs", categoryLabel: "워크스페이스", title: "관리자 변경 이력", url: "/admin/audit-logs" },
     { id: "protect", categoryLabel: "워크스페이스", title: "권익 보호 신고", url: "/admin/protect" },
+    { id: "contact", categoryLabel: "워크스페이스", title: "문의 관리", url: "/admin/contact" },
     { id: "auditions", categoryLabel: "워크스페이스", title: "오디션 캠페인", url: "/admin/auditions/campaigns" },
     { id: "settings", categoryLabel: "사이트 설정", title: "사이트 설정", url: "/admin/settings" },
     { id: "new-artist", categoryLabel: "워크스페이스", title: "새 아티스트 추가", url: "/admin/artists/new/profile" },
@@ -70,6 +71,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     { id: "history", categoryLabel: "사이트 설정", title: "연혁", url: "/admin/settings?tab=history" },
     { id: "footer", categoryLabel: "사이트 설정", title: "푸터 문구", url: "/admin/settings?tab=footer" },
     { id: "social", categoryLabel: "사이트 설정", title: "소셜 링크", url: "/admin/settings?tab=social" },
+    { id: "avatars", categoryLabel: "사이트 설정", title: "사용자 아바타", url: "/admin/settings?tab=avatars" },
     ...artists.flatMap((artist) => [
       { id: `${artist.id}-profile`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필", url: `/admin/artists/${artist.id}/profile` },
       { id: `${artist.id}-profile-basic`, categoryLabel: "아티스트", artistName: artist.name, title: "프로필 - 기본 정보", url: `/admin/artists/${artist.id}/profile?tab=basic` },
@@ -132,7 +134,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   };
 
   return (
-    <div className={styles.wrapper} ref={wrapperRef}>
+    <div className={styles.wrapper} ref={wrapperRef} data-tour-id="admin-search">
       <div className={`${styles.field} ${isOpen ? styles.fieldOpen : ""}`}>
         <Search className={styles.searchIcon} aria-hidden="true" />
         <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => setIsOpen(true)} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />

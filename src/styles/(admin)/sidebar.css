@@ -111,6 +111,7 @@
 .cms-nav-icon { width: 16px; height: 16px; flex: 0 0 16px; }
 .cms-nav-icon svg { display: block; width: 100%; height: 100%; }
 .cms-nav-item.is-active .cms-nav-icon { color: var(--color-brand-pink); }
+.cms-nav-count { min-width: 20px; margin-left: auto; padding: 2px 5px; border: 1px solid var(--border-default); color: var(--color-brand-pink); font-size: 9px; font-weight: 800; line-height: 1.2; text-align: center; font-variant-numeric: tabular-nums; }
 
 .cms-artist-section { padding-top: 16px; border-top: 0; }
 .cms-nav-label-row { display: flex; align-items: center; justify-content: space-between; padding-right: 6px; }
@@ -178,7 +179,8 @@
 
 .cms-sidebar-footer { padding: 13px 15px 15px; border-top: 1px solid var(--border-default); background: var(--bg-surface); }
 .cms-account { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.cms-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 11px; font-weight: 800; }
+.cms-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; overflow: hidden; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 11px; font-weight: 800; }
+.cms-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .cms-account-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; }
 .cms-account-copy b { overflow: hidden; color: var(--text-secondary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .cms-account-copy small { margin-top: 1px; color: var(--text-faint); font-size: 9px; }

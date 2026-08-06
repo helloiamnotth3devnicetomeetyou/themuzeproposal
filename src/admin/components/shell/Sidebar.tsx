@@ -1,5 +1,6 @@
 "use client";
 
+import NextImage from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,23 +10,27 @@ import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
 import SidebarSearch from "./SidebarSearch";
 import ArtistNavGroup from "./ArtistNavGroup";
+import AdminOnboarding from "@/admin/onboarding/AdminOnboarding";
 
 type Artist = { id: string; name: string; logo_url: string | null };
 
-const dashboardLinks = [
+const overviewLinks = [
   { label: "대시보드", href: "/admin", icon: LayoutDashboard },
-  { label: "변경 이력", href: "/admin/audit-logs", icon: History },
 ];
 
 const contentLinks = [
   { label: "메인 앨범 정렬", href: "/admin/hero", icon: Image },
   { label: "전체 공지", href: "/admin/notices", icon: FileText },
-  { label: "권익 보호", href: "/admin/protect", icon: ShieldCheck },
-  { label: "문의 관리", href: "/admin/contact", icon: Mail },
-  { label: "오디션", href: "/admin/auditions/campaigns", icon: Inbox },
 ];
 
+const inboxLinks = [
+  { label: "오디션", href: "/admin/auditions/campaigns", icon: Inbox, countKey: "auditions" },
+  { label: "문의 관리", href: "/admin/contact", icon: Mail, countKey: "contacts" },
+  { label: "권익 보호", href: "/admin/protect", icon: ShieldCheck, countKey: "reports" },
+] as const;
+
 const systemLinks = [
+  { label: "변경 이력", href: "/admin/audit-logs", icon: History },
   { label: "사이트 설정", href: "/admin/settings", icon: Settings },
 ];
 
@@ -42,15 +47,19 @@ export default function Sidebar({
   onClose,
   isCollapsed = false,
   onToggleCollapse,
+  canNavigate,
 }: {
   isOpen?: boolean;
   onClose?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  canNavigate: () => boolean;
 }) {
   const pathname = usePathname();
-  const [profile, setProfile] = useState<{ email?: string } | null>(null);
+  const [profile, setProfile] = useState<{ id?: string; email?: string; avatar_asset_id?: string | null; role?: "super_admin" | "editor" | null } | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState({ auditions: 0, contacts: 0, reports: 0 });
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -74,7 +83,24 @@ export default function Sidebar({
 
   useEffect(() => {
     let active = true;
-    void getUserProfile().then(setProfile);
+    const loadProfile = async () => {
+      const nextProfile = await getUserProfile();
+      if (!active) return;
+      setProfile(nextProfile);
+      setAvatarUrl(null);
+      if (!nextProfile?.avatar_asset_id) return;
+
+      const { data } = await supabase
+        .from("avatar_assets")
+        .select("image_path")
+        .eq("id", nextProfile.avatar_asset_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (active && data?.image_path) {
+        setAvatarUrl(supabase.storage.from("artist-assets").getPublicUrl(data.image_path).data.publicUrl);
+      }
+    };
+    void loadProfile();
     const loadArtists = async () => {
       const { data } = await supabase.from("artists").select("id,name,logo_url").order("name");
       if (active) setArtists((data ?? []) as Artist[]);
@@ -82,11 +108,27 @@ export default function Sidebar({
     void loadArtists();
     const refreshArtists = () => void loadArtists();
     window.addEventListener(ARTISTS_CHANGED_EVENT, refreshArtists);
+    window.addEventListener("account-avatar-changed", loadProfile);
     return () => {
       active = false;
       window.removeEventListener(ARTISTS_CHANGED_EVENT, refreshArtists);
+      window.removeEventListener("account-avatar-changed", loadProfile);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadUnreadCounts = () => void Promise.all([
+        supabase.from("audition_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ]).then(([auditions, contacts, reports]) => {
+        if (active) setUnreadCounts({ auditions: auditions.count ?? 0, contacts: contacts.count ?? 0, reports: reports.count ?? 0 });
+      });
+    loadUnreadCounts();
+    window.addEventListener("admin-inbox-changed", loadUnreadCounts);
+    return () => { active = false; window.removeEventListener("admin-inbox-changed", loadUnreadCounts); };
+  }, [pathname]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -137,16 +179,16 @@ export default function Sidebar({
         )}
       </div>
       <nav className="cms-nav" aria-label="관리자 메뉴">
-        {/* Dashboard Group */}
+        {/* Overview Group */}
         <div className={`cms-nav-section ${collapsedGroups.analytics ? "is-collapsed-group" : ""}`}>
           <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("analytics")}>
-            <p className="cms-nav-label">분석</p>
+            <p className="cms-nav-label">운영 현황</p>
             <span className="cms-group-toggle-arrow">
               {collapsedGroups.analytics ? "▶" : "▼"}
             </span>
           </div>
           <div className="cms-nav-group-items">
-            {dashboardLinks.map((item) => {
+            {overviewLinks.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -159,6 +201,26 @@ export default function Sidebar({
                     <Icon aria-hidden="true" />
                   </span>
                   <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`cms-nav-section ${collapsedGroups.inbox ? "is-collapsed-group" : ""}`}>
+          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("inbox")}>
+            <p className="cms-nav-label">접수함</p>
+            <span className="cms-group-toggle-arrow">{collapsedGroups.inbox ? "▶" : "▼"}</span>
+          </div>
+          <div className="cms-nav-group-items">
+            {inboxLinks.map((item) => {
+              const Icon = item.icon;
+              const count = unreadCounts[item.countKey];
+              return (
+                <Link key={item.href} href={item.href} title={item.label} className={`cms-nav-item ${isActive(item.href) ? "is-active" : ""}`}>
+                  <span className="cms-nav-icon"><Icon aria-hidden="true" /></span>
+                  <span>{item.label}</span>
+                  {count > 0 && <span className="cms-nav-count" aria-label={`미확인 ${count}건`}>{count > 99 ? "99+" : count}</span>}
                 </Link>
               );
             })}
@@ -266,9 +328,22 @@ export default function Sidebar({
           </div>
         </div>
       </nav>
+      <AdminOnboarding
+        userId={profile?.id}
+        role={profile?.role === "super_admin" || profile?.role === "editor" ? profile.role : undefined}
+        artists={artists}
+        isCollapsed={isCollapsed}
+        canNavigate={canNavigate}
+      />
       <div className="cms-sidebar-footer">
         <div className="cms-account">
-          <span className="cms-avatar">{(profile?.email?.[0] || "A").toUpperCase()}</span>
+          <span className="cms-avatar">
+            {avatarUrl ? (
+              <NextImage src={avatarUrl} alt="" width={30} height={30} sizes="30px" />
+            ) : (
+              (profile?.email?.[0] || "A").toUpperCase()
+            )}
+          </span>
           <span className="cms-account-copy">
             <b>{profile?.email?.split("@")[0] || "관리자"}</b>
             <small>관리자 계정</small>

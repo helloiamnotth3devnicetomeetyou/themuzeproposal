@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExternalLink, Menu } from "lucide-react";
+import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import Navbar from "@/public/components/layout/Navbar";
@@ -29,10 +30,13 @@ const emptySubscribe = () => () => {};
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [toast, setToast] = useState("");
+  const dirtyDrafts = useRef(new Set<string>());
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("admin-sidebar-collapsed") === "true"
   );
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const confirmNavigation = useCallback(() => !dirtyDrafts.current.size || window.confirm("저장하지 않은 변경사항이 있습니다. 이동해도 임시 작업은 브라우저에 백업됩니다."), []);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
@@ -93,9 +97,52 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     };
   }, [isNavigationOpen]);
 
+  useEffect(() => {
+    let timer = 0;
+    const onToast = (event: Event) => {
+      setToast((event as CustomEvent<string>).detail);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setToast(""), 2600);
+    };
+    window.addEventListener("admin-toast", onToast);
+    return () => { window.clearTimeout(timer); window.removeEventListener("admin-toast", onToast); };
+  }, []);
+
+  useEffect(() => {
+    const openGuideNavigation = () => {
+      setIsNavigationOpen(true);
+      setIsSidebarCollapsed(false);
+      localStorage.setItem("admin-sidebar-collapsed", "false");
+    };
+    window.addEventListener("admin-guide-open-navigation", openGuideNavigation);
+    return () => window.removeEventListener("admin-guide-open-navigation", openGuideNavigation);
+  }, []);
+
+  useEffect(() => {
+    const onDirty = (event: Event) => {
+      const { key, dirty } = (event as CustomEvent<{ key: string; dirty: boolean }>).detail;
+      if (dirty) dirtyDrafts.current.add(key); else dirtyDrafts.current.delete(key);
+    };
+    const onClick = (event: MouseEvent) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>("a[href]");
+      if (!link || link.target || link.origin !== window.location.origin || !link.pathname.startsWith("/admin") || link.href === window.location.href) return;
+      if (!confirmNavigation()) event.preventDefault();
+    };
+    const onPopState = () => { if (!confirmNavigation()) window.history.forward(); };
+    window.addEventListener("admin-draft-dirty", onDirty);
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("admin-draft-dirty", onDirty);
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [confirmNavigation]);
+
   return (
     <AdminDialogProvider>
       <div className="admin-root-shell">
+        <AdminToast message={toast} />
         <div className="admin-public-header">
           <Navbar />
         </div>
@@ -125,6 +172,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               onClose={() => setIsNavigationOpen(false)}
               isCollapsed={isMounted && isSidebarCollapsed}
               onToggleCollapse={toggleSidebar}
+              canNavigate={confirmNavigation}
             />
             {isNavigationOpen && (
               <button
@@ -135,7 +183,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               />
             )}
             <div className="cms-workspace">
-              <main key={pathname} className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""}`}>
+              <main key={pathname} data-tour-id="admin-page" className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""}`}>
                 <div className="cms-content-inner">{children}</div>
               </main>
             </div>

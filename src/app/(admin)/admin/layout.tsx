@@ -12,6 +12,7 @@ import "@/styles/(admin)/workbench.css";
 import "@/styles/(admin)/profile.css";
 import "@/styles/(admin)/editor.css";
 import "@/styles/(admin)/dialogs.css";
+import "@/styles/(admin)/onboarding.css";
 import "@/styles/(admin)/assets.css";
 import "@/styles/(admin)/social.css";
 import "@/styles/(admin)/gallery.css";
