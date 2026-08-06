@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, LogIn, Moon, Sun, User } from "lucide-react";
+import { ChevronDown, LogIn, Moon, Sun } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
@@ -15,6 +15,9 @@ type Props = {
   pathname: string;
   isAdmin: boolean;
   isLoggedIn: boolean;
+  accountAvatarUrl: string | null;
+  accountInitial: string;
+  accountName: string;
   isDark: boolean;
   t: NavTranslations;
   mobileOpenArtist: string | null;
@@ -31,7 +34,7 @@ const links = (slug: string) => [
 
 export default function MobileNav({
   menuButtonRef, mobileMenuRef, isOpen, onToggle, onClose, artists, pathname,
-  isAdmin, isLoggedIn, isDark, t, mobileOpenArtist, setMobileOpenArtist, onToggleTheme,
+  isAdmin, isLoggedIn, accountAvatarUrl, accountInitial, accountName, isDark, t, mobileOpenArtist, setMobileOpenArtist, onToggleTheme,
 }: Props) {
   const mobileLinkClass = (path: string) =>
     `flex min-h-14 items-center border-b border-[var(--border-default)] font-display text-[15px] font-bold tracking-[0.08em] transition-colors ${pathname === path ? "text-brand-pink" : "hover:text-brand-pink"}`;
@@ -47,8 +50,8 @@ export default function MobileNav({
           <div className={`${styles.themeToggleThumb} ${isDark ? styles.themeToggleThumbDark : ""}`}>{isDark ? <Moon size={13} /> : <Sun size={13} />}</div>
           <div className={styles.themeToggleIcons}><Sun size={12} className={!isDark ? "opacity-0" : "opacity-60"} /><Moon size={12} className={isDark ? "opacity-0" : "opacity-60"} /></div>
         </button>
-        <Link href={isLoggedIn ? "/account" : "/login"} onClick={onClose} className={`${styles.accountBtn} ${isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut}`} title={isLoggedIn ? "ACCOUNT" : "LOGIN"}>
-          {isLoggedIn ? <User className={styles.accountBtnIcon} /> : <LogIn className={styles.accountBtnIcon} />}
+        <Link href={isLoggedIn ? "/account" : "/login"} onClick={onClose} className={`${styles.accountBtn} ${isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut}`} title={isLoggedIn ? accountName : "LOGIN"}>
+          {isLoggedIn ? <span className={styles.accountAvatar}>{accountAvatarUrl ? <Image src={accountAvatarUrl} alt="" width={22} height={22} sizes="22px" /> : <b aria-hidden="true">{accountInitial}</b>}</span> : <LogIn className={styles.accountBtnIcon} />}
         </Link>
       </>}
       <button ref={menuButtonRef} type="button" onClick={onToggle} aria-label={isOpen ? t.common.closeMenu : t.common.openMenu} aria-expanded={isOpen} aria-controls="mobile-menu" className="grid size-9 place-items-center text-[var(--text-primary)]">

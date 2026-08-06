@@ -19,7 +19,7 @@ export default function LoginClient({ redirectTo, oauthFailed }: LoginClientProp
 
   return (
     <div className="min-h-screen flex w-full" style={{ backgroundColor: "var(--bg-base)" }}>
-      <LoginFormPanel {...formState} isDark={theme === "dark"} />
+      <LoginFormPanel {...formState} isDark={theme === "dark"} showLoginRequired={redirectTo !== "/"} />
       <SlideshowPanel currentSlide={formState.currentSlide} />
     </div>
   );

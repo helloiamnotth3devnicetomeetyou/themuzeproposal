@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
+import { useLocale } from "@/core/providers/LocaleContext";
 
 interface LoginFormPanelProps extends LoginFormState {
   isDark: boolean;
+  showLoginRequired: boolean;
 }
 
 /** Reusable styled input field */
@@ -86,6 +88,7 @@ export default function LoginFormPanel({
   loading,
   t,
   isDark,
+  showLoginRequired,
   setEmail,
   setPassword,
   setConfirmPassword,
@@ -95,8 +98,10 @@ export default function LoginFormPanel({
   handleSignup,
   handleGoogleLogin,
 }: LoginFormPanelProps) {
+  const { locale, setLocale } = useLocale();
+
   return (
-    <div className="w-full md:w-[45%] flex items-center justify-start px-8 md:px-16 lg:px-24 py-24 z-10">
+    <div className="relative w-full md:w-[45%] flex items-center justify-start px-8 md:px-16 lg:px-24 py-24 z-10">
       <div className="w-full max-w-sm flex flex-col items-start text-left">
 
         {/* Top Back Link */}
@@ -106,22 +111,13 @@ export default function LoginFormPanel({
             className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-brand-pink"
             style={{ color: "var(--text-muted)" }}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
             <span>{t.backToHome}</span>
           </Link>
         </div>
 
         {/* Brand Logo */}
         <div className="flex flex-col items-start mb-12">
-          <Link href="/" className="relative w-44 h-11 block transition-transform duration-slow hover:scale-105">
+          <Link href="/" className="relative w-52 h-[3.25rem] block">
             <Image
               src="/images/logo.png"
               alt="THE MUZE Logo"
@@ -135,6 +131,9 @@ export default function LoginFormPanel({
           <p className="text-[10px] font-semibold mt-4" style={{ color: "var(--text-muted)" }}>
             {mode === "login" ? t.accountSign : t.createAccount}
           </p>
+          <div className="mt-3 flex gap-3" aria-label="언어 선택">
+            {(["ko", "ja", "en"] as const).map((value) => <button type="button" key={value} onClick={() => setLocale(value)} className="relative h-5 text-[8px] font-bold" style={{ color: locale === value ? "var(--text-primary)" : "var(--text-faint)", borderBottom: locale === value ? "2px solid var(--color-brand-pink)" : "2px solid transparent" }}>{value === "ko" ? "KR" : value === "ja" ? "JP" : "EN"}</button>)}
+          </div>
         </div>
 
         {/* Mode Tabs */}
@@ -144,6 +143,19 @@ export default function LoginFormPanel({
         </div>
 
         {/* Status Messages */}
+        {showLoginRequired && (
+          <div
+            role="status"
+            className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
+            style={{
+              backgroundColor: "var(--bg-subtle)",
+              color: "var(--text-secondary)",
+              borderColor: "var(--border-default)",
+            }}
+          >
+            {t.loginRequired}
+          </div>
+        )}
         {error && (
           <div
             role="alert"
