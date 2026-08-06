@@ -1,15 +1,18 @@
 "use client";
 
-import { type DragEvent, useEffect, useId, useMemo, useState } from "react";
+import { type DragEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { Building2, Check, FileArchive, FileText, Globe, History, Mail, Plus, Settings2, Share2, ShieldCheck, Trash2 } from "lucide-react";
+import { Building2, Check, FileArchive, FileText, Globe, History, Mail, Plus, Settings2, Share2, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import FormField from "@/admin/components/content/FormField";
 import SocialLinksField, { hasInvalidSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { supabase } from "@/core/supabase/client";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
+import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
 import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
@@ -28,6 +31,7 @@ import {
   type SettingsTab,
 } from "./settings-editor-model";
 import AdminAccountsPanel from "./AdminAccountsPanel";
+import AvatarAssetManager from "./AvatarAssetManager";
 
 function BusinessAssetField({ label, hint, accept, icon: Icon, value, busy, onUpload }: {
   label: string;
@@ -66,14 +70,23 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   const [footer, setFooter] = useState<FooterSettings>(EMPTY_FOOTER);
   const [social, setSocial] = useState<SocialLink[]>(EMPTY_SOCIAL);
   const [business, setBusiness] = useState<BusinessAssets>(EMPTY_BUSINESS);
+  const [avatarDirty, setAvatarDirty] = useState(false);
   const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const isSuperAdmin = canManageAdminAccounts;
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2600);
+  }, []);
 
   const draft = useMemo(() => ({ company, history, footer, social, business }), [business, company, history, footer, social]);
   const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
-  const dirty = serializedDraft !== snapshot;
+  const settingsDirty = serializedDraft !== snapshot;
+  const dirty = settingsDirty || avatarDirty;
+  const restoreSettings = useCallback((saved: typeof draft) => { setCompany(saved.company); setHistory(saved.history); setFooter(saved.footer); setSocial(saved.social); setBusiness(saved.business); }, []);
+  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: "admin-draft:settings", draft, snapshot, dirty: settingsDirty, restore: restoreSettings });
+  const nestedDrafts = usePageDrafts();
   const previewTarget = tab === "company"
     ? "/about?section=company#about-company"
     : tab === "history"
@@ -135,7 +148,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     const handleUrlTab = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as SettingsTab;
-      if (tabParam && ["company", "history", "footer", "social", "business", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
+      if (tabParam && ["company", "history", "footer", "social", "business", "avatars", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
         setTab(tabParam);
       }
     };
@@ -144,7 +157,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
 
     const handleCustomEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail as SettingsTab;
-      if (detail && ["company", "history", "footer", "social", "business", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
+      if (detail && ["company", "history", "footer", "social", "business", "avatars", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
         setTab(detail);
       }
     };
@@ -235,6 +248,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     }
 
     setSnapshot(serializedDraft);
+    discardBackup();
     void fetch("/api/admin/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -244,7 +258,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     window.setTimeout(() => setToast(""), 2600);
   };
 
-  if (loading) return <LoadingIndicator label="사이트 설정을 불러오는 중…" className="min-h-[420px] bg-[var(--bg-card)]" />;
+  if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
   const companyReady = Boolean(company.email.trim() || company.address_ko.trim() || company.address_en.trim() || company.address_ja.trim());
   const historyReady = history.length > 0;
@@ -257,6 +271,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     { id: "footer", label: "푸터", copy: "하단 저작권 문구", icon: Globe, ready: footerReady, meta: footerReady ? "입력 완료" : "확인 필요" },
     { id: "social", label: "소셜 채널", copy: "공식 채널 바로가기", icon: Share2, ready: socialCount > 0, meta: `${socialCount}개 연결` },
     { id: "business", label: "비즈니스 자료", copy: "프레스킷 · 프로필 PDF", icon: FileArchive, ready: Boolean(business.pressKitUrl || business.profilePdfUrl), meta: business.pressKitUrl && business.profilePdfUrl ? "업로드 완료" : "자료 확인 필요" },
+    { id: "avatars", label: "사용자 아바타", copy: "아티스트별 계정 이미지", icon: UserRound, ready: !avatarDirty, meta: avatarDirty ? "저장 필요" : "목록 관리" },
     ...(isSuperAdmin ? [{ id: "admins" as const, label: "관리자 계정", copy: "초대 · 역할 · 권한 해제", icon: ShieldCheck, ready: true, meta: "슈퍼 관리자" }] : []),
   ];
 
@@ -297,14 +312,15 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     <ContentWorkbench
       rail={rail}
       identity={identity}
-      actions={<><PreviewButton onClick={openPreview} /><button type="button" className="admin-btn admin-btn-primary" disabled={!dirty || saving} onClick={() => void handleSave()}>{saving ? "저장 중…" : "변경사항 저장"}</button></>}
-      tabs={isSuperAdmin ? settingsTabs : settingsTabs.filter((item) => item.id !== "admins")}
+      actions={tab === "admins" ? null : <>{tab !== "avatars" && <PreviewButton onClick={openPreview} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={settingsDirty || nestedDrafts.dirty} saving={saving} extraDiff={nestedDrafts.diff} onSave={async () => { if (settingsDirty) await handleSave(); await nestedDrafts.commit(); }} /></>}
+      tabs={(isSuperAdmin ? settingsTabs : settingsTabs.filter((item) => item.id !== "admins")).map((item) => ({ ...item, complete: railItems.find((railItem) => railItem.id === item.id)?.ready }))}
       activeTab={tab}
       onTabChange={setTab}
       error={error}
       onDismissError={() => setError("")}
       toast={toast}
       className="settings-workbench"
+      recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreBackup, onDiscard: discardBackup } : null}
     >
       <div className="content-editor-stack settings-editor-stack">
         {tab === "company" && <>
@@ -318,7 +334,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
 
         {tab === "history" && <>
           <div className="content-section-heading settings-section-heading"><div><h3>ABOUT 연혁</h3><p>공개 ABOUT 페이지에 표시할 성장 기록을 관리합니다. 현재 목록 순서대로 사이트에 노출됩니다.</p></div><History aria-hidden="true" /></div>
-          <div className="settings-history-toolbar">
+          <div className="settings-history-toolbar" data-tour-id="settings-history-actions">
             <span>총 {history.length}개 항목 · 최신순 자동 정렬</span>
             <div className="settings-history-tools">
               <div className="settings-history-languages" aria-label="연혁 편집 언어">
@@ -367,6 +383,8 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
             <BusinessAssetField label="프로필 PDF" hint="PDF · 최대 100MB · 드래그하거나 파일을 선택하세요" accept=".pdf,application/pdf" icon={FileText} value={business.profilePdfUrl} busy={saving} onUpload={(file) => void uploadBusinessAsset("profilePdfUrl", file)} />
           </section>
         </>}
+
+        <AvatarAssetManager active={tab === "avatars"} onDirtyChange={setAvatarDirty} onError={setError} onToast={showToast} />
 
         {tab === "admins" && isSuperAdmin && <AdminAccountsPanel onError={setError} onSuccess={(message) => {
           setToast(message);

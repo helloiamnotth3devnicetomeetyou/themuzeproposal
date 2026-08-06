@@ -8,7 +8,7 @@ import {
   type HistoryEntry,
 } from "@/core/content/site-content";
 
-export type SettingsTab = "company" | "history" | "footer" | "social" | "business" | "admins";
+export type SettingsTab = "company" | "history" | "footer" | "social" | "business" | "avatars" | "admins";
 export type HistoryLanguage = "ko" | "en" | "ja";
 
 export type CompanySettings = {
@@ -59,6 +59,7 @@ const baseSettingsTabs: WorkbenchTab<SettingsTab>[] = [
   { id: "footer", label: "푸터" },
   { id: "social", label: "소셜 채널" },
   { id: "business", label: "비즈니스 자료" },
+  { id: "avatars", label: "사용자 아바타" },
 ];
 
 export const settingsTabs: WorkbenchTab<SettingsTab>[] = [

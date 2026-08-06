@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import AccountClient from "./AccountClient";
+import AccountClient, { type AvatarArtistOption } from "./AccountClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createPrivatePageMetadata } from "@/core/seo/metadata";
 
@@ -10,16 +10,33 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/account");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: artists }, { data: avatarAssets }] = await Promise.all([
+    supabase.from("profiles").select("name,avatar_asset_id").eq("id", user.id).maybeSingle(),
+    supabase.from("artists").select("id,name,eng_name").eq("is_active", true).order("name", { ascending: true }),
+    supabase.from("avatar_assets").select("id,artist_id,image_path,sort_order").eq("is_active", true).order("sort_order", { ascending: true }),
+  ]);
+
+  const assets = (avatarAssets ?? []).map((asset) => ({
+    id: asset.id,
+    artistId: asset.artist_id,
+    imageUrl: supabase.storage.from("artist-assets").getPublicUrl(asset.image_path).data.publicUrl,
+  }));
+  const avatarArtists: AvatarArtistOption[] = (artists ?? []).flatMap((artist) => {
+    const artistAssets = assets.filter((asset) => asset.artistId === artist.id);
+    return artistAssets.length ? [{
+      id: artist.id,
+      name: artist.eng_name || artist.name,
+      avatars: artistAssets.map(({ id, imageUrl }) => ({ id, imageUrl })),
+    }] : [];
+  });
+  const availableAvatarIds = new Set(avatarArtists.flatMap((artist) => artist.avatars.map((avatar) => avatar.id)));
 
   return (
     <AccountClient
       initialName={profile?.name || user.user_metadata?.name || ""}
       initialEmail={user.email || ""}
+      initialAvatarAssetId={profile?.avatar_asset_id && availableAvatarIds.has(profile.avatar_asset_id) ? profile.avatar_asset_id : null}
+      avatarArtists={avatarArtists}
     />
   );
 }

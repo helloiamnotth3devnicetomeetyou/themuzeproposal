@@ -1,0 +1,9 @@
+
+@media (prefers-reduced-motion: reduce) {
+  .formRow > input,
+  .submit,
+  .signOut,
+  .avatarGroup img {
+    transition: none;
+  }
+}

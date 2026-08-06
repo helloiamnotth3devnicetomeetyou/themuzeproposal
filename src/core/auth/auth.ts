@@ -101,7 +101,24 @@ export async function updateUserName(name: string) {
     );
 
   if (profileError) throw new AuthUserError('UPDATE_FAILED');
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('account-profile-changed'));
   return data.user;
+}
+
+export async function updateUserAvatar(avatarAssetId: string | null) {
+  const user = await getUser();
+  if (!user) throw new AuthUserError('UPDATE_FAILED');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ avatar_asset_id: avatarAssetId, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+    .select('avatar_asset_id')
+    .single();
+
+  if (error) throw new AuthUserError('UPDATE_FAILED');
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('account-avatar-changed'));
+  return data.avatar_asset_id as string | null;
 }
 
 export async function updateUserEmail(email: string) {

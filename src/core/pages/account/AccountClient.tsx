@@ -1,12 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, ShieldCheck } from "lucide-react";
+import { Check, LogOut } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import {
   CurrentPasswordError,
   signOut,
+  updateUserAvatar,
   updateUserEmail,
   updateUserName,
   updateUserPassword,
@@ -15,7 +17,13 @@ import {
 import styles from "@/styles/(core)/pages/account.module.css";
 
 type Status = { type: "success" | "error"; message: string } | null;
-type AccountSection = "profile" | "email" | "password" | "session";
+type AccountSection = "profile" | "avatar" | "email" | "password" | "session";
+
+export type AvatarArtistOption = {
+  id: string;
+  name: string;
+  avatars: Array<{ id: string; imageUrl: string }>;
+};
 
 const copy = {
   ko: {
@@ -25,6 +33,12 @@ const copy = {
     intro: "이름과 로그인 정보를 최신 상태로 관리하세요. 변경한 정보는 이 계정을 사용하는 모든 곳에 반영됩니다.",
     profileTitle: "기본 정보",
     profileDescription: "서비스에서 사용할 이름입니다.",
+    avatarTitle: "아바타",
+    avatarDescription: "좋아하는 아티스트의 이미지로 계정을 표현하세요.",
+    defaultAvatar: "기본 아바타",
+    saveAvatar: "아바타 저장",
+    avatarSaved: "아바타를 저장했습니다.",
+    noAvatars: "선택할 수 있는 아바타가 아직 없습니다.",
     name: "이름",
     saveName: "이름 저장",
     nameSaved: "이름을 저장했습니다.",
@@ -65,6 +79,12 @@ const copy = {
     intro: "Keep your name and sign-in details current. Updates apply everywhere you use this account.",
     profileTitle: "Profile",
     profileDescription: "The name shown across the service.",
+    avatarTitle: "Avatar",
+    avatarDescription: "Choose an account image from your favorite artist.",
+    defaultAvatar: "Default avatar",
+    saveAvatar: "SAVE AVATAR",
+    avatarSaved: "Your avatar has been saved.",
+    noAvatars: "No artist avatars are available yet.",
     name: "NAME",
     saveName: "SAVE NAME",
     nameSaved: "Your name has been saved.",
@@ -105,6 +125,12 @@ const copy = {
     intro: "名前とログイン情報を最新の状態に保ちます。変更内容は、このアカウントを使うすべての場所に反映されます。",
     profileTitle: "基本情報",
     profileDescription: "サービスに表示される名前です。",
+    avatarTitle: "アバター",
+    avatarDescription: "好きなアーティストの画像をアカウントに設定できます。",
+    defaultAvatar: "基本アバター",
+    saveAvatar: "アバターを保存",
+    avatarSaved: "アバターを保存しました。",
+    noAvatars: "選択できるアバターはまだありません。",
     name: "名前",
     saveName: "名前を保存",
     nameSaved: "名前を保存しました。",
@@ -140,21 +166,29 @@ const copy = {
   },
 };
 
-export default function AccountClient({ initialName, initialEmail }: { initialName: string; initialEmail: string }) {
+export default function AccountClient({ initialName, initialEmail, initialAvatarAssetId, avatarArtists }: {
+  initialName: string;
+  initialEmail: string;
+  initialAvatarAssetId: string | null;
+  avatarArtists: AvatarArtistOption[];
+}) {
   const router = useRouter();
   const { locale } = useLocale();
   const t = copy[locale] ?? copy.ko;
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
   const [originalEmail] = useState(initialEmail);
+  const [avatarAssetId, setAvatarAssetId] = useState<string | null>(initialAvatarAssetId);
+  const [savedAvatarAssetId, setSavedAvatarAssetId] = useState<string | null>(initialAvatarAssetId);
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [currentPasswordVerified, setCurrentPasswordVerified] = useState(false);
   const [checkingCurrentPassword, setCheckingCurrentPassword] = useState(false);
-  const [saving, setSaving] = useState<"name" | "email" | "password" | "logout" | null>(null);
+  const [saving, setSaving] = useState<"name" | "avatar" | "email" | "password" | "logout" | null>(null);
   const [activeSection, setActiveSection] = useState<AccountSection>("profile");
   const [profileStatus, setProfileStatus] = useState<Status>(null);
+  const [avatarStatus, setAvatarStatus] = useState<Status>(null);
   const [emailStatus, setEmailStatus] = useState<Status>(null);
   const [currentPasswordStatus, setCurrentPasswordStatus] = useState<Status>(null);
   const [passwordStatus, setPasswordStatus] = useState<Status>(null);
@@ -192,6 +226,22 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
       setEmailStatus({ type: "success", message: t.emailSent });
     } catch (error) {
       setEmailStatus({ type: "error", message: errorMessage(error) });
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleAvatarSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAvatarStatus(null);
+    setSaving("avatar");
+    try {
+      const savedAvatar = await updateUserAvatar(avatarAssetId);
+      setAvatarAssetId(savedAvatar);
+      setSavedAvatarAssetId(savedAvatar);
+      setAvatarStatus({ type: "success", message: t.avatarSaved });
+    } catch (error) {
+      setAvatarStatus({ type: "error", message: errorMessage(error) });
     } finally {
       setSaving(null);
     }
@@ -286,11 +336,13 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
 
   const sections = [
     { id: "profile" as const, label: t.profileTitle, description: t.profileDescription, code: "PROFILE" },
+    { id: "avatar" as const, label: t.avatarTitle, description: t.avatarDescription, code: "AVATAR" },
     { id: "email" as const, label: t.emailTitle, description: t.emailDescription, code: "SIGN-IN ID" },
     { id: "password" as const, label: t.passwordTitle, description: t.passwordDescription, code: "SECURITY" },
     { id: "session" as const, label: t.sessionTitle, description: t.sessionDescription, code: "SESSION" },
   ];
   const activeMeta = sections.find((item) => item.id === activeSection) ?? sections[0];
+  const savedAvatarUrl = avatarArtists.flatMap((artist) => artist.avatars).find((avatar) => avatar.id === savedAvatarAssetId)?.imageUrl;
 
   return (
     <main className={styles.page}>
@@ -303,9 +355,13 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
               {sections.map((item) => <button key={item.id} type="button" className={activeSection === item.id ? styles.activeTab : ""} onClick={() => setActiveSection(item.id)}>{item.label}</button>)}
             </nav>
             <div className={styles.accountMeta}>
-              <ShieldCheck aria-hidden="true" />
-              <span>{name || "THE MUZE"}</span>
-              <b>{originalEmail}</b>
+              <div className={styles.accountMetaAvatar}>
+                {savedAvatarUrl ? <Image src={savedAvatarUrl} alt={`${name || "사용자"} 아바타`} width={58} height={58} sizes="58px" /> : <b aria-hidden="true">{(originalEmail.trim()[0] || "M").toUpperCase()}</b>}
+              </div>
+              <div className={styles.accountMetaCopy}>
+                <span>{name || "THE MUZE"}</span>
+                <b>{originalEmail}</b>
+              </div>
             </div>
           </div>
         </header>
@@ -313,13 +369,35 @@ export default function AccountClient({ initialName, initialEmail }: { initialNa
         <div className={styles.contentColumn}>
           <header className={styles.contentHeader}>
             <div><h2>{activeMeta.label}</h2><p>{activeMeta.description}</p></div>
-            <em>{String(sections.findIndex((item) => item.id === activeSection) + 1).padStart(2, "0")} / 04</em>
+            <em>{String(sections.findIndex((item) => item.id === activeSection) + 1).padStart(2, "0")} / {String(sections.length).padStart(2, "0")}</em>
           </header>
 
           {activeSection === "profile" && <form className={styles.form} onSubmit={handleNameSubmit}>
             <div className={styles.formRow}><label htmlFor="account-name">{t.name}</label><input id="account-name" value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" maxLength={80} /></div>
             {profileStatus && <span role="status" className={`${styles.status} ${profileStatus.type === "success" ? styles.success : styles.error}`}>{profileStatus.message}</span>}
             <button className={styles.submit} type="submit" disabled={saving !== null}>{saving === "name" ? t.saving : t.saveName}</button>
+          </form>}
+
+          {activeSection === "avatar" && <form className={styles.avatarForm} onSubmit={handleAvatarSubmit}>
+            <div className={styles.avatarGroups}>
+              <section className={styles.avatarGroup}>
+                <h3>{t.defaultAvatar}</h3>
+                <div><button type="button" className={`${styles.defaultAvatarTile} ${avatarAssetId === null ? styles.selectedAvatar : ""}`} aria-label={t.defaultAvatar} aria-pressed={avatarAssetId === null} onClick={() => { setAvatarAssetId(null); setAvatarStatus(null); }}>
+                  <b aria-hidden="true">{(originalEmail.trim()[0] || "M").toUpperCase()}</b>
+                  {avatarAssetId === null && <span><Check aria-hidden="true" /></span>}
+                </button></div>
+              </section>
+              {avatarArtists.map((artist) => <section key={artist.id} className={styles.avatarGroup}>
+              <h3>{artist.name}</h3>
+              <div>{artist.avatars.map((avatar, index) => <button key={avatar.id} type="button" className={avatarAssetId === avatar.id ? styles.selectedAvatar : ""} aria-label={`${artist.name} ${index + 1}`} aria-pressed={avatarAssetId === avatar.id} onClick={() => { setAvatarAssetId(avatar.id); setAvatarStatus(null); }}>
+                <Image src={avatar.imageUrl} alt="" width={180} height={180} sizes="(max-width: 767px) 28vw, 140px" />
+                {avatarAssetId === avatar.id && <span><Check aria-hidden="true" /></span>}
+              </button>)}</div>
+              </section>)}
+            </div>
+            {!avatarArtists.length && <p className={styles.avatarEmpty}>{t.noAvatars}</p>}
+            {avatarStatus && <span role="status" className={`${styles.status} ${avatarStatus.type === "success" ? styles.success : styles.error}`}>{avatarStatus.message}</span>}
+            <button className={styles.submit} type="submit" disabled={saving !== null || avatarAssetId === savedAvatarAssetId}>{saving === "avatar" ? t.saving : t.saveAvatar}</button>
           </form>}
 
           {activeSection === "email" && <form className={styles.form} onSubmit={handleEmailSubmit}>
