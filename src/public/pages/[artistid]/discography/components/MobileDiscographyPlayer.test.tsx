@@ -69,6 +69,11 @@ describe("MobileDiscographyPlayer", () => {
     expect(props.onSelectAlbum).not.toHaveBeenCalled();
   });
 
+  it("pre-renders the neighboring cover for a continuous slide", () => {
+    renderPlayer();
+    expect(document.querySelector('img[loading="eager"]')).toBeInTheDocument();
+  });
+
   it("exposes visible album controls", () => {
     const props = renderPlayer();
     fireEvent.click(screen.getAllByRole("button", { name: "Next album" }).at(-1)!);

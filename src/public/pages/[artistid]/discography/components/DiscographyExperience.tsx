@@ -21,6 +21,7 @@ export function DiscographyExperience() {
   const preview = usePreviewPayload("album");
   const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
   const [mobileView, setMobileView] = useState<"album" | "tracks">("album");
   const discography = useDiscographyController(
     artistid,
@@ -42,6 +43,12 @@ export function DiscographyExperience() {
     const candidate = coverCandidates[index];
     if (candidate) void preloadImages([candidate]);
   }, [coverCandidates]);
+
+  const changeMobileView = useCallback((view: "album" | "tracks") => {
+    setMobileView(view);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(() => pageRef.current?.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" }));
+  }, []);
 
   if (discography.loading || !discography.album) {
     const message =
@@ -71,7 +78,8 @@ export function DiscographyExperience() {
 
   return (
     <main
-      className="min-h-[100dvh] lg:h-[100dvh] w-full relative overflow-x-hidden lg:overflow-hidden flex flex-col"
+      ref={pageRef}
+      className="h-[100dvh] w-full relative overflow-x-hidden overflow-y-auto overscroll-y-contain scrollbar-none lg:overflow-hidden flex flex-col"
       style={{ backgroundColor: "var(--palette-050505)" }}
     >
       <audio
@@ -87,7 +95,7 @@ export function DiscographyExperience() {
         isPlaying={discography.isPlaying}
       />
 
-      <div className="lg:hidden min-h-[100dvh] w-full max-w-[640px] mx-auto px-5 pb-8 pt-24 relative z-10">
+      <div className="lg:hidden w-full max-w-[640px] mx-auto px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--banner-height,0px)+var(--site-header-height))] relative z-10">
         <MobileDiscographyPlayer
           album={album}
           albumIndex={discography.albumIndex}
@@ -107,7 +115,7 @@ export function DiscographyExperience() {
           onPreviousTrack={discography.previousTrack}
           onSelectAlbum={discography.switchAlbum}
           onTogglePlay={discography.togglePlay}
-          onViewChange={setMobileView}
+          onViewChange={changeMobileView}
         />
       </div>
       <div className={`hidden lg:grid lg:flex-1 lg:min-h-0 lg:grid-cols-12 lg:items-center max-w-[1400px] mx-auto px-8 pb-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}>
