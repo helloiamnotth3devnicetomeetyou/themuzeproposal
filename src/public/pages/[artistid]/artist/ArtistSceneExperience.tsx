@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
@@ -24,6 +24,17 @@ import type { ArtistScene } from "@/core/utils/artist-scenes";
 const EMPTY_MEMBERS: Member[] = [];
 const EMPTY_SCENES: ArtistScene[] = [];
 
+function sceneImageCandidates(scene: ArtistScene) {
+  const { props } = getImageProps({
+    src: scene.image_url,
+    alt: "",
+    width: scene.image_width || 1600,
+    height: scene.image_height || 900,
+    sizes: "100vw",
+  });
+  return [{ src: props.src, srcSet: props.srcSet, sizes: props.sizes }, { src: scene.image_url }];
+}
+
 export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, initialData = null }: { artistSlug: string; initialMemberSlug?: string; initialData?: ArtistSceneData | null }) {
   const { locale, t } = useLocale();
   const copy = t.artistScene;
@@ -36,6 +47,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   const [isMobileExperience, setIsMobileExperience] = useState(false);
   const focusWasOpenedHere = useRef(false);
+  const pendingSceneId = useRef<string | null>(null);
 
   const artist = data?.artist;
   const members = data?.members ?? EMPTY_MEMBERS;
@@ -48,11 +60,8 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
 
   const artistName = artist ? localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name) : artistSlug.toUpperCase();
   const scenePreloadCandidates = useMemo(() => {
-    const urls = [
-      ...scenes.slice(1).map((scene) => scene.image_url),
-      ...scenes.flatMap((scene) => scene.artist_scene_members.map((region) => region.mask_url).filter(Boolean)),
-    ] as string[];
-    return Array.from(new Set(urls)).map((src) => ({ src }));
+    const masks = scenes.flatMap((scene) => scene.artist_scene_members.map((region) => region.mask_url).filter(Boolean) as string[]);
+    return [...scenes.slice(1).flatMap(sceneImageCandidates), ...Array.from(new Set(masks)).map((src) => ({ src }))];
   }, [scenes]);
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
@@ -73,14 +82,20 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
 
   const memberScenes = useMemo(() => selectedMemberId ? scenes.filter((scene) => scene.member_ids?.includes(selectedMemberId) || scene.artist_scene_members.some((region) => region.member_id === selectedMemberId)) : scenes, [scenes, selectedMemberId]);
   const activeSceneMembers = useMemo(() => members.filter((member) => activeScene?.artist_scene_members.some((region) => region.member_id === member.id)), [activeScene, members]);
-  const requestSceneChange = (id: string) => {
+  const requestSceneChange = async (id: string) => {
     setHoveredMemberId(null);
-    if (id === activeScene?.id) return;
+    if (id === activeScene?.id) { pendingSceneId.current = null; return; }
+    const scene = scenes.find((item) => item.id === id);
+    if (!scene) return;
+    pendingSceneId.current = id;
+    await preloadImages(sceneImageCandidates(scene), { concurrency: 2 });
+    if (pendingSceneId.current !== id) return;
+    pendingSceneId.current = null;
     setActiveSceneId(id);
   };
   const selectMember = (memberId: string) => { const member = members.find((item) => item.id === memberId); if (!member || !artist) return; const matchingScene = activeScene?.member_ids?.includes(memberId) ? activeScene : scenes.find((scene) => scene.member_ids?.includes(memberId)); if (matchingScene) setActiveSceneId(matchingScene.id); const path = `/${artist.slug}/artist/${member.slug}`; if (!selectedMemberId) { window.history.pushState({ artistMemberFocus: true }, "", path); focusWasOpenedHere.current = true; } else window.history.replaceState({ artistMemberFocus: true }, "", path); setSelectedMemberId(memberId); setGroupFocused(false); setHoveredMemberId(null); };
   const closeMember = () => { if (!artist) return; if (focusWasOpenedHere.current) { focusWasOpenedHere.current = false; window.history.back(); return; } window.history.replaceState(null, "", `/${artist.slug}/artist`); setSelectedMemberId(null); setGroupFocused(false); setHoveredMemberId(null); };
-  const reset = () => { if (!artist) return; focusWasOpenedHere.current = false; window.history.replaceState(null, "", `/${artist.slug}/artist`); setSelectedMemberId(null); setGroupFocused(false); setHoveredMemberId(null); setActiveSceneId(scenes[0]?.id ?? ""); };
+  const reset = () => { if (!artist) return; focusWasOpenedHere.current = false; pendingSceneId.current = null; window.history.replaceState(null, "", `/${artist.slug}/artist`); setSelectedMemberId(null); setGroupFocused(false); setHoveredMemberId(null); setActiveSceneId(scenes[0]?.id ?? ""); };
   const navigate = (direction: -1 | 1) => { const index = activeSceneMembers.findIndex((member) => member.id === selectedMemberId); if (index >= 0 && activeSceneMembers.length > 1) selectMember(activeSceneMembers[(index + direction + activeSceneMembers.length) % activeSceneMembers.length].id); };
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape" && (selectedMemberId || groupFocused)) closeMember(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); });
 
@@ -101,9 +116,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
     memberBio={memberBio || ""}
     locale={locale}
     copy={copy}
-    onChangeScene={(id) => {
-      setActiveSceneId(id);
-    }}
+    onChangeScene={requestSceneChange}
     onSelectMember={selectMember}
     onCloseMember={closeMember}
     onNavigateMember={navigate}
