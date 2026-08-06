@@ -69,6 +69,18 @@
   animation: slideIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.mobile-album-track {
+  transform: translate3d(-33.333333%, 0, 0);
+}
+
+@keyframes mobileAlbumInfoEnter {
+  from { opacity: .78; transform: translate3d(0, 5px, 0); }
+}
+
+.mobile-album-info-enter {
+  animation: mobileAlbumInfoEnter .26s cubic-bezier(.22, 1, .36, 1);
+}
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -302,6 +314,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-slideIn,
+  .animate-slideOutLeft,
+  .animate-slideOutRight {
+    animation: none !important;
+  }
+  .mobile-album-info-enter { animation: none !important; }
   .reveal {
     transition: none !important;
     opacity: 1 !important;

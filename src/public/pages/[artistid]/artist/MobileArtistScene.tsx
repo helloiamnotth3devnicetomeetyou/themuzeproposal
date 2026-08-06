@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, Disc3, ExternalLink, X } from "lucide-react";
 import { localizeText } from "@/core/i18n/localized";
+import { sanitizeRichText } from "@/core/utils/rich-text";
 import { normalizeSceneLink, outlineToPath, outlineCentroid, type ArtistScene } from "@/core/utils/artist-scenes";
 import type { Locale } from "@/core/i18n/translations";
 import type { Artist, Member, SceneCopy } from "./artist-scene-types";
@@ -83,7 +84,8 @@ export default function MobileArtistScene({
       style={{ "--artist-accent": selectedMember?.color || artist.color || "var(--color-brand-pink)" } as CSSProperties}
     >
       <header className={styles.mobileSceneHeader}>
-        <div>
+        <div className={styles.mobileArtistIdentity}>
+          {artist.logo_url && <Image src={artist.logo_url} alt={`${artistName} logo`} width={120} height={40} />}
           <h1>{artistName}</h1>
         </div>
         <div className={styles.mobileHeaderActions}>
@@ -110,7 +112,6 @@ export default function MobileArtistScene({
       </header>
 
       <section className={styles.mobileSceneStage} aria-label={`${artistName} ${copy.scene}`}>
-        {!selectedMember && <div className={styles.clickHint}>{copy.clickHint}</div>}
         <div ref={railRef} className={styles.mobileSceneRail} onScroll={syncSceneFromScroll}>
           {scenes.map((scene) => {
             const sceneTitle = localizeText(
@@ -149,8 +150,7 @@ export default function MobileArtistScene({
                     fill
                     priority={scene.id === scenes[0]?.id}
                     draggable={false}
-                    // Grayscale background when a member is selected
-                    style={selectedMember ? { filter: "grayscale(1) brightness(0.28) contrast(1.15)" } : undefined}
+                    style={{ objectFit: "cover", ...(selectedMember ? { filter: "grayscale(1) brightness(0.28) contrast(1.15)" } : {}) }}
                   />
                   
                   {/* Highlight Overlay (unaffected by grayscale filter) */}
@@ -194,9 +194,6 @@ export default function MobileArtistScene({
                     );
                   })}
                 </svg>
-                <div className={styles.mobileSceneCaption}>
-                  <strong>{sceneTitle || copy.scene}</strong>
-                </div>
               </article>
             );
           })}
@@ -232,10 +229,31 @@ export default function MobileArtistScene({
         ) : (
           /* Default General Controls (Counter, Members, Actions) */
           <>
-            <div className={styles.mobileFilmCounter}>
-              <span>{String(activeIndex + 1).padStart(2, "0")}</span>
-              <div><i style={{ width: `${((activeIndex + 1) / Math.max(1, scenes.length)) * 100}%` }} /></div>
-              <span>{String(scenes.length).padStart(2, "0")}</span>
+            <div className={styles.mobileSceneNavigator}>
+              <div className={styles.mobileFilmCounter}>
+                <span>{String(activeIndex + 1).padStart(2, "0")}</span>
+                <div><i style={{ width: `${((activeIndex + 1) / Math.max(1, scenes.length)) * 100}%` }} /></div>
+                <span>{String(scenes.length).padStart(2, "0")}</span>
+              </div>
+              <div className={styles.mobileSceneActions}>
+                <button
+                  type="button"
+                  disabled={activeIndex === 0}
+                  onClick={() => onChangeScene(scenes[Math.max(0, activeIndex - 1)].id)}
+                  aria-label={copy.previous}
+                >
+                  <ArrowLeft aria-hidden="true" />
+                </button>
+                <span aria-hidden="true" />
+                <button
+                  type="button"
+                  disabled={activeIndex === scenes.length - 1}
+                  onClick={() => onChangeScene(scenes[Math.min(scenes.length - 1, activeIndex + 1)].id)}
+                  aria-label={copy.next}
+                >
+                  <ArrowRight aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div className={styles.mobileMemberChips}>
               {activeMembers.map((member) => (
@@ -250,26 +268,7 @@ export default function MobileArtistScene({
                 </button>
               ))}
             </div>
-            <div className={styles.mobileSceneActions}>
-              <button
-                type="button"
-                disabled={activeIndex === 0}
-                onClick={() => onChangeScene(scenes[Math.max(0, activeIndex - 1)].id)}
-                aria-label={copy.previous}
-              >
-                <ArrowLeft aria-hidden="true" />
-              </button>
-              <span aria-hidden="true" />
-              <button
-                type="button"
-                disabled={activeIndex === scenes.length - 1}
-                onClick={() => onChangeScene(scenes[Math.min(scenes.length - 1, activeIndex + 1)].id)}
-                aria-label={copy.next}
-              >
-                <ArrowRight aria-hidden="true" />
-              </button>
-            </div>
-            {groupBio && <div className={styles.mobileGroupBio}><strong>{copy.groupProfile}</strong><p>{groupBio}</p></div>}
+            {groupBio && <div className={styles.mobileGroupBio}><strong>{copy.groupProfile}</strong><div dangerouslySetInnerHTML={{ __html: sanitizeRichText(groupBio) }} /></div>}
           </>
         )}
       </section>

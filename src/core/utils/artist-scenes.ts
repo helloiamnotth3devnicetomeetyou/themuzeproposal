@@ -25,6 +25,7 @@ export type ArtistScene = {
   is_hero: boolean;
   is_published: boolean;
   sort_order: number;
+  member_ids?: string[];
   artist_scene_members: ArtistSceneRegion[];
 };
 
