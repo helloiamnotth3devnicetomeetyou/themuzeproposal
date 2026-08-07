@@ -176,7 +176,9 @@ export function useDiscographyController(
         const requestedId = requestedAlbumId();
         const remembered = readPlaybackMemory(artistSlug);
         const requestedIndex = requestedId
-          ? result.albums.findIndex((item) => item.id === requestedId)
+          ? [...result.albums]
+              .sort((a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || ""))
+              .findIndex((item) => item.id === requestedId)
           : -1;
         const rememberedIndex = remembered
           ? result.albums.findIndex((item) => item.id === remembered.albumId)

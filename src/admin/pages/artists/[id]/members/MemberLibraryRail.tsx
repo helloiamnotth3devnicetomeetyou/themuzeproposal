@@ -71,6 +71,7 @@ function SortableMemberItem({
       ref={setNodeRef}
       style={style}
       type="button"
+      data-tour-id="entity-list-item"
       onClick={sorting ? undefined : onClick}
       className={`content-library-item ${isSelected ? "is-selected" : ""} ${
         sorting ? "is-sorting" : ""

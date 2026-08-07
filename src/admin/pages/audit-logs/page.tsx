@@ -225,7 +225,7 @@ export default function AuditLogsAdminPage() {
                       <td><b>{log.actor_email || "시스템 작업"}</b><small>{log.actor_id ? log.actor_id.slice(0, 8).toUpperCase() : "SERVICE"}</small></td>
                       <td><span className={`${styles.operation} ${operationClass(log.operation)}`}>{operationLabel(log.operation)}</span></td>
                       <td><b>{log.record_label}</b><small>{tableLabel(log.table_name)} · {log.record_id}</small></td>
-                      <td><button type="button" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><ChevronRight aria-hidden="true" /></button></td>
+                      <td><button type="button" data-tour-id="audit-open" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><ChevronRight aria-hidden="true" /></button></td>
                     </tr>
                   ))}
                 </tbody>

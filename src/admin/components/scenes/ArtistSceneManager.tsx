@@ -330,8 +330,8 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => { const checked = event.target.checked; setScenes((current) => current.map((scene) => ({ ...scene, is_hero: scene.id === selectedScene.id ? checked : checked ? false : scene.is_hero }))); }} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>
-          <button type="button" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><Trash2 aria-hidden="true" />삭제</button>
-          <button type="button" disabled={busy} onClick={() => { const link = selectedScene.link_url?.trim(); if (link && !normalizeSceneLink(link)) onError("장면 링크는 https:// 주소 또는 /로 시작하는 내부 경로를 입력해 주세요."); else onToast("장면 설정을 임시 작업에 적용했습니다."); }}><Save aria-hidden="true" />장면 적용</button>
+          <button type="button" data-tour-id="scene-delete" className={styles.danger} disabled={busy} onClick={() => setDeleteOpen(true)}><Trash2 aria-hidden="true" />삭제</button>
+          <button type="button" data-tour-id="scene-apply" disabled={busy} onClick={() => { const link = selectedScene.link_url?.trim(); if (link && !normalizeSceneLink(link)) onError("장면 링크는 https:// 주소 또는 /로 시작하는 내부 경로를 입력해 주세요."); else onToast("장면 설정을 임시 작업에 적용했습니다."); }}><Save aria-hidden="true" />장면 적용</button>
         </div>}
 
         {selectedScene && <div className={styles.editor}>

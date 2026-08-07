@@ -326,7 +326,7 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
         <div className="avatar-manager-card-actions" data-tour-id="avatar-actions">
           <button type="button" disabled={index === 0} aria-label="앞으로 이동" onClick={() => moveItem(index, -1)}><ArrowUp aria-hidden="true" /></button>
           <button type="button" disabled={index === items.length - 1} aria-label="뒤로 이동" onClick={() => moveItem(index, 1)}><ArrowDown aria-hidden="true" /></button>
-          <button type="button" className="is-danger" aria-label="아바타 삭제" onClick={() => setDeleteItem(item)}><Trash2 aria-hidden="true" /></button>
+          <button type="button" data-tour-id="avatar-delete" className="is-danger" aria-label="아바타 삭제" onClick={() => setDeleteItem(item)}><Trash2 aria-hidden="true" /></button>
         </div>
       </article>)}
     </div>}

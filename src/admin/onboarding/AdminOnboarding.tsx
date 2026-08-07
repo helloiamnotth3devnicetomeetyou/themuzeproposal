@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, List, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, List, Play, X } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
 import {
   GUIDE_CHAPTERS,
@@ -13,6 +13,7 @@ import {
   type GuideRole,
   type GuideStep,
 } from "./guide-content";
+import { getGuideHighlightRect, getGuidePosition, type GuidePosition } from "./guide-position";
 
 type Artist = { id: string; name: string };
 type Run = { chapterId: string; index: number; mode: "full" | "chapter" };
@@ -38,6 +39,9 @@ export default function AdminOnboarding({
   const router = useRouter();
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const guideWasOpenRef = useRef(false);
   const progressRef = useRef<Record<string, GuideProgressRow>>({});
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [ready, setReady] = useState(false);
@@ -46,7 +50,11 @@ export default function AdminOnboarding({
   const [tocOpen, setTocOpen] = useState(false);
   const [chapterIntro, setChapterIntro] = useState<ChapterIntro | null>(null);
   const [run, setRun] = useState<Run | null>(null);
+  const [pausedRun, setPausedRun] = useState<Run | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState<GuidePosition | null>(null);
+  const [interactionPrompt, setInteractionPrompt] = useState<string | null>(null);
+  const [isExploring, setIsExploring] = useState(false);
   const [capabilities, setCapabilities] = useState({ artistScenes: true, artistGallery: true });
 
   const artistId = artists.find((artist) => pathname.includes(`/artists/${artist.id}/`))?.id ?? artists[0]?.id;
@@ -68,9 +76,11 @@ export default function AdminOnboarding({
   const progress = totalSteps ? Math.round((reachedSteps / totalSteps) * 100) : 0;
   const steps = run ? chapterSteps[run.chapterId] ?? [] : [];
   const step = run ? steps[run.index] : undefined;
+  const runChapter = run ? GUIDE_CHAPTERS.find((chapter) => chapter.id === run.chapterId) : undefined;
   const introChapter = chapterIntro ? GUIDE_CHAPTERS.find((chapter) => chapter.id === chapterIntro.chapterId) : undefined;
   const stepOnCurrentPath = !step || pathname === step.href.replace(":artistId", artistId ?? "new").split("?")[0];
   const visibleRect = stepOnCurrentPath ? rect : null;
+  const guideOpen = welcomeOpen || tocOpen || Boolean(chapterIntro) || Boolean(run);
 
   useEffect(() => {
     if (!userId || !role) return;
@@ -90,7 +100,6 @@ export default function AdminOnboarding({
         artistGallery: !missingTable(galleryResult.error?.message),
       });
       setReady(true);
-      if (!progressResult.error && rows.length === 0) setWelcomeOpen(true);
     });
     return () => { active = false; };
   }, [role, userId]);
@@ -150,6 +159,10 @@ export default function AdminOnboarding({
     setTocOpen(false);
     setChapterIntro(null);
     setRect(null);
+    setPopoverPosition(null);
+    setInteractionPrompt(null);
+    setPausedRun(null);
+    setIsExploring(false);
     setRun({ chapterId, index, mode });
     void saveStepProgress(chapterId, nextStep.id);
     if (href !== currentHref) router.push(href);
@@ -168,7 +181,11 @@ export default function AdminOnboarding({
     const row = progressRows[chapterId];
     const savedIndex = row?.completed_at ? -1 : available.findIndex((item) => item.id === row?.furthest_step_id);
     setRun(null);
+    setPausedRun(null);
     setRect(null);
+    setPopoverPosition(null);
+    setInteractionPrompt(null);
+    setIsExploring(false);
     setWelcomeOpen(false);
     setTocOpen(false);
     setChapterIntro({ chapterId, index: resume && savedIndex >= 0 ? savedIndex : 0, mode });
@@ -191,6 +208,7 @@ export default function AdminOnboarding({
     }
     setRun(null);
     setRect(null);
+    setPopoverPosition(null);
     setTocOpen(true);
   };
 
@@ -205,65 +223,129 @@ export default function AdminOnboarding({
 
     let target: HTMLElement | null = null;
     let resizeObserver: ResizeObserver | null = null;
-    let fallbackTimer = 0;
+    let searchTimer = 0;
+    let lostTimer = 0;
+    let animationFrame = 0;
+    let promptFrame = 0;
+    let paused = false;
+    let awaitingInteraction = false;
+    const isRendered = (element: HTMLElement) => {
+      const bounds = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return element.isConnected && bounds.width > 0 && bounds.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    };
     const visibleTarget = (tourId: string) => Array.from(document.querySelectorAll<HTMLElement>(`[data-tour-id="${tourId}"]`))
-      .find((element) => {
-        const bounds = element.getBoundingClientRect();
-        return bounds.width > 0 && bounds.height > 0;
-      }) ?? null;
+      .find(isRendered) ?? null;
     const update = () => {
       if (!target) return;
       const next = target.getBoundingClientRect();
-      const padding = 8;
-      setRect({
-        top: Math.max(8, next.top - padding),
-        left: Math.max(8, next.left - padding),
-        width: Math.min(window.innerWidth - 16, next.width + padding * 2),
-        height: Math.min(window.innerHeight - 16, next.height + padding * 2),
-      });
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const targetRect = { top: next.top, left: next.left, width: next.width, height: next.height };
+      const popover = dialogRef.current?.getBoundingClientRect();
+      setRect(getGuideHighlightRect(targetRect, viewport));
+      setPopoverPosition(getGuidePosition(targetRect, {
+        width: popover?.width ?? Math.min(380, viewport.width - 32),
+        height: popover?.height ?? 360,
+      }, viewport));
     };
-    const attach = (nextTarget: HTMLElement) => {
-      if (target) return true;
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(update);
+    };
+    const observeTarget = () => {
+      resizeObserver?.disconnect();
+      resizeObserver = new ResizeObserver(scheduleUpdate);
+      if (target) resizeObserver.observe(target);
+      if (dialogRef.current) resizeObserver.observe(dialogRef.current);
+    };
+    const attach = (nextTarget: HTMLElement, prompt: string | null = null) => {
+      awaitingInteraction = Boolean(prompt);
+      cancelAnimationFrame(promptFrame);
+      promptFrame = requestAnimationFrame(() => setInteractionPrompt(prompt));
+      if (target === nextTarget) return true;
+      target?.classList.remove("admin-guide-target");
       target = nextTarget;
-      target.scrollIntoView({ block: "nearest", inline: "nearest" });
-      update();
-      resizeObserver = new ResizeObserver(update);
-      resizeObserver.observe(target);
-      window.addEventListener("resize", update);
-      window.addEventListener("scroll", update, true);
+      target.classList.add("admin-guide-target");
+      const bounds = target.getBoundingClientRect();
+      if (bounds.top < 24 || bounds.bottom > window.innerHeight - 24 || bounds.left < 24 || bounds.right > window.innerWidth - 24) {
+        target.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+      }
+      scheduleUpdate();
+      observeTarget();
+      window.clearTimeout(lostTimer);
+      lostTimer = 0;
       return true;
     };
     const findPrimary = () => {
       const nextTarget = visibleTarget(step.target);
       return nextTarget ? attach(nextTarget) : false;
     };
-    if (!findPrimary()) {
-      const observer = new MutationObserver(() => { if (findPrimary()) observer.disconnect(); });
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-      fallbackTimer = window.setTimeout(() => {
-        observer.disconnect();
-        const fallbackTarget = step.fallbackTarget ? visibleTarget(step.fallbackTarget) : null;
+    const findInteraction = () => {
+      const nextTarget = step.interaction ? visibleTarget(step.interaction.target) : null;
+      return nextTarget && step.interaction ? attach(nextTarget, step.interaction.instruction) : false;
+    };
+    const pause = () => {
+      if (paused) return;
+      paused = true;
+      target?.classList.remove("admin-guide-target");
+      setPausedRun(run);
+      setRun(null);
+      setRect(null);
+      setPopoverPosition(null);
+      setInteractionPrompt(null);
+      setIsExploring(false);
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: "안내할 요소가 보이지 않아 가이드를 잠시 멈췄습니다." }));
+    };
+    const validateTarget = () => {
+      if (awaitingInteraction && findPrimary()) return;
+      if (!target) { if (!findPrimary()) findInteraction(); return; }
+      if (target && isRendered(target)) return;
+      if (findPrimary()) return;
+      if (findInteraction()) return;
+      if (!lostTimer) lostTimer = window.setTimeout(pause, 700);
+    };
+    const observer = new MutationObserver(validateTarget);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("scroll", scheduleUpdate, true);
+    if (!findPrimary() && !findInteraction()) {
+      searchTimer = window.setTimeout(() => {
+        if (findPrimary()) return;
+        if (findInteraction()) return;
+        const fallbackTarget = step.fallbackTarget && step.fallbackTarget !== "admin-page" ? visibleTarget(step.fallbackTarget) : null;
         if (fallbackTarget) attach(fallbackTarget);
-      }, 700);
-      return () => {
-        observer.disconnect();
-        resizeObserver?.disconnect();
-        window.clearTimeout(navigationTimer);
-        window.clearTimeout(fallbackTimer);
-        window.removeEventListener("resize", update);
-        window.removeEventListener("scroll", update, true);
-      };
+        else pause();
+      }, 4000);
     }
     return () => {
+      observer.disconnect();
+      target?.classList.remove("admin-guide-target");
       resizeObserver?.disconnect();
+      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(promptFrame);
       window.clearTimeout(navigationTimer);
-      window.clearTimeout(fallbackTimer);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      window.clearTimeout(searchTimer);
+      window.clearTimeout(lostTimer);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("scroll", scheduleUpdate, true);
     };
     // pathname repeats tab events after a route transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, step?.id]);
+
+  useEffect(() => {
+    document.body.classList.toggle("is-admin-guide-exploring", Boolean(run && isExploring));
+    return () => document.body.classList.remove("is-admin-guide-exploring");
+  }, [isExploring, run]);
+
+  useEffect(() => {
+    if (guideOpen && !guideWasOpenRef.current) previousFocusRef.current = document.activeElement as HTMLElement | null;
+    if (!guideOpen && guideWasOpenRef.current) {
+      const previous = previousFocusRef.current;
+      requestAnimationFrame(() => (previous?.isConnected ? previous : launcherRef.current)?.focus());
+    }
+    guideWasOpenRef.current = guideOpen;
+  }, [guideOpen]);
 
   useEffect(() => {
     if (!welcomeOpen && !tocOpen && !chapterIntro && !run) return;
@@ -345,23 +427,47 @@ export default function AdminOnboarding({
         </footer>
       </section>
     </div>}
-    {run && step && <div className="admin-guide-layer" aria-live="polite">
-      {visibleRect && <div className="admin-guide-highlight" style={visibleRect} />}
-      <section ref={dialogRef} className={`admin-guide-popover${visibleRect ? "" : " is-loading"}`} role="dialog" aria-modal="true" aria-labelledby="admin-guide-step-title" onKeyDown={trapFocus}>
-        <header><span>CHAPTER {run.chapterId.padStart(2, "0")}</span><button type="button" aria-label="가이드 닫기" onClick={() => { setRun(null); setRect(null); }}><X aria-hidden="true" /></button></header>
+    {run && step && <div className={`admin-guide-layer${isExploring ? " is-exploring" : ""}`} aria-live="polite">
+      {visibleRect && !isExploring && <div className="admin-guide-spotlight" style={visibleRect} />}
+      <section
+        key={step.id}
+        ref={dialogRef}
+        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}`}
+        style={visibleRect && popoverPosition ? { top: popoverPosition.top, left: popoverPosition.left, right: "auto", bottom: "auto" } : undefined}
+        data-placement={popoverPosition?.placement}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-guide-step-title"
+        onMouseEnter={() => setIsExploring(false)}
+        onMouseLeave={() => setIsExploring(true)}
+        onFocusCapture={() => setIsExploring(false)}
+        onKeyDown={trapFocus}
+      >
+        <header><span>CHAPTER {run.chapterId.padStart(2, "0")} · {runChapter?.title}</span><button type="button" aria-label="가이드 닫기" onClick={() => { setRun(null); setRect(null); setPopoverPosition(null); }}><X aria-hidden="true" /></button></header>
         {visibleRect ? <>
           <div className="admin-guide-step-progress"><i style={{ width: `${((run.index + 1) / steps.length) * 100}%` }} /><span>{run.index + 1} / {steps.length}</span></div>
-          <span className="admin-guide-control-label">버튼 · {step.controlLabel}</span>
-          <h2 id="admin-guide-step-title">{step.title}</h2>
-          <p className="admin-guide-purpose">{step.purpose}</p>
-          <dl><div><dt>실행 결과</dt><dd>{step.outcome}</dd></div>{step.caution && <div className="is-caution"><dt>주의</dt><dd>{step.caution}</dd></div>}</dl>
-          <footer>
-            <button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
-            <button type="button" disabled={run.index === 0} aria-label="이전 단계" onClick={() => openStep(run.chapterId, run.index - 1, run.mode)}><ArrowLeft aria-hidden="true" /></button>
-            <button type="button" className="is-next" onClick={() => void finishOrAdvance()}>{run.index === steps.length - 1 ? "완료" : "다음"}<ArrowRight aria-hidden="true" /></button>
-          </footer>
-          <button type="button" className="admin-guide-skip" onClick={() => { setRun(null); setRect(null); }}>나중에 이어보기</button>
-        </> : <><span className="admin-guide-loader" /><p>안내할 버튼을 찾는 중입니다.</p></>}
+          {interactionPrompt ? <>
+            <span className="admin-guide-control-label is-action">먼저 직접 해주세요</span>
+            <h2 id="admin-guide-step-title">세부 화면을 열어주세요</h2>
+            <p className="admin-guide-purpose">{interactionPrompt}</p>
+            <div className="admin-guide-action-cue">강조된 요소를 클릭하면 다음 안내가 자동으로 이어집니다.</div>
+            <footer><button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button></footer>
+            <button type="button" className="admin-guide-skip" onClick={() => { setPausedRun(run); setRun(null); setRect(null); setPopoverPosition(null); }}>여기서 멈추기</button>
+          </> : <>
+            <span className="admin-guide-control-label">지금 보고 있는 기능 · {step.controlLabel}</span>
+            <h2 id="admin-guide-step-title">{step.title}</h2>
+            <p className="admin-guide-purpose">{step.purpose}</p>
+            {step.actionHint && <div className="admin-guide-action-cue">{step.actionHint}</div>}
+            <span className="admin-guide-explore-hint">카드 밖으로 마우스를 옮기면 화면을 편하게 둘러볼 수 있어요.</span>
+            <dl><div><dt>사용하면</dt><dd>{step.outcome}</dd></div>{step.caution && <div className="is-caution"><dt>확인하세요</dt><dd>{step.caution}</dd></div>}</dl>
+            <footer>
+              <button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
+              <button type="button" disabled={run.index === 0} onClick={() => openStep(run.chapterId, run.index - 1, run.mode)}><ArrowLeft aria-hidden="true" />이전</button>
+              <button type="button" className="is-next" onClick={() => void finishOrAdvance()}>{run.index === steps.length - 1 ? "완료" : "다음 기능"}<ArrowRight aria-hidden="true" /></button>
+            </footer>
+            <button type="button" className="admin-guide-skip" onClick={() => { setPausedRun(run); setRun(null); setRect(null); setPopoverPosition(null); }}>여기서 멈추고 나중에 이어보기</button>
+          </>}
+        </> : <><span className="admin-guide-loader" /><p>안내할 위치를 찾고 있어요.</p></>}
       </section>
     </div>}
   </>, document.body) : null;
@@ -370,14 +476,23 @@ export default function AdminOnboarding({
 
   return <>
     <button
+      ref={launcherRef}
       type="button"
-      className={`admin-guide-launcher${isCollapsed ? " is-collapsed" : ""}`}
-      onClick={() => { setRun(null); setWelcomeOpen(false); setTocOpen(true); }}
-      aria-label={`관리자 가이드, ${progress}% 확인`}
-      title={isCollapsed ? `관리자 가이드 · ${progress}%` : undefined}
+      className={`admin-guide-launcher${isCollapsed ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
+      onClick={() => {
+        if (pausedRun) {
+          openStep(pausedRun.chapterId, pausedRun.index, pausedRun.mode);
+          return;
+        }
+        setRun(null);
+        if (Object.keys(progressRows).length === 0) setWelcomeOpen(true);
+        else setTocOpen(true);
+      }}
+      aria-label={pausedRun ? "중단된 관리자 가이드 이어보기" : `관리자 가이드, ${progress}% 확인`}
+      title={isCollapsed ? pausedRun ? "가이드 이어보기" : `관리자 가이드 · ${progress}%` : undefined}
     >
-      <span className="admin-guide-launcher-ring" style={{ "--guide-progress": `${progress * 3.6}deg` } as CSSProperties}><BookOpen aria-hidden="true" /></span>
-      {!isCollapsed && <span><b>관리자 업무 가이드</b><small>{reachedSteps}/{totalSteps} 스텝 · {progress}%</small><i><em style={{ width: `${progress}%` }} /></i></span>}
+      <span className="admin-guide-launcher-ring" style={{ "--guide-progress": `${progress * 3.6}deg` } as CSSProperties}>{pausedRun ? <Play aria-hidden="true" /> : <BookOpen aria-hidden="true" />}</span>
+      {!isCollapsed && <span><b>{pausedRun ? "가이드 이어보기" : "관리자 업무 가이드"}</b><small>{pausedRun ? `${GUIDE_CHAPTERS.find((chapter) => chapter.id === pausedRun.chapterId)?.title ?? "이전 단계"} · 눌러서 재개` : `${reachedSteps}/${totalSteps} 스텝 · ${progress}%`}</small><i><em style={{ width: `${progress}%` }} /></i></span>}
       {!isCollapsed && <ChevronRight aria-hidden="true" />}
     </button>
     {portal}

@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
 const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.replace(/\/+$/, "")
   || (supabaseUrl ? `${supabaseUrl}/storage/v1/object/public` : "");
+const imageRemotePatterns = [storageUrl, supabaseUrl ? `${supabaseUrl}/storage/v1/object` : ""]
+  .filter(Boolean)
+  .map((value) => {
+    const url = new URL(value);
+    return {
+      protocol: url.protocol.slice(0, -1) as "http" | "https",
+      hostname: url.hostname,
+      port: url.port,
+      pathname: `${url.pathname.replace(/\/+$/, "")}/**`,
+    };
+  });
 
 const nextConfig: NextConfig = {
   experimental: { cssChunking: false },
@@ -32,7 +43,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 604800,
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 80, 85, 90],
-    remotePatterns: storageUrl ? [new URL(`${storageUrl}/**`)] : [],
+    remotePatterns: imageRemotePatterns,
   },
 };
 

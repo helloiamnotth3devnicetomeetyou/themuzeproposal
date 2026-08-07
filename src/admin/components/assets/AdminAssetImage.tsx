@@ -10,7 +10,7 @@ type AdminAssetImageProps = Omit<ImageProps, "src" | "alt" | "width" | "height">
 };
 
 const shouldSkipOptimization = (src: string) =>
-  /^(?:blob:|data:)/i.test(src) || /\.svg(?:$|\?)/i.test(src);
+  /^(?:blob:|data:)/i.test(src) || /\.svg(?:$|\?)/i.test(src) || /\/storage\/v1\/object\/sign\//i.test(src);
 
 const normalizeImageSource = (src: string) =>
   /^(?:[a-z]+:|\/)/i.test(src) ? src : `/${src}`;
