@@ -159,9 +159,7 @@
   gap: 16px;
   padding: 17px 18px;
   border-bottom: 1px solid var(--border-default);
-  background:
-    linear-gradient(135deg, var(--alpha-fc6fcf-06), transparent 70%),
-    var(--bg-surface);
+  background: var(--bg-surface);
 }
 
 .detailHeading h2 {

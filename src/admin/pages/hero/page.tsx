@@ -181,7 +181,7 @@ export default function HeroAdminPage() {
         <button type="button" data-tour-id="hero-refresh" className="admin-btn admin-btn-secondary hero-admin-refresh" onClick={() => void load(true)} disabled={Boolean(savingId)}>
           <RefreshCw aria-hidden="true" /> 새로고침
         </button>
-        <DraftSaveButton snapshot={orderSnapshot} draft={slides} dirty={orderDirty} saving={savingId === "order"} onSave={saveSlides} />
+        <DraftSaveButton snapshot={orderSnapshot} draft={slides} dirty={orderDirty} saving={savingId === "order"} onSave={saveSlides} labels={{ $root: "메인 노출 목록" }} />
       </section>
 
       {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={discardBackup}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={restoreBackup}>복구</button></div>}

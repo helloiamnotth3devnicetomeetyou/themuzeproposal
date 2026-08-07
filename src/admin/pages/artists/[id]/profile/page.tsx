@@ -341,9 +341,9 @@ export default function ArtistProfileAdmin() {
     const creationComplete = creationReady.name && creationReady.visual && creationReady.content && !saveIssues.length;
     const wizardTab = newStep === "name" ? "basic" : newStep === "visual" ? "visual" : "content";
     const wizardActions = <>
-      {stepIndex > 0 && <button type="button" data-tour-id="profile-wizard-navigation" className="admin-btn admin-btn-secondary" onClick={() => setNewStep(newArtistSteps[stepIndex - 1].id)}><ArrowLeft aria-hidden="true" />이전</button>}
+      {stepIndex > 0 && <button type="button" data-tour-id="profile-wizard-back" className="admin-btn admin-btn-secondary" onClick={() => setNewStep(newArtistSteps[stepIndex - 1].id)}><ArrowLeft aria-hidden="true" />이전</button>}
       {stepIndex < newArtistSteps.length - 1
-        ? <button type="button" data-tour-id="profile-wizard-navigation" className="admin-btn admin-btn-primary" disabled={!currentReady} onClick={() => setNewStep(newArtistSteps[stepIndex + 1].id)}>다음<ArrowRight aria-hidden="true" /></button>
+        ? <button type="button" data-tour-id="profile-wizard-next" className="admin-btn admin-btn-primary" disabled={!currentReady} onClick={() => setNewStep(newArtistSteps[stepIndex + 1].id)}>다음<ArrowRight aria-hidden="true" /></button>
         : <DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty} saving={saving} onSave={handleSave} disabled={!creationComplete} label="아티스트 만들기" />}
     </>;
 

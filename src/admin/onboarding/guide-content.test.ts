@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GUIDE_STEPS, availableGuideSteps, guideChapterProgress } from "./guide-content";
+import { GUIDE_STEPS, availableGuideSteps, guideChapterProgress, guidePathMatches, parseGuideRun } from "./guide-content";
 
 const context = { role: "editor" as const, hasArtist: true, artistScenes: true, artistGallery: true };
 
@@ -27,5 +27,27 @@ describe("admin guide content", () => {
     expect(guideChapterProgress("1", steps)).toEqual({ reached: 0, total: steps.length });
     expect(guideChapterProgress("1", steps, { chapter_id: "1", furthest_step_id: steps[2].id, completed_at: null })).toEqual({ reached: 3, total: steps.length });
     expect(guideChapterProgress("1", steps, { chapter_id: "1", furthest_step_id: steps[2].id, completed_at: "2026-08-07" })).toEqual({ reached: steps.length, total: steps.length });
+  });
+
+  it("keeps an interactive step active on its nested detail route", () => {
+    expect(guidePathMatches("/admin/auditions/campaigns", "/admin/auditions/campaigns/123/builder", true)).toBe(true);
+    expect(guidePathMatches("/admin/auditions/campaigns", "/admin/auditions/campaigns/123/builder")).toBe(false);
+  });
+
+  it("restores only valid paused guide state", () => {
+    expect(parseGuideRun('{"chapterId":"4","index":5,"mode":"chapter"}')).toEqual({ chapterId: "4", index: 5, mode: "chapter" });
+    expect(parseGuideRun("broken")).toBeNull();
+    expect(parseGuideRun('{"chapterId":"4","index":"5","mode":"chapter"}')).toBeNull();
+  });
+
+  it("finishes each tab before moving to the next tab", () => {
+    const artist = availableGuideSteps("2", context).map((step) => step.id);
+    expect(artist.indexOf("2-profile-social")).toBeLessThan(artist.indexOf("2-scene-import"));
+    expect(artist.indexOf("2-scene-delete")).toBeLessThan(artist.indexOf("2-gallery-upload"));
+    expect(artist.indexOf("2-gallery-delete")).toBeLessThan(artist.indexOf("2-profile-publish"));
+
+    const settings = availableGuideSteps("8", context).map((step) => step.id);
+    expect(settings.slice(settings.indexOf("8-history-tab"), settings.indexOf("8-footer"))).toEqual(["8-history-tab", "8-history-add", "8-history-delete"]);
+    expect(settings.indexOf("8-avatar-delete")).toBeLessThan(settings.indexOf("8-save"));
   });
 });

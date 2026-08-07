@@ -5,8 +5,21 @@ export type GuidePosition = { top: number; left: number; placement: GuidePlaceme
 const VIEWPORT_GUTTER = 16;
 const TARGET_GAP = 14;
 const HIGHLIGHT_PADDING = 8;
+const SAFE_TARGET_MARGIN = 24;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
+
+export function shouldRevealGuideTarget(
+  target: GuideRect,
+  viewport: { width: number; height: number },
+  isExposed: boolean,
+) {
+  return !isExposed
+    || target.top < SAFE_TARGET_MARGIN
+    || target.left < SAFE_TARGET_MARGIN
+    || target.top + target.height > viewport.height - SAFE_TARGET_MARGIN
+    || target.left + target.width > viewport.width - SAFE_TARGET_MARGIN;
+}
 
 export function getGuideHighlightRect(target: GuideRect, viewport: { width: number; height: number }): GuideRect {
   const left = clamp(target.left - HIGHLIGHT_PADDING, 8, viewport.width - 8);

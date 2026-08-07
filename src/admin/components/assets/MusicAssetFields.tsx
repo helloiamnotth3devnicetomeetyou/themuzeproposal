@@ -5,6 +5,7 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { type DragEvent, useId, useState } from "react";
 import { Image as ImageIcon, Music, X } from "lucide-react";
 import type { UploadedAsset } from "@/core/utils/music-editor";
+import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import AdminAssetImage from "./AdminAssetImage";
@@ -175,7 +176,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
         formData.set("artistKey", artistId);
         formData.set("entityKey", albumId);
         formData.set("assetKind", "album-typography");
-        const response = await fetch("/api/uploads/artist-logo", { method: "POST", body: formData });
+        const response = await guideSandboxFetch("/api/uploads/artist-logo", { method: "POST", body: formData });
         const payload = await response.json().catch(() => ({})) as { asset?: UploadedAsset; code?: string };
         if (!response.ok || !payload.asset) throw new Error(payload.code || "UPLOAD_FAILED");
         onUploaded(payload.asset);

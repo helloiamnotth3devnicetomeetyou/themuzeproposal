@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGuideHighlightRect, getGuidePosition } from "./guide-position";
+import { getGuideHighlightRect, getGuidePosition, shouldRevealGuideTarget } from "./guide-position";
 
 describe("admin guide positioning", () => {
   const viewport = { width: 1200, height: 800 };
@@ -27,5 +27,11 @@ describe("admin guide positioning", () => {
     expect(compact.left).toBe(16);
     expect(compact.top).toBeGreaterThanOrEqual(16);
     expect(compact.top + 420).toBeLessThanOrEqual(464);
+  });
+
+  it("reveals targets that are covered even when they are inside the viewport", () => {
+    const target = { top: 200, left: 200, width: 160, height: 60 };
+    expect(shouldRevealGuideTarget(target, viewport, true)).toBe(false);
+    expect(shouldRevealGuideTarget(target, viewport, false)).toBe(true);
   });
 });

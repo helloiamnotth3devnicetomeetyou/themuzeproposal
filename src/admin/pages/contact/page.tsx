@@ -237,7 +237,7 @@ export default function ContactAdminPage() {
               </section>
             )}
 
-            <section>
+            <section data-tour-id="contact-memo">
               <div className={base.sectionHeading}><span>INTERNAL</span><h2>관리자 메모</h2></div>
               <textarea className={base.adminNote} rows={5} value={note} onChange={(event) => setNote(event.target.value)} placeholder="검토 내용과 후속 조치를 기록해 주세요." />
               <div className={base.noteActions}>
@@ -247,7 +247,7 @@ export default function ContactAdminPage() {
             </section>
           </div>
 
-          <footer className={base.statusBar}>
+          <footer className={base.statusBar} data-tour-id="contact-status">
             <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
             <div>{statuses.map((status) => (
               <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? base.active : ""} onClick={() => void updateInquiry({ status: status.value })}>{status.label}</button>
@@ -276,6 +276,7 @@ export default function ContactAdminPage() {
         </div>
         <div className={styles.summaryTabs} data-tour-id="contact-category" role="tablist" aria-label="문의 구분">
           <button
+            data-tour-id="contact-category-general"
             type="button"
             role="tab"
             aria-selected={category === "general"}
@@ -285,6 +286,7 @@ export default function ContactAdminPage() {
             <span>일반 문의</span><strong>{categoryCounts.general}</strong>
           </button>
           <button
+            data-tour-id="contact-category-business"
             type="button"
             role="tab"
             aria-selected={category === "business"}
@@ -301,12 +303,12 @@ export default function ContactAdminPage() {
         <header className={base.toolbar}>
           <div><h1>문의 접수함</h1><p>{category === "business" ? "Business" : "일반 문의"} · {total}건</p></div>
           <div className={base.filters} data-tour-id="contact-filters">
-            <label className={base.search}>
+            <label className={base.search} data-tour-id="contact-search">
               <Search aria-hidden="true" />
               <span className="sr-only">문의 검색</span>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 회사명, 내용 검색" />
             </label>
-            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
+            <span data-tour-id="contact-status-filter"><CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} /></span>
           </div>
         </header>
 

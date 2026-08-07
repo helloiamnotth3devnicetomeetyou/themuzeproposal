@@ -5,6 +5,7 @@ import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { Plus } from "lucide-react";
 import AdminAssetImage from "./AdminAssetImage";
+import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 
 export type UploadedImageAsset = {
   bucket: "artist-assets";
@@ -72,7 +73,7 @@ export default function ImageAssetField({
         formData.set("file", file);
         formData.set("artistKey", artistKey);
         formData.set("entityKey", entityKey);
-        const response = await fetch("/api/uploads/artist-logo", {
+        const response = await guideSandboxFetch("/api/uploads/artist-logo", {
           method: "POST",
           body: formData,
         });

@@ -4,9 +4,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: 30px 32px 54px;
-  background:
-    linear-gradient(135deg, var(--alpha-fc6fcf-035), transparent 260px),
-    var(--bg-base);
+  background: var(--bg-base);
   color: var(--text-primary);
 }
 .header {

@@ -315,7 +315,7 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
     >
       <Upload aria-hidden="true" />
       <div><b>{uploading ? "아바타를 업로드하는 중…" : "아바타 이미지 추가"}</b><span>JPG, PNG, WebP · 최대 10MB · 업로드 전 정사각형으로 자릅니다</span></div>
-      <button type="button" disabled={uploading || !artistId} onClick={() => inputRef.current?.click()}>{uploading ? "업로드 중" : "파일 선택"}</button>
+      <button type="button" data-tour-id="avatar-file" disabled={uploading || !artistId} onClick={() => inputRef.current?.click()}>{uploading ? "업로드 중" : "파일 선택"}</button>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => event.target.files && selectFiles(event.target.files)} />
     </div>
 
@@ -324,8 +324,8 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
         <div className="avatar-manager-image"><AdminAssetImage src={publicUrl(item.image_path)} alt={`${selectedArtist?.eng_name || selectedArtist?.name || "아티스트"} 아바타 ${index + 1}`} sizes="180px" /></div>
         <div className="avatar-manager-card-meta"><b>{String(index + 1).padStart(2, "0")}</b><label><input type="checkbox" checked={item.is_active} onChange={(event) => setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, is_active: event.target.checked } : entry))} />계정에 노출</label></div>
         <div className="avatar-manager-card-actions" data-tour-id="avatar-actions">
-          <button type="button" disabled={index === 0} aria-label="앞으로 이동" onClick={() => moveItem(index, -1)}><ArrowUp aria-hidden="true" /></button>
-          <button type="button" disabled={index === items.length - 1} aria-label="뒤로 이동" onClick={() => moveItem(index, 1)}><ArrowDown aria-hidden="true" /></button>
+          <button type="button" data-tour-id="avatar-up" disabled={index === 0} aria-label="앞으로 이동" onClick={() => moveItem(index, -1)}><ArrowUp aria-hidden="true" /></button>
+          <button type="button" data-tour-id="avatar-down" disabled={index === items.length - 1} aria-label="뒤로 이동" onClick={() => moveItem(index, 1)}><ArrowDown aria-hidden="true" /></button>
           <button type="button" data-tour-id="avatar-delete" className="is-danger" aria-label="아바타 삭제" onClick={() => setDeleteItem(item)}><Trash2 aria-hidden="true" /></button>
         </div>
       </article>)}
@@ -341,7 +341,7 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
           <label><span>가로 위치</span><input type="range" min="-100" max="100" value={cropX} onChange={(event) => setCropX(Number(event.target.value))} /></label>
           <label><span>세로 위치</span><input type="range" min="-100" max="100" value={cropY} onChange={(event) => setCropY(Number(event.target.value))} /></label>
         </div>
-        <footer><button type="button" className="admin-btn admin-btn-secondary" onClick={closeCrop}>취소</button><button type="button" className="admin-btn admin-btn-primary" disabled={!cropReady} onClick={() => void confirmCrop()}>{cropQueue.index < cropQueue.files.length - 1 ? "다음 이미지" : "자르고 추가"}</button></footer>
+        <footer><button type="button" className="admin-btn admin-btn-secondary" onClick={closeCrop}>취소</button><button type="button" data-tour-id="avatar-crop" className="admin-btn admin-btn-primary" disabled={!cropReady} onClick={() => void confirmCrop()}>{cropQueue.index < cropQueue.files.length - 1 ? "다음 이미지" : "자르고 추가"}</button></footer>
       </div>
     </div>}
   </section>;

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { buildDraftDiff } from "@/admin/utils/draft-diff";
+import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
 
 type EditorOperation = "loading" | "saving" | "deleting";
 
@@ -40,6 +42,10 @@ export function useAdminEntityEditor<T>({
     [draft, serialize],
   );
   const dirty = Boolean(draft) && serializedDraft !== snapshot;
+  const diff = useMemo(() => {
+    if (!dirty || !draft) return [];
+    try { return buildDraftDiff(JSON.parse(snapshot || "{}"), draft); } catch { return []; }
+  }, [dirty, draft, snapshot]);
 
   const patchDraft = useCallback((patch: Partial<T> | ((current: T) => T)) => {
     setDraft((current) => {
@@ -135,6 +141,10 @@ export function useAdminEntityEditor<T>({
   useEffect(() => {
     let active = true;
     if (!storageKey || !snapshot) return;
+    if (isGuideSandboxActive()) {
+      queueMicrotask(() => { if (active) setRecovery(null); });
+      return () => { active = false; };
+    }
     try {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) || "null") as { draft?: T; updatedAt?: number } | null;
       if (saved?.draft && serialize(saved.draft) !== snapshot) queueMicrotask(() => { if (active) setRecovery({ draft: saved.draft!, updatedAt: saved.updatedAt || Date.now() }); });
@@ -143,7 +153,7 @@ export function useAdminEntityEditor<T>({
   }, [serialize, snapshot, storageKey]);
 
   useEffect(() => {
-    if (!storageKey || !dirty || !draft || recovery) return;
+    if (!storageKey || !dirty || !draft || recovery || isGuideSandboxActive()) return;
     const timer = window.setTimeout(() => {
       window.localStorage.setItem(storageKey, JSON.stringify({ draft, updatedAt: Date.now() }));
     }, 800);
@@ -152,9 +162,9 @@ export function useAdminEntityEditor<T>({
 
   useEffect(() => {
     const key = storageKey || `editor-${Math.random()}`;
-    window.dispatchEvent(new CustomEvent("admin-draft-dirty", { detail: { key, dirty } }));
+    window.dispatchEvent(new CustomEvent("admin-draft-dirty", { detail: { key, dirty, diff } }));
     return () => { window.dispatchEvent(new CustomEvent("admin-draft-dirty", { detail: { key, dirty: false } })); };
-  }, [dirty, storageKey]);
+  }, [diff, dirty, storageKey]);
 
   return {
     draft,

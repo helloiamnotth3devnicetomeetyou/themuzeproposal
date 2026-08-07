@@ -143,7 +143,7 @@ export default function AuditLogsAdminPage() {
           <span><Filter aria-hidden="true" /> 조회 조건</span>
           {activeFilterCount > 0 && <b>{activeFilterCount}개 적용 중</b>}
         </div>
-        <div className={styles.filterGrid}>
+        <div className={styles.filterGrid} data-tour-id="audit-filter-fields">
           <label>
             <span>시작일</span>
             <input type="date" value={draftFilters.fromDate} onChange={(event) => patchFilter("fromDate", event.target.value)} />
@@ -178,10 +178,10 @@ export default function AuditLogsAdminPage() {
           </label>
         </div>
         <div className={styles.filterActions}>
-          <button type="button" onClick={clearFilters} disabled={!activeFilterCount && !Object.values(draftFilters).some(Boolean)}>
+          <button type="button" data-tour-id="audit-reset" onClick={clearFilters} disabled={!activeFilterCount && !Object.values(draftFilters).some(Boolean)}>
             <X aria-hidden="true" /> 초기화
           </button>
-          <button type="submit"><Search aria-hidden="true" /> 이력 조회</button>
+          <button type="submit" data-tour-id="audit-search"><Search aria-hidden="true" /> 이력 조회</button>
         </div>
       </form>
 
@@ -248,10 +248,10 @@ export default function AuditLogsAdminPage() {
           </footer>
         </section>
 
-        <aside className={styles.detailPanel} data-tour-id="audit-detail" aria-label="변경 상세">
+        <aside className={styles.detailPanel} aria-label="변경 상세">
           {selected ? (
             <>
-              <header className={styles.detailHeading}>
+              <header className={styles.detailHeading} data-tour-id="audit-detail">
                 <div>
                   <span className={`${styles.operation} ${operationClass(selected.operation)}`}>{operationLabel(selected.operation)}</span>
                   <h2>{selected.record_label}</h2>

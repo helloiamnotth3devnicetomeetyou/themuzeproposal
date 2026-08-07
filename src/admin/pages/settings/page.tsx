@@ -10,6 +10,7 @@ import FormField from "@/admin/components/content/FormField";
 import SocialLinksField, { hasInvalidSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { supabase } from "@/core/supabase/client";
+import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
@@ -249,7 +250,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
 
     setSnapshot(serializedDraft);
     discardBackup();
-    void fetch("/api/admin/revalidate", {
+    void guideSandboxFetch("/api/admin/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tag: "public-site-settings" }),
@@ -340,7 +341,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
               <div className="settings-history-languages" aria-label="연혁 편집 언어">
                 {(["ko", "en", "ja"] as HistoryLanguage[]).map((language) => <button key={language} type="button" className={historyLanguage === language ? "is-active" : ""} onClick={() => setHistoryLanguage(language)}>{language.toUpperCase()}</button>)}
               </div>
-              <button type="button" className="admin-btn admin-btn-secondary" onClick={addHistory}><Plus aria-hidden="true" /> 연혁 추가</button>
+              <button type="button" data-tour-id="history-add" className="admin-btn admin-btn-secondary" onClick={addHistory}><Plus aria-hidden="true" /> 연혁 추가</button>
             </div>
           </div>
           <div className="settings-history-columns" aria-hidden="true"><span>순서</span><span>시점</span><span>{historyLanguage.toUpperCase()} 내용</span><span>관리</span></div>

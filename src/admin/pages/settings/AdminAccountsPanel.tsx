@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Crown, RefreshCw, ShieldCheck, UserPlus, UserX } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import type { AdminRole } from "@/core/auth/admin-auth";
+import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 
 type AdminAccount = {
   id: string;
@@ -38,7 +39,7 @@ export default function AdminAccountsPanel({ onError, onSuccess }: Props) {
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/admin/accounts", { cache: "no-store" });
+    const response = await guideSandboxFetch("/api/admin/accounts", { cache: "no-store" });
     const payload = await response.json().catch(() => ({})) as { accounts?: AdminAccount[]; code?: string };
     if (!response.ok) onError(messageFor(response, payload));
     else setAccounts(payload.accounts ?? []);
@@ -54,7 +55,7 @@ export default function AdminAccountsPanel({ onError, onSuccess }: Props) {
     event.preventDefault();
     if (!email.trim()) return;
     setInviting(true);
-    const response = await fetch("/api/admin/accounts", {
+    const response = await guideSandboxFetch("/api/admin/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, role }),
@@ -70,7 +71,7 @@ export default function AdminAccountsPanel({ onError, onSuccess }: Props) {
   const changeRole = async (account: AdminAccount, nextRole: AdminRole) => {
     if (account.role === nextRole) return;
     setBusyId(account.id);
-    const response = await fetch("/api/admin/accounts", {
+    const response = await guideSandboxFetch("/api/admin/accounts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: account.id, role: nextRole }),
@@ -85,7 +86,7 @@ export default function AdminAccountsPanel({ onError, onSuccess }: Props) {
   const remove = async (account: AdminAccount) => {
     if (!window.confirm(`${account.email} 계정의 관리자 권한을 해제할까요?`)) return;
     setBusyId(account.id);
-    const response = await fetch("/api/admin/accounts", {
+    const response = await guideSandboxFetch("/api/admin/accounts", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: account.id }),

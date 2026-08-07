@@ -173,10 +173,10 @@ export default function ProtectAdminPage() {
                 <div><dt>게시물 IP</dt><dd>{viewing.post_ip || "미입력"}</dd></div>
                 <div><dt>제보 계정</dt><dd>{viewing.reporter_email || "확인 불가"}</dd></div>
               </dl>
-              <a className={styles.sourceLink} href={viewing.post_url} target="_blank" rel="noreferrer"><Link aria-hidden="true" /><span><b>원문 게시물 열기</b><small>{viewing.post_url}</small></span><ExternalLink aria-hidden="true" /></a>
+              <a className={styles.sourceLink} data-tour-id="protect-source" href={viewing.post_url} target="_blank" rel="noreferrer"><Link aria-hidden="true" /><span><b>원문 게시물 열기</b><small>{viewing.post_url}</small></span><ExternalLink aria-hidden="true" /></a>
             </section>
 
-            <section>
+            <section data-tour-id="protect-evidence">
               <div className={styles.sectionHeading}><span>EVIDENCE</span><h2>첨부 자료</h2></div>
               <div className={styles.evidenceGrid}>
                 {viewing.protect_report_attachments.map(({ file_path, file_name }) => {
@@ -194,14 +194,14 @@ export default function ProtectAdminPage() {
               </div>
             </section>
 
-            <section>
+            <section data-tour-id="protect-memo">
               <div className={styles.sectionHeading}><span>INTERNAL</span><h2>관리자 메모</h2></div>
               <textarea className={styles.adminNote} rows={5} value={note} onChange={(event) => setNote(event.target.value)} placeholder="검토 내용과 후속 조치를 기록해 주세요." />
               <div className={styles.noteActions}><span>관리자만 볼 수 있는 내부 기록입니다.</span><button type="button" disabled={saving || note === (viewing.admin_note || "")} onClick={() => void updateReport({ admin_note: note.trim() || null })}>메모 저장</button></div>
             </section>
           </div>
 
-          <footer className={styles.statusBar}>
+          <footer className={styles.statusBar} data-tour-id="protect-status">
             <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
             <div>{statuses.map((status) => <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? styles.active : ""} onClick={() => void updateReport({ status: status.value })}>{status.label}</button>)}</div>
           </footer>
@@ -225,8 +225,8 @@ export default function ProtectAdminPage() {
         <header className={styles.toolbar}>
           <div><h1>권익 보호 접수함</h1><p>{total}건의 제보</p></div>
           <div className={styles.filters} data-tour-id="protect-filters">
-            <label className={styles.search}><Search aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
-            <CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} />
+            <label className={styles.search} data-tour-id="protect-search"><Search aria-hidden="true" /><span className="sr-only">제보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 아티스트, 작성자 검색" /></label>
+            <span data-tour-id="protect-status-filter"><CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} /></span>
           </div>
         </header>
 

@@ -141,7 +141,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
         {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <span className={styles.shortcut} aria-hidden="true"><Command />K</span>}
       </div>
       {isShowingResults && resultsPosition && typeof document !== "undefined" && createPortal(
-        <div id="admin-search-results" className={styles.results} ref={resultsRef} style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">
+        <div id="admin-search-results" className={styles.results} ref={resultsRef} data-tour-id="admin-search-result" style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">
           {Object.entries(groups).map(([label, group]) => <section className={styles.group} key={label} role="group" aria-label={label}>
             <p className={styles.groupLabel}>{label}</p>
             {group.map((item) => {

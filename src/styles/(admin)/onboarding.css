@@ -188,10 +188,6 @@
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-brand-pink) 18%, transparent);
   transition: outline-color .18s ease, box-shadow .18s ease;
 }
-body.is-admin-guide-exploring .admin-guide-target {
-  outline-color: color-mix(in srgb, var(--color-brand-pink) 38%, transparent);
-  box-shadow: none;
-}
 .admin-guide-popover {
   position: fixed;
   z-index: 10012;
@@ -209,9 +205,6 @@ body.is-admin-guide-exploring .admin-guide-target {
   pointer-events: auto;
   transition: opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
-.admin-guide-layer.is-exploring .admin-guide-popover { border-color: color-mix(in srgb, var(--border-default) 70%, transparent); box-shadow: none; opacity: .28; }
-.admin-guide-layer.is-exploring .admin-guide-popover:hover,
-.admin-guide-layer.is-exploring .admin-guide-popover:focus-within { border-color: color-mix(in srgb, var(--color-brand-pink) 36%, var(--border-default)); box-shadow: 0 18px 60px rgba(0, 0, 0, .45); opacity: 1; }
 .admin-guide-popover.is-anchored { animation: admin-guide-popover-in .18s cubic-bezier(.22, 1, .36, 1) backwards; }
 @keyframes admin-guide-popover-in { from { opacity: 0; transform: translateY(7px) scale(.985); } }
 .admin-guide-popover header { display: flex; align-items: center; justify-content: space-between; }
@@ -221,6 +214,15 @@ body.is-admin-guide-exploring .admin-guide-target {
 .admin-guide-step-progress span { position: absolute; top: 0; right: 0; color: var(--text-faint); font-size: 8px; font-weight: 800; }
 .admin-guide-control-label { display: inline-flex; margin-bottom: 8px; padding: 5px 7px; border-left: 2px solid var(--color-brand-pink); background: color-mix(in srgb, var(--color-brand-pink) 6%, transparent); color: var(--text-muted); font-size: 9px; font-weight: 600; line-height: 1.4; }
 .admin-guide-control-label.is-action { color: var(--color-brand-pink); }
+.admin-guide-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.admin-guide-safety { position: relative; display: inline-flex; }
+.admin-guide-badge { display: inline-flex; min-height: 25px; align-items: center; gap: 5px; padding: 4px 8px; border: 1px solid var(--border-default); border-radius: 999px; background: var(--bg-subtle); font-size: 9px; font-weight: 750; line-height: 1.35; }
+.admin-guide-badge.is-safe { border-color: color-mix(in srgb, #57b98a 42%, var(--border-default)); background: color-mix(in srgb, #57b98a 10%, var(--bg-subtle)); color: #68c999; cursor: help; }
+.admin-guide-badge.is-feature { border-color: color-mix(in srgb, var(--color-brand-pink) 36%, var(--border-default)); background: color-mix(in srgb, var(--color-brand-pink) 8%, var(--bg-subtle)); color: color-mix(in srgb, var(--color-brand-pink) 76%, var(--text-primary)); }
+.admin-guide-badge svg { width: 12px; height: 12px; }
+.admin-guide-safety [role="tooltip"] { position: absolute; z-index: 2; top: calc(100% + 7px); left: 0; width: min(260px, calc(100vw - 48px)); padding: 9px 10px; border: 1px solid var(--border-default); border-radius: 7px; background: var(--bg-elevated); box-shadow: 0 12px 32px rgba(0, 0, 0, .28); color: var(--text-secondary); font-size: 10px; font-weight: 550; line-height: 1.5; opacity: 0; pointer-events: none; transform: translateY(-3px); transition: opacity .16s ease, transform .16s ease; }
+.admin-guide-safety:hover [role="tooltip"], .admin-guide-safety:focus-within [role="tooltip"] { opacity: 1; transform: translateY(0); }
+body.is-admin-guide-sandbox::after { position: fixed; z-index: 10020; inset: 0; border: 1px solid color-mix(in srgb, #57b98a 58%, transparent); box-shadow: inset 0 0 18px color-mix(in srgb, #57b98a 8%, transparent); content: ""; pointer-events: none; }
 .admin-guide-popover h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
 .admin-guide-purpose { margin: 9px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.65; text-wrap: pretty; }
 .admin-guide-action-cue { margin-top: 12px; padding: 10px 11px; border-left: 2px solid var(--color-brand-pink); background: color-mix(in srgb, var(--color-brand-pink) 7%, var(--bg-subtle)); color: var(--text-secondary); font-size: 10px; font-weight: 650; line-height: 1.55; }

@@ -8,6 +8,8 @@ import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import Navbar from "@/public/components/layout/Navbar";
+import { formatDraftPeek, type DraftDiffItem } from "@/admin/utils/draft-diff";
+import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
 
 function getPageLabel(pathname: string) {
   if (pathname === "/admin") return "대시보드";
@@ -31,12 +33,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const dirtyDrafts = useRef(new Set<string>());
+  const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("admin-sidebar-collapsed") === "true"
   );
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
-  const confirmNavigation = useCallback(() => !dirtyDrafts.current.size || window.confirm("저장하지 않은 변경사항이 있습니다. 이동해도 임시 작업은 브라우저에 백업됩니다."), []);
+  const confirmNavigation = useCallback(() => {
+    if (isGuideSandboxActive()) return true;
+    if (!dirtyDrafts.current.size) return true;
+    const peek = formatDraftPeek([...dirtyDrafts.current.values()].flat());
+    return window.confirm(`저장하지 않은 변경사항이 있습니다.\n\n${peek}\n\n이동해도 임시 작업은 브라우저에 백업됩니다.`);
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
@@ -120,8 +127,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const onDirty = (event: Event) => {
-      const { key, dirty } = (event as CustomEvent<{ key: string; dirty: boolean }>).detail;
-      if (dirty) dirtyDrafts.current.add(key); else dirtyDrafts.current.delete(key);
+      const { key, dirty, diff = [] } = (event as CustomEvent<{ key: string; dirty: boolean; diff?: DraftDiffItem[] }>).detail;
+      if (dirty) dirtyDrafts.current.set(key, diff); else dirtyDrafts.current.delete(key);
     };
     const onClick = (event: MouseEvent) => {
       const link = (event.target as HTMLElement).closest<HTMLAnchorElement>("a[href]");
