@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, List, Play, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, GripHorizontal, List, Play, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
 import { finishGuideSandbox, isGuideSandboxActive, startGuideSandbox } from "@/core/supabase/guide-sandbox";
 import {
@@ -17,7 +17,7 @@ import {
   type GuideRun,
   type GuideStep,
 } from "./guide-content";
-import { getGuideHighlightRect, getGuidePosition, shouldRevealGuideTarget, type GuidePosition } from "./guide-position";
+import { getGuideHighlightRect, getGuidePosition, getSnappedGuidePosition, shouldRevealGuideTarget, type GuidePosition } from "./guide-position";
 
 type Artist = { id: string; name: string };
 type ChapterIntro = GuideRun;
@@ -46,6 +46,7 @@ export default function AdminOnboarding({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const guideWasOpenRef = useRef(false);
   const progressRef = useRef<Record<string, GuideProgressRow>>({});
+  const popoverDragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number; width: number; height: number } | null>(null);
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [ready, setReady] = useState(false);
   const [progressRows, setProgressRows] = useState<Record<string, GuideProgressRow>>({});
@@ -58,6 +59,8 @@ export default function AdminOnboarding({
     : parseGuideRun(localStorage.getItem(`admin-guide-paused:${userId}`)));
   const [rect, setRect] = useState<Rect | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<GuidePosition | null>(null);
+  const [manualPopoverPosition, setManualPopoverPosition] = useState<{ top: number; left: number } | null>(null);
+  const [isPopoverDragging, setIsPopoverDragging] = useState(false);
   const [interactionPrompt, setInteractionPrompt] = useState<string | null>(null);
   const [isExploring, setIsExploring] = useState(false);
   const [capabilities, setCapabilities] = useState({ artistScenes: true, artistGallery: true });
@@ -176,6 +179,7 @@ export default function AdminOnboarding({
     setChapterIntro(null);
     setRect(null);
     setPopoverPosition(null);
+    setManualPopoverPosition(null);
     setInteractionPrompt(null);
     setPausedRun(null);
     setIsExploring(false);
@@ -447,6 +451,34 @@ export default function AdminOnboarding({
     }
   };
 
+  const startPopoverDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if (window.innerWidth <= 700 || event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    const bounds = dialogRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    popoverDragRef.current = { pointerId: event.pointerId, offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top, width: bounds.width, height: bounds.height };
+    setManualPopoverPosition({ top: bounds.top, left: bounds.left });
+    setIsPopoverDragging(true);
+  };
+
+  const movePopover = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = popoverDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    setManualPopoverPosition(getSnappedGuidePosition(
+      { top: event.clientY - drag.offsetY, left: event.clientX - drag.offsetX },
+      { width: drag.width, height: drag.height },
+      { width: window.innerWidth, height: window.innerHeight },
+    ));
+  };
+
+  const stopPopoverDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if (popoverDragRef.current?.pointerId !== event.pointerId) return;
+    popoverDragRef.current = null;
+    setIsPopoverDragging(false);
+  };
+
+  const activePopoverPosition = manualPopoverPosition ?? popoverPosition;
+
   const portal = mounted && (welcomeOpen || tocOpen || chapterIntro || run) ? createPortal(<>
     {welcomeOpen && <div className="admin-guide-modal-backdrop">
       <div ref={dialogRef} className="admin-guide-welcome" role="dialog" aria-modal="true" aria-labelledby="admin-guide-welcome-title" onKeyDown={trapFocus}>
@@ -499,8 +531,8 @@ export default function AdminOnboarding({
       <section
         key={step.id}
         ref={dialogRef}
-        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}`}
-        style={visibleRect && popoverPosition ? { top: popoverPosition.top, left: popoverPosition.left, right: "auto", bottom: "auto" } : undefined}
+        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}${isPopoverDragging ? " is-dragging" : ""}`}
+        style={visibleRect && activePopoverPosition ? { top: activePopoverPosition.top, left: activePopoverPosition.left, right: "auto", bottom: "auto" } : undefined}
         data-placement={popoverPosition?.placement}
         role="dialog"
         aria-modal="true"
@@ -510,7 +542,7 @@ export default function AdminOnboarding({
         onFocusCapture={() => setIsExploring(false)}
         onKeyDown={trapFocus}
       >
-        <header><span>CHAPTER {run.chapterId.padStart(2, "0")} · {runChapter?.title}</span><button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button></header>
+        <header onPointerDown={startPopoverDrag} onPointerMove={movePopover} onPointerUp={stopPopoverDrag} onPointerCancel={stopPopoverDrag} title="드래그해서 안내 박스 옮기기"><span>CHAPTER {run.chapterId.padStart(2, "0")} · {runChapter?.title}<GripHorizontal aria-hidden="true" /></span><button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button></header>
         {visibleRect ? <>
           <div className="admin-guide-step-progress"><i style={{ width: `${((run.index + 1) / steps.length) * 100}%` }} /><span>{run.index + 1} / {steps.length}</span></div>
           <div className="admin-guide-badges">

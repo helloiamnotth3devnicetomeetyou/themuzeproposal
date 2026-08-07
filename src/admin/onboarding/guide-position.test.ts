@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGuideHighlightRect, getGuidePosition, shouldRevealGuideTarget } from "./guide-position";
+import { getGuideHighlightRect, getGuidePosition, getSnappedGuidePosition, shouldRevealGuideTarget } from "./guide-position";
 
 describe("admin guide positioning", () => {
   const viewport = { width: 1200, height: 800 };
@@ -33,5 +33,10 @@ describe("admin guide positioning", () => {
     const target = { top: 200, left: 200, width: 160, height: 60 };
     expect(shouldRevealGuideTarget(target, viewport, true)).toBe(false);
     expect(shouldRevealGuideTarget(target, viewport, false)).toBe(true);
+  });
+
+  it("snaps a dragged guide card to nearby screen edges", () => {
+    expect(getSnappedGuidePosition({ top: 20, left: 830 }, popover, viewport)).toEqual({ top: 12, left: 828 });
+    expect(getSnappedGuidePosition({ top: 300, left: 400 }, popover, viewport)).toEqual({ top: 300, left: 400 });
   });
 });

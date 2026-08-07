@@ -6,8 +6,23 @@ const VIEWPORT_GUTTER = 16;
 const TARGET_GAP = 14;
 const HIGHLIGHT_PADDING = 8;
 const SAFE_TARGET_MARGIN = 24;
+const DRAG_GUTTER = 12;
+const SNAP_DISTANCE = 36;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
+
+export function getSnappedGuidePosition(
+  position: { top: number; left: number },
+  popover: { width: number; height: number },
+  viewport: { width: number; height: number },
+) {
+  const maxLeft = Math.max(DRAG_GUTTER, viewport.width - popover.width - DRAG_GUTTER);
+  const maxTop = Math.max(DRAG_GUTTER, viewport.height - popover.height - DRAG_GUTTER);
+  const snap = (value: number, max: number) => value - DRAG_GUTTER < SNAP_DISTANCE
+    ? DRAG_GUTTER
+    : max - value < SNAP_DISTANCE ? max : clamp(value, DRAG_GUTTER, max);
+  return { top: snap(position.top, maxTop), left: snap(position.left, maxLeft) };
+}
 
 export function shouldRevealGuideTarget(
   target: GuideRect,
