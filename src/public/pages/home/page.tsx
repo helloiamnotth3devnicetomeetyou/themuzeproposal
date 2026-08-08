@@ -9,6 +9,8 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { HomeSlideDTO } from "@/public/features/home/types";
+import { spotifyAlbumHref } from "@/core/http/spotify";
+import { startSlideTransition } from "./carousel-state";
 
 const TRANSITION_DURATION = 1100;
 
@@ -20,9 +22,10 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     artistName: localizeText(slide.artistNames, locale, slide.artistName),
     title: localizeText(slide.titles, locale, slide.title),
   })), [locale, rawSlides]);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [prevSlide, setPrevSlide] = useState<number | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transition, setTransition] = useState({ current: 0, previous: null as number | null });
+  const currentSlide = transition.current;
+  const prevSlide = transition.previous;
+  const isTransitioning = prevSlide !== null;
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
 
   const [isPageVisible, setIsPageVisible] = useState(true);
@@ -57,18 +60,15 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const goToSlide = useCallback((next: number) => {
     if (slides.length <= 1 || isTransitioning) return;
 
-    const normalizedNext = (next + slides.length) % slides.length;
+    const normalizedNext = startSlideTransition(currentSlide, next, slides.length).current;
     if (normalizedNext === currentSlide) return;
 
-    setIsTransitioning(true);
-    setPrevSlide(currentSlide);
-    setCurrentSlide(normalizedNext);
+    setTransition({ current: normalizedNext, previous: currentSlide });
     setOpenStreamingSlideId(null);
 
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
     transitionTimeout.current = setTimeout(() => {
-      setPrevSlide(null);
-      setIsTransitioning(false);
+      setTransition((current) => ({ ...current, previous: null }));
     }, TRANSITION_DURATION);
   }, [currentSlide, isTransitioning, slides.length]);
 
@@ -132,7 +132,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 sizes="(max-width: 768px) 768px, 100vw"
                 preload={index === 0}
                 fetchPriority={index === 0 ? "high" : undefined}
-                loading={index === 0 ? undefined : "lazy"}
+                loading={index === 0 ? "eager" : "lazy"}
                 quality={80}
                 className="object-cover object-center"
                 style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
@@ -202,8 +202,8 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                             <span>YouTube</span>
                           </a>
                         )}
-                        {slide.spotifyId && (
-                          <a href={`https://open.spotify.com/album/${slide.spotifyId}`} target="_blank" rel="noreferrer" aria-label={`${slide.title} on Spotify`} className="is-spotify">
+                        {spotifyAlbumHref(slide.spotifyId) && (
+                          <a href={spotifyAlbumHref(slide.spotifyId)} target="_blank" rel="noreferrer" aria-label={`${slide.title} on Spotify`} className="is-spotify">
                             <SiSpotify aria-hidden="true" />
                             <span>Spotify</span>
                           </a>

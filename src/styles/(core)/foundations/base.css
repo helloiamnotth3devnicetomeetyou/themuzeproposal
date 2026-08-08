@@ -74,7 +74,7 @@
   --site-header-height: 64px;
   --site-hero-header-height: 72px;
   --page-gutter: clamp(20px, 4vw, 68px);
-  --page-top-space: clamp(112px, 13vw, 156px);
+  --page-top-space: calc(clamp(112px, 13vw, 156px) + var(--banner-height, 0px));
   --page-bottom-space: clamp(64px, 8vw, 112px);
   --page-title-size: clamp(42px, 6vw, 84px);
   --admin-mobile-bar-height: 56px;
@@ -230,7 +230,7 @@ select option {
   [data-theme="dark"],
   [data-theme="light"] {
     --page-gutter: clamp(18px, 5vw, 24px);
-    --page-top-space: 108px;
+    --page-top-space: calc(108px + var(--banner-height, 0px));
     --page-bottom-space: 72px;
     --page-title-size: clamp(40px, 13vw, 62px);
   }

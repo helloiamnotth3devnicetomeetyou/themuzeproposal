@@ -393,3 +393,4 @@
   .uploadButton,
   .submit { transition: none; }
 }
+.page p, .page label, .page input, .page textarea, .page button { font-size: max(14px, 1em); }

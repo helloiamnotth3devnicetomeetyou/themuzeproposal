@@ -185,3 +185,4 @@
 .businessDownloads p { margin-top: 6px; color: var(--text-muted); font-size: 12px; }
 .businessDownloads > div { display: flex; gap: 8px; margin-top: 14px; }
 .businessDownloads a { padding: 9px 12px; border: 1px solid var(--border-default); border-radius: 7px; color: var(--text-primary); font-size: 12px; font-weight: 700; text-decoration: none; }
+.page p, .page label, .page input, .page textarea, .page button { font-size: max(14px, 1em); }

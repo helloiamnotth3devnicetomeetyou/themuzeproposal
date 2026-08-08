@@ -354,3 +354,8 @@
     width: 100%;
   }
 }
+.audition-page p,
+.audition-page label,
+.audition-page input,
+.audition-page textarea,
+.audition-page button { font-size: max(14px, 1em); }

@@ -34,9 +34,10 @@ export default function About() {
   const [noticesLoading, setNoticesLoading] = useState(true);
 
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hasChangedTab = useRef(false);
 
   useEffect(() => {
-    if (activeTab !== null) {
+    if (activeTab !== null && hasChangedTab.current) {
       const timer = setTimeout(() => {
         itemRefs.current[activeTab]?.scrollIntoView({
           behavior: "smooth",
@@ -229,7 +230,7 @@ export default function About() {
   ];
 
   return (
-    <main className="min-h-screen pt-36 pb-24 transition-colors duration-slow" style={{ backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}>
+    <main className="min-h-screen pb-24 transition-colors duration-slow" style={{ paddingTop: "var(--page-top-space)", backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}>
       <div className="max-w-4xl mx-auto px-6 pt-16">
         
         {/* Interactive Question Stack */}
@@ -246,7 +247,7 @@ export default function About() {
                 
                 {/* Clickable Stack Line */}
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => { hasChangedTab.current = true; setActiveTab(item.id); }}
                   className="w-full text-left flex items-start gap-3 py-1.5 focus:outline-none cursor-pointer group"
                 >
                   {/* Arrow prefix (only visible on active) */}

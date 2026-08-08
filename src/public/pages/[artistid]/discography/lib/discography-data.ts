@@ -1,6 +1,7 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { supabase } from "@/core/supabase/client";
 import { safeHref } from "@/core/http/safe-href";
+import { spotifyAlbumHref } from "@/core/http/spotify";
 
 import type { DiscographyAlbum, DiscographyMember, DiscographyGalleryItem, RawDiscographyAlbum } from "./types";
 
@@ -77,9 +78,7 @@ export async function fetchDiscography(artistSlug: string) {
       ja: item.description_ja || "",
     },
     links: {
-      spotify: item.spotify_id
-        ? `https://open.spotify.com/album/${item.spotify_id}`
-        : undefined,
+      spotify: spotifyAlbumHref(item.spotify_id),
       youtube: safeHref(item.youtube_url),
     },
   }));

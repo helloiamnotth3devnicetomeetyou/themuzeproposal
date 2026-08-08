@@ -27,6 +27,7 @@ import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
+import { spotifyAlbumId } from "@/core/http/spotify";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
   albumSelect,
@@ -348,7 +349,7 @@ export default function DiscographyAdmin() {
             <div className="music-section-title"><div><h3>앨범 소개와 외부 링크</h3><span>언어별 소개를 작성하고 앨범 단위 스트리밍 링크를 연결합니다.</span></div></div>
             <div className="music-language-tabs">{(["ko", "en", "ja"] as Language[]).map((item) => <button type="button" key={item} className={language === item ? "is-active" : ""} onClick={() => setLanguage(item)}>{item.toUpperCase()}<i className={draft[`description_${item}`].trim() ? "is-complete" : ""} /></button>)}</div>
             <label className="music-field"><span>{language === "ko" ? "한국어" : language === "en" ? "영어" : "일본어"} 앨범 소개</span><textarea className="admin-input" rows={9} value={draft[`description_${language}`]} onChange={(event) => patchDraft({ [`description_${language}`]: event.target.value } as Partial<AlbumEditorDraft>)} placeholder="앨범의 콘셉트와 이야기를 입력하세요." /></label>
-            <div className="music-field-grid two"><label className="music-field"><span>Spotify 앨범 ID</span><input className="admin-input" value={draft.spotify_id} onChange={(event) => patchDraft({ spotify_id: event.target.value })} placeholder="Spotify 앨범 ID" /></label><label className="music-field"><span>YouTube Music URL</span><input type="url" className="admin-input" value={draft.youtube_url} onChange={(event) => patchDraft({ youtube_url: event.target.value })} placeholder="https://music.youtube.com/…" /></label></div>
+            <div className="music-field-grid two"><label className="music-field"><span>Spotify 앨범 ID 또는 URL</span><input className="admin-input" value={draft.spotify_id} onChange={(event) => patchDraft({ spotify_id: event.target.value })} onBlur={() => patchDraft({ spotify_id: spotifyAlbumId(draft.spotify_id) || "" })} placeholder="Spotify 앨범 ID 또는 URL" /></label><label className="music-field"><span>YouTube Music URL</span><input type="url" className="admin-input" value={draft.youtube_url} onChange={(event) => patchDraft({ youtube_url: event.target.value })} placeholder="https://music.youtube.com/…" /></label></div>
           </div>}
 
           {tab === "tracks" && <div className="music-section-stack music-track-section">

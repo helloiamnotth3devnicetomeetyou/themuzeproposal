@@ -13,6 +13,7 @@ import { localizeText } from "@/core/i18n/localized";
 import type { LocalizedText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
+import { spotifyAlbumHref } from "@/core/http/spotify";
 
 import { fetchDiscography } from "../lib/discography-data";
 import {
@@ -31,6 +32,7 @@ import type {
   SlideDirection,
 } from "../lib/types";
 import { useAudioPlayback } from "./useAudioPlayback";
+import { newestAlbumsFirst } from "../lib/album-order";
 
 const ALBUM_TRANSITION_MS = 220;
 
@@ -105,9 +107,7 @@ export function useDiscographyController(
       ja: preview.album.description_ja,
     },
     links: {
-      spotify: preview.album.spotify_id
-        ? `https://open.spotify.com/album/${preview.album.spotify_id}`
-        : undefined,
+      spotify: spotifyAlbumHref(preview.album.spotify_id),
       youtube: safeHref(preview.album.youtube_url),
     },
   } : null, [preview]);
@@ -173,15 +173,14 @@ export function useDiscographyController(
         const result = await fetchDiscography(artistSlug);
         if (cancelled) return;
 
+        const orderedAlbums = newestAlbumsFirst(result.albums);
         const requestedId = requestedAlbumId();
         const remembered = readPlaybackMemory(artistSlug);
         const requestedIndex = requestedId
-          ? [...result.albums]
-              .sort((a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || ""))
-              .findIndex((item) => item.id === requestedId)
+          ? orderedAlbums.findIndex((item) => item.id === requestedId)
           : -1;
         const rememberedIndex = remembered
-          ? result.albums.findIndex((item) => item.id === remembered.albumId)
+          ? orderedAlbums.findIndex((item) => item.id === remembered.albumId)
           : -1;
         const nextAlbumIndex =
           requestedIndex >= 0
@@ -190,16 +189,16 @@ export function useDiscographyController(
               ? rememberedIndex
               : 0;
         const rememberedAlbumMatches = Boolean(
-          remembered && result.albums[nextAlbumIndex]?.id === remembered.albumId,
+          remembered && orderedAlbums[nextAlbumIndex]?.id === remembered.albumId,
         );
-        const trackCount = result.albums[nextAlbumIndex]?.tracks.length ?? 0;
+        const trackCount = orderedAlbums[nextAlbumIndex]?.tracks.length ?? 0;
         const rememberedTrackIndex = rememberedAlbumMatches
           ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)))
           : 0;
 
         setArtistName(result.artistName);
         setArtistNames(result.artistNames);
-        setAlbums(result.albums);
+        setAlbums(orderedAlbums);
         setMembers(result.members);
         setGallery(result.gallery);
         setAlbumIndex(nextAlbumIndex);
@@ -208,7 +207,7 @@ export function useDiscographyController(
           ? Math.max(0, remembered?.currentTime ?? 0)
           : 0;
 
-        const selectedAlbum = result.albums[nextAlbumIndex];
+        const selectedAlbum = orderedAlbums[nextAlbumIndex];
         if (selectedAlbum) syncAlbumQuery(selectedAlbum.id);
       } catch (error) {
         if (!cancelled) {

@@ -348,3 +348,7 @@
   font-size: 24px;
   font-weight: 800;
 }
+.account-page p,
+.account-page label,
+.account-page input,
+.account-page button { font-size: max(14px, 1em); }

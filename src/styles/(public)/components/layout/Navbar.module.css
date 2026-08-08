@@ -300,6 +300,10 @@
   white-space: nowrap;
 }
 
+.authLoading .accountBtn {
+  visibility: hidden;
+}
+
 .mobileHeaderControls {
   display: flex;
   align-items: center;
@@ -314,7 +318,7 @@
   height: calc(100dvh - var(--site-header-height));
   overflow-y: auto;
   border-top: 1px solid var(--border-subtle);
-  background-color: var(--mobile-menu-bg);
+  background-color: var(--bg-base);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   animation: mobileMenuFadeDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;

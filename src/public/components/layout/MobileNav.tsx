@@ -15,6 +15,7 @@ type Props = {
   pathname: string;
   isAdmin: boolean;
   isLoggedIn: boolean;
+  authReady: boolean;
   accountAvatarUrl: string | null;
   accountInitial: string;
   accountName: string;
@@ -34,12 +35,12 @@ const links = (slug: string) => [
 
 export default function MobileNav({
   menuButtonRef, mobileMenuRef, isOpen, onToggle, onClose, artists, pathname,
-  isAdmin, isLoggedIn, accountAvatarUrl, accountInitial, accountName, isDark, t, mobileOpenArtist, setMobileOpenArtist, onToggleTheme,
+  isAdmin, isLoggedIn, authReady, accountAvatarUrl, accountInitial, accountName, isDark, t, mobileOpenArtist, setMobileOpenArtist, onToggleTheme,
 }: Props) {
   const mobileLinkClass = (path: string) =>
     `flex min-h-14 items-center border-b border-[var(--border-default)] font-display text-[15px] font-bold tracking-[0.08em] transition-colors ${pathname === path ? "text-brand-pink" : "hover:text-brand-pink"}`;
 
-  return <div className="flex w-full items-center xl:hidden">
+  return <div className={`flex w-full items-center xl:hidden ${authReady ? "" : styles.authLoading}`}>
     <Link href="/" onClick={onClose} className="relative block size-10 shrink-0">
       <Image src="/images/iconlogo.png" alt="THE MUZE" fill sizes="40px" priority className={`${styles.logoImage} ${isDark ? styles.logoDark : ""}`} />
     </Link>
