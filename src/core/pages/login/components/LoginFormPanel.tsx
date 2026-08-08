@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { type LoginFormState } from "../hooks";
@@ -11,7 +12,7 @@ interface LoginFormPanelProps extends LoginFormState {
   showLoginRequired: boolean;
 }
 
-/** Reusable styled input field */
+/** Reusable styled input field with optional password visibility toggle */
 function FormInput({
   id,
   type,
@@ -29,6 +30,10 @@ function FormInput({
   placeholder: string;
   label: string;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordType = type === "password";
+  const inputType = isPasswordType ? (showPassword ? "text" : "password") : type;
+
   return (
     <fieldset className="flex flex-col gap-2">
       <label
@@ -38,20 +43,68 @@ function FormInput({
       >
         {label}
       </label>
-      <input
-        id={id}
-        type={type}
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 rounded-lg text-sm transition-all duration-slow focus:outline-none focus:border-brand-pink"
-        style={{
-          backgroundColor: "var(--bg-subtle)",
-          border: "1px solid var(--border-default)",
-          color: "var(--text-primary)",
-        }}
-        placeholder={placeholder}
-      />
+      <div className="relative w-full">
+        <input
+          id={id}
+          type={inputType}
+          required={required}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full px-4 py-3 rounded-lg text-sm transition-all duration-slow focus:outline-none focus:border-brand-pink ${
+            isPasswordType ? "pr-11" : ""
+          }`}
+          style={{
+            backgroundColor: "var(--bg-subtle)",
+            border: "1px solid var(--border-default)",
+            color: "var(--text-primary)",
+          }}
+          placeholder={placeholder}
+        />
+        {isPasswordType && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            tabIndex={-1}
+            aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-opacity duration-200 hover:opacity-100 opacity-60 cursor-pointer flex items-center justify-center"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {showPassword ? (
+              /* Eye Slash Icon (Hide) */
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4 transition-transform duration-200 scale-100 active:scale-95"
+              >
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+            ) : (
+              /* Eye Icon (Show) */
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4 transition-transform duration-200 scale-100 active:scale-95"
+              >
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
     </fieldset>
   );
 }
