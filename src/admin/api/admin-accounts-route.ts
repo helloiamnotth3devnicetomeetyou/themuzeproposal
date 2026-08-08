@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { isSuperAdmin, type AdminRole } from "@/core/auth/admin-auth";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
@@ -13,14 +14,13 @@ type AdminAccount = {
   updated_at: string | null;
 };
 
-const validRoles = new Set<AdminRole>(["super_admin", "editor"]);
+const adminRoleSchema = z.enum(["super_admin", "editor"]);
+const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), role: adminRoleSchema });
+const roleChangeSchema = z.object({ id: z.string().uuid(), role: adminRoleSchema });
+const removeSchema = z.object({ id: z.string().uuid() });
 
 function response(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
-}
-
-function isAdminRole(value: unknown): value is AdminRole {
-  return typeof value === "string" && validRoles.has(value as AdminRole);
 }
 
 async function requireSuperAdmin() {
@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const body = await request.json().catch(() => null) as { email?: unknown; role?: unknown } | null;
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-  if (!/^\S+@\S+\.\S+$/.test(email) || !isAdminRole(body?.role)) return response({ code: "INVALID_REQUEST" }, 400);
+  const parsed = inviteSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
+  const { email, role } = parsed.data;
 
   const adminClient = createServiceRoleClient();
   if (!adminClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
@@ -96,9 +96,9 @@ export async function POST(request: NextRequest) {
   if (lookupError) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
 
   if (existing) {
-    const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, existing.id, body.role);
+    const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, existing.id, role);
     if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
-    const { error } = await auth.supabase.from("profiles").update({ role: body.role }).eq("id", existing.id);
+    const { error } = await auth.supabase.from("profiles").update({ role }).eq("id", existing.id);
     if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
     return response({ invited: false });
   }
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
   const { error: roleError } = await auth.supabase
     .from("profiles")
-    .upsert({ id: invitation.user.id, email, role: body.role }, { onConflict: "id" });
+    .upsert({ id: invitation.user.id, email, role }, { onConflict: "id" });
   if (roleError) return response({ code: "INVITATION_FAILED" }, 422);
 
   return response({ invited: true }, 201);
@@ -119,15 +119,16 @@ export async function PATCH(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const body = await request.json().catch(() => null) as { id?: unknown; role?: unknown } | null;
-  if (typeof body?.id !== "string" || !isAdminRole(body?.role)) return response({ code: "INVALID_REQUEST" }, 400);
+  const parsed = roleChangeSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
+  const { id, role } = parsed.data;
 
   const adminClient = createServiceRoleClient();
   if (!adminClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
-  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, body.id, body.role);
+  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, id, role);
   if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
 
-  const { error } = await auth.supabase.from("profiles").update({ role: body.role }).eq("id", body.id);
+  const { error } = await auth.supabase.from("profiles").update({ role }).eq("id", id);
   if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
   return response({ ok: true });
 }
@@ -137,15 +138,16 @@ export async function DELETE(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const body = await request.json().catch(() => null) as { id?: unknown } | null;
-  if (typeof body?.id !== "string") return response({ code: "INVALID_REQUEST" }, 400);
+  const parsed = removeSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
+  const { id } = parsed.data;
 
   const adminClient = createServiceRoleClient();
   if (!adminClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
-  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, body.id, null);
+  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, id, null);
   if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
 
-  const { error } = await auth.supabase.from("profiles").update({ role: null }).eq("id", body.id);
+  const { error } = await auth.supabase.from("profiles").update({ role: null }).eq("id", id);
   if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
   return response({ ok: true });
 }

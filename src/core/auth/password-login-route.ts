@@ -1,12 +1,17 @@
 import { createHmac } from "node:crypto";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 16 * 1024;
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(1024),
+});
 
 type PendingCookie = {
   name: string;
@@ -38,16 +43,11 @@ export async function POST(request: NextRequest) {
     return jsonError("INVALID_REQUEST", 400);
   }
 
-  const email = typeof body === "object" && body && "email" in body
-    ? String(body.email).trim().toLowerCase()
-    : "";
-  const password = typeof body === "object" && body && "password" in body
-    ? String(body.password)
-    : "";
-
-  if (!email || email.length > 254 || !email.includes("@") || !password || password.length > 1024) {
+  const parsed = loginSchema.safeParse(body);
+  if (!parsed.success) {
     return jsonError("INVALID_CREDENTIALS", 401);
   }
+  const { email, password } = parsed.data;
 
   const { url, anonKey } = getPublicSupabaseConfig();
   const limiterSecret = process.env.AUTH_RATE_LIMIT_SECRET?.trim()
@@ -82,7 +82,13 @@ export async function POST(request: NextRequest) {
 
   const { error: authError } = await authClient.auth.signInWithPassword({ email, password });
   const succeeded = !authError;
-  if (!succeeded) return jsonError("INVALID_CREDENTIALS", 401);
+  if (!succeeded) {
+    const { data: googleOnly, error: identityError } = await limiterClient.rpc("is_google_only_email", {
+      p_email: email,
+    });
+    if (!identityError && googleOnly === true) return jsonError("GOOGLE_SIGN_IN_REQUIRED", 409);
+    return jsonError("INVALID_CREDENTIALS", 401);
+  }
 
   const { error: resetError } = await limiterClient.rpc("reset_login_rate_limit", {
     p_identifier_hash: identifierHash,

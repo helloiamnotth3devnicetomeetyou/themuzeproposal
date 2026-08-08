@@ -2,12 +2,14 @@ import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 4 * 1024;
+const verifyPasswordSchema = z.object({ password: z.string().min(1).max(1024) });
 
 function jsonError(code: string, status: number, retryAfter?: number) {
   const response = NextResponse.json({ code }, { status });
@@ -33,12 +35,9 @@ export async function POST(request: NextRequest) {
     return jsonError("INVALID_REQUEST", 400);
   }
 
-  const password =
-    typeof body === "object" && body && "password" in body
-      ? String(body.password)
-      : "";
-
-  if (!password || password.length > 1024) return jsonError("INVALID_REQUEST", 400);
+  const parsed = verifyPasswordSchema.safeParse(body);
+  if (!parsed.success) return jsonError("INVALID_REQUEST", 400);
+  const { password } = parsed.data;
 
   const { url, anonKey } = getPublicSupabaseConfig();
 
@@ -49,7 +48,10 @@ export async function POST(request: NextRequest) {
   });
   const { data: { user } } = await sessionClient.auth.getUser();
   const email = user?.email?.trim().toLowerCase() ?? "";
-  if (!email) return jsonError("UNAUTHORIZED", 401);
+  if (!user || !email) return jsonError("UNAUTHORIZED", 401);
+  if (!user.identities?.some((identity) => identity.provider === "email")) {
+    return jsonError("PASSWORD_UNAVAILABLE", 403);
+  }
 
   const limiterSecret =
     process.env.AUTH_RATE_LIMIT_SECRET?.trim() ||

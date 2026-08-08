@@ -14,13 +14,14 @@ describe("consumeSubmissionRateLimit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.SUBMISSION_RATE_LIMIT_SECRET = "test-secret";
+    process.env.VERCEL = "1";
     mocks.createServiceRoleClient.mockReturnValue({ rpc: mocks.rpc });
   });
 
   it("uses the rightmost forwarded client IP and configured scope", async () => {
     mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, retry_after_seconds: 12 }], error: null });
     const request = new NextRequest("https://themuze.kr/api/contact-inquiries", {
-      headers: { "x-forwarded-for": "203.0.113.4, 10.0.0.1" },
+      headers: { "x-vercel-forwarded-for": "203.0.113.4" },
     });
 
     await expect(consumeSubmissionRateLimit(request, "contact_inquiry"))
@@ -35,7 +36,7 @@ describe("consumeSubmissionRateLimit", () => {
   it("consumes both IP and userId keys when userId is provided", async () => {
     mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, retry_after_seconds: 10 }], error: null });
     const request = new NextRequest("https://themuze.kr/api/audition/submit", {
-      headers: { "x-forwarded-for": "203.0.113.4" },
+      headers: { "x-vercel-forwarded-for": "203.0.113.4" },
     });
 
     await expect(consumeSubmissionRateLimit(request, "audition_submission", "user-42"))
@@ -48,7 +49,7 @@ describe("consumeSubmissionRateLimit", () => {
       .mockResolvedValueOnce({ data: [{ is_allowed: true, retry_after_seconds: 0 }], error: null })
       .mockResolvedValueOnce({ data: [{ is_allowed: false, retry_after_seconds: 300 }], error: null });
     const request = new NextRequest("https://themuze.kr/api/protect-reports", {
-      headers: { "x-forwarded-for": "203.0.113.4" },
+      headers: { "x-vercel-forwarded-for": "203.0.113.4" },
     });
 
     await expect(consumeSubmissionRateLimit(request, "protect_report", "user-42"))
@@ -60,7 +61,7 @@ describe("consumeSubmissionRateLimit", () => {
       .mockResolvedValueOnce({ data: [{ is_allowed: false, retry_after_seconds: 120 }], error: null })
       .mockResolvedValueOnce({ data: [{ is_allowed: true, retry_after_seconds: 0 }], error: null });
     const request = new NextRequest("https://themuze.kr/api/audition/submit", {
-      headers: { "x-forwarded-for": "203.0.113.4" },
+      headers: { "x-vercel-forwarded-for": "203.0.113.4" },
     });
 
     await expect(consumeSubmissionRateLimit(request, "audition_submission", "user-42"))

@@ -99,6 +99,14 @@ export function useLoginForm({
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
     } catch (err: unknown) {
+      if (err instanceof AuthUserError && err.code === "GOOGLE_SIGN_IN_REQUIRED") {
+        try {
+          await signInWithGoogle(redirectTo, email);
+        } catch {
+          setError(t.googleFailed);
+        }
+        return;
+      }
       setError(loginErrorMessage(err, t));
     } finally {
       setLoading(false);
@@ -127,8 +135,16 @@ export function useLoginForm({
       if (!data.session) throw new AuthUserError("SIGNUP_FAILED");
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
-    } catch {
-      setError(t.signupFailed);
+    } catch (err: unknown) {
+      if (err instanceof AuthUserError && err.code === "GOOGLE_SIGN_IN_REQUIRED") {
+        try {
+          await signInWithGoogle(redirectTo, email);
+        } catch {
+          setError(t.googleFailed);
+        }
+      } else {
+        setError(t.signupFailed);
+      }
     } finally {
       setLoading(false);
     }

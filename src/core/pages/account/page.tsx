@@ -37,6 +37,7 @@ export default async function AccountPage() {
       initialEmail={user.email || ""}
       initialAvatarAssetId={profile?.avatar_asset_id && availableAvatarIds.has(profile.avatar_asset_id) ? profile.avatar_asset_id : null}
       avatarArtists={avatarArtists}
+      canChangePassword={user.identities?.some((identity) => identity.provider === "email") ?? false}
     />
   );
 }

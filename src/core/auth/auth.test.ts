@@ -13,7 +13,7 @@ vi.mock("@/core/supabase/client", () => ({
   supabase: { auth: { getUser: mocks.getUser }, from: mocks.from },
 }));
 
-import { AuthUserError, signIn, updateUserAvatar } from "./auth";
+import { AuthUserError, getUserProfile, signIn, updateUserAvatar } from "./auth";
 
 describe("signIn", () => {
   afterEach(() => {
@@ -66,5 +66,18 @@ describe("updateUserAvatar", () => {
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ avatar_asset_id: "inactive-avatar" }));
     expect(avatarChanged).toHaveBeenCalledOnce();
     window.removeEventListener("account-avatar-changed", avatarChanged);
+  });
+});
+
+describe("getUserProfile", () => {
+  it("selects only the profile fields used by the application", async () => {
+    const profile = { id: "user-1", email: "user@example.com", name: "User", role: "editor", avatar_asset_id: null };
+    mocks.from.mockReturnValue({ select: mocks.select });
+    mocks.select.mockReturnValue({ eq: mocks.eq });
+    mocks.eq.mockReturnValue({ single: mocks.single });
+    mocks.single.mockResolvedValue({ data: profile });
+
+    await expect(getUserProfile("user-1")).resolves.toEqual(profile);
+    expect(mocks.select).toHaveBeenCalledWith("id,email,name,role,avatar_asset_id");
   });
 });

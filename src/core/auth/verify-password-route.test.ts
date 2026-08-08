@@ -36,7 +36,7 @@ describe("POST /api/auth/verify-password", () => {
 
     // Session client: returns authenticated user
     mocks.createServerClient.mockReturnValue({
-      auth: { getUser: mocks.getUser.mockResolvedValue({ data: { user: { email: "user@example.com" } } }) },
+      auth: { getUser: mocks.getUser.mockResolvedValue({ data: { user: { email: "user@example.com", identities: [{ provider: "email" }] } } }) },
     });
 
     mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
@@ -65,6 +65,18 @@ describe("POST /api/auth/verify-password", () => {
     const response = await POST(request({ password: "somepassword" }));
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ code: "UNAUTHORIZED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects password checks for Google-only accounts", async () => {
+    mocks.getUser.mockResolvedValueOnce({
+      data: { user: { email: "user@example.com", identities: [{ provider: "google" }] } },
+    });
+
+    const response = await POST(request({ password: "somepassword" }));
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ code: "PASSWORD_UNAVAILABLE" });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 

@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
 
   const now = new Date().toISOString();
   const [campaignResult, fieldResult] = await Promise.all([
-    service.from("audition_campaigns").select("*").eq("id", campaignId).eq("is_active", true).maybeSingle(),
-    service.from("audition_form_fields").select("*").eq("campaign_id", campaignId).eq("is_active", true).order("sort_order"),
+    service.from("audition_campaigns").select("id,title,description,description_i18n,is_active,starts_at,ends_at,created_at,updated_at").eq("id", campaignId).eq("is_active", true).maybeSingle(),
+    service.from("audition_form_fields").select("id,campaign_id,field_key,label_i18n,help_text,field_type,options,required,max_length,max_file_size_mb,accepted_file_types,sort_order,is_active,is_primary_label").eq("campaign_id", campaignId).eq("is_active", true).order("sort_order"),
   ]);
   if (campaignResult.error || fieldResult.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   const activeCampaign = campaignResult.data as AuditionCampaign | null;
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: existing, error: existingError } = requestedSubmissionId
-    ? await service.from("audition_submissions").select("*").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
+    ? await service.from("audition_submissions").select("id,campaign_id,answers,created_at").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
     : { data: null, error: null };
   if (existingError) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (requestedSubmissionId && (!existing || existing.campaign_id !== campaignId)) return errorResponse("SUBMISSION_NOT_FOUND", 404);

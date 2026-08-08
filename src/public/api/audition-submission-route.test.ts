@@ -26,7 +26,7 @@ const service = {
   from: vi.fn((table: string) => {
     if (table === "audition_campaigns") return chain({ data: campaign, error: null });
     if (table === "audition_form_fields") return chain({ data: fields, error: null });
-    return { select: vi.fn((columns: string) => columns === "*" ? chain({ data: mocks.existing, error: null }) : chain({ count: 0, error: null })), insert: mocks.insert, update: mocks.update };
+    return { select: vi.fn((columns: string) => columns.includes("answers") ? chain({ data: mocks.existing, error: null }) : chain({ count: 0, error: null })), insert: mocks.insert, update: mocks.update };
   }),
   storage: { from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })) },
 };

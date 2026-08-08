@@ -53,6 +53,17 @@ describe("useLoginForm", () => {
     expect(result.current.error).toBe(result.current.t.serviceUnavailable);
   });
 
+  it("starts Google sign-in for Google-only accounts", async () => {
+    auth.signIn.mockRejectedValueOnce(new AuthUserError("GOOGLE_SIGN_IN_REQUIRED"));
+    auth.signInWithGoogle.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
+    act(() => { result.current.setEmail("user@example.com"); result.current.setPassword("secret"); });
+
+    await act(async () => { await result.current.handleLogin({ preventDefault: vi.fn() } as never); });
+
+    expect(auth.signInWithGoogle).toHaveBeenCalledWith("/protect", "user@example.com");
+  });
+
   it("rejects an invalid sign-up password before calling Supabase", async () => {
     const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
     act(() => { result.current.switchMode("signup"); result.current.setPassword("short"); result.current.setConfirmPassword("short"); });
@@ -73,5 +84,21 @@ describe("useLoginForm", () => {
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
     expect(auth.signUp).toHaveBeenCalledWith("user@example.com", "password", "");
     expect(push).toHaveBeenCalledWith("/protect");
+  });
+
+  it("starts Google sign-in when sign-up finds a Google-only account", async () => {
+    auth.signUp.mockRejectedValueOnce(new AuthUserError("GOOGLE_SIGN_IN_REQUIRED"));
+    auth.signInWithGoogle.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
+    act(() => {
+      result.current.switchMode("signup");
+      result.current.setEmail("user@example.com");
+      result.current.setPassword("password");
+      result.current.setConfirmPassword("password");
+    });
+
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+
+    expect(auth.signInWithGoogle).toHaveBeenCalledWith("/protect", "user@example.com");
   });
 });

@@ -166,11 +166,12 @@ const copy = {
   },
 };
 
-export default function AccountClient({ initialName, initialEmail, initialAvatarAssetId, avatarArtists }: {
+export default function AccountClient({ initialName, initialEmail, initialAvatarAssetId, avatarArtists, canChangePassword }: {
   initialName: string;
   initialEmail: string;
   initialAvatarAssetId: string | null;
   avatarArtists: AvatarArtistOption[];
+  canChangePassword: boolean;
 }) {
   const router = useRouter();
   const { locale } = useLocale();
@@ -338,7 +339,7 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
     { id: "profile" as const, label: t.profileTitle, description: t.profileDescription, code: "PROFILE" },
     { id: "avatar" as const, label: t.avatarTitle, description: t.avatarDescription, code: "AVATAR" },
     { id: "email" as const, label: t.emailTitle, description: t.emailDescription, code: "SIGN-IN ID" },
-    { id: "password" as const, label: t.passwordTitle, description: t.passwordDescription, code: "SECURITY" },
+    ...(canChangePassword ? [{ id: "password" as const, label: t.passwordTitle, description: t.passwordDescription, code: "SECURITY" }] : []),
     { id: "session" as const, label: t.sessionTitle, description: t.sessionDescription, code: "SESSION" },
   ];
   const activeMeta = sections.find((item) => item.id === activeSection) ?? sections[0];
@@ -407,7 +408,7 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
             <button className={styles.submit} type="submit" disabled={saving !== null}>{saving === "email" ? t.saving : t.saveEmail}</button>
           </form>}
 
-          {activeSection === "password" && <form className={styles.form} onSubmit={handlePasswordSubmit}>
+          {canChangePassword && activeSection === "password" && <form className={styles.form} onSubmit={handlePasswordSubmit}>
             <div className={styles.formRow}><label htmlFor="account-current-password">{t.currentPassword}</label><input id="account-current-password" type="password" value={currentPassword} onChange={(event) => handleCurrentPasswordChange(event.target.value)} onBlur={() => void handleCurrentPasswordVerification()} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); } }} required autoComplete="current-password" aria-describedby="current-password-guide current-password-status" /></div>
             <p id="current-password-guide" className={styles.guide}>{t.currentPasswordHint}</p>
             {checkingCurrentPassword && <span id="current-password-status" role="status" className={`${styles.status} ${styles.checking}`}>{t.currentPasswordChecking}</span>}
