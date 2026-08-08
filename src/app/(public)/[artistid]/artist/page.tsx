@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import ArtistSceneExperience from "@/public/pages/[artistid]/artist/ArtistSceneExperience";
 import { getArtistSceneData } from "@/public/pages/[artistid]/artist/artist-scene-server";
 import { createPageMetadata } from "@/core/seo/metadata";
@@ -13,5 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ artistid:
 
 export default async function ArtistPage({ params }: { params: Promise<{ artistid: string }> }) {
   const { artistid } = await params;
-  return <ArtistSceneExperience artistSlug={artistid} initialData={await getArtistSceneData(artistid)} />;
+  const initialData = await getArtistSceneData(artistid);
+  if (!initialData) notFound();
+  return <ArtistSceneExperience artistSlug={artistid} initialData={initialData} />;
 }

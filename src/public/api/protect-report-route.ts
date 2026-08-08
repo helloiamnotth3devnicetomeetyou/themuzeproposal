@@ -14,6 +14,7 @@ const PLATFORMS = new Set(["instagram", "x", "youtube", "tiktok", "facebook", "c
 function errorResponse(code: string, status: number, retryAfter?: number) {
   const response = NextResponse.json({ code }, { status });
   response.headers.set("Cache-Control", "no-store");
+  response.headers.set("X-Content-Type-Options", "nosniff");
   if (retryAfter) response.headers.set("Retry-After", String(retryAfter));
   return response;
 }

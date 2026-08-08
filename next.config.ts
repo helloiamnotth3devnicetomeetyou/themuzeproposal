@@ -16,6 +16,7 @@ const imageRemotePatterns = [storageUrl, supabaseUrl ? `${supabaseUrl}/storage/v
   });
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   experimental: { cssChunking: false },
   async headers() {
     return [

@@ -16,6 +16,7 @@ const EMAIL_KEYS = new Set(["email", "applicant_email"]);
 function errorResponse(code: string, status: number, retryAfter?: number) {
   const result = NextResponse.json({ code }, { status });
   result.headers.set("Cache-Control", "no-store");
+  result.headers.set("X-Content-Type-Options", "nosniff");
   if (retryAfter) result.headers.set("Retry-After", String(retryAfter));
   return result;
 }
