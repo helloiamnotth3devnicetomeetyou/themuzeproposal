@@ -78,6 +78,138 @@ function ModeTab({
   );
 }
 
+type RuleKey = "length" | "lower" | "upper" | "digit" | "symbol";
+
+interface PasswordRule {
+  key: RuleKey;
+  label: { ko: string; en: string; ja: string };
+  test: (p: string) => boolean;
+}
+
+const PASSWORD_RULES: PasswordRule[] = [
+  {
+    key: "length",
+    label: { ko: "8자 이상", en: "8+ characters", ja: "8文字以上" },
+    test: (p) => p.length >= 8,
+  },
+  {
+    key: "lower",
+    label: { ko: "소문자 포함", en: "Lowercase letter", ja: "小文字を含む" },
+    test: (p) => /[a-z]/.test(p),
+  },
+  {
+    key: "upper",
+    label: { ko: "대문자 포함", en: "Uppercase letter", ja: "大文字を含む" },
+    test: (p) => /[A-Z]/.test(p),
+  },
+  {
+    key: "digit",
+    label: { ko: "숫자 포함", en: "Number", ja: "数字を含む" },
+    test: (p) => /[0-9]/.test(p),
+  },
+  {
+    key: "symbol",
+    label: { ko: "기호 포함", en: "Symbol", ja: "記号を含む" },
+    test: (p) => /[^a-zA-Z0-9]/.test(p),
+  },
+];
+
+/** Micro-animated password strength meter, shown only in signup mode when password is non-empty */
+function PasswordStrengthMeter({ password, locale }: { password: string; locale: "ko" | "en" | "ja" }) {
+  if (!password) return null;
+
+  const passed = PASSWORD_RULES.filter((r) => r.test(password)).length;
+  const total = PASSWORD_RULES.length;
+
+  const barColor =
+    passed <= 1
+      ? "#ef4444"
+      : passed <= 2
+      ? "#f97316"
+      : passed <= 3
+      ? "#eab308"
+      : passed === 4
+      ? "#22c55e"
+      : "#22c55e";
+
+  return (
+    <div
+      style={{
+        overflow: "hidden",
+        animation: "pwStrengthIn 180ms cubic-bezier(0.22,1,0.36,1) both",
+      }}
+    >
+      <style>{`
+        @keyframes pwStrengthIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pwBarGrow {
+          from { width: 0%; }
+        }
+        @keyframes pwRuleIn {
+          from { opacity: 0; transform: translateX(-4px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+
+      {/* Strength bar */}
+      <div
+        className="rounded-full overflow-hidden mb-2"
+        style={{ height: "2px", backgroundColor: "var(--border-default)" }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${(passed / total) * 100}%`,
+            backgroundColor: barColor,
+            borderRadius: "9999px",
+            transition: "width 300ms cubic-bezier(0.22,1,0.36,1), background-color 300ms ease",
+          }}
+        />
+      </div>
+
+      {/* Rule checklist */}
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        {PASSWORD_RULES.map((rule, i) => {
+          const ok = rule.test(password);
+          return (
+            <li
+              key={rule.key}
+              className="flex items-center gap-1"
+              style={{
+                animation: `pwRuleIn 200ms ${i * 30}ms cubic-bezier(0.22,1,0.36,1) both`,
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "5px",
+                  height: "5px",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  backgroundColor: ok ? "#22c55e" : "var(--border-default)",
+                  transition: "background-color 200ms ease",
+                }}
+              />
+              <span
+                className="text-[9px] font-medium"
+                style={{
+                  color: ok ? "var(--text-secondary)" : "var(--text-faint)",
+                  transition: "color 200ms ease",
+                  textDecoration: ok ? "line-through" : "none",
+                }}
+              >
+                {rule.label[locale]}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function LoginFormPanel({
   mode,
   email,
@@ -198,15 +330,23 @@ export default function LoginFormPanel({
             placeholder="you@example.com"
           />
 
-          <FormInput
-            id="login-password"
-            type="password"
-            required
-            label={t.password}
-            value={password}
-            onChange={setPassword}
-            placeholder={t.passwordPlaceholder}
-          />
+          <div className="flex flex-col gap-2">
+            <FormInput
+              id="login-password"
+              type="password"
+              required
+              label={t.password}
+              value={password}
+              onChange={setPassword}
+              placeholder={t.passwordPlaceholder}
+            />
+            {mode === "signup" && (
+              <PasswordStrengthMeter
+                password={password}
+                locale={locale === "ja" ? "ja" : locale === "en" ? "en" : "ko"}
+              />
+            )}
+          </div>
 
           {mode === "signup" && (
             <FormInput

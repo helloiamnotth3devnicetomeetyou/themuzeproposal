@@ -118,8 +118,18 @@ export function useLoginForm({
     setError("");
     setLoading(true);
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(t.passwordLengthErr);
+      setLoading(false);
+      return;
+    }
+
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasDigit = /[0-9]/.test(password);
+    const hasSymbol = /[^a-zA-Z0-9]/.test(password);
+    if (!hasLower || !hasUpper || !hasDigit || !hasSymbol) {
+      setError(t.passwordStrengthErr);
       setLoading(false);
       return;
     }

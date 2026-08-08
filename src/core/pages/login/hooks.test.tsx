@@ -64,7 +64,7 @@ describe("useLoginForm", () => {
     expect(auth.signInWithGoogle).toHaveBeenCalledWith("/protect", "user@example.com");
   });
 
-  it("rejects an invalid sign-up password before calling Supabase", async () => {
+  it("rejects an invalid sign-up password (too short) before calling Supabase", async () => {
     const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
     act(() => { result.current.switchMode("signup"); result.current.setPassword("short"); result.current.setConfirmPassword("short"); });
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
@@ -72,17 +72,25 @@ describe("useLoginForm", () => {
     expect(result.current.error).toBe(result.current.t.passwordLengthErr);
   });
 
-  it("signs a newly registered user in and navigates immediately", async () => {
+  it("rejects a weak sign-up password missing symbol/upper/digit", async () => {
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
+    act(() => { result.current.switchMode("signup"); result.current.setPassword("simplepassword"); result.current.setConfirmPassword("simplepassword"); });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+    expect(auth.signUp).not.toHaveBeenCalled();
+    expect(result.current.error).toBe(result.current.t.passwordStrengthErr);
+  });
+
+  it("signs a newly registered user in and navigates immediately with valid password", async () => {
     auth.signUp.mockResolvedValue({ session: { access_token: "test" } });
     const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
     act(() => {
       result.current.switchMode("signup");
       result.current.setEmail("user@example.com");
-      result.current.setPassword("password");
-      result.current.setConfirmPassword("password");
+      result.current.setPassword("ValidPass123!");
+      result.current.setConfirmPassword("ValidPass123!");
     });
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
-    expect(auth.signUp).toHaveBeenCalledWith("user@example.com", "password", "");
+    expect(auth.signUp).toHaveBeenCalledWith("user@example.com", "ValidPass123!", "");
     expect(push).toHaveBeenCalledWith("/protect");
   });
 
@@ -93,8 +101,8 @@ describe("useLoginForm", () => {
     act(() => {
       result.current.switchMode("signup");
       result.current.setEmail("user@example.com");
-      result.current.setPassword("password");
-      result.current.setConfirmPassword("password");
+      result.current.setPassword("ValidPass123!");
+      result.current.setConfirmPassword("ValidPass123!");
     });
 
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
