@@ -25,6 +25,15 @@ type Rect = { top: number; left: number; width: number; height: number };
 
 const missingTable = (message?: string) => Boolean(message && /does not exist|schema cache|could not find/i.test(message));
 const emptySubscribe = () => () => {};
+const getScrollableParent = (element: HTMLElement) => {
+  let parent = element.parentElement;
+  while (parent) {
+    const overflowY = window.getComputedStyle(parent).overflowY;
+    if (/(auto|scroll)/.test(overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
+    parent = parent.parentElement;
+  }
+  return null;
+};
 
 export default function AdminOnboarding({
   userId,
@@ -47,8 +56,11 @@ export default function AdminOnboarding({
   const guideWasOpenRef = useRef(false);
   const progressRef = useRef<Record<string, GuideProgressRow>>({});
   const popoverDragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number; width: number; height: number } | null>(null);
+  const mobileSheetDragRef = useRef<number | null>(null);
+  const suppressMobileSheetClickRef = useRef(false);
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [ready, setReady] = useState(false);
+  const [launcherCompact, setLauncherCompact] = useState(() => typeof window !== "undefined" && Boolean(userId) && localStorage.getItem(`admin-guide-seen:${userId}`) === "true");
   const [progressRows, setProgressRows] = useState<Record<string, GuideProgressRow>>({});
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
@@ -63,6 +75,9 @@ export default function AdminOnboarding({
   const [isPopoverDragging, setIsPopoverDragging] = useState(false);
   const [interactionPrompt, setInteractionPrompt] = useState<string | null>(null);
   const [isExploring, setIsExploring] = useState(false);
+  const [isMobileGuide, setIsMobileGuide] = useState(false);
+  const [mobileSheetExpanded, setMobileSheetExpanded] = useState(true);
+  const [practiceComplete, setPracticeComplete] = useState(false);
   const [capabilities, setCapabilities] = useState({ artistScenes: true, artistGallery: true });
 
   const artistId = artists.find((artist) => pathname.includes(`/artists/${artist.id}/`))?.id ?? artists[0]?.id;
@@ -89,6 +104,14 @@ export default function AdminOnboarding({
   const stepOnCurrentPath = !step || guidePathMatches(step.href.replace(":artistId", artistId ?? "new"), pathname, step.descendantPath);
   const visibleRect = stepOnCurrentPath ? rect : null;
   const guideOpen = welcomeOpen || tocOpen || Boolean(chapterIntro) || Boolean(run);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 700px)");
+    const update = () => setIsMobileGuide(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -181,11 +204,12 @@ export default function AdminOnboarding({
     setPopoverPosition(null);
     setManualPopoverPosition(null);
     setInteractionPrompt(null);
+    setPracticeComplete(false);
     setPausedRun(null);
     setIsExploring(false);
+    setMobileSheetExpanded(true);
     startGuideSandbox();
     setRun({ chapterId, index, mode });
-    void saveStepProgress(chapterId, nextStep.id);
     if (shouldNavigate) router.push(href);
     return true;
   };
@@ -214,6 +238,8 @@ export default function AdminOnboarding({
 
   const finishOrAdvance = async () => {
     if (!run) return;
+    const currentStep = steps[run.index];
+    if (currentStep) void saveStepProgress(run.chapterId, currentStep.id);
     if (run.index < steps.length - 1) {
       openStep(run.chapterId, run.index + 1, run.mode);
       return;
@@ -248,8 +274,22 @@ export default function AdminOnboarding({
     let revealTimer = 0;
     let animationFrame = 0;
     let promptFrame = 0;
+    let practiceTimer = 0;
     let skipped = false;
     let awaitingInteraction = false;
+    let practiceDone = false;
+    let practiceTarget: HTMLElement | null = null;
+    let revealedTarget: HTMLElement | null = null;
+    const usableViewport = () => {
+      const mobile = window.matchMedia("(max-width: 700px)").matches;
+      const visualHeight = window.visualViewport?.height ?? window.innerHeight;
+      const sheetHeight = mobile ? dialogRef.current?.getBoundingClientRect().height ?? 0 : 0;
+      return {
+        width: window.innerWidth,
+        height: Math.max(160, visualHeight - sheetHeight - (mobile ? 12 : 0)),
+        visualHeight,
+      };
+    };
     const isRendered = (element: HTMLElement) => {
       const bounds = element.getBoundingClientRect();
       const style = window.getComputedStyle(element);
@@ -277,7 +317,7 @@ export default function AdminOnboarding({
     const update = () => {
       if (!target) return;
       const next = target.getBoundingClientRect();
-      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const viewport = usableViewport();
       const targetRect = { top: next.top, left: next.left, width: next.width, height: next.height };
       const popover = dialogRef.current?.getBoundingClientRect();
       setRect(getGuideHighlightRect(targetRect, viewport));
@@ -296,22 +336,62 @@ export default function AdminOnboarding({
       if (target) resizeObserver.observe(target);
       if (dialogRef.current) resizeObserver.observe(dialogRef.current);
     };
-    const revealTarget = (element: HTMLElement) => {
+    const revealTarget = (element: HTMLElement, force = false) => {
+      if (!force && revealedTarget === element) return;
+      revealedTarget = element;
       const bounds = element.getBoundingClientRect();
-      if (revealTimer || !shouldRevealGuideTarget(bounds, { width: window.innerWidth, height: window.innerHeight }, isExposed(element))) return;
-      element.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+      const viewport = usableViewport();
+      if (revealTimer || !shouldRevealGuideTarget(bounds, viewport, isExposed(element))) return;
+      element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
       revealTimer = window.setTimeout(() => {
         revealTimer = 0;
-        if (element.isConnected && !isExposed(element)) {
-          element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+        if (!element.isConnected) return;
+        const next = element.getBoundingClientRect();
+        const nextViewport = usableViewport();
+        const delta = next.bottom > nextViewport.height - 20
+          ? next.bottom - nextViewport.height + 20
+          : next.top < 20 ? next.top - 20 : 0;
+        if (delta) {
+          const scrollParent = getScrollableParent(element);
+          if (scrollParent) scrollParent.scrollBy({ top: delta, behavior: "smooth" });
+          else window.scrollBy({ top: delta, behavior: "smooth" });
         }
         scheduleUpdate();
-      }, 450);
+      }, 360);
     };
-    const attach = (nextTarget: HTMLElement, prompt: string | null = null) => {
+    const markPracticeComplete = () => {
+      if (!step.practice || practiceDone) return;
+      practiceDone = true;
+      setPracticeComplete(true);
+      void saveStepProgress(step.chapterId, step.id);
+    };
+    const completePractice = (event: Event) => {
+      if (step.practice?.event === "input" || step.practice?.event === "change") {
+        const field = event.target;
+        if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+          if (!field.value.trim()) return;
+        }
+        window.clearTimeout(practiceTimer);
+        practiceTimer = window.setTimeout(markPracticeComplete, 350);
+        return;
+      }
+      markPracticeComplete();
+    };
+    const armPractice = (element: HTMLElement, tourId: string) => {
+      const practiceTourId = step.practice?.target ?? step.target;
+      if (!step.practice || tourId !== practiceTourId || practiceTarget === element) return;
+      if (practiceTarget) practiceTarget.removeEventListener(step.practice.event, completePractice, true);
+      practiceTarget = element;
+      practiceTarget.addEventListener(step.practice.event, completePractice, true);
+    };
+    const attach = (nextTarget: HTMLElement, prompt: string | null = null, tourId = "") => {
       awaitingInteraction = Boolean(prompt);
       cancelAnimationFrame(promptFrame);
-      promptFrame = requestAnimationFrame(() => setInteractionPrompt(prompt));
+      promptFrame = requestAnimationFrame(() => {
+        setInteractionPrompt(prompt);
+        if (prompt && window.matchMedia("(max-width: 700px)").matches) setMobileSheetExpanded(false);
+      });
+      armPractice(nextTarget, tourId);
       if (target === nextTarget) return true;
       target?.classList.remove("admin-guide-target");
       target = nextTarget;
@@ -325,11 +405,11 @@ export default function AdminOnboarding({
     };
     const findPrimary = () => {
       const nextTarget = visibleTarget(step.target);
-      return nextTarget ? attach(nextTarget) : false;
+      return nextTarget ? attach(nextTarget, null, step.target) : false;
     };
     const findInteraction = () => {
       const nextTarget = step.interaction ? visibleTarget(step.interaction.target) : null;
-      return nextTarget && step.interaction ? attach(nextTarget, step.interaction.instruction) : false;
+      return nextTarget && step.interaction ? attach(nextTarget, step.interaction.instruction, step.interaction.target) : false;
     };
     const skipMissingStep = () => {
       if (skipped) return;
@@ -345,7 +425,7 @@ export default function AdminOnboarding({
     const validateTarget = () => {
       if (awaitingInteraction && findPrimary()) return;
       if (!target) { if (!findPrimary()) findInteraction(); return; }
-      if (target && isRendered(target)) { revealTarget(target); return; }
+      if (target && isRendered(target)) return;
       if (findPrimary()) return;
       if (findInteraction()) return;
       if (!lostTimer) lostTimer = window.setTimeout(skipMissingStep, 700);
@@ -359,13 +439,20 @@ export default function AdminOnboarding({
         if (findPrimary()) return;
         if (findInteraction()) return;
         const fallbackTarget = step.fallbackTarget && step.fallbackTarget !== "admin-page" ? visibleTarget(step.fallbackTarget) : null;
-        if (fallbackTarget) attach(fallbackTarget);
+        if (fallbackTarget) attach(fallbackTarget, null, step.fallbackTarget);
         else skipMissingStep();
       }, 4000);
     }
+    const revealActiveTarget = () => {
+      if (target) revealTarget(target, true);
+    };
+    window.addEventListener("admin-guide-reveal-target", revealActiveTarget);
+    window.visualViewport?.addEventListener("resize", scheduleUpdate);
+    window.visualViewport?.addEventListener("scroll", scheduleUpdate);
     return () => {
       observer.disconnect();
       target?.classList.remove("admin-guide-target");
+      if (practiceTarget && step.practice) practiceTarget.removeEventListener(step.practice.event, completePractice, true);
       resizeObserver?.disconnect();
       cancelAnimationFrame(animationFrame);
       cancelAnimationFrame(promptFrame);
@@ -373,8 +460,12 @@ export default function AdminOnboarding({
       window.clearTimeout(searchTimer);
       window.clearTimeout(lostTimer);
       window.clearTimeout(revealTimer);
+      window.clearTimeout(practiceTimer);
       window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("scroll", scheduleUpdate, true);
+      window.removeEventListener("admin-guide-reveal-target", revealActiveTarget);
+      window.visualViewport?.removeEventListener("resize", scheduleUpdate);
+      window.visualViewport?.removeEventListener("scroll", scheduleUpdate);
     };
     // pathname repeats tab events after a route transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -477,6 +568,33 @@ export default function AdminOnboarding({
     setIsPopoverDragging(false);
   };
 
+  const updateMobileSheet = (expanded: boolean) => {
+    setMobileSheetExpanded(expanded);
+    requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event("admin-guide-reveal-target"))));
+  };
+
+  const startMobileSheetDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    mobileSheetDragRef.current = event.clientY;
+  };
+
+  const stopMobileSheetDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const startY = mobileSheetDragRef.current;
+    mobileSheetDragRef.current = null;
+    if (startY === null) return;
+    const distance = event.clientY - startY;
+    if (Math.abs(distance) < 32) return;
+    suppressMobileSheetClickRef.current = true;
+    updateMobileSheet(distance < 0);
+  };
+
+  const toggleMobileSheet = () => {
+    if (suppressMobileSheetClickRef.current) {
+      suppressMobileSheetClickRef.current = false;
+      return;
+    }
+    updateMobileSheet(!mobileSheetExpanded);
+  };
+
   const activePopoverPosition = manualPopoverPosition ?? popoverPosition;
 
   const portal = mounted && (welcomeOpen || tocOpen || chapterIntro || run) ? createPortal(<>
@@ -522,36 +640,48 @@ export default function AdminOnboarding({
         <p>{introChapter.description}</p>
         <footer>
           <button type="button" onClick={() => { setChapterIntro(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
+          {chapterIntro.index > 0 && <button type="button" onClick={() => openStep(chapterIntro.chapterId, 0, chapterIntro.mode)}>처음부터 보기</button>}
           <button type="button" className="is-next" onClick={() => openStep(chapterIntro.chapterId, chapterIntro.index, chapterIntro.mode)}>{chapterIntro.index > 0 ? "이어보기" : "시작하기"}<ArrowRight aria-hidden="true" /></button>
         </footer>
       </section>
     </div>}
-    {run && step && <div className={`admin-guide-layer${isExploring ? " is-exploring" : ""}`} aria-live="polite">
+    {run && step && <div className={`admin-guide-layer${isExploring ? " is-exploring" : ""}${isMobileGuide && !mobileSheetExpanded ? " is-sheet-collapsed" : ""}`} aria-live="polite">
       {visibleRect && !isExploring && <div className="admin-guide-spotlight" style={visibleRect} />}
       <section
         key={step.id}
         ref={dialogRef}
-        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}${isPopoverDragging ? " is-dragging" : ""}`}
+        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}${isPopoverDragging ? " is-dragging" : ""}${isMobileGuide && !mobileSheetExpanded ? " is-mobile-collapsed" : ""}`}
         style={visibleRect && activePopoverPosition ? { top: activePopoverPosition.top, left: activePopoverPosition.left, right: "auto", bottom: "auto" } : undefined}
         data-placement={popoverPosition?.placement}
         role="dialog"
-        aria-modal="true"
+        aria-modal={!isMobileGuide}
         aria-labelledby="admin-guide-step-title"
         onMouseEnter={() => setIsExploring(false)}
         onMouseLeave={() => setIsExploring(true)}
         onFocusCapture={() => setIsExploring(false)}
-        onKeyDown={trapFocus}
+        onKeyDown={isMobileGuide ? undefined : trapFocus}
       >
+        <div className="admin-guide-mobile-bar">
+          <button type="button" onClick={toggleMobileSheet} onPointerDown={startMobileSheetDrag} onPointerUp={stopMobileSheetDrag} onPointerCancel={() => { mobileSheetDragRef.current = null; }} aria-expanded={mobileSheetExpanded}>
+            <span>
+              <small>{run.index + 1} / {steps.length}{practiceComplete ? " · 실습 완료" : ""}</small>
+              <b>{interactionPrompt ? "화면에서 직접 해보기" : step.title}</b>
+              <strong>{interactionPrompt ?? step.instruction}</strong>
+            </span>
+            <em>{mobileSheetExpanded ? "화면에서 보기" : "설명 보기"}</em>
+          </button>
+          <button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button>
+        </div>
         <header onPointerDown={startPopoverDrag} onPointerMove={movePopover} onPointerUp={stopPopoverDrag} onPointerCancel={stopPopoverDrag} title="드래그해서 안내 박스 옮기기"><span>CHAPTER {run.chapterId.padStart(2, "0")} · {runChapter?.title}<GripHorizontal aria-hidden="true" /></span><button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button></header>
         {visibleRect ? <>
           <div className="admin-guide-step-progress"><i style={{ width: `${((run.index + 1) / steps.length) * 100}%` }} /><span>{run.index + 1} / {steps.length}</span></div>
-          <div className="admin-guide-badges">
+          {!isMobileGuide && <div className="admin-guide-badges">
             <div className="admin-guide-safety">
               <button type="button" className="admin-guide-badge is-safe" aria-describedby="admin-guide-safety-tooltip"><ShieldCheck aria-hidden="true" />안전 모드</button>
               <span id="admin-guide-safety-tooltip" role="tooltip">가이드에서 변경·삭제·업로드해도 운영 DB와 실제 파일에는 반영되지 않습니다.</span>
             </div>
             <span className="admin-guide-badge is-feature">지금 보고 있는 기능 · {step.controlLabel}</span>
-          </div>
+          </div>}
           {interactionPrompt ? <>
             <span className="admin-guide-control-label is-action">먼저 직접 해주세요</span>
             <h2 id="admin-guide-step-title">세부 화면을 열어주세요</h2>
@@ -563,12 +693,19 @@ export default function AdminOnboarding({
             <h2 id="admin-guide-step-title">{step.title}</h2>
             <p className="admin-guide-purpose">{step.purpose}</p>
             {step.actionHint && <div className="admin-guide-action-cue">{step.actionHint}</div>}
-            <span className="admin-guide-explore-hint">카드 밖으로 마우스를 옮기면 화면을 편하게 둘러볼 수 있어요.</span>
+            <div className={`admin-guide-task${practiceComplete ? " is-complete" : ""}`}>
+              <span>{step.practice ? practiceComplete ? "실습 완료" : "지금 해볼 일" : "확인할 위치"}</span>
+              <p>{step.instruction}</p>
+              {step.practice?.example && <code>{step.practice.example}</code>}
+              {isMobileGuide && <button type="button" onClick={() => { updateMobileSheet(false); window.dispatchEvent(new Event("admin-guide-reveal-target")); }}>대상 다시 보기</button>}
+            </div>
+            {!isMobileGuide && <span className="admin-guide-explore-hint">카드 밖으로 마우스를 옮기면 화면을 편하게 둘러볼 수 있어요.</span>}
             <dl><div><dt>사용하면</dt><dd>{step.outcome}</dd></div>{step.caution && <div className="is-caution"><dt>확인하세요</dt><dd>{step.caution}</dd></div>}</dl>
             <footer>
               <button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
+              {step.practice && !practiceComplete && <button type="button" className="admin-guide-practice-skip" onClick={() => void finishOrAdvance()}>실습 건너뛰기</button>}
               <button type="button" disabled={run.index === 0} onClick={() => openStep(run.chapterId, run.index - 1, run.mode)}><ArrowLeft aria-hidden="true" />이전</button>
-              <button type="button" className="is-next" onClick={() => void finishOrAdvance()}>{run.index === steps.length - 1 ? "완료" : "다음 기능"}<ArrowRight aria-hidden="true" /></button>
+              <button type="button" className="is-next" disabled={Boolean(step.practice && !practiceComplete)} onClick={() => void finishOrAdvance()}>{run.index === steps.length - 1 ? "완료" : "다음 기능"}<ArrowRight aria-hidden="true" /></button>
             </footer>
             <button type="button" className="admin-guide-skip" onClick={() => { setPausedRun(run); setRun(null); setRect(null); setPopoverPosition(null); }}>여기서 멈추고 나중에 이어보기</button>
           </>}
@@ -583,10 +720,15 @@ export default function AdminOnboarding({
     <button
       ref={launcherRef}
       type="button"
-      className={`admin-guide-launcher${isCollapsed ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
+      className={`admin-guide-launcher${isCollapsed || launcherCompact ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
       onClick={() => {
+        localStorage.setItem(`admin-guide-seen:${userId}`, "true");
+        setLauncherCompact(true);
         if (pausedRun) {
-          openStep(pausedRun.chapterId, pausedRun.index, pausedRun.mode);
+          setRun(null);
+          setWelcomeOpen(false);
+          setTocOpen(false);
+          setChapterIntro(pausedRun);
           return;
         }
         setRun(null);
@@ -594,7 +736,7 @@ export default function AdminOnboarding({
         else setTocOpen(true);
       }}
       aria-label={pausedRun ? "중단된 관리자 가이드 이어보기" : `관리자 가이드, ${progress}% 확인`}
-      title={isCollapsed ? pausedRun ? "가이드 이어보기" : `관리자 가이드 · ${progress}%` : undefined}
+      title={isCollapsed || launcherCompact ? pausedRun ? "가이드 이어보기" : `관리자 가이드 · ${progress}%` : undefined}
     >
       <span className="admin-guide-launcher-ring" style={{ "--guide-progress": `${progress * 3.6}deg` } as CSSProperties}>{pausedRun ? <Play aria-hidden="true" /> : <BookOpen aria-hidden="true" />}</span>
       {!isCollapsed && <span><b>{pausedRun ? "가이드 이어보기" : "관리자 업무 가이드"}</b><small>{pausedRun ? `연습 모드 · ${GUIDE_CHAPTERS.find((chapter) => chapter.id === pausedRun.chapterId)?.title ?? "이전 단계"}` : `${reachedSteps}/${totalSteps} 스텝 · ${progress}%`}</small><i><em style={{ width: `${progress}%` }} /></i></span>}

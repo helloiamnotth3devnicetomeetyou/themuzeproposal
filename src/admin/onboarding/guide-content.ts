@@ -1,5 +1,12 @@
 export type GuideRole = "super_admin" | "editor";
 export type GuideRequirement = "artist" | "artist_scenes" | "artist_gallery";
+export type GuidePracticeEvent = "click" | "input" | "change" | "pointerup";
+export type GuidePractice = {
+  instruction: string;
+  event: GuidePracticeEvent;
+  target?: string;
+  example?: string;
+};
 
 export type GuideStep = {
   id: string;
@@ -18,7 +25,11 @@ export type GuideStep = {
   tabEvent?: { name: "admin-profile-tab-change" | "admin-settings-tab-change"; detail: string };
   requires?: GuideRequirement;
   role?: GuideRole;
+  instruction: string;
+  practice?: GuidePractice;
 };
+
+type GuideStepInput = Omit<GuideStep, "instruction" | "practice">;
 
 export type GuideChapter = { id: string; title: string; eyebrow: string; description: string };
 export type GuideProgressRow = {
@@ -61,7 +72,7 @@ export const GUIDE_CHAPTERS: GuideChapter[] = [
 const page = "admin-page";
 const fallback = { fallbackTarget: page };
 
-export const GUIDE_STEPS: GuideStep[] = [
+const GUIDE_STEP_INPUTS: GuideStepInput[] = [
   { id: "1-refresh", chapterId: "1", title: "목록 새로고침", controlLabel: "새로고침", purpose: "서버의 최신 메인 노출 목록을 다시 불러옵니다.", outcome: "저장된 노출 목록과 앨범 상태가 화면에 다시 표시됩니다.", caution: "저장하지 않은 임시 순서는 유지되지 않을 수 있으므로 먼저 저장하세요.", href: "/admin/hero", target: "hero-refresh", ...fallback },
   { id: "1-add", chapterId: "1", title: "메인에 앨범 추가", controlLabel: "메인에 추가", purpose: "앨범 라이브러리의 앨범을 홈 슬라이드 목록에 넣습니다.", outcome: "임시 목록에 추가되며 상단 저장 전까지 공개 사이트에는 반영되지 않습니다.", href: "/admin/hero", target: "hero-add", ...fallback },
   { id: "1-reorder", chapterId: "1", title: "노출 순서 변경", controlLabel: "슬라이드 드래그", purpose: "카드를 끌어 홈 화면의 앨범 노출 순서를 정합니다.", outcome: "변경된 순서가 임시 작업으로 표시됩니다.", href: "/admin/hero", target: "hero-reorder", ...fallback },
@@ -179,6 +190,44 @@ export const GUIDE_STEPS: GuideStep[] = [
   { id: "9-search", chapterId: "9", title: "빠른 검색 열기", controlLabel: "검색창 · Ctrl/⌘ + K", purpose: "화면명이나 아티스트명을 입력해 관리자 기능을 빠르게 찾습니다.", outcome: "검색어와 일치하는 화면·아티스트·세부 탭이 분류되어 표시됩니다.", href: "/admin", target: "admin-search", fallbackTarget: "admin-navigation" },
   { id: "9-result", chapterId: "9", title: "검색 결과로 이동", controlLabel: "검색 결과", purpose: "원하는 결과를 선택해 해당 화면이나 세부 탭으로 바로 이동합니다.", outcome: "미저장 변경 확인 후 선택한 관리자 화면이 열립니다.", href: "/admin", target: "admin-search-result", interaction: { target: "admin-search", instruction: "검색창에 화면명이나 아티스트명을 입력해 주세요." }, fallbackTarget: "admin-navigation" },
 ];
+
+const GUIDE_PRACTICES: Partial<Record<string, GuidePractice>> = {
+  "1-add": { instruction: "앨범 라이브러리에서 ‘메인에 추가’를 한 번 눌러 보세요.", event: "click" },
+  "1-reorder": { instruction: "슬라이드 카드 한 장을 길게 누른 뒤 한 칸 옮겨 보세요.", event: "pointerup" },
+  "1-save": { instruction: "변경 내역을 확인하려면 ‘변경사항 저장’을 눌러 보세요.", event: "click" },
+  "2-profile-basic": { instruction: "‘기본 정보’ 탭을 열어 아티스트명 입력 위치를 확인해 보세요.", event: "click" },
+  "2-profile-visual": { instruction: "‘비주얼’ 탭을 열어 대표 이미지와 브랜드 색상 위치를 확인해 보세요.", event: "click" },
+  "2-member-create": { instruction: "‘첫 멤버 추가’ 또는 새 멤버 버튼을 눌러 빈 초안을 열어 보세요.", event: "click" },
+  "2-album-create": { instruction: "새 앨범 버튼을 눌러 앨범 기본 정보 초안을 열어 보세요.", event: "click" },
+  "2-track-bulk": { instruction: "‘여러 곡 붙여넣기’를 눌러 일괄 입력 창을 열어 보세요.", event: "click", example: "예: 첫사랑\n밤공기\n다시, 우리" },
+  "2-schedule-create": { instruction: "‘일정 추가’를 눌러 날짜와 제목을 입력할 초안을 열어 보세요.", event: "click" },
+  "2-notice-create": { instruction: "‘공지 작성’을 눌러 아티스트 전용 공지 초안을 열어 보세요.", event: "click" },
+  "3-create": { instruction: "‘공지 작성’을 눌러 사이트 전체 공지 초안을 열어 보세요.", event: "click" },
+  "3-search": { instruction: "공지 검색창에 아래 예시 검색어를 입력해 보세요.", event: "input", example: "공지" },
+  "3-filter": { instruction: "‘공개’ 또는 ‘비공개’ 필터를 눌러 목록 변화를 확인해 보세요.", event: "click" },
+  "4-question-add": { instruction: "‘질문 추가’를 눌러 빈 질문 한 개를 만들어 보세요.", event: "click" },
+  "4-question-type": { instruction: "새 질문에 맞는 답변 유형을 하나 선택해 보세요.", event: "click", example: "자기소개처럼 긴 답변은 ‘장문’을 선택하세요." },
+  "4-save": { instruction: "질문 구성을 확인한 뒤 ‘저장’을 눌러 연습 저장을 완료해 보세요.", event: "click" },
+  "4-status": { instruction: "지원서의 현재 심사 단계와 다른 상태 버튼을 하나 눌러 보세요.", event: "click" },
+  "5-general": { instruction: "‘일반 문의’를 눌러 일반 문의함으로 전환해 보세요.", event: "click" },
+  "5-search": { instruction: "문의 검색창에 아래 예시 검색어를 입력해 보세요.", event: "input", example: "접수" },
+  "5-open": { instruction: "목록의 첫 번째 ‘열기’를 눌러 문의 상세를 확인해 보세요.", event: "click" },
+  "5-status": { instruction: "상세 화면에서 현재 처리 단계와 다른 상태를 하나 선택해 보세요.", event: "click" },
+  "6-search": { instruction: "신고 검색창에 기억나는 제목이나 아티스트명을 입력해 보세요.", event: "input", example: "아티스트명" },
+  "6-open": { instruction: "목록의 첫 번째 ‘열기’를 눌러 신고 상세를 확인해 보세요.", event: "click" },
+  "6-status": { instruction: "상세 화면에서 현재 처리 단계와 다른 상태를 하나 선택해 보세요.", event: "click" },
+  "7-search": { instruction: "필요한 조회 조건을 고른 뒤 ‘이력 조회’를 눌러 보세요.", event: "click" },
+  "8-history-tab": { instruction: "‘연혁’ 탭을 열어 공개 연혁 목록을 확인해 보세요.", event: "click" },
+  "8-history-add": { instruction: "‘연혁 추가’를 눌러 날짜와 내용을 입력할 새 행을 만들어 보세요.", event: "click" },
+  "8-save": { instruction: "설정 변경 내역을 확인하려면 ‘변경사항 저장’을 눌러 보세요.", event: "click" },
+  "9-search": { instruction: "검색창에 아래 예시 화면명을 입력해 보세요.", event: "input", example: "공지" },
+};
+
+export const GUIDE_STEPS: GuideStep[] = GUIDE_STEP_INPUTS.map((step) => ({
+  ...step,
+  instruction: GUIDE_PRACTICES[step.id]?.instruction ?? `강조된 ‘${step.controlLabel}’ 위치를 확인하세요.`,
+  practice: GUIDE_PRACTICES[step.id],
+}));
 
 export function availableGuideSteps(
   chapterId: string,

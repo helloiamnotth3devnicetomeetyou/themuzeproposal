@@ -11,8 +11,18 @@ describe("admin guide content", () => {
       expect(step.controlLabel.trim()).not.toBe("");
       expect(step.purpose.trim()).not.toBe("");
       expect(step.outcome.trim()).not.toBe("");
+      expect(step.instruction.trim()).not.toBe("");
       expect(step.fallbackTarget).toBeTruthy();
     }
+  });
+
+  it("defines concrete, optional practice tasks for the core mobile flows", () => {
+    const practices = new Map(GUIDE_STEPS.filter((step) => step.practice).map((step) => [step.id, step.practice]));
+    expect(practices.get("1-add")).toMatchObject({ event: "click" });
+    expect(practices.get("1-reorder")).toMatchObject({ event: "pointerup" });
+    expect(practices.get("3-search")).toMatchObject({ event: "input", example: "공지" });
+    expect(practices.get("4-question-add")?.instruction).toContain("질문 추가");
+    expect(practices.get("9-search")?.example).toBe("공지");
   });
 
   it("skips unavailable migrations and super-admin-only controls", () => {
