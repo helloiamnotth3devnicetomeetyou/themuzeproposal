@@ -7,6 +7,6 @@ export function AdminAlert({ message, onDismiss, className = "" }: AlertProps) {
   return <div className={`admin-feedback-alert ${className}`.trim()} role="alert"><b>!</b><span>{message}</span>{onDismiss && <button type="button" onClick={onDismiss}>닫기</button>}</div>;
 }
 
-export function AdminToast({ message }: Pick<AlertProps, "message">) {
-  return message ? <div className="admin-feedback-toast" role="status">{message}</div> : null;
+export function AdminToast({ message, actionLabel, onAction }: Pick<AlertProps, "message"> & { actionLabel?: string; onAction?: () => void }) {
+  return message ? <div className="admin-feedback-toast" role="status"><span>{message}</span>{actionLabel && onAction && <button type="button" onClick={onAction}>{actionLabel}</button>}</div> : null;
 }

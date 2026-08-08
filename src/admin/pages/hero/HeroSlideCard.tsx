@@ -3,7 +3,7 @@
 import { type CSSProperties } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 
 export type HeroArtist = {
@@ -42,6 +42,10 @@ type SlideCardProps = {
   accent: string;
   disabled: boolean;
   onRemove: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 };
 
 export function SortableSlideCard({
@@ -53,6 +57,10 @@ export function SortableSlideCard({
   accent,
   disabled,
   onRemove,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
 }: SlideCardProps) {
   const {
     attributes,
@@ -87,6 +95,8 @@ export function SortableSlideCard({
       <footer className="hero-slide-footer">
         <span>드래그해 노출 순서 변경</span>
         <div>
+          <button type="button" aria-label="위로 이동" disabled={disabled || !canMoveUp} onClick={onMoveUp}><ChevronUp aria-hidden="true" /></button>
+          <button type="button" aria-label="아래로 이동" disabled={disabled || !canMoveDown} onClick={onMoveDown}><ChevronDown aria-hidden="true" /></button>
           <button type="button" data-tour-id="hero-remove" className="is-danger" aria-label="목록에서 제외" title="목록에서 제외" disabled={disabled} onClick={onRemove}><Trash2 /></button>
         </div>
       </footer>

@@ -72,6 +72,17 @@
     max-height: 136px;
   }
 
+  .music-editor-shell > .content-workbench-rail {
+    height: auto;
+    max-height: none;
+    flex-basis: auto;
+  }
+
+  .music-album-list {
+    min-height: 220px;
+    max-height: min(42dvh, 360px);
+  }
+
   .content-workbench-stage,
   .music-workbench {
     width: 100%;

@@ -155,7 +155,7 @@ begin
 
     if v_mode = 'sensitive' then
       v_safe_fields := case tg_table_name
-        when 'contact_inquiries' then array['status', 'admin_note']
+        when 'contact_inquiries' then array['status', 'admin_note', 'answered_at', 'answered_by']
         when 'protect_reports' then array['status', 'admin_note']
         when 'audition_submissions' then array['status', 'notes']
         else array[]::text[]
@@ -183,7 +183,7 @@ begin
   else
     if v_mode = 'sensitive' then
       v_safe_fields := case tg_table_name
-        when 'contact_inquiries' then array['id', 'category', 'inquiry_type', 'status', 'admin_note']
+        when 'contact_inquiries' then array['id', 'category', 'inquiry_type', 'status', 'admin_note', 'answered_at', 'answered_by']
         when 'protect_reports' then array['id', 'report_type', 'status', 'admin_note']
         when 'audition_submissions' then array['id', 'category', 'status', 'notes']
         else array['id']

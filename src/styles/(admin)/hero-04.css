@@ -7,3 +7,21 @@
     transition: none !important;
   }
 }
+.hero-slide-strip {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: 1fr;
+  overflow-x: hidden;
+  overflow-y: visible;
+  scroll-snap-type: none;
+}
+.hero-slide-card,
+.hero-slide-card.is-overlay {
+  width: 100%;
+  min-width: 0;
+}
+.hero-slide-frame { aspect-ratio: 4 / 1; }
+.hero-slide-footer > div { display: flex; gap: 6px; }
+.hero-slide-footer button { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--border-default); border-radius: 6px; background: transparent; color: var(--text-secondary); }
+.hero-slide-footer button:disabled { opacity: .35; }
+.hero-slide-footer button svg { width: 14px; height: 14px; }

@@ -26,6 +26,19 @@ export type AuditLogFilters = {
   recordId: string;
 };
 
+export type AuditLogGroup = { transactionId: AuditLogRow["transaction_id"]; primary: AuditLogRow; entries: AuditLogRow[] };
+
+export function groupAuditLogs(rows: AuditLogRow[]): AuditLogGroup[] {
+  const groups = new Map<string, AuditLogGroup>();
+  for (const row of rows) {
+    const key = String(row.transaction_id);
+    const group = groups.get(key);
+    if (group) group.entries.push(row);
+    else groups.set(key, { transactionId: row.transaction_id, primary: row, entries: [row] });
+  }
+  return [...groups.values()];
+}
+
 export const EMPTY_AUDIT_FILTERS: AuditLogFilters = {
   fromDate: "",
   toDate: "",
@@ -92,6 +105,8 @@ const FIELD_LABELS: Record<string, string> = {
   title_ja: "일문 제목",
   status: "상태",
   admin_note: "관리자 메모",
+  answered_at: "답변 기록 시각",
+  answered_by: "답변 기록 담당자",
   notes: "관리자 메모",
   reviewer_notes: "심사 메모",
   field_key: "필드 키",

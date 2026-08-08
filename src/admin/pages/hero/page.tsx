@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
-  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
@@ -163,6 +163,11 @@ export default function HeroAdminPage() {
     setNotice("임시 목록에서 제외했습니다. 상단 저장 시 반영됩니다.");
     setDeleteSlideItem(null);
   };
+  const moveSlide = (index: number, offset: number) => {
+    const target = index + offset;
+    if (target < 0 || target >= slides.length) return;
+    setSlides(arrayMove(slides, index, target).map((slide, position) => ({ ...slide, sort_order: position + 1 })));
+  };
 
   if (loading) return <AdminSkeleton variant="cards" className="min-h-[420px]" rows={4} />;
 
@@ -195,12 +200,12 @@ export default function HeroAdminPage() {
           <em>총 {slides.length}개</em>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragEnd={(event) => void handleDragEnd(event)}>
-          <SortableContext items={slides.map((slide) => slide.id)} strategy={horizontalListSortingStrategy}>
+          <SortableContext items={slides.map((slide) => slide.id)} strategy={verticalListSortingStrategy}>
             <div className={`hero-slide-strip ${draggingId ? "is-sorting" : ""}`}>
               {slides.map((slide, index) => {
                 const album = albumById.get(slide.album_id);
                 const artist = album ? artistById.get(album.artist_id) : undefined;
-                 return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onRemove={() => setDeleteSlideItem(slide)} />;
+                 return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onMoveUp={() => moveSlide(index, -1)} onMoveDown={() => moveSlide(index, 1)} canMoveUp={index > 0} canMoveDown={index < slides.length - 1} onRemove={() => setDeleteSlideItem(slide)} />;
               })}
               {!slides.length && <div className="hero-admin-empty"><ImageIcon aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>

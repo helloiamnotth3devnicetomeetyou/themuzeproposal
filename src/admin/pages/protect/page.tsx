@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ExternalLink, FileImage, Inbox, Link, Paperclip, Search, ShieldCheck } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
+import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
@@ -56,6 +58,7 @@ const PAGE_SIZE = 20;
 const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ProtectAdminPage() {
+  const confirm = useAdminConfirm();
   const [reports, setReports] = useState<ProtectReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<ProtectReport | null>(null);
@@ -70,6 +73,14 @@ export default function ProtectAdminPage() {
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const [undoStatus, setUndoStatus] = useState<ReportStatus | null>(null);
+  const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    if (!undoStatus) return;
+    const timer = window.setTimeout(() => { setUndoStatus(null); setToast(""); }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [undoStatus]);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -142,11 +153,27 @@ export default function ProtectAdminPage() {
     setSaving(false);
   };
 
+  const changeStatus = async (status: ReportStatus) => {
+    if (!viewing || status === viewing.status) return;
+    if (["resolved", "rejected"].includes(status) && !await confirm({ title: status === "resolved" ? "처리 완료로 변경할까요?" : "신고를 종결할까요?", description: "처리 상태가 즉시 반영됩니다.", confirmLabel: "상태 변경" })) return;
+    setUndoStatus(viewing.status as ReportStatus);
+    await updateReport({ status });
+    setToast("처리 상태를 변경했습니다.");
+  };
+
+  const undoLastStatus = async () => {
+    if (!undoStatus) return;
+    await updateReport({ status: undoStatus });
+    setUndoStatus(null);
+    setToast("이전 처리 상태로 되돌렸습니다.");
+  };
+
   if (loading) return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
 
   if (viewing) {
     return (
       <div className={`${styles.page} ${styles.detailPage}`}>
+        <AdminToast message={toast} actionLabel={undoStatus ? "되돌리기" : undefined} onAction={undoStatus ? () => void undoLastStatus() : undefined} />
         <button type="button" className={styles.back} onClick={() => setViewing(null)}><ArrowLeft aria-hidden="true" /> 접수 목록</button>
         {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
 
@@ -203,7 +230,7 @@ export default function ProtectAdminPage() {
 
           <footer className={styles.statusBar} data-tour-id="protect-status">
             <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
-            <div>{statuses.map((status) => <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? styles.active : ""} onClick={() => void updateReport({ status: status.value })}>{status.label}</button>)}</div>
+            <div>{statuses.map((status) => <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? styles.active : ""} onClick={() => void changeStatus(status.value)}>{status.label}</button>)}</div>
           </footer>
         </article>
       </div>

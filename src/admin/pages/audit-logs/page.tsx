@@ -11,6 +11,7 @@ import {
   auditFields,
   fieldLabel,
   formatAuditValue,
+  groupAuditLogs,
   operationLabel,
   tableLabel,
   type AuditLogFilters,
@@ -67,6 +68,8 @@ export default function AuditLogsAdminPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const groupedLogs = useMemo(() => groupAuditLogs(logs), [logs]);
+  const selectedGroup = useMemo(() => selected ? groupedLogs.find((group) => group.entries.some((entry) => entry.id === selected.id)) : null, [groupedLogs, selected]);
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -216,7 +219,7 @@ export default function AuditLogsAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log) => (
+                  {groupedLogs.map(({ primary: log, entries }) => (
                     <tr key={log.id} className={selected?.id === log.id ? styles.selectedRow : undefined}>
                       <td>
                         <span className={styles.time}><Clock3 aria-hidden="true" />{dateTimeFormatter.format(new Date(log.occurred_at))}</span>
@@ -224,7 +227,7 @@ export default function AuditLogsAdminPage() {
                       </td>
                       <td><b>{log.actor_email || "시스템 작업"}</b><small>{log.actor_id ? log.actor_id.slice(0, 8).toUpperCase() : "SERVICE"}</small></td>
                       <td><span className={`${styles.operation} ${operationClass(log.operation)}`}>{operationLabel(log.operation)}</span></td>
-                      <td><b>{log.record_label}</b><small>{tableLabel(log.table_name)} · {log.record_id}</small></td>
+                      <td><b>{log.record_label}{entries.length > 1 ? ` 외 ${entries.length - 1}건` : ""}</b><small>{tableLabel(log.table_name)} · {log.record_id.slice(0, 8)} <button type="button" className={styles.copyId} onClick={() => void navigator.clipboard.writeText(log.record_id)}>ID 복사</button></small></td>
                       <td><button type="button" data-tour-id="audit-open" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><ChevronRight aria-hidden="true" /></button></td>
                     </tr>
                   ))}
@@ -265,6 +268,7 @@ export default function AuditLogsAdminPage() {
                 <div><dt>관리자</dt><dd>{selected.actor_email || "시스템 작업"}</dd></div>
                 <div><dt>트랜잭션</dt><dd>{selected.transaction_id}</dd></div>
               </dl>
+              {selectedGroup && selectedGroup.entries.length > 1 && <section className={styles.transactionRecords}><h3>같은 작업의 변경 {selectedGroup.entries.length}건</h3>{selectedGroup.entries.map((entry) => <button type="button" key={entry.id} onClick={() => setSelected(entry)} className={entry.id === selected.id ? styles.activeTransactionRecord : undefined}><span>{tableLabel(entry.table_name)}</span><b>{entry.record_label}</b><small>{operationLabel(entry.operation)}</small></button>)}</section>}
 
               <section className={styles.changes}>
                 <div className={styles.changeColumns} aria-hidden="true"><span>필드</span><span>이전</span><span>이후</span></div>

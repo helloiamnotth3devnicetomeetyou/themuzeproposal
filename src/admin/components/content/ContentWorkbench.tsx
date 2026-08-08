@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
-import { Check } from "lucide-react";
+import { useState, type ReactNode, type Ref } from "react";
+import { Check, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 
 export type WorkbenchTab<T extends string = string> = {
@@ -41,10 +41,20 @@ export default function ContentWorkbench<T extends string>({
   bodyRef,
   recovery,
 }: ContentWorkbenchProps<T>) {
+  const [railCollapsed, setRailCollapsed] = useState(() =>
+    typeof window !== "undefined" && window.localStorage.getItem("admin-workbench-rail-collapsed") === "true",
+  );
+  const toggleRail = () => setRailCollapsed((current) => {
+    window.localStorage.setItem("admin-workbench-rail-collapsed", String(!current));
+    return !current;
+  });
   return (
-    <div className={`content-workbench ${className}`.trim()}>
+    <div className={`content-workbench ${railCollapsed ? "is-rail-collapsed" : ""} ${className}`.trim()}>
       <AdminToast message={toast} />
       <aside className="content-workbench-rail">{rail}</aside>
+      <button type="button" className="content-workbench-rail-toggle" onClick={toggleRail} aria-label={railCollapsed ? "목록 패널 펼치기" : "목록 패널 접기"} aria-expanded={!railCollapsed}>
+        {railCollapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+      </button>
       <section className="content-workbench-stage">
         {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={recovery.onDiscard}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={recovery.onRestore}>복구</button></div>}
         {error && (

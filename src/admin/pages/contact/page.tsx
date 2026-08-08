@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, ExternalLink, Inbox, Mail, MessageSquareText, Paperclip, Search } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
+import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
@@ -27,6 +29,8 @@ type ContactInquiry = {
   admin_note: string | null;
   created_at: string;
   updated_at: string;
+  answered_at: string | null;
+  answered_by: string | null;
 };
 
 const statuses: Array<{ value: ContactStatus; label: string }> = [
@@ -68,6 +72,7 @@ const PAGE_SIZE = 20;
 const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ContactAdminPage() {
+  const confirm = useAdminConfirm();
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<ContactCategory>("general");
@@ -82,6 +87,14 @@ export default function ContactAdminPage() {
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [undo, setUndo] = useState<{ id: string; previous: Pick<ContactInquiry, "status" | "answered_at" | "answered_by"> } | null>(null);
+  const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    if (!undo) return;
+    const timer = window.setTimeout(() => { setUndo(null); setToast(""); }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [undo]);
 
   const fetchInquiries = useCallback(async () => {
     setLoading(true);
@@ -137,7 +150,7 @@ export default function ContactAdminPage() {
   }, [viewing]);
 
   const updateInquiry = async (
-    changes: Partial<Pick<ContactInquiry, "status" | "admin_note">>,
+    changes: Partial<Pick<ContactInquiry, "status" | "admin_note" | "answered_at" | "answered_by">>,
   ) => {
     if (!viewing) return;
     setSaving(true);
@@ -157,6 +170,23 @@ export default function ContactAdminPage() {
     setSaving(false);
   };
 
+  const changeStatus = async (status: ContactStatus) => {
+    if (!viewing || status === viewing.status) return;
+    if (["answered", "closed"].includes(status) && !await confirm({ title: status === "answered" ? "답변 완료로 기록할까요?" : "문의를 종결할까요?", description: "처리 상태와 담당자 기록이 즉시 반영됩니다.", confirmLabel: "상태 변경" })) return;
+    const previous = { status: viewing.status, answered_at: viewing.answered_at, answered_by: viewing.answered_by };
+    const userId = status === "answered" ? (await supabase.auth.getUser()).data.user?.id ?? null : viewing.answered_by;
+    await updateInquiry({ status, answered_at: status === "answered" ? new Date().toISOString() : viewing.answered_at, answered_by: userId });
+    setUndo({ id: viewing.id, previous });
+    setToast("처리 상태를 변경했습니다.");
+  };
+
+  const undoStatus = async () => {
+    if (!undo || !viewing || viewing.id !== undo.id) return;
+    await updateInquiry(undo.previous);
+    setUndo(null);
+    setToast("이전 처리 상태로 되돌렸습니다.");
+  };
+
   if (loading) {
     return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
   }
@@ -165,6 +195,7 @@ export default function ContactAdminPage() {
     const isBusiness = viewing.category === "business";
     return (
       <div className={`${base.page} ${base.detailPage} ${styles.fullPage}`}>
+        <AdminToast message={toast} actionLabel={undo ? "되돌리기" : undefined} onAction={undo ? () => void undoStatus() : undefined} />
         <button type="button" className={`${base.back} ${styles.fullWidth}`} onClick={() => setViewing(null)}>
           <ArrowLeft aria-hidden="true" /> 문의 목록
         </button>
@@ -208,6 +239,10 @@ export default function ContactAdminPage() {
                 <span><b>이메일로 답변하기</b><small>{viewing.email}</small></span>
                 <ExternalLink aria-hidden="true" />
               </a>
+              <div className={styles.answerRecord}>
+                <span>{viewing.answered_at ? `${formatDate(viewing.answered_at, true)} 답변 완료 기록` : "메일 발송 후 답변 완료를 별도로 기록하세요."}</span>
+                <button type="button" disabled={saving || viewing.status === "answered"} onClick={() => void changeStatus("answered")}>답변 완료로 기록</button>
+              </div>
             </section>
 
             {isBusiness && (
@@ -250,7 +285,7 @@ export default function ContactAdminPage() {
           <footer className={base.statusBar} data-tour-id="contact-status">
             <div><span>STATUS</span><b>처리 상태 변경</b><small>상태와 관리자 메모는 즉시 반영됩니다.</small></div>
             <div>{statuses.map((status) => (
-              <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? base.active : ""} onClick={() => void updateInquiry({ status: status.value })}>{status.label}</button>
+              <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? base.active : ""} onClick={() => void changeStatus(status.value)}>{status.label}</button>
             ))}</div>
           </footer>
         </article>

@@ -146,3 +146,5 @@
 .desk-lang-tabs button.is-active::after { content:""; position:absolute; right:0; bottom:0; left:0; height:2px; background:var(--color-brand-pink); }
 .desk-translatable-control { position:relative; }
 .desk-translatable-control .hidden { display:none; }
+.desk-today-title { margin: 0 0 2px; color: var(--text-primary); font-size: 14px; }
+.desk-inbox-stack { align-content: start; }

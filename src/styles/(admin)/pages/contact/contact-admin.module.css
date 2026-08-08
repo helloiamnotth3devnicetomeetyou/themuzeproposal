@@ -69,6 +69,10 @@
   font-size: 9px;
   text-align: center;
 }
+.fullPage article > footer { position: sticky; z-index: 3; bottom: 0; border-top: 1px solid var(--border-default); }
+.answerRecord { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--text-muted); font-size: 12px; }
+.answerRecord button { min-height: 34px; padding: 0 12px; border: 1px solid var(--color-brand-pink); border-radius: 6px; background: transparent; color: var(--color-brand-pink); font-size: 12px; font-weight: 700; cursor: pointer; }
+.answerRecord button:disabled { opacity: .45; cursor: default; }
 
 @media (max-width: 600px) {
   .summaryTabs { min-height: 76px; border-top: 1px solid var(--border-default); border-inline: 0; }

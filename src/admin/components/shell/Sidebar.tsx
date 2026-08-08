@@ -59,6 +59,8 @@ export default function Sidebar({
   const [profile, setProfile] = useState<{ id?: string; email?: string; avatar_asset_id?: string | null; role?: "super_admin" | "editor" | null } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [artistsLoading, setArtistsLoading] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState({ auditions: 0, contacts: 0, reports: 0 });
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
@@ -87,6 +89,7 @@ export default function Sidebar({
       const nextProfile = await getUserProfile();
       if (!active) return;
       setProfile(nextProfile);
+      setProfileLoading(false);
       setAvatarUrl(null);
       if (!nextProfile?.avatar_asset_id) return;
 
@@ -103,7 +106,7 @@ export default function Sidebar({
     void loadProfile();
     const loadArtists = async () => {
       const { data } = await supabase.from("artists").select("id,name,logo_url").order("name");
-      if (active) setArtists((data ?? []) as Artist[]);
+      if (active) { setArtists((data ?? []) as Artist[]); setArtistsLoading(false); }
     };
     void loadArtists();
     const refreshArtists = () => void loadArtists();
@@ -320,7 +323,7 @@ export default function Sidebar({
                 />
               );
             })}
-            {!artists.length && (
+            {!artistsLoading && !artists.length && (
               <Link href="/admin/artists/new/profile" className="cms-empty-artist">
                 첫 아티스트 추가하기
               </Link>
@@ -337,14 +340,14 @@ export default function Sidebar({
       />
       <div className="cms-sidebar-footer">
         <div className="cms-account">
-          <span className="cms-avatar">
+          <span className={`cms-avatar ${profileLoading ? "is-loading" : ""}`}>
             {avatarUrl ? (
               <NextImage src={avatarUrl} alt="" width={30} height={30} sizes="30px" />
             ) : (
               (profile?.email?.[0] || "A").toUpperCase()
             )}
           </span>
-          <span className="cms-account-copy">
+          <span className={`cms-account-copy ${profileLoading ? "is-loading" : ""}`}>
             <b>{profile?.email?.split("@")[0] || "관리자"}</b>
             <small>관리자 계정</small>
           </span>

@@ -35,5 +35,5 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
     await onSave();
   };
 
-  return <button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{saving ? "저장 중…" : label}</button>;
+  return <button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{saving ? "저장 중…" : `${label}${diff.length ? ` (${diff.length})` : ""}`}</button>;
 }
