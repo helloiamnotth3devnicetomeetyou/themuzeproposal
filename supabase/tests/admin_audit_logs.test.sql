@@ -184,9 +184,7 @@ begin
 end;
 $$;
 
-update public.profiles
-set role = 'editor'
-where id = '00000000-0000-0000-0000-000000000102';
+select public.set_admin_role('00000000-0000-0000-0000-000000000102', 'editor');
 
 do $$
 begin
