@@ -61,10 +61,10 @@ describe("submission rate limit", () => {
 
   it("fails closed in production without a trusted client IP", async () => {
     delete process.env.VERCEL;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     await expect(consumeSubmissionRateLimit(new NextRequest("https://themuze.kr"), "protect_report", "user-42"))
       .resolves.toEqual({ error: true });
-    process.env.NODE_ENV = "test";
+    vi.unstubAllEnvs();
   });
 
   it("fails closed when configuration or the RPC fails", async () => {

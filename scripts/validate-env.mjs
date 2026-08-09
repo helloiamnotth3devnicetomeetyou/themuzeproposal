@@ -19,6 +19,17 @@ const strict = process.env.VERCEL_ENV === "production"
   || (process.env.CI === "true" && process.env.NODE_ENV === "production");
 const missing = required.filter((name) => !process.env[name]?.trim());
 const problems = [];
+const trustedClientIpHeader = process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase();
+
+if (trustedClientIpHeader && !/^[a-z0-9-]+$/.test(trustedClientIpHeader)) {
+  problems.push("TRUSTED_CLIENT_IP_HEADER must be a valid HTTP header name.");
+}
+if (strict && process.env.VERCEL === "1" && trustedClientIpHeader) {
+  problems.push("Do not configure TRUSTED_CLIENT_IP_HEADER on Vercel.");
+}
+if (strict && process.env.VERCEL !== "1" && !trustedClientIpHeader) {
+  problems.push("Non-Vercel production requires TRUSTED_CLIENT_IP_HEADER from a trusted reverse proxy.");
+}
 
 if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
   try {

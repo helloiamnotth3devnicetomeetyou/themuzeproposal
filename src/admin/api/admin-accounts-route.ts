@@ -31,31 +31,15 @@ async function requireSuperAdmin() {
   return { user, supabase };
 }
 
-async function preventUnsafeRoleChange(
-  adminClient: NonNullable<ReturnType<typeof createServiceRoleClient>>,
-  actorId: string,
+async function changeAdminRole(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   targetId: string,
-  nextRole: AdminRole | null,
+  role: AdminRole | null,
 ) {
-  if (actorId === targetId) return "CANNOT_CHANGE_OWN_ROLE";
-
-  const { data: target, error: targetError } = await adminClient
-    .from("profiles")
-    .select("role")
-    .eq("id", targetId)
-    .maybeSingle();
-  if (targetError || !target) return "NOT_FOUND";
-
-  if (target.role === "super_admin" && nextRole !== "super_admin") {
-    const { count, error: countError } = await adminClient
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "super_admin");
-    if (countError) return "SERVICE_UNAVAILABLE";
-    if ((count ?? 0) <= 1) return "LAST_SUPER_ADMIN";
-  }
-
-  return null;
+  const { error } = await supabase.rpc("set_admin_role", { p_target_id: targetId, p_role: role });
+  if (!error) return null;
+  return ["CANNOT_CHANGE_OWN_ROLE", "NOT_FOUND", "LAST_SUPER_ADMIN"]
+    .find((code) => error.message.includes(code)) ?? "SERVICE_UNAVAILABLE";
 }
 
 export async function GET() {
@@ -96,20 +80,16 @@ export async function POST(request: NextRequest) {
   if (lookupError) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
 
   if (existing) {
-    const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, existing.id, role);
-    if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
-    const { error } = await auth.supabase.from("profiles").update({ role }).eq("id", existing.id);
-    if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
+    const changeError = await changeAdminRole(auth.supabase, existing.id, role);
+    if (changeError) return response({ code: changeError }, changeError === "NOT_FOUND" ? 404 : changeError === "SERVICE_UNAVAILABLE" ? 503 : 409);
     return response({ invited: false });
   }
 
   const { data: invitation, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email);
   if (inviteError || !invitation.user) return response({ code: "INVITATION_FAILED" }, 422);
 
-  const { error: roleError } = await auth.supabase
-    .from("profiles")
-    .upsert({ id: invitation.user.id, email, role }, { onConflict: "id" });
-  if (roleError) return response({ code: "INVITATION_FAILED" }, 422);
+  const changeError = await changeAdminRole(auth.supabase, invitation.user.id, role);
+  if (changeError) return response({ code: "INVITATION_FAILED" }, 422);
 
   return response({ invited: true }, 201);
 }
@@ -123,13 +103,8 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
   const { id, role } = parsed.data;
 
-  const adminClient = createServiceRoleClient();
-  if (!adminClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
-  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, id, role);
-  if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
-
-  const { error } = await auth.supabase.from("profiles").update({ role }).eq("id", id);
-  if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
+  const changeError = await changeAdminRole(auth.supabase, id, role);
+  if (changeError) return response({ code: changeError }, changeError === "NOT_FOUND" ? 404 : changeError === "SERVICE_UNAVAILABLE" ? 503 : 409);
   return response({ ok: true });
 }
 
@@ -142,12 +117,7 @@ export async function DELETE(request: NextRequest) {
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
   const { id } = parsed.data;
 
-  const adminClient = createServiceRoleClient();
-  if (!adminClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
-  const unsafeChange = await preventUnsafeRoleChange(adminClient, auth.user.id, id, null);
-  if (unsafeChange) return response({ code: unsafeChange }, unsafeChange === "NOT_FOUND" ? 404 : 409);
-
-  const { error } = await auth.supabase.from("profiles").update({ role: null }).eq("id", id);
-  if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
+  const changeError = await changeAdminRole(auth.supabase, id, null);
+  if (changeError) return response({ code: changeError }, changeError === "NOT_FOUND" ? 404 : changeError === "SERVICE_UNAVAILABLE" ? 503 : 409);
   return response({ ok: true });
 }

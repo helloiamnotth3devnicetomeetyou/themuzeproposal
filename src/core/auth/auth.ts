@@ -94,15 +94,8 @@ export async function updateUserName(name: string) {
 
   const { error: profileError } = await supabase
     .from('profiles')
-    .upsert(
-      {
-        id: data.user.id,
-        email,
-        name: trimmedName,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' },
-    );
+    .update({ name: trimmedName, updated_at: new Date().toISOString() })
+    .eq('id', data.user.id);
 
   if (profileError) throw new AuthUserError('UPDATE_FAILED');
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('account-profile-changed'));

@@ -73,6 +73,20 @@ describe("POST /api/audition/submit", () => {
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", status: "pending", answers: expect.objectContaining({ part: "댄스" }) }));
   });
 
+  it("removes replacement uploads when an edit loses the version race", async () => {
+    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
+    mocks.update.mockReturnValueOnce(chain({ data: null, error: null }));
+    const original = request();
+    const form = await original.formData();
+    form.set("submissionId", "submission-1");
+    form.set("answers[portfolio]", new File(["%PDF-1.7\ncontent"], "portfolio.pdf", { type: "application/pdf" }));
+
+    const response = await POST(new NextRequest(original.url, { method: "POST", headers: { origin: "http://localhost" }, body: form }));
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ code: "SUBMISSION_CONFLICT" });
+    expect(mocks.remove).toHaveBeenCalledWith([expect.stringMatching(/\.pdf$/)]);
+  });
+
   it("rejects an option not present in the active server definition", async () => {
     const response = await POST(request("연기"));
     expect(response.status).toBe(422);
