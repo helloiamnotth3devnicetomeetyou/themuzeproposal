@@ -293,3 +293,111 @@
   .audition-question-list { max-height:290px; overflow-y:auto; }
   .audition-question-form { padding:20px 16px; }
 }
+
+/* Keep action groups readable before they become a mobile stack. */
+.audition-campaign-heading > nav,
+.audition-campaign-list nav,
+.audition-review-detail footer {
+  flex-wrap: wrap;
+}
+
+.audition-campaign-heading > nav,
+.audition-campaign-list nav {
+  flex-shrink: 0;
+}
+
+.audition-campaign-heading > nav > a,
+.audition-campaign-heading > nav > button,
+.audition-campaign-list nav > a,
+.audition-campaign-list nav > button,
+.audition-review-detail footer button {
+  min-width: 0;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.audition-campaign-list nav > a > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audition-question-item button:first-of-type {
+  min-width: 0;
+}
+
+.audition-question-item button:last-child {
+  flex: 0 0 28px;
+}
+
+.audition-type-picker button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.audition-campaign-delete {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--admin-control-radius);
+  background: transparent;
+  color: var(--text-faint);
+  font: 700 10px/1 var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.audition-campaign-delete:hover {
+  border-color: var(--color-status-danger);
+  color: var(--color-status-danger);
+}
+
+.audition-campaign-delete svg {
+  width: 13px;
+  flex: 0 0 13px;
+}
+
+@media (max-width: 900px) {
+  .audition-campaign-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .audition-campaign-heading > nav {
+    width: 100%;
+  }
+
+  .audition-campaign-heading > nav > a,
+  .audition-campaign-heading > nav > button {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .audition-campaign-page {
+    padding: 20px var(--page-gutter) 48px;
+  }
+
+  .audition-campaign-heading > nav,
+  .audition-campaign-list nav {
+    gap: 6px;
+  }
+
+  .audition-campaign-list nav > a,
+  .audition-campaign-list nav > button {
+    flex: 1 1 0;
+    padding-inline: 10px;
+  }
+
+  .audition-review-detail footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .audition-review-detail footer button {
+    width: 100%;
+  }
+}

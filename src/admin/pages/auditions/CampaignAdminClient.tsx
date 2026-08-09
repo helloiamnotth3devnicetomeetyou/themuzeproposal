@@ -8,6 +8,7 @@ import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
+import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
 import { supabase } from "@/core/supabase/client";
 import { auditionTextareaRows, campaignDescription, fieldLabel, type AuditionCampaign, type AuditionFieldType, type AuditionFormField, type AuditionSubmission, type LocalizedLabel } from "@/core/auditions/types";
@@ -66,6 +67,8 @@ export function CampaignListAdmin() {
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteCampaign, setDeleteCampaign] = useState<AuditionCampaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -103,9 +106,27 @@ export function CampaignListAdmin() {
     const { error: updateError } = await supabase.from("audition_campaigns").update({ is_active: !campaign.is_active }).eq("id", campaign.id);
     if (updateError) setError(updateError.message); else setCampaigns((current) => current.map((item) => item.id === campaign.id ? { ...item, is_active: !item.is_active } : item));
   };
+  const remove = async () => {
+    if (!deleteCampaign) return;
+    const campaign = deleteCampaign;
+    setError("");
+    setDeleting(true);
+    try {
+      const { error: submissionsError } = await supabase.from("audition_submissions").delete().eq("campaign_id", campaign.id);
+      if (submissionsError) { setError(submissionsError.message); return; }
+      const { error: deleteError } = await supabase.from("audition_campaigns").delete().eq("id", campaign.id);
+      if (deleteError) { setError(deleteError.message); return; }
+      setCampaigns((current) => current.filter((item) => item.id !== campaign.id));
+      setSubmissionCounts((current) => { const next = { ...current }; delete next[campaign.id]; return next; });
+      setDeleteCampaign(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
   return <div className="audition-campaign-page"><header className="audition-campaign-heading"><div><h1>캠페인 관리</h1><p>캠페인별 지원서와 질문을 관리합니다.</p></div><button data-tour-id="audition-create" className="admin-btn admin-btn-primary" type="button" onClick={() => void create()}><Plus aria-hidden="true" /> 새 캠페인</button></header>
     {error && <div className="hero-admin-alert is-error" role="alert">{error}</div>}
-    {loading ? <AdminSkeleton variant="cards" className="min-h-[180px]" rows={3} /> : <div className="audition-campaign-list" data-tour-id="audition-campaign-list">{campaigns.map((campaign) => <article key={campaign.id}><div><span className={`audition-session-badge ${campaign.is_active ? "is-open" : "is-closed"}`}>{campaign.is_active ? "공개 중" : "비공개"}</span><h2>{campaign.title}</h2><p>{campaign.description || "소개 없음"}</p><small>{campaignPeriod(campaign)} · 지원 {submissionCounts[campaign.id] ?? 0}건</small></div><nav><button data-tour-id="audition-toggle" type="button" onClick={() => void toggle(campaign)}>{campaign.is_active ? "비활성화" : "활성화"}</button><Link data-tour-id="audition-review" href={`/admin/auditions/campaigns/${campaign.id}/submissions`}><span data-tour-id="audition-status-prerequisite"><Inbox aria-hidden="true" /> 심사</span></Link><Link data-tour-id="audition-builder" href={`/admin/auditions/campaigns/${campaign.id}/builder`}><span data-tour-id="audition-builder-prerequisite">폼 편집</span></Link></nav></article>)}</div>}
+    {loading ? <AdminSkeleton variant="cards" className="min-h-[180px]" rows={3} /> : <div className="audition-campaign-list" data-tour-id="audition-campaign-list">{campaigns.map((campaign) => <article key={campaign.id}><div><span className={`audition-session-badge ${campaign.is_active ? "is-open" : "is-closed"}`}>{campaign.is_active ? "공개 중" : "비공개"}</span><h2>{campaign.title}</h2><p>{campaign.description || "소개 없음"}</p><small>{campaignPeriod(campaign)} · 지원 {submissionCounts[campaign.id] ?? 0}건</small></div><nav><button data-tour-id="audition-toggle" type="button" onClick={() => void toggle(campaign)}>{campaign.is_active ? "비활성화" : "활성화"}</button><Link data-tour-id="audition-review" href={`/admin/auditions/campaigns/${campaign.id}/submissions`}><span data-tour-id="audition-status-prerequisite"><Inbox aria-hidden="true" /> 심사</span></Link><Link data-tour-id="audition-builder" href={`/admin/auditions/campaigns/${campaign.id}/builder`}><span data-tour-id="audition-builder-prerequisite">폼 편집</span></Link><button data-tour-id="audition-delete" className="audition-campaign-delete" type="button" onClick={() => setDeleteCampaign(campaign)}><Trash2 aria-hidden="true" />삭제</button></nav></article>)}</div>}
+    {deleteCampaign && <DeleteConfirmDialog title="오디션을 삭제할까요?" description="질문과 지원서 기록을 모두 삭제합니다. 삭제 후에는 복구할 수 없습니다." confirmValue={deleteCampaign.title} valueLabel="오디션 이름" busy={deleting} onCancel={() => setDeleteCampaign(null)} onConfirm={() => void remove()} />}
   </div>;
 }
 

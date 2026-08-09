@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const HOLD_DURATION_MS = 1500;
 
@@ -69,7 +70,9 @@ export default function DeleteConfirmDialog({
           ? "1.5초 길게 눌러 삭제"
           : "이름을 먼저 입력하세요";
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="delete-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !busy) onCancel(); }}>
       <section className="delete-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title" aria-describedby="delete-confirm-description delete-confirm-hint">
         <div className="delete-confirm-mark">!</div>
@@ -128,6 +131,7 @@ export default function DeleteConfirmDialog({
           </button>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
