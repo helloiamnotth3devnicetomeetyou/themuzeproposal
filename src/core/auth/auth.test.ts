@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
+  signUp: vi.fn(),
   from: vi.fn(),
   update: vi.fn(),
   eq: vi.fn(),
@@ -10,10 +11,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/supabase/client", () => ({
-  supabase: { auth: { getUser: mocks.getUser }, from: mocks.from },
+  supabase: { auth: { getUser: mocks.getUser, signUp: mocks.signUp }, from: mocks.from },
 }));
 
-import { AuthUserError, getUserProfile, signIn, updateUserAvatar } from "./auth";
+import { AuthUserError, getUserProfile, signIn, signUp, updateUserAvatar } from "./auth";
 
 describe("signIn", () => {
   afterEach(() => {
@@ -48,6 +49,23 @@ describe("signIn", () => {
       code: "SERVICE_UNAVAILABLE",
       retryAfterSeconds: undefined,
     });
+  });
+});
+
+describe("signUp", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("does not query an account's identity provider when signup returns no identities", async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    mocks.signUp.mockResolvedValue({ data: { user: { identities: [] } }, error: null });
+
+    await expect(signUp("user@example.com", "ValidPass123!")).rejects.toMatchObject({
+      code: "SIGNUP_FAILED",
+    });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 

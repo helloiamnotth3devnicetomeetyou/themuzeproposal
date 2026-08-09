@@ -70,26 +70,22 @@ describe("POST /api/auth/login", () => {
   });
 
   it("returns invalid credentials when Supabase rejects the password", async () => {
-    mocks.rpc
-      .mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null })
-      .mockResolvedValueOnce({ data: false, error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
     mocks.signInWithPassword.mockResolvedValueOnce({ error: new Error("invalid") });
     const response = await POST(request({ email: "user@example.com", password: "password" }));
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_CREDENTIALS" });
   });
 
-  it("redirects Google-only accounts to OAuth after a password sign-in failure", async () => {
-    mocks.rpc
-      .mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null })
-      .mockResolvedValueOnce({ data: true, error: null });
+  it("returns generic invalid credentials without an identity-provider lookup", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
     mocks.signInWithPassword.mockResolvedValueOnce({ error: new Error("invalid") });
 
     const response = await POST(request({ email: "user@example.com", password: "password" }));
 
-    expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ code: "GOOGLE_SIGN_IN_REQUIRED" });
-    expect(mocks.rpc).toHaveBeenLastCalledWith("is_google_only_email", { p_email: "user@example.com" });
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ code: "INVALID_CREDENTIALS" });
+    expect(mocks.rpc).toHaveBeenCalledOnce();
   });
 
   it("returns a no-store success response and pending session cookies", async () => {

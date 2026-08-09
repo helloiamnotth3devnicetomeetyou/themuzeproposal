@@ -53,20 +53,11 @@ describe("useLoginForm", () => {
     expect(result.current.error).toBe(result.current.t.serviceUnavailable);
   });
 
-  it("starts Google sign-in for Google-only accounts", async () => {
-    auth.signIn.mockRejectedValueOnce(new AuthUserError("GOOGLE_SIGN_IN_REQUIRED"));
-    auth.signInWithGoogle.mockResolvedValueOnce(undefined);
-    const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
-    act(() => { result.current.setEmail("user@example.com"); result.current.setPassword("secret"); });
-
-    await act(async () => { await result.current.handleLogin({ preventDefault: vi.fn() } as never); });
-
-    expect(auth.signInWithGoogle).toHaveBeenCalledWith("/protect", "user@example.com");
-  });
-
   it("rejects an invalid sign-up password (too short) before calling Supabase", async () => {
     const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
-    act(() => { result.current.switchMode("signup"); result.current.setPassword("short"); result.current.setConfirmPassword("short"); });
+    act(() => { result.current.switchMode("signup"); });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+    act(() => { result.current.setPassword("short"); });
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
     expect(auth.signUp).not.toHaveBeenCalled();
     expect(result.current.error).toBe(result.current.t.passwordLengthErr);
@@ -74,7 +65,9 @@ describe("useLoginForm", () => {
 
   it("rejects a weak sign-up password missing symbol/upper/digit", async () => {
     const { result } = renderHook(() => useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "en" }));
-    act(() => { result.current.switchMode("signup"); result.current.setPassword("simplepassword"); result.current.setConfirmPassword("simplepassword"); });
+    act(() => { result.current.switchMode("signup"); });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+    act(() => { result.current.setPassword("simplepassword"); });
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
     expect(auth.signUp).not.toHaveBeenCalled();
     expect(result.current.error).toBe(result.current.t.passwordStrengthErr);
@@ -86,27 +79,15 @@ describe("useLoginForm", () => {
     act(() => {
       result.current.switchMode("signup");
       result.current.setEmail("user@example.com");
-      result.current.setPassword("ValidPass123!");
-      result.current.setConfirmPassword("ValidPass123!");
+      result.current.setName("User");
     });
     await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
-    expect(auth.signUp).toHaveBeenCalledWith("user@example.com", "ValidPass123!", "");
+    act(() => {
+      result.current.setPassword("ValidPass123!");
+    });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+    expect(auth.signUp).toHaveBeenCalledWith("user@example.com", "ValidPass123!", "User");
     expect(push).toHaveBeenCalledWith("/protect");
   });
 
-  it("starts Google sign-in when sign-up finds a Google-only account", async () => {
-    auth.signUp.mockRejectedValueOnce(new AuthUserError("GOOGLE_SIGN_IN_REQUIRED"));
-    auth.signInWithGoogle.mockResolvedValueOnce(undefined);
-    const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
-    act(() => {
-      result.current.switchMode("signup");
-      result.current.setEmail("user@example.com");
-      result.current.setPassword("ValidPass123!");
-      result.current.setConfirmPassword("ValidPass123!");
-    });
-
-    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
-
-    expect(auth.signInWithGoogle).toHaveBeenCalledWith("/protect", "user@example.com");
-  });
 });

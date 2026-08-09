@@ -2,7 +2,6 @@ import { supabase } from '@/core/supabase/client';
 
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
-  | 'GOOGLE_SIGN_IN_REQUIRED'
   | 'RATE_LIMITED'
   | 'SERVICE_UNAVAILABLE'
   | 'SIGNUP_FAILED'
@@ -67,21 +66,8 @@ export async function signUp(email: string, password: string, name?: string) {
     },
   });
   if (error) throw new AuthUserError('SIGNUP_FAILED');
-  if (data.user?.identities?.length === 0 && await isGoogleOnlyEmail(email)) {
-    throw new AuthUserError('GOOGLE_SIGN_IN_REQUIRED');
-  }
+  if (data.user?.identities?.length === 0) throw new AuthUserError('SIGNUP_FAILED');
   return data;
-}
-
-async function isGoogleOnlyEmail(email: string) {
-  const response = await fetch('/api/auth/google-only', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if (!response.ok) return false;
-  const payload = await response.json().catch(() => ({})) as { googleOnly?: boolean };
-  return payload.googleOnly === true;
 }
 
 export async function signOut() {

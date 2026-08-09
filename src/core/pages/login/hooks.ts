@@ -33,9 +33,9 @@ interface UseLoginFormOptions {
 
 export interface LoginFormState {
   mode: Mode;
+  signupStep: 1 | 2;
   email: string;
   password: string;
-  confirmPassword: string;
   name: string;
   error: string;
   loading: boolean;
@@ -43,9 +43,9 @@ export interface LoginFormState {
   t: LoginTranslations;
   setEmail: (v: string) => void;
   setPassword: (v: string) => void;
-  setConfirmPassword: (v: string) => void;
   setName: (v: string) => void;
   switchMode: (next: Mode) => void;
+  previousSignupStep: () => void;
   handleLogin: (e: React.FormEvent) => Promise<void>;
   handleSignup: (e: React.FormEvent) => Promise<void>;
   handleGoogleLogin: () => Promise<void>;
@@ -60,9 +60,9 @@ export function useLoginForm({
   const t = localT[locale] ?? localT.ko;
 
   const [mode, setMode] = useState<Mode>("login");
+  const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState(oauthFailed ? t.googleFailed : "");
   const [loading, setLoading] = useState(false);
@@ -79,9 +79,9 @@ export function useLoginForm({
   const resetForm = () => {
     setEmail("");
     setPassword("");
-    setConfirmPassword("");
     setName("");
     setError("");
+    setSignupStep(1);
   };
 
   const switchMode = (next: Mode) => {
@@ -99,14 +99,6 @@ export function useLoginForm({
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
     } catch (err: unknown) {
-      if (err instanceof AuthUserError && err.code === "GOOGLE_SIGN_IN_REQUIRED") {
-        try {
-          await signInWithGoogle(redirectTo, email);
-        } catch {
-          setError(t.googleFailed);
-        }
-        return;
-      }
       setError(loginErrorMessage(err, t));
     } finally {
       setLoading(false);
@@ -116,6 +108,10 @@ export function useLoginForm({
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (signupStep === 1) {
+      setSignupStep(2);
+      return;
+    }
     setLoading(true);
 
     if (password.length < 8) {
@@ -134,27 +130,13 @@ export function useLoginForm({
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError(t.passwordMatchErr);
-      setLoading(false);
-      return;
-    }
-
     try {
       const data = await signUp(email, password, name);
       if (!data.session) throw new AuthUserError("SIGNUP_FAILED");
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
-    } catch (err: unknown) {
-      if (err instanceof AuthUserError && err.code === "GOOGLE_SIGN_IN_REQUIRED") {
-        try {
-          await signInWithGoogle(redirectTo, email);
-        } catch {
-          setError(t.googleFailed);
-        }
-      } else {
-        setError(t.signupFailed);
-      }
+    } catch {
+      setError(t.signupFailed);
     } finally {
       setLoading(false);
     }
@@ -174,9 +156,9 @@ export function useLoginForm({
 
   return {
     mode,
+    signupStep,
     email,
     password,
-    confirmPassword,
     name,
     error,
     loading,
@@ -184,9 +166,9 @@ export function useLoginForm({
     t,
     setEmail,
     setPassword,
-    setConfirmPassword,
     setName,
     switchMode,
+    previousSignupStep: () => { setSignupStep(1); setError(""); },
     handleLogin,
     handleSignup,
     handleGoogleLogin,

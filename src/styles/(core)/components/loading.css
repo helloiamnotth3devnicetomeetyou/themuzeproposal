@@ -22,24 +22,6 @@
   display: block;
 }
 
-.muze-logo-base {
-  fill: var(--border-subtle, rgba(255, 255, 255, 0.15));
-  opacity: 0.6;
-  transition: fill 0.3s ease;
-}
-
-:root[data-theme="light"] .muze-logo-base,
-.light .muze-logo-base {
-  fill: rgba(0, 0, 0, 0.12);
-  opacity: 0.8;
-}
-
-.muze-logo-fill {
-  fill: var(--selection-bg, var(--color-brand-pink, #FC6FCF));
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--selection-bg, var(--color-brand-pink, #FC6FCF)) 65%, transparent));
-  animation: muze-logo-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
 .muze-loading-label {
   font-family: var(--font-display);
   font-size: 11px;
@@ -47,33 +29,4 @@
   line-height: 1.4;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-@keyframes muze-logo-sweep {
-  0% {
-    clip-path: polygon(-40% -20%, -20% -20%, -50% 120%, -70% 120%);
-    opacity: 0.2;
-  }
-  10% {
-    opacity: 1;
-  }
-  42%, 52% {
-    clip-path: polygon(-40% -20%, 140% -20%, 110% 120%, -70% 120%);
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  95%, 100% {
-    clip-path: polygon(120% -20%, 140% -20%, 110% 120%, 90% 120%);
-    opacity: 0.2;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .muze-logo-fill {
-    animation: none;
-    clip-path: none;
-    opacity: 0.85;
-  }
 }

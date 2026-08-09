@@ -26,6 +26,11 @@ describe("LoadingIndicator", () => {
     expect(logoContainer).toHaveStyle({ width: "4rem" });
   });
 
+  it("uses the animated brand logo", () => {
+    const { container } = render(<LoadingIndicator />);
+    expect(container.querySelector('img[src="/images/logo.svg"]')).toBeInTheDocument();
+  });
+
   it("applies extra className", () => {
     render(<LoadingIndicator className="custom-class" />);
     expect(screen.getByRole("status")).toHaveClass("custom-class");

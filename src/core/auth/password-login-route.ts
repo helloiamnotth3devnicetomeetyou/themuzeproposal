@@ -82,13 +82,7 @@ export async function POST(request: NextRequest) {
 
   const { error: authError } = await authClient.auth.signInWithPassword({ email, password });
   const succeeded = !authError;
-  if (!succeeded) {
-    const { data: googleOnly, error: identityError } = await limiterClient.rpc("is_google_only_email", {
-      p_email: email,
-    });
-    if (!identityError && googleOnly === true) return jsonError("GOOGLE_SIGN_IN_REQUIRED", 409);
-    return jsonError("INVALID_CREDENTIALS", 401);
-  }
+  if (!succeeded) return jsonError("INVALID_CREDENTIALS", 401);
 
   const { error: resetError } = await limiterClient.rpc("reset_login_rate_limit", {
     p_identifier_hash: identifierHash,

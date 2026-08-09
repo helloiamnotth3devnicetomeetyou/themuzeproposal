@@ -1,466 +1,71 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useLocale } from "@/core/providers/LocaleContext";
 import { type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
-import { useLocale } from "@/core/providers/LocaleContext";
 
 interface LoginFormPanelProps extends LoginFormState {
   isDark: boolean;
   showLoginRequired: boolean;
 }
 
-/** Reusable styled input field with optional password visibility toggle */
-function FormInput({
-  id,
-  type,
-  required,
-  value,
-  onChange,
-  placeholder,
-  label,
-}: {
-  id: string;
-  type: string;
-  required?: boolean;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  label: string;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const isPasswordType = type === "password";
-  const inputType = isPasswordType ? (showPassword ? "text" : "password") : type;
-
+function Input({ id, label, type = "text", value, onChange, placeholder, autoComplete }: { id: string; label: string; type?: string; value: string; onChange: (value: string) => void; placeholder: string; autoComplete?: string }) {
   return (
-    <fieldset className="flex flex-col gap-2">
-      <label
-        htmlFor={id}
-        className="text-[10px] font-bold tracking-widest"
-        style={{ color: "var(--text-muted)" }}
-      >
-        {label}
-      </label>
-      <div className="relative w-full">
-        <input
-          id={id}
-          type={inputType}
-          required={required}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full px-4 py-3 rounded-lg text-sm transition-all duration-slow focus:outline-none focus:border-brand-pink ${
-            isPasswordType ? "pr-11" : ""
-          }`}
-          style={{
-            backgroundColor: "var(--bg-subtle)",
-            border: "1px solid var(--border-default)",
-            color: "var(--text-primary)",
-          }}
-          placeholder={placeholder}
-        />
-        {isPasswordType && (
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            tabIndex={-1}
-            aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-opacity duration-200 hover:opacity-100 opacity-60 cursor-pointer flex items-center justify-center"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {showPassword ? (
-              /* Eye Slash Icon (Hide) */
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4 transition-transform duration-200 scale-100 active:scale-95"
-              >
-                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                <line x1="2" y1="2" x2="22" y2="22" />
-              </svg>
-            ) : (
-              /* Eye Icon (Show) */
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4 transition-transform duration-200 scale-100 active:scale-95"
-              >
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-    </fieldset>
+    <label htmlFor={id} className="block">
+      <span className="mb-2 block text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>{label}</span>
+      <input id={id} type={type} required value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} autoComplete={autoComplete ?? (type === "email" ? "email" : "name")} className="w-full rounded-xl border px-4 py-3.5 text-sm outline-none transition duration-200 placeholder:text-[var(--text-faint)] focus:-translate-y-px focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 motion-reduce:transform-none motion-reduce:transition-none" style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-default)", color: "var(--text-primary)" }} />
+    </label>
   );
 }
 
-/** Tab button with active underline indicator */
-function ModeTab({
-  label,
-  isActive,
-  onClick,
-}: {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="pb-3 text-[10px] font-bold transition-all duration-slow relative cursor-pointer"
-      style={{ color: isActive ? "var(--text-primary)" : "var(--text-muted)" }}
-    >
-      {label}
-      {isActive && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-pink" />}
-    </button>
-  );
-}
-
-type RuleKey = "length" | "lower" | "upper" | "digit" | "symbol";
-
-interface PasswordRule {
-  key: RuleKey;
-  label: { ko: string; en: string; ja: string };
-  test: (p: string) => boolean;
-}
-
-const PASSWORD_RULES: PasswordRule[] = [
-  {
-    key: "length",
-    label: { ko: "8자 이상", en: "8+ characters", ja: "8文字以上" },
-    test: (p) => p.length >= 8,
-  },
-  {
-    key: "lower",
-    label: { ko: "소문자 포함", en: "Lowercase letter", ja: "小文字を含む" },
-    test: (p) => /[a-z]/.test(p),
-  },
-  {
-    key: "upper",
-    label: { ko: "대문자 포함", en: "Uppercase letter", ja: "大文字を含む" },
-    test: (p) => /[A-Z]/.test(p),
-  },
-  {
-    key: "digit",
-    label: { ko: "숫자 포함", en: "Number", ja: "数字を含む" },
-    test: (p) => /[0-9]/.test(p),
-  },
-  {
-    key: "symbol",
-    label: { ko: "기호 포함", en: "Symbol", ja: "記号を含む" },
-    test: (p) => /[^a-zA-Z0-9]/.test(p),
-  },
-];
-
-/** Micro-animated password strength meter, shown only in signup mode when password is non-empty */
-function PasswordStrengthMeter({ password, locale }: { password: string; locale: "ko" | "en" | "ja" }) {
-  if (!password) return null;
-
-  const passed = PASSWORD_RULES.filter((r) => r.test(password)).length;
-  const total = PASSWORD_RULES.length;
-
-  const barColor =
-    passed <= 1
-      ? "#ef4444"
-      : passed <= 2
-      ? "#f97316"
-      : passed <= 3
-      ? "#eab308"
-      : passed === 4
-      ? "#22c55e"
-      : "#22c55e";
-
-  return (
-    <div
-      style={{
-        overflow: "hidden",
-        animation: "pwStrengthIn 180ms cubic-bezier(0.22,1,0.36,1) both",
-      }}
-    >
-      <style>{`
-        @keyframes pwStrengthIn {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pwBarGrow {
-          from { width: 0%; }
-        }
-        @keyframes pwRuleIn {
-          from { opacity: 0; transform: translateX(-4px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-      `}</style>
-
-      {/* Strength bar */}
-      <div
-        className="rounded-full overflow-hidden mb-2"
-        style={{ height: "2px", backgroundColor: "var(--border-default)" }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${(passed / total) * 100}%`,
-            backgroundColor: barColor,
-            borderRadius: "9999px",
-            transition: "width 300ms cubic-bezier(0.22,1,0.36,1), background-color 300ms ease",
-          }}
-        />
-      </div>
-
-      {/* Rule checklist */}
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-        {PASSWORD_RULES.map((rule, i) => {
-          const ok = rule.test(password);
-          return (
-            <li
-              key={rule.key}
-              className="flex items-center gap-1"
-              style={{
-                animation: `pwRuleIn 200ms ${i * 30}ms cubic-bezier(0.22,1,0.36,1) both`,
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "5px",
-                  height: "5px",
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  backgroundColor: ok ? "#22c55e" : "var(--border-default)",
-                  transition: "background-color 200ms ease",
-                }}
-              />
-              <span
-                className="text-[9px] font-medium"
-                style={{
-                  color: ok ? "var(--text-secondary)" : "var(--text-faint)",
-                  transition: "color 200ms ease",
-                  textDecoration: ok ? "line-through" : "none",
-                }}
-              >
-                {rule.label[locale]}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-export default function LoginFormPanel({
-  mode,
-  email,
-  password,
-  confirmPassword,
-  name,
-  error,
-  loading,
-  t,
-  isDark,
-  showLoginRequired,
-  setEmail,
-  setPassword,
-  setConfirmPassword,
-  setName,
-  switchMode,
-  handleLogin,
-  handleSignup,
-  handleGoogleLogin,
-}: LoginFormPanelProps) {
+export default function LoginFormPanel({ mode, signupStep, email, password, name, error, loading, t, isDark, showLoginRequired, setEmail, setPassword, setName, switchMode, previousSignupStep, handleLogin, handleSignup, handleGoogleLogin }: LoginFormPanelProps) {
   const { locale, setLocale } = useLocale();
+  const isSignup = mode === "signup";
+  const nextLabel = locale === "ko" ? "다음" : locale === "ja" ? "次へ" : "NEXT";
+  const backLabel = locale === "ko" ? "이전" : locale === "ja" ? "戻る" : "BACK";
 
   return (
-    <div className="relative w-full md:w-[45%] flex items-center justify-start px-8 md:px-16 lg:px-24 py-24 z-10">
-      <div className="w-full max-w-sm flex flex-col items-start text-left">
-
-        {/* Top Back Link */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-brand-pink"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <span>{t.backToHome}</span>
+    <main className="relative flex w-full items-center justify-center px-6 py-12 md:w-[46%] md:px-12 lg:px-20">
+      <section className="w-full max-w-sm">
+        <div className="mb-10">
+          <Link href="/" className="relative mb-10 block h-12 w-52 transition-opacity hover:opacity-65">
+            <Image src="/images/logo.png" alt="THE MUZE" fill sizes="208px" className="object-contain object-left" style={isDark ? { filter: "invert(1)" } : undefined} priority />
           </Link>
-        </div>
-
-        {/* Brand Logo */}
-        <div className="flex flex-col items-start mb-12">
-          <Link href="/" className="relative w-52 h-[3.25rem] block">
-            <Image
-              src="/images/logo.png"
-              alt="THE MUZE Logo"
-              fill
-              sizes="176px"
-              className="object-contain object-left transition-all duration-slow"
-              style={isDark ? { filter: "invert(1)" } : {}}
-              priority
-            />
-          </Link>
-          <p className="text-[10px] font-semibold mt-4" style={{ color: "var(--text-muted)" }}>
-            {mode === "login" ? t.accountSign : t.createAccount}
-          </p>
-          <div className="mt-3 flex gap-3" aria-label="언어 선택">
-            {(["ko", "ja", "en"] as const).map((value) => <button type="button" key={value} onClick={() => setLocale(value)} className="relative h-5 text-[8px] font-bold" style={{ color: locale === value ? "var(--text-primary)" : "var(--text-faint)", borderBottom: locale === value ? "2px solid var(--color-brand-pink)" : "2px solid transparent" }}>{value === "ko" ? "KR" : value === "ja" ? "JP" : "EN"}</button>)}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-2xl font-semibold tracking-[-0.04em]" style={{ color: "var(--text-primary)" }}>{isSignup ? t.createAccount : t.accountSign}</p>
+              <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>{isSignup ? t.descSignup : t.descLogin}</p>
+            </div>
+            <div className="flex gap-2" aria-label="Language">
+              {(["ko", "en", "ja"] as const).map((value) => <button type="button" key={value} onClick={() => setLocale(value)} className="h-7 w-7 rounded-md text-[10px] font-bold transition hover:bg-black/5" style={{ backgroundColor: locale === value ? "var(--bg-subtle)" : "transparent", color: locale === value ? "var(--text-primary)" : "var(--text-faint)" }}>{value.toUpperCase()}</button>)}
+            </div>
           </div>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex gap-8 border-b mb-8 w-full" style={{ borderColor: "var(--border-default)" }}>
-          <ModeTab label={t.signIn} isActive={mode === "login"} onClick={() => switchMode("login")} />
-          <ModeTab label={t.register} isActive={mode === "signup"} onClick={() => switchMode("signup")} />
+        <div className="mb-7 grid grid-cols-2 rounded-xl p-1" style={{ backgroundColor: "var(--bg-subtle)" }}>
+          {(["login", "signup"] as const).map((value) => <button type="button" key={value} onClick={() => switchMode(value)} className="rounded-lg py-2.5 text-xs font-semibold transition duration-200" style={{ backgroundColor: mode === value ? "var(--bg-card)" : "transparent", boxShadow: mode === value ? "0 1px 3px rgb(0 0 0 / 0.08)" : "none", color: mode === value ? "var(--text-primary)" : "var(--text-muted)" }}>{value === "login" ? t.signIn : t.register}</button>)}
         </div>
 
-        {/* Status Messages */}
-        {showLoginRequired && (
-          <div
-            role="status"
-            className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
-            style={{
-              backgroundColor: "var(--bg-subtle)",
-              color: "var(--text-secondary)",
-              borderColor: "var(--border-default)",
-            }}
-          >
-            {t.loginRequired}
-          </div>
-        )}
-        {error && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="mb-6 w-full px-4 py-3 rounded-lg text-xs font-semibold border"
-            style={{
-              backgroundColor: "var(--color-error-subtle)",
-              color: "var(--color-error)",
-              borderColor: "var(--color-error-border)",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {isSignup && <div className="mb-7 flex items-center gap-2" aria-label={`Step ${signupStep} of 2`}><span className="h-1.5 flex-1 rounded-full bg-brand-pink" /><span className="h-1.5 flex-1 rounded-full transition-colors duration-300" style={{ backgroundColor: signupStep === 2 ? "var(--color-brand-pink)" : "var(--border-default)" }} /></div>}
+        {showLoginRequired && <p role="status" className="mb-6 flex items-center gap-3 rounded-xl border-l-4 px-4 py-3.5 text-sm font-semibold" style={{ backgroundColor: "color-mix(in srgb, var(--color-brand-pink) 10%, var(--bg-card))", borderColor: "var(--color-brand-pink)", color: "var(--text-primary)" }}><span aria-hidden className="grid h-5 w-5 place-items-center rounded-full bg-brand-pink text-[11px] text-black">!</span>{t.loginRequired}</p>}
+        {error && <p role="alert" aria-live="polite" className="mb-5 rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: "var(--color-error-subtle)", color: "var(--color-error)" }}>{error}</p>}
 
-        {/* Form */}
-        <form
-          onSubmit={mode === "login" ? handleLogin : handleSignup}
-          className="flex flex-col gap-5 w-full"
-        >
-          {mode === "signup" && (
-            <FormInput
-              id="login-name"
-              type="text"
-              required
-              label={t.name}
-              value={name}
-              onChange={setName}
-              placeholder={t.namePlaceholder}
-            />
-          )}
-
-          <FormInput
-            id="login-email"
-            type="email"
-            required
-            label={t.email}
-            value={email}
-            onChange={setEmail}
-            placeholder="you@example.com"
-          />
-
-          <div className="flex flex-col gap-2">
-            <FormInput
-              id="login-password"
-              type="password"
-              required
-              label={t.password}
-              value={password}
-              onChange={setPassword}
-              placeholder={t.passwordPlaceholder}
-            />
-            {mode === "signup" && (
-              <PasswordStrengthMeter
-                password={password}
-                locale={locale === "ja" ? "ja" : locale === "en" ? "en" : "ko"}
-              />
-            )}
-          </div>
-
-          {mode === "signup" && (
-            <FormInput
-              id="login-confirm-password"
-              type="password"
-              required
-              label={t.confirmPassword}
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-              placeholder={t.confirmPlaceholder}
-            />
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 mt-4 rounded-lg text-xs font-bold tracking-widest transition-all duration-slow hover:opacity-90 disabled:opacity-50 cursor-pointer"
-            style={{
-              backgroundColor: "var(--text-primary)",
-              color: "var(--bg-base)",
-            }}
-          >
-            {loading ? t.processing : mode === "login" ? t.signIn : t.register}
-          </button>
+        <form onSubmit={isSignup ? handleSignup : handleLogin} className="space-y-5">
+          {(!isSignup || signupStep === 1) && <>
+            <Input id="login-email" label={t.email} type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+            {isSignup && <Input id="login-name" label={t.name} value={name} onChange={setName} placeholder={t.namePlaceholder} />}
+          </>}
+          {(!isSignup || signupStep === 2) && <Input id="login-password" label={t.password} type="password" value={password} onChange={setPassword} placeholder={t.passwordPlaceholder} autoComplete={isSignup ? "new-password" : "current-password"} />}
+          <button type="submit" disabled={loading} className="w-full rounded-xl py-3.5 text-xs font-bold tracking-widest transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none" style={{ backgroundColor: "var(--text-primary)", color: "var(--bg-base)" }}>{loading ? t.processing : isSignup && signupStep === 1 ? nextLabel : isSignup ? t.register : t.signIn}</button>
         </form>
 
-        {/* Google Sign-In (login mode only) */}
-        {mode === "login" && (
-          <GoogleSignInButton
-            loading={loading}
-            label={t.googleSignIn}
-            onClick={handleGoogleLogin}
-          />
-        )}
+        {isSignup && signupStep === 2 && <button type="button" onClick={previousSignupStep} className="mt-4 text-xs font-semibold transition hover:text-brand-pink" style={{ color: "var(--text-muted)" }}>{backLabel}</button>}
+        {!isSignup && <GoogleSignInButton loading={loading} label={t.googleSignIn} onClick={handleGoogleLogin} />}
 
-        {/* Toggle Mode */}
-        <div className="mt-8">
-          {mode === "login" ? (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              {t.noAccount}{" "}
-              <button
-                onClick={() => switchMode("signup")}
-                className="font-bold text-brand-pink hover:underline cursor-pointer"
-              >
-                {t.register}
-              </button>
-            </p>
-          ) : (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              {t.hasAccount}{" "}
-              <button
-                onClick={() => switchMode("login")}
-                className="font-bold text-brand-pink hover:underline cursor-pointer"
-              >
-                {t.signIn}
-              </button>
-            </p>
-          )}
-        </div>
-
-      </div>
-    </div>
+        <p className="mt-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>{isSignup ? t.hasAccount : t.noAccount} <button type="button" onClick={() => switchMode(isSignup ? "login" : "signup")} className="font-semibold text-brand-pink hover:underline">{isSignup ? t.signIn : t.register}</button></p>
+      </section>
+    </main>
   );
 }
