@@ -82,6 +82,14 @@ describe("AdminOnboarding mobile guide", () => {
     expect(labels).toContain("이어보기");
   });
 
+  it("keeps the launcher expanded in an expanded sidebar after reopening", async () => {
+    localStorage.setItem("admin-guide-seen:user-1", "true");
+    const { container } = render(<AdminOnboarding userId="user-1" role="editor" artists={[]} isCollapsed={false} canNavigate={() => true} />);
+
+    await vi.waitFor(() => expect(container.querySelector(".admin-guide-launcher")).toBeInTheDocument());
+    expect(container.querySelector(".admin-guide-launcher")).not.toHaveClass("is-collapsed");
+  });
+
   it("marks a core practice complete only after the highlighted action", async () => {
     const { container } = render(<>
       <button type="button" data-tour-id="hero-refresh">Refresh</button>

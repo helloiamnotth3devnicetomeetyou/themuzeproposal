@@ -60,7 +60,6 @@ export default function AdminOnboarding({
   const suppressMobileSheetClickRef = useRef(false);
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [ready, setReady] = useState(false);
-  const [launcherCompact, setLauncherCompact] = useState(() => typeof window !== "undefined" && Boolean(userId) && localStorage.getItem(`admin-guide-seen:${userId}`) === "true");
   const [progressRows, setProgressRows] = useState<Record<string, GuideProgressRow>>({});
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
@@ -720,10 +719,8 @@ export default function AdminOnboarding({
     <button
       ref={launcherRef}
       type="button"
-      className={`admin-guide-launcher${isCollapsed || launcherCompact ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
+      className={`admin-guide-launcher${isCollapsed ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
       onClick={() => {
-        localStorage.setItem(`admin-guide-seen:${userId}`, "true");
-        setLauncherCompact(true);
         if (pausedRun) {
           setRun(null);
           setWelcomeOpen(false);
@@ -736,7 +733,7 @@ export default function AdminOnboarding({
         else setTocOpen(true);
       }}
       aria-label={pausedRun ? "중단된 관리자 가이드 이어보기" : `관리자 가이드, ${progress}% 확인`}
-      title={isCollapsed || launcherCompact ? pausedRun ? "가이드 이어보기" : `관리자 가이드 · ${progress}%` : undefined}
+      title={isCollapsed ? pausedRun ? "가이드 이어보기" : `관리자 가이드 · ${progress}%` : undefined}
     >
       <span className="admin-guide-launcher-ring" style={{ "--guide-progress": `${progress * 3.6}deg` } as CSSProperties}>{pausedRun ? <Play aria-hidden="true" /> : <BookOpen aria-hidden="true" />}</span>
       {!isCollapsed && <span><b>{pausedRun ? "가이드 이어보기" : "관리자 업무 가이드"}</b><small>{pausedRun ? `연습 모드 · ${GUIDE_CHAPTERS.find((chapter) => chapter.id === pausedRun.chapterId)?.title ?? "이전 단계"}` : `${reachedSteps}/${totalSteps} 스텝 · ${progress}%`}</small><i><em style={{ width: `${progress}%` }} /></i></span>}
