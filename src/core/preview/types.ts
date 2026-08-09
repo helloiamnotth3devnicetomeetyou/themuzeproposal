@@ -113,12 +113,14 @@ type NoticePreviewPayload = {
   };
   notice: {
     id: string;
-    title: string;
-    content: string;
-    category: string;
+    title: LocalizedPreviewText;
+    content: LocalizedPreviewText;
+    category: LocalizedPreviewText;
     date: string;
   };
 };
+
+type LocalizedPreviewText = { ko: string; en: string; ja: string };
 
 type SchedulePreviewPayload = {
   artist: {
@@ -265,7 +267,13 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
       && isString(scope.name)
       && (scope.artistSlug === undefined || isString(scope.artistSlug))
       && isRecord(notice)
-      && hasStrings(notice, ["id", "title", "content", "category", "date"]);
+      && hasStrings(notice, ["id", "date"])
+      && isRecord(notice.title)
+      && isRecord(notice.content)
+      && isRecord(notice.category)
+      && hasStrings(notice.title, ["ko", "en", "ja"])
+      && hasStrings(notice.content, ["ko", "en", "ja"])
+      && hasStrings(notice.category, ["ko", "en", "ja"]);
   }
 
   if (kind === "schedule") {

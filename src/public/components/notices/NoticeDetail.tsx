@@ -29,9 +29,9 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
     notice: {
       id: preview.notice.id,
       date: preview.notice.date,
-      title: { ko: preview.notice.title, en: "", ja: "" },
-      content: { ko: preview.notice.content, en: "", ja: "" },
-      category: { ko: preview.notice.category, en: "", ja: "" },
+      title: preview.notice.title,
+      content: preview.notice.content,
+      category: preview.notice.category,
     },
   } : null;
   const effectiveData = previewData ?? initialData;

@@ -13,6 +13,8 @@ interface FormFieldProps {
   onChangeEn: (val: string) => void;
   onChangeJa: (val: string) => void;
   required?: boolean;
+  activeLang?: "ko" | "en" | "ja";
+  showLanguageTabs?: boolean;
 }
 
 export default function FormField({ 
@@ -24,9 +26,12 @@ export default function FormField({
   onChangeKo,
   onChangeEn,
   onChangeJa,
-  required = false
+  required = false,
+  activeLang: controlledActiveLang,
+  showLanguageTabs = true,
 }: FormFieldProps) {
-  const [activeLang, setActiveLang] = useState<"ko" | "en" | "ja">("ko");
+  const [localActiveLang, setLocalActiveLang] = useState<"ko" | "en" | "ja">("ko");
+  const activeLang = controlledActiveLang ?? localActiveLang;
   const fieldId = useId();
   const activeId = `${fieldId}-${activeLang}`;
   const languageTabs = [
@@ -39,19 +44,19 @@ export default function FormField({
     <div className="desk-translatable-field">
       <div className="desk-translatable-heading">
         <label htmlFor={activeId}>{label}{required && <span>*</span>}</label>
-        <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
+        {showLanguageTabs && <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
           {languageTabs.map((language) => {
             const complete = Boolean(language.value.trim());
             return <button
               key={language.id}
               type="button"
-              onClick={() => setActiveLang(language.id)}
+              onClick={() => setLocalActiveLang(language.id)}
               className={`${activeLang === language.id ? "is-active" : ""}${complete ? " is-complete" : ""}`.trim()}
               aria-pressed={activeLang === language.id}
               aria-label={`${language.name}${complete ? " 작성됨" : " 미작성"}`}
             >{language.label}</button>;
           })}
-        </div>
+        </div>}
       </div>
 
       <div className="desk-translatable-control">

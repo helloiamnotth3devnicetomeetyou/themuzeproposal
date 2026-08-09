@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Save } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import { buildDraftDiff, type DraftDiffItem } from "@/admin/utils/draft-diff";
@@ -20,6 +20,8 @@ type Props = {
 
 export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave, labels, extraDiff = [], disabled, label = "변경사항 저장", requireConfirmation = false }: Props) {
   const confirm = useAdminConfirm();
+  const saveRequested = useRef(false);
+  const [justSaved, setJustSaved] = useState(false);
   const diff = useMemo(() => {
     let before: unknown = {};
     try { before = snapshot ? JSON.parse(snapshot) : {}; } catch { /* invalid snapshots are shown as a full change */ }
@@ -33,10 +35,27 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
       confirmLabel: "일괄 반영",
       details: diff,
     })) return;
+    saveRequested.current = true;
     await onSave();
   };
 
-  const status = saving ? "저장 중…" : dirty ? disabled ? "필수 항목을 확인하세요" : diff.length ? `${diff.length}건 변경됨` : "저장할 변경사항 있음" : "저장됨";
+  useEffect(() => {
+    if (!saveRequested.current || saving || dirty) return;
+    saveRequested.current = false;
+    setJustSaved(true);
+  }, [dirty, saving]);
 
-  return <><span className={`draft-save-status${dirty ? " is-dirty" : ""}${disabled ? " is-invalid" : ""}`} role="status" aria-live="polite">{status}</span><button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{saving ? "저장 중…" : `${label}${diff.length ? ` (${diff.length})` : ""}`}</button></>;
+  useEffect(() => {
+    if (!justSaved) return;
+    const timer = window.setTimeout(() => setJustSaved(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [justSaved]);
+
+  useEffect(() => {
+    if (dirty) setJustSaved(false);
+  }, [dirty]);
+
+  const buttonLabel = saving ? "저장 중…" : justSaved && !dirty ? "저장됨" : `${label}${diff.length ? ` (${diff.length})` : ""}`;
+
+  return <><span className="sr-only" role="status" aria-live="polite">{saving ? "저장 중…" : justSaved ? "저장됨" : ""}</span><button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{buttonLabel}</button></>;
 }

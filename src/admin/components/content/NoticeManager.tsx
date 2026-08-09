@@ -7,8 +7,8 @@ import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import FormField from "@/admin/components/content/FormField";
 import NoticeCategoryInput from "@/admin/components/content/NoticeCategoryInput";
-import RichTextEditor from "@/admin/components/content/RichTextEditor";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
 import { supabase } from "@/core/supabase/client";
@@ -18,23 +18,36 @@ import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 type Notice = {
   id: string;
   title_ko: string;
+  title_en: string | null;
+  title_ja: string | null;
   content_ko: string | null;
+  content_en: string | null;
+  content_ja: string | null;
   category_ko: string;
+  category_en: string | null;
+  category_ja: string | null;
   date: string;
   is_published: boolean;
 };
 
 type NoticeDraft = {
   id: string | null;
-  title: string;
-  content: string;
-  category: string;
+  titleKo: string;
+  titleEn: string;
+  titleJa: string;
+  contentKo: string;
+  contentEn: string;
+  contentJa: string;
+  categoryKo: string;
+  categoryEn: string;
+  categoryJa: string;
   date: string;
   published: boolean;
 };
 
 type NoticeTab = "content" | "publish";
 type NoticeFilter = "all" | "published" | "draft";
+type NoticeLanguage = "ko" | "en" | "ja";
 
 const tabs: WorkbenchTab<NoticeTab>[] = [
   { id: "content", label: "공지 내용" },
@@ -43,18 +56,30 @@ const tabs: WorkbenchTab<NoticeTab>[] = [
 
 const emptyNotice = (): NoticeDraft => ({
   id: null,
-  title: "",
-  content: "",
-  category: "공지",
+  titleKo: "",
+  titleEn: "",
+  titleJa: "",
+  contentKo: "",
+  contentEn: "",
+  contentJa: "",
+  categoryKo: "공지",
+  categoryEn: "Notice",
+  categoryJa: "お知らせ",
   date: new Date().toISOString().slice(0, 10),
   published: true,
 });
 
 const fromNotice = (notice: Notice): NoticeDraft => ({
   id: notice.id,
-  title: notice.title_ko,
-  content: sanitizeRichText(notice.content_ko || ""),
-  category: notice.category_ko,
+  titleKo: notice.title_ko,
+  titleEn: notice.title_en || "",
+  titleJa: notice.title_ja || "",
+  contentKo: sanitizeRichText(notice.content_ko || ""),
+  contentEn: sanitizeRichText(notice.content_en || ""),
+  contentJa: sanitizeRichText(notice.content_ja || ""),
+  categoryKo: notice.category_ko,
+  categoryEn: notice.category_en || "",
+  categoryJa: notice.category_ja || "",
   date: notice.date,
   published: notice.is_published,
 });
@@ -68,6 +93,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const [draft, setDraft] = useState<NoticeDraft | null>(null);
   const [snapshot, setSnapshot] = useState("");
   const [tab, setTab] = useState<NoticeTab>("content");
+  const [language, setLanguage] = useState<NoticeLanguage>("ko");
   const [filter, setFilter] = useState<NoticeFilter>("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -83,27 +109,17 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const dirty = Boolean(draft && serializedDraft !== snapshot);
   const restoreNotice = useCallback((saved: NoticeDraft) => setDraft(saved), []);
   const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: `admin-draft:notices:${scopeArtistId || "global"}`, draft, snapshot, dirty, restore: restoreNotice });
-  const canSave = Boolean(draft?.title.trim() && hasRichTextContent(draft.content) && draft.category.trim() && draft.date);
-  const categoryOptions = useMemo(() => {
-    const seen = new Set<string>();
-    return ["공지", ...notices.map((notice) => notice.category_ko)]
-      .map((category) => category.trim())
-      .filter((category) => {
-        const key = category.toLocaleLowerCase("ko");
-        if (!category || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  }, [notices]);
+  const canSave = Boolean(draft?.titleKo.trim() && hasRichTextContent(draft.contentKo) && draft.categoryKo.trim() && draft.date);
+  const categoryOptions = useMemo(() => [...new Set(["공지", ...notices.map((notice) => notice.category_ko)].map((category) => category.trim()).filter(Boolean))], [notices]);
 
   const effectiveNoticeId = draft?.id || previewNoticeId;
   const previewPayload = useMemo(() => draft ? {
     scope: { name: scopeName, artistSlug: scopeSlug || undefined },
     notice: {
       id: effectiveNoticeId,
-      title: draft.title,
-      content: sanitizeRichText(draft.content),
-      category: draft.category,
+      title: { ko: draft.titleKo, en: draft.titleEn, ja: draft.titleJa },
+      content: { ko: sanitizeRichText(draft.contentKo), en: sanitizeRichText(draft.contentEn), ja: sanitizeRichText(draft.contentJa) },
+      category: { ko: draft.categoryKo, en: draft.categoryEn, ja: draft.categoryJa },
       date: draft.date,
     },
   } : null, [draft, effectiveNoticeId, scopeName, scopeSlug]);
@@ -135,7 +151,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       setScopeSlug("");
     }
     setArtistId(resolvedArtistId);
-    let query = supabase.from("notices").select("id,title_ko,content_ko,category_ko,date,is_published").order("date", { ascending: false });
+    let query = supabase.from("notices").select("id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published").order("date", { ascending: false });
     query = resolvedArtistId ? query.eq("artist_id", resolvedArtistId) : query.is("artist_id", null);
     const { data, error: noticeError } = await query;
     if (noticeError) {
@@ -216,9 +232,15 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     setError("");
     const payload = {
       artist_id: artistId,
-      title_ko: draft.title,
-      content_ko: sanitizeRichText(draft.content),
-      category_ko: draft.category.trim(),
+      title_ko: draft.titleKo,
+      title_en: draft.titleEn.trim() || null,
+      title_ja: draft.titleJa.trim() || null,
+      content_ko: sanitizeRichText(draft.contentKo),
+      content_en: sanitizeRichText(draft.contentEn) || null,
+      content_ja: sanitizeRichText(draft.contentJa) || null,
+      category_ko: draft.categoryKo.trim(),
+      category_en: draft.categoryEn.trim() || null,
+      category_ja: draft.categoryJa.trim() || null,
       date: draft.date,
       is_published: draft.published,
       published_at: draft.published ? new Date().toISOString() : null,
@@ -258,7 +280,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     <div className="content-rail-tools" data-tour-id="notice-filters"><input data-tour-id="notice-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="공지 검색" aria-label="공지 검색" /><div className="content-filter-row" data-tour-id="notice-status-filter">{(["all", "published", "draft"] as NoticeFilter[]).map((item) => <button key={item} type="button" className={filter === item ? "is-active" : ""} onClick={() => setFilter(item)}>{item === "all" ? "전체" : item === "published" ? "공개" : "비공개"}</button>)}</div></div>
     <div className="content-rail-sort"><span>{visibleNotices.length}개 공지</span><small>{scopeName}</small></div>
     <div className="content-library-list notice-library-list">
-      {draft && !draft.id && <button type="button" className="content-library-item notice-library-item is-selected"><span className="notice-library-date"><b>NEW</b><small>{draft.date.slice(5).replace("-", ".")}</small></span><span className="content-library-copy"><b>{draft.title || "새 공지"}</b><small>{draft.category} · {draft.published ? "공개 예정" : "비공개"}</small></span></button>}
+      {draft && !draft.id && <button type="button" className="content-library-item notice-library-item is-selected"><span className="notice-library-date"><b>NEW</b><small>{draft.date.slice(5).replace("-", ".")}</small></span><span className="content-library-copy"><b>{draft.titleKo || "새 공지"}</b><small>{draft.categoryKo} · {draft.published ? "공개 예정" : "비공개"}</small></span></button>}
       {visibleNotices.map((notice) => <button key={notice.id} type="button" data-tour-id="entity-list-item" onClick={() => void selectNotice(notice)} className={`content-library-item notice-library-item ${draft?.id === notice.id ? "is-selected" : ""}`}><span className="notice-library-date"><b>{notice.date.slice(0, 4)}</b><small>{notice.date.slice(5).replace("-", ".")}</small></span><span className="content-library-copy"><b>{notice.title_ko}</b><small>{notice.category_ko} · {notice.is_published ? "공개" : "비공개"}</small></span><span className={`content-library-dot ${notice.is_published ? "is-live" : ""}`} /></button>)}
       {!visibleNotices.length && !draft?.id && <div className="content-library-empty"><b>표시할 공지가 없습니다.</b><span>검색 조건을 바꾸거나 새 공지를 작성하세요.</span></div>}
     </div>
@@ -266,30 +288,26 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
 
   const identity = draft ? <>
     <span className="notice-identity-date"><b>{draft.date ? draft.date.slice(5, 7) : "—"}</b><small>{draft.date ? draft.date.slice(8, 10) : "—"}</small></span>
-    <div className="content-identity-copy"><p><span className={`cms-status ${draft.published ? "is-live" : ""}`}>{draft.published ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 공지"}</h2><small>{scopeName} · {draft.category || "분류 미설정"}</small></div>
+    <div className="content-identity-copy"><p><span className={`cms-status ${draft.published ? "is-live" : ""}`}>{draft.published ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.titleKo || "제목 없는 공지"}</h2><small>{scopeName} · {draft.categoryKo || "분류 미설정"}</small></div>
   </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>공지를 선택하세요</h2><small>{scopeName} notice desk</small></div>;
 
-  const actions = draft ? <>{draft.id && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !canSave} onSave={() => pendingDelete ? removeNotice() : saveNotice()} extraDiff={pendingDelete ? [{ kind: "delete", field: "공지", before: draft.title, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
+  const actions = draft ? <>{draft.id && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !canSave} onSave={() => pendingDelete ? removeNotice() : saveNotice()} extraDiff={pendingDelete ? [{ kind: "delete", field: "공지", before: draft.titleKo, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button>;
 
-  return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs.map((item) => ({ ...item, complete: item.id === "content" ? Boolean(draft?.title.trim() && hasRichTextContent(draft.content) && draft.category.trim()) : Boolean(draft?.date) }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreBackup, onDiscard: discardBackup } : null}>
+  return <><ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={tabs.map((item) => ({ ...item, complete: item.id === "content" ? Boolean(draft?.titleKo.trim() && hasRichTextContent(draft.contentKo) && draft.categoryKo.trim()) : Boolean(draft?.date) }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="notice-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreBackup, onDiscard: discardBackup } : null}>
     {!draft ? <div className="content-no-selection"><span><FileText aria-hidden="true" /></span><h2>공지를 선택하세요</h2><p>왼쪽 라이브러리에서 공지를 열거나 새 소식을 작성할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addNotice()}>공지 작성</button></div> : <div className="content-editor-stack">
       {tab === "content" && <>
         <div className="content-section-heading"><h3>공지 내용</h3><span>독자가 목록에서 찾고 본문에서 읽게 될 제목과 내용을 작성합니다.</span></div>
-        <div className="music-field-grid two">
-          <div className="music-field">
-            <span>분류 <b>*</b></span>
-            <NoticeCategoryInput value={draft.category} options={categoryOptions} onChange={(category) => patchDraft({ category })} />
-          </div>
-          <label className="music-field"><span>등록일 <b>*</b></span><input type="date" className="admin-input" value={draft.date} onChange={(event) => patchDraft({ date: event.target.value })} /></label>
-        </div>
-        <label className="music-field"><span>제목 <b>*</b></span><input className="admin-input content-title-input" value={draft.title} onChange={(event) => patchDraft({ title: event.target.value })} autoFocus /></label>
-        <RichTextEditor key={draft.id ?? "new"} value={draft.content} onChange={(content) => patchDraft({ content })} />
+        <div className="desk-lang-tabs" aria-label="공지 작성 언어">{(["ko", "en", "ja"] as const).map((item) => <button key={item} type="button" className={language === item ? "is-active" : ""} onClick={() => setLanguage(item)} aria-pressed={language === item}>{item === "ko" ? "KR" : item === "en" ? "EN" : "JP"}</button>)}</div>
+        <label className="music-field content-field-short"><span>등록일 <b>*</b></span><input type="date" className="admin-input" value={draft.date} onChange={(event) => patchDraft({ date: event.target.value })} /></label>
+        <div className="desk-translatable-field"><div className="desk-translatable-heading"><label>분류{language === "ko" && <span>*</span>}</label></div><div className="desk-translatable-control">{language === "ko" ? <NoticeCategoryInput value={draft.categoryKo} options={categoryOptions} onChange={(categoryKo) => patchDraft({ categoryKo })} /> : <input className="admin-input w-full" value={language === "en" ? draft.categoryEn : draft.categoryJa} onChange={(event) => patchDraft(language === "en" ? { categoryEn: event.target.value } : { categoryJa: event.target.value })} />}</div></div>
+        <FormField label="제목" activeLang={language} showLanguageTabs={false} valueKo={draft.titleKo} valueEn={draft.titleEn} valueJa={draft.titleJa} onChangeKo={(titleKo) => patchDraft({ titleKo })} onChangeEn={(titleEn) => patchDraft({ titleEn })} onChangeJa={(titleJa) => patchDraft({ titleJa })} required />
+        <FormField label="본문" type="richtext" activeLang={language} showLanguageTabs={false} valueKo={draft.contentKo} valueEn={draft.contentEn} valueJa={draft.contentJa} onChangeKo={(contentKo) => patchDraft({ contentKo })} onChangeEn={(contentEn) => patchDraft({ contentEn })} onChangeJa={(contentJa) => patchDraft({ contentJa })} required />
       </>}
       {tab === "publish" && <>
         <div className="content-section-heading"><h3>발행 설정</h3><span>공지의 노출 범위와 공개 상태를 마지막으로 확인합니다.</span></div>
-        <div className="notice-preview-card"><p>{draft.category || "분류"}</p><h3>{draft.title || "공지 제목"}</h3><small>{draft.date || "등록일 미설정"} · {scopeArtistId ? `${scopeName} 아티스트` : "전체 공지"}</small>{hasRichTextContent(draft.content) ? <div className="notice-preview-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(draft.content) }} /> : <div className="notice-preview-content is-empty">공지 내용을 입력하면 여기에 미리 표시됩니다.</div>}</div>
+        <div className="notice-preview-card"><p>{draft.categoryKo || "분류"}</p><h3>{draft.titleKo || "공지 제목"}</h3><small>{draft.date || "등록일 미설정"} · {scopeArtistId ? `${scopeName} 아티스트` : "전체 공지"}</small>{hasRichTextContent(draft.contentKo) ? <div className="notice-preview-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(draft.contentKo) }} /> : <div className="notice-preview-content is-empty">공지 내용을 입력하면 여기에 미리 표시됩니다.</div>}</div>
         <div className="content-choice-grid"><label className="content-choice"><input type="radio" checked={draft.published} onChange={() => patchDraft({ published: true })} /><span><b>공개</b><small>저장 즉시 사이트 공지 목록에 표시합니다.</small></span></label><label className="content-choice"><input type="radio" checked={!draft.published} onChange={() => patchDraft({ published: false })} /><span><b>비공개</b><small>관리자에만 저장하고 사이트에는 표시하지 않습니다.</small></span></label></div>
       </>}
     </div>}
-  </ContentWorkbench>{deleteOpen && draft?.id && <DeleteConfirmDialog title="공지를 삭제할까요?" description="삭제 작업은 상단 저장 전까지 서버에 반영되지 않습니다." confirmValue={draft.title} valueLabel="공지 제목" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => { setPendingDelete(true); setDeleteOpen(false); }} />}</>;
+  </ContentWorkbench>{deleteOpen && draft?.id && <DeleteConfirmDialog title="공지를 삭제할까요?" description="삭제 작업은 상단 저장 전까지 서버에 반영되지 않습니다." confirmValue={draft.titleKo} valueLabel="공지 제목" busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => { setPendingDelete(true); setDeleteOpen(false); }} />}</>;
 }
