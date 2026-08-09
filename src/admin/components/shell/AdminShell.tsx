@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ExternalLink, Menu } from "lucide-react";
+import { ExternalLink, Menu, Moon, Sun } from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import { formatDraftPeek, type DraftDiffItem } from "@/admin/utils/draft-diff";
 import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
+import { useTheme } from "@/core/providers/ThemeContext";
 
 function getPageLabel(pathname: string) {
   if (pathname === "/admin") return "대시보드";
+  if (pathname.includes("/analytics")) return "페이지 통계";
   if (pathname.includes("/hero")) return "메인 앨범";
   if (pathname.includes("/notices")) return "공지";
   if (pathname.includes("/audit-logs")) return "변경 이력";
@@ -30,6 +32,7 @@ const emptySubscribe = () => () => {};
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [toast, setToast] = useState("");
   const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
@@ -65,6 +68,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     "auditions",
     "protect",
     "contact",
+    "analytics",
   ].some((segment) => pathname.includes(segment));
 
   useEffect(() => {
@@ -163,6 +167,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <div className="admin-mobile-title">
             <strong>{getPageLabel(pathname)}</strong>
           </div>
+          <button type="button" className="admin-theme-button admin-mobile-theme-button" onClick={toggleTheme} aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}>
+            {theme === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+          </button>
           <Link href="/" className="admin-mobile-site-link" aria-label="공개 사이트 열기">
             <ExternalLink aria-hidden="true" />
           </Link>
@@ -187,9 +194,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <div className="cms-workspace">
               <header className="admin-desktop-topbar">
                 <div><strong>{getPageLabel(pathname)}</strong></div>
+                <button type="button" className="admin-theme-button" onClick={toggleTheme} aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}>
+                  {theme === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+                </button>
                 <Link href="/" className="admin-desktop-site-link"><ExternalLink aria-hidden="true" /> 사이트 보기</Link>
               </header>
-              <main key={pathname} data-tour-id="admin-page" className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""}`}>
+              <main key={pathname} data-tour-id="admin-page" className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""} ${pathname.includes("/analytics") ? "is-analytics" : ""}`}>
                 <div className="cms-content-inner">{children}</div>
               </main>
             </div>

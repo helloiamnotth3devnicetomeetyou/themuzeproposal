@@ -59,6 +59,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
 
   const items = useMemo<SearchItem[]>(() => [
     { id: "dashboard", categoryLabel: "워크스페이스", title: "대시보드", url: "/admin" },
+    { id: "analytics", categoryLabel: "워크스페이스", title: "페이지 통계", url: "/admin/analytics" },
     { id: "hero", categoryLabel: "워크스페이스", title: "메인 히어로", url: "/admin/hero" },
     { id: "notices", categoryLabel: "워크스페이스", title: "전체 공지", url: "/admin/notices" },
     { id: "audit-logs", categoryLabel: "워크스페이스", title: "관리자 변경 이력", url: "/admin/audit-logs" },

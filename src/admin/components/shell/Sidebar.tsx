@@ -4,7 +4,7 @@ import NextImage from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
@@ -17,6 +17,7 @@ type Artist = { id: string; name: string; logo_url: string | null };
 
 const overviewLinks = [
   { label: "대시보드", href: "/admin", icon: LayoutDashboard },
+  { label: "페이지 통계", href: "/admin/analytics", icon: BarChart3 },
 ];
 
 const contentLinks = [
