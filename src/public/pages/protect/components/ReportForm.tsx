@@ -16,7 +16,7 @@ import type { Artist, MyReport } from "../ProtectClient";
 import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
 import styles from "@/styles/(public)/pages/protect.module.css";
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const HOLD_DURATION_MS = 1500;
 const ACCEPTED_FILE_TYPES = new Set([
   "image/jpeg",
@@ -43,6 +43,7 @@ type Props = {
   userEmail: string;
   setMyReports: Dispatch<SetStateAction<MyReport[]>>;
   setSubmittedId: (id: string) => void;
+  setRemaining: (remaining: number) => void;
   setError: (message: string) => void;
   error: string;
 };
@@ -51,6 +52,7 @@ export default function ReportForm({
   artists,
   setMyReports,
   setSubmittedId,
+  setRemaining,
   setError,
   error,
 }: Props) {
@@ -208,13 +210,14 @@ export default function ReportForm({
       files.forEach((file) => payload.append("evidence", file));
 
       const response = await fetch("/api/protect-reports", { method: "POST", body: payload });
-      const result = await response.json().catch(() => ({})) as { id?: string; createdAt?: string; code?: string };
+      const result = await response.json().catch(() => ({})) as { id?: string; createdAt?: string; remaining?: number; code?: string };
       if (response.status === 401) {
         router.replace("/login?redirect=/protect");
         return;
       }
       const reportId = result.id;
       if (!response.ok || !reportId) throw new Error(result.code || "SUBMISSION_FAILED");
+      if (typeof result.remaining === "number") setRemaining(result.remaining);
 
       setMyReports((current) => [{
         id: reportId,

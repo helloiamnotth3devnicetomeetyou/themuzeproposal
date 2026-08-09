@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { ArrowRight, Check, CircleAlert, FileText, Paperclip, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { useLocale } from "@/core/providers/LocaleContext";
+import AccountProfileLink from "@/public/components/AccountProfileLink";
 import styles from "@/styles/(public)/pages/contact.module.css";
 
 type ContactCategory = "general" | "business";
@@ -43,8 +44,8 @@ const inquiryLabels = {
   },
 } as const;
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = new Set(["pdf", "ppt", "pptx"]);
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = new Set(["pdf"]);
 const EMPTY_ERROR = "";
 
 const copy = {
@@ -56,11 +57,14 @@ const copy = {
 export default function ContactClient({
   initialName,
   initialEmail,
+  initialAvatarUrl,
+  initialRemaining,
   businessAssets,
 }: {
   initialName: string;
   initialEmail: string;
-  initialUserId: string | null;
+  initialAvatarUrl: string;
+  initialRemaining: number;
   businessAssets: { pressKitUrl: string; profilePdfUrl: string };
 }) {
   const { locale } = useLocale();
@@ -78,6 +82,7 @@ export default function ContactClient({
   const [consented, setConsented] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
+  const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState(EMPTY_ERROR);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -110,11 +115,11 @@ export default function ContactClient({
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
     if (!ALLOWED_EXTENSIONS.has(extension)) {
-      setError("PDF 또는 PPT 형식의 파일만 첨부할 수 있습니다.");
+      setError("PDF 형식의 파일만 첨부할 수 있습니다.");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setError("첨부 파일은 최대 20MB까지 등록할 수 있습니다.");
+      setError("첨부 파일은 최대 5MB까지 등록할 수 있습니다.");
       return;
     }
     setAttachment(file);
@@ -176,9 +181,10 @@ export default function ContactClient({
         method: "POST",
         body: payload,
       });
-      const result = await response.json().catch(() => ({})) as { id?: string; code?: string };
+      const result = await response.json().catch(() => ({})) as { id?: string; remaining?: number; code?: string };
       if (!response.ok || !result.id) throw new Error(result.code || "SUBMISSION_FAILED");
 
+      if (typeof result.remaining === "number") setRemaining(result.remaining);
       setSubmittedId(result.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
@@ -253,6 +259,7 @@ export default function ContactClient({
                 <span>{messages.business}</span>
               </button>
             </nav>
+            <AccountProfileLink name={initialName} email={initialEmail} avatarUrl={initialAvatarUrl} remaining={remaining} />
           </div>
         </header>
 
@@ -316,7 +323,7 @@ export default function ContactClient({
 
             <div className={styles.formRow}>
               <label htmlFor="contact-email">{messages.email} <i>*</i></label>
-              <input id="contact-email" value={form.email} onChange={updateField("email")} placeholder="이메일 주소를 입력해 주세요." maxLength={254} autoComplete="email" inputMode="email" />
+              <input id="contact-email" value={form.email} readOnly maxLength={254} autoComplete="email" inputMode="email" />
             </div>
 
             {isBusiness && (
@@ -326,9 +333,9 @@ export default function ContactClient({
                   {!attachment ? (
                     <label className={styles.uploadButton}>
                       <Paperclip aria-hidden="true" />
-                      <span><b>파일을 선택해 주세요.</b><small>PDF, PPT · 최대 20MB</small></span>
+                      <span><b>파일을 선택해 주세요.</b><small>PDF · 최대 5MB</small></span>
                       <em>파일 선택</em>
-                      <input type="file" accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={handleFile} />
+                      <input type="file" accept=".pdf,application/pdf" onChange={handleFile} />
                     </label>
                   ) : (
                     <div className={styles.fileItem}>

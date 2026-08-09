@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getSubmissionRemaining } from "@/core/http/submission-rate-limit";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import ContactClient from "./ContactClient";
@@ -11,32 +13,28 @@ export const metadata: Metadata = createPageMetadata(
 export default async function ContactPage() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login?redirect=/contact");
 
-  let profileName = "";
   let businessAssets = { pressKitUrl: "", profilePdfUrl: "" };
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .maybeSingle();
-    profileName = profile?.name || user.user_metadata?.name || "";
-  }
-
-  const { data: businessRow } = await supabase
-    .from("site_settings")
-    .select("value")
-    .eq("key", "business_assets")
-    .maybeSingle();
+  const [{ data: profile }, { data: businessRow }, remaining] = await Promise.all([
+    supabase.from("profiles").select("name,avatar_asset_id").eq("id", user.id).maybeSingle(),
+    supabase.from("site_settings").select("value").eq("key", "business_assets").maybeSingle(),
+    getSubmissionRemaining("contact_inquiry", user.id),
+  ]);
+  const { data: avatar } = profile?.avatar_asset_id
+    ? await supabase.from("avatar_assets").select("image_path").eq("id", profile.avatar_asset_id).eq("is_active", true).maybeSingle()
+    : { data: null };
+  const avatarUrl = avatar?.image_path ? supabase.storage.from("artist-assets").getPublicUrl(avatar.image_path).data.publicUrl : "";
   if (businessRow?.value && typeof businessRow.value === "object") {
     businessAssets = { ...businessAssets, ...(businessRow.value as Partial<typeof businessAssets>) };
   }
 
   return (
     <ContactClient
-      initialName={profileName}
-      initialEmail={user?.email || ""}
-      initialUserId={user?.id || null}
+      initialName={profile?.name || user.user_metadata?.name || ""}
+      initialEmail={user.email || ""}
+      initialAvatarUrl={avatarUrl}
+      initialRemaining={remaining}
       businessAssets={businessAssets}
     />
   );

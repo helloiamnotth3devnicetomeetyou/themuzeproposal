@@ -24,12 +24,16 @@ export type MyReport = {
 export default function ProtectClient({
   initialUserEmail,
   initialUserName,
+  initialAvatarUrl,
+  initialRemaining,
   initialArtists,
   initialReports,
   initialLoadFailed = false,
 }: {
   initialUserEmail: string;
   initialUserName: string;
+  initialAvatarUrl: string;
+  initialRemaining: number;
   initialArtists: Artist[];
   initialReports: MyReport[];
   initialLoadFailed?: boolean;
@@ -43,6 +47,7 @@ export default function ProtectClient({
   }));
   const [myReports, setMyReports] = useState<MyReport[]>(initialReports);
   const [submittedId, setSubmittedId] = useState("");
+  const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState(
     initialLoadFailed ? t.protect.loadError : "",
   );
@@ -93,7 +98,7 @@ export default function ProtectClient({
                 {t.protect.report}
               </button>
             </nav>
-            <AccountProfileLink name={initialUserName} email={userEmail} />
+            <AccountProfileLink name={initialUserName} email={userEmail} avatarUrl={initialAvatarUrl} remaining={remaining} />
           </div>
         </header>
 
@@ -123,6 +128,7 @@ export default function ProtectClient({
               setMyReports={setMyReports}
               setSubmittedId={setSubmittedId}
               setError={setError}
+              setRemaining={setRemaining}
               error={error}
             />
           )}

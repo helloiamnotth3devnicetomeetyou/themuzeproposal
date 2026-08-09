@@ -22,7 +22,7 @@ function formatBytes(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)}KB` : `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
-export default function CampaignFormClient({ campaign, fields, initialSubmission, userEmail, onSaved, onViewMine }: { campaign: AuditionCampaign; fields: AuditionFormField[]; initialSubmission: AuditionSubmission | null; userEmail: string; onSaved: (submission: AuditionSubmission) => void; onViewMine: () => void }) {
+export default function CampaignFormClient({ campaign, fields, initialSubmission, userEmail, onSaved, onViewMine }: { campaign: AuditionCampaign; fields: AuditionFormField[]; initialSubmission: AuditionSubmission | null; userEmail: string; onSaved: (submission: AuditionSubmission, remaining: number) => void; onViewMine: () => void }) {
   const { locale } = useLocale();
   const m = auditionMessages[locale];
   const initialAnswers = initialSubmission?.answers ?? {};
@@ -68,7 +68,7 @@ export default function CampaignFormClient({ campaign, fields, initialSubmission
       const response = await fetch("/api/audition/submit", { method: "POST", body: formData });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(m.errors[body.code] || m.submitFailed);
-      onSaved(body.submission as AuditionSubmission); setSavedId(body.submission.id);
+      onSaved(body.submission as AuditionSubmission, Number(body.remaining) || 0); setSavedId(body.submission.id);
     } catch (cause) { setError(cause instanceof Error ? cause.message : m.submitFailed); setReviewing(false); }
     finally { setSubmitting(false); }
   };

@@ -29,6 +29,7 @@ const renderForm = () => render(
       userEmail="user@example.com"
       setMyReports={mocks.setMyReports}
       setSubmittedId={mocks.setSubmittedId}
+      setRemaining={vi.fn()}
       setError={mocks.setError}
       error=""
     />
