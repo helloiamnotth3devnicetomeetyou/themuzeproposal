@@ -19,6 +19,8 @@
 
 Google OAuth callback은 `code`를 서버에서 session으로 교환한다. `next`는 `safeRedirect`로 내부 상대 경로만 허용해 open redirect를 막는다.
 
+Supabase Auth는 모든 환경에서 이메일 확인을 요구하고, 12자 이상이면서 영문 대·소문자·숫자·기호를 포함한 비밀번호 정책을 강제한다. 배포 전 hosted dashboard 설정을 `supabase/config.toml`과 동일하게 맞춘다.
+
 ### 서버
 
 - 보호 페이지의 proxy는 `getClaims()`로 JWT 서명을 검증하고 session cookie를 refresh한다.
@@ -99,7 +101,7 @@ GET에서 상태를 변경하지 않는다. API 성공·실패 응답은 민감 
 9. private bucket 접근 policy
 10. DB 실패 시 이미 올린 object 제거
 
-관리자 MP3 direct upload는 서버가 먼저 작은 검증용 파일/metadata를 확인하고 signed upload token을 발급하는 현재 계약을 유지한다. signed URL 발급 자체가 최종 권한 검사를 대신하지 않는다.
+관리자 MP3 업로드는 서버가 실제 전체 파일의 크기와 시그니처를 검증한 뒤 service-role 경로로 저장한다. 클라이언트가 제시한 미리보기나 metadata만으로 업로드 권한을 발급하지 않는다.
 
 ## 속도 제한
 
@@ -121,7 +123,7 @@ rate-limit 저장소나 secret이 없으면 fail-open하지 않고 503으로 실
 
 ### IP 신뢰
 
-`clientIp()`는 `VERCEL=1`일 때 Vercel이 덮어쓰는 `x-vercel-forwarded-for`의 단일 값만 신뢰한다. 다른 호스팅에서는 `unknown`을 사용한다. 비 Vercel 배포 전에 trusted proxy CIDR/peer IP를 확인할 수 있는 플랫폼별 구현과 테스트가 필요하다. 임의 `x-forwarded-for` 신뢰는 금지한다.
+`clientIp()`는 `VERCEL=1`일 때 Vercel이 덮어쓰는 `x-vercel-forwarded-for`의 단일 값만 신뢰한다. 비 Vercel 운영 배포는 proxy가 덮어쓰는 `TRUSTED_CLIENT_IP_HEADER`를 반드시 설정하며, 값이 없거나 모호하면 로그인은 503으로 안전하게 실패한다. 임의 `x-forwarded-for` 신뢰는 금지한다.
 
 ## 응답 보안 헤더와 CSP
 

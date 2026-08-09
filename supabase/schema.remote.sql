@@ -1056,7 +1056,7 @@ CREATE TABLE IF NOT EXISTS "public"."audition_form_fields" (
     CONSTRAINT "audition_form_fields_field_key_check" CHECK (("field_key" ~ '^[a-z][a-z0-9_]{0,63}$'::"text")),
     CONSTRAINT "audition_form_fields_field_type_check" CHECK (("field_type" = ANY (ARRAY['short_text'::"text", 'long_text'::"text", 'select'::"text", 'radio'::"text", 'checkbox'::"text", 'date'::"text", 'file'::"text", 'consent'::"text"]))),
     CONSTRAINT "audition_form_fields_label_i18n_check" CHECK ((("jsonb_typeof"("label_i18n") = 'object'::"text") AND (COALESCE(NULLIF("btrim"(("label_i18n" ->> 'ko'::"text")), ''::"text"), NULLIF("btrim"(("label_i18n" ->> 'en'::"text")), ''::"text"), NULLIF("btrim"(("label_i18n" ->> 'ja'::"text")), ''::"text")) IS NOT NULL))),
-    CONSTRAINT "audition_form_fields_max_file_size_mb_check" CHECK ((("max_file_size_mb" >= 1) AND ("max_file_size_mb" <= 100))),
+    CONSTRAINT "audition_form_fields_max_file_size_mb_check" CHECK ((("max_file_size_mb" >= 1) AND ("max_file_size_mb" <= 30))),
     CONSTRAINT "audition_form_fields_max_length_check" CHECK ((("max_length" >= 1) AND ("max_length" <= 10000))),
     CONSTRAINT "audition_form_fields_options_check" CHECK (("jsonb_typeof"("options") = 'array'::"text"))
 );
@@ -2236,7 +2236,7 @@ CREATE POLICY "users read own protect reports" ON "public"."protect_reports" FOR
 
 
 
-CREATE POLICY "users update own non-privileged fields" ON "public"."profiles" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK ((("auth"."uid"() = "id") AND (NOT ("role" IS DISTINCT FROM ( SELECT "profiles_1"."role"
+CREATE POLICY "users update own non-privileged fields" ON "public"."profiles" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK ((("auth"."uid"() = "id") AND ("email" = COALESCE(("auth"."jwt"() ->> 'email'::"text"), ''::"text")) AND (NOT ("role" IS DISTINCT FROM ( SELECT "profiles_1"."role"
    FROM "public"."profiles" "profiles_1"
   WHERE ("profiles_1"."id" = "auth"."uid"()))))));
 

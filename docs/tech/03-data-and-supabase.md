@@ -74,7 +74,7 @@ private.submission_rate_limits
 | --- | --- | --- |
 | `artist-assets` | 공개 아티스트 이미지·로고 | 관리자, 이미지 magic bytes |
 | `album-covers` | 공개 앨범 이미지 | 관리자, 이미지 magic bytes |
-| `track-assets` | 공개 커버/MP3 | 관리자, MP3 대용량은 signed direct upload |
+| `track-assets` | 공개 커버/MP3 | 관리자, 서버 검증 업로드 |
 | `business-assets` | 공개 press-kit.zip, profile.pdf만 | 관리자, 고정 path allowlist |
 | `contact-attachments` | 비공개 문의 첨부 | PDF/PPT/PPTX |
 | `protect-evidence` | 비공개 제보 증빙 | 이미지/GIF/PDF |
