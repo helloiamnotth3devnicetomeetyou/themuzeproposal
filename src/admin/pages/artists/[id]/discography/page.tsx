@@ -9,6 +9,7 @@ import { CoverAssetField, HeroAssetField, TrackAssetField } from "@/admin/compon
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import PreviewButton from "@/admin/components/content/PreviewButton";
+import FormField from "@/admin/components/content/FormField";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
@@ -332,11 +333,7 @@ export default function DiscographyAdmin() {
           {tab === "basic" && <div className="music-section-stack">
             <div className="music-section-title music-release-heading"><div><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div></div>
             <div className="music-field-grid two"><label className="music-field"><span>앨범 제목 <b>*</b></span><input className="admin-input" value={draft.title} onChange={(event) => handleTitle(event.target.value)} autoFocus /></label><div className="music-field"><span>앨범 종류 <b>*</b></span><CustomSelect ariaLabel="앨범 종류" value={draft.type} onChange={(type) => patchDraft({ type })} options={ALBUM_TYPES.map((type) => ({ value: type, label: type }))} /></div></div>
-            <div className="music-field-grid three">
-              <label className="music-field"><span>표시 제목 (한국어)</span><input className="admin-input" value={draft.title_ko} onChange={(event) => patchDraft({ title_ko: event.target.value })} /></label>
-              <label className="music-field"><span>표시 제목 (영어)</span><input className="admin-input" value={draft.title_en} onChange={(event) => patchDraft({ title_en: event.target.value })} /></label>
-              <label className="music-field"><span>표시 제목 (일본어)</span><input className="admin-input" value={draft.title_ja} onChange={(event) => patchDraft({ title_ja: event.target.value })} /></label>
-            </div>
+            <FormField label="표시 제목" valueKo={draft.title_ko} valueEn={draft.title_en} valueJa={draft.title_ja} onChangeKo={(value) => patchDraft({ title_ko: value })} onChangeEn={(value) => patchDraft({ title_en: value })} onChangeJa={(value) => patchDraft({ title_ja: value })} />
             <label className="music-field music-date-field"><span>발매일</span><input type="date" className="admin-input" value={draft.release_date} onChange={(event) => patchDraft({ release_date: event.target.value })} /></label>
             <div className="music-divider" />
             <CoverAssetField artistId={artistId} albumId={draft.id} value={draft.cover_url} onError={setError} onUploaded={(asset, color) => { registerUpload(asset); patchDraft({ cover_url: asset.url, color }); }} />
@@ -365,9 +362,7 @@ export default function DiscographyAdmin() {
                 </div>
                 {expandedTrack === track.id && <div className="music-track-assets">
                   <div className="music-track-link-grid">
-                    <label className="music-field"><span>곡명 (한국어)</span><input className="admin-input" value={track.title_ko} onChange={(event) => patchTrack(track.id, { title_ko: event.target.value })} /></label>
-                    <label className="music-field"><span>곡명 (영어)</span><input className="admin-input" value={track.title_en} onChange={(event) => patchTrack(track.id, { title_en: event.target.value })} /></label>
-                    <label className="music-field"><span>곡명 (일본어)</span><input className="admin-input" value={track.title_ja} onChange={(event) => patchTrack(track.id, { title_ja: event.target.value })} /></label>
+                    <FormField label="곡명" valueKo={track.title_ko} valueEn={track.title_en} valueJa={track.title_ja} onChangeKo={(value) => patchTrack(track.id, { title_ko: value })} onChangeEn={(value) => patchTrack(track.id, { title_en: value })} onChangeJa={(value) => patchTrack(track.id, { title_ja: value })} />
                   </div>
                   <div className="music-track-link-grid"><label className="music-field"><span>곡별 Spotify 링크</span><input type="url" className="admin-input" value={track.spotify_url} onChange={(event) => patchTrack(track.id, { spotify_url: event.target.value })} placeholder="https://open.spotify.com/track/…" /></label><label className="music-field"><span>곡별 YouTube 링크</span><input type="url" className="admin-input" value={track.youtube_url} onChange={(event) => patchTrack(track.id, { youtube_url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label></div>
                   <div className="music-track-asset-grid is-single">

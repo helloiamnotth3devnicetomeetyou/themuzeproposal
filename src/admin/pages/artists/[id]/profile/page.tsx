@@ -330,8 +330,8 @@ export default function ArtistProfileAdmin() {
   const identity = <>
     <span className="content-identity-art">{draft.imageUrl ? <AdminAssetImage src={draft.imageUrl} alt="" sizes="56px" /> : <i style={{ background: draft.color }} />}</span>
     <div className="content-identity-copy">
-      <p><span className={`cms-status ${draft.isActive ? "is-live" : ""}`}>{draft.isActive ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p>
-      <h2>{draft.name || "이름 없는 아티스트"}</h2>
+      <h2><span className={`cms-status ${draft.isActive ? "is-live" : ""}`}>{draft.isActive ? "공개" : "비공개"}</span><span>{draft.name || "이름 없는 아티스트"}</span></h2>
+      {dirty && <em>저장하지 않은 변경사항</em>}
     </div>
   </>;
 

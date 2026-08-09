@@ -47,20 +47,16 @@ export default function ProfileEditorSections({
             <h3>아티스트 기본 정보</h3>
             <span>공개 페이지와 관리자 목록에서 사용하는 이름과 고유 ID입니다.</span>
           </div>
-          <div className="music-field-grid two">
-            <label className="music-field">
-              <span>아티스트명 (한국어) <b>*</b></span>
-              <input className="admin-input" value={draft.name} onChange={(event) => patchDraft({ name: event.target.value })} autoFocus />
-            </label>
-            <label className="music-field">
-              <span>아티스트명 (영문) <b>*</b></span>
-              <input className="admin-input" value={draft.engName} onChange={(event) => patchDraft({ engName: event.target.value })} />
-            </label>
-          </div>
-          <label className="music-field content-field-short">
-            <span>아티스트명 (일본어)</span>
-            <input className="admin-input" value={draft.jaName} onChange={(event) => patchDraft({ jaName: event.target.value })} />
-          </label>
+          <FormField
+            label="아티스트명"
+            valueKo={draft.name}
+            valueEn={draft.engName}
+            valueJa={draft.jaName}
+            onChangeKo={(value) => patchDraft({ name: value })}
+            onChangeEn={(value) => patchDraft({ engName: value })}
+            onChangeJa={(value) => patchDraft({ jaName: value })}
+            required
+          />
           <div className="music-field-grid two">
             <label className="music-field">
               <span>공개 경로</span>

@@ -19,8 +19,9 @@ export default function ProfileContextRail({
   return (
     <div className="profile-context-rail" data-tour-id="artist-profile-context">
       <div className="profile-context-portrait" style={{ "--artist-color": draft.color } as CSSProperties}>
-        {draft.imageUrl ? <AdminAssetImage src={draft.imageUrl} alt="" sizes="280px" /> : <div><span>프로필 이미지</span>{draft.engName && <b>{draft.engName.slice(0, 2)}</b>}</div>}
+        {draft.imageUrl ? <AdminAssetImage src={draft.imageUrl} alt="" sizes="100vw" quality={90} /> : <div><span>프로필 이미지</span>{draft.engName && <b>{draft.engName.slice(0, 2)}</b>}</div>}
       </div>
+      <span className="profile-context-shade" aria-hidden="true" />
       <div className="profile-context-copy">
         <p>{draft.name || "아티스트 이름"}</p>
         <strong>{draft.engName || "ENGLISH NAME"}</strong>

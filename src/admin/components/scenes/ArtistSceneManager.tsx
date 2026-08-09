@@ -14,6 +14,7 @@ import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module
 import SceneCanvas from "./SceneCanvas";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
+import FormField from "@/admin/components/content/FormField";
 import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
@@ -323,10 +324,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         </div>
 
         {selectedScene && <div className={styles.sceneSettings} data-tour-id="scene-settings">
-          <label><span>장면 이름</span><input className="admin-input" value={selectedScene.title} onChange={(event) => patchScene({ title: event.target.value })} /></label>
-          <label><span>장면 이름 (한국어)</span><input className="admin-input" value={selectedScene.title_ko || ""} onChange={(event) => patchScene({ title_ko: event.target.value })} /></label>
-          <label><span>장면 이름 (영어)</span><input className="admin-input" value={selectedScene.title_en || ""} onChange={(event) => patchScene({ title_en: event.target.value })} /></label>
-          <label><span>장면 이름 (일본어)</span><input className="admin-input" value={selectedScene.title_ja || ""} onChange={(event) => patchScene({ title_ja: event.target.value })} /></label>
+          <FormField label="장면 제목" valueKo={selectedScene.title_ko || selectedScene.title || ""} valueEn={selectedScene.title_en || ""} valueJa={selectedScene.title_ja || ""} onChangeKo={(value) => patchScene({ title: value, title_ko: value })} onChangeEn={(value) => patchScene({ title_en: value })} onChangeJa={(value) => patchScene({ title_ja: value })} />
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => { const checked = event.target.checked; setScenes((current) => current.map((scene) => ({ ...scene, is_hero: scene.id === selectedScene.id ? checked : checked ? false : scene.is_hero }))); }} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>

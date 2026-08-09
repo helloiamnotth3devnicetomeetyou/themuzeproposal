@@ -5,10 +5,10 @@
 .toolbar b,.toolbar span { display:block; }
 .toolbar b { color:var(--text-primary); font-size: var(--text-xs); }
 .toolbar span { margin-top:5px; color:var(--text-muted); font-size:9px; }
-.toolbar button,.sceneSettings button,.outlineTools button { display:flex; min-height:36px; align-items:center; justify-content:center; gap:7px; padding:0 11px; border:1px solid var(--border-default); border-radius:7px; background:var(--bg-card); color:var(--text-secondary); font-size:9px; font-weight:700; cursor:pointer; }
-.toolbar button:hover,.sceneSettings button:hover,.outlineTools button:hover { border-color:var(--color-brand-pink); color:var(--color-brand-pink); }
-.toolbar button:disabled,.sceneSettings button:disabled,.outlineTools button:disabled { cursor:not-allowed; opacity:.35; }
-.toolbar svg,.sceneSettings svg,.outlineTools svg { width:13px; height:13px; }
+.toolbar > button,.sceneSettings > button,.outlineTools > button { display:flex; min-height:36px; align-items:center; justify-content:center; gap:7px; padding:0 11px; border:1px solid var(--border-default); border-radius:7px; background:var(--bg-card); color:var(--text-secondary); font-size:9px; font-weight:700; cursor:pointer; }
+.toolbar > button:hover,.sceneSettings > button:hover,.outlineTools > button:hover { border-color:var(--color-brand-pink); color:var(--color-brand-pink); }
+.toolbar > button:disabled,.sceneSettings > button:disabled,.outlineTools > button:disabled { cursor:not-allowed; opacity:.35; }
+.toolbar > button svg,.sceneSettings > button svg,.outlineTools > button svg { width:13px; height:13px; }
 
 .empty { display:flex; min-height:250px; align-items:center; justify-content:center; flex-direction:column; gap:9px; border:1px dashed var(--border-default); border-radius:11px; color:var(--text-muted); text-align:center; }
 .empty > svg { width:24px; height:24px; color:var(--color-brand-pink); }
@@ -26,6 +26,9 @@
 .sceneSettings { display:grid; grid-template-columns:minmax(180px,1fr) auto auto auto auto; align-items:end; gap:8px; padding:12px; border:1px solid var(--border-default); border-radius:10px; background:var(--bg-card); }
 .sceneSettings > label:not(.toggle) > span { display:block; margin-bottom:7px; color:var(--text-muted); font-size:8px; font-weight:700; }
 .sceneSettings input[type=text],.sceneSettings input:not([type]) { height:36px; }
+.sceneSettings :global(.desk-lang-tabs) { gap:8px; }
+.sceneSettings :global(.desk-lang-tabs button) { min-width:32px; height:32px; font-size:10px; }
+.sceneSettings :global(.desk-lang-tabs button.is-complete)::before { top:4px; right:0; }
 .sceneLinkField { grid-column:1/-1; }
 .toggle { display:flex; height:36px; align-items:center; gap:7px; padding:0 10px; border:1px solid var(--border-default); border-radius:7px; color:var(--text-secondary); font-size:8px; font-weight:700; }
 .toggle input { accent-color:var(--color-brand-pink); }

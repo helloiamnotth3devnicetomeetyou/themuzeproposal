@@ -43,24 +43,11 @@ export default function MemberEditorSections({
             <h3>멤버 기본 정보</h3>
             <span>프로필과 멤버 목록에서 사용하는 이름과 역할입니다.</span>
           </div>
-          <div className="music-field-grid two">
-            <label className="music-field">
-              <span>이름 (한국어) <b>*</b></span>
-              <input className="admin-input" value={draft.name} onChange={(event) => patchDraft({ name: event.target.value })} autoFocus />
-            </label>
-            <label className="music-field">
-              <span>이름 (영문) <b>*</b></span>
-              <input className="admin-input" value={draft.engName} onChange={(event) => patchDraft({ engName: event.target.value })} />
-            </label>
-          </div>
+          <FormField label="멤버 이름" valueKo={draft.name} valueEn={draft.engName} valueJa={draft.jaName} onChangeKo={(value) => patchDraft({ name: value })} onChangeEn={(value) => patchDraft({ engName: value })} onChangeJa={(value) => patchDraft({ jaName: value })} required />
           <label className="music-field content-field-short">
             <span>공개 경로</span>
             <input className="admin-input" value={`/${toMemberSlug(draft.engName) || "english-name"}`} readOnly />
             <small>영문명을 기준으로 자동 생성됩니다.</small>
-          </label>
-          <label className="music-field content-field-short">
-            <span>이름 (일본어)</span>
-            <input className="admin-input" value={draft.jaName} onChange={(event) => patchDraft({ jaName: event.target.value })} />
           </label>
           <div className="music-divider" />
           <FormField
