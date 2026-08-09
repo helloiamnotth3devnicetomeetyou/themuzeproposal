@@ -49,12 +49,12 @@ function request(formData: FormData) {
 describe("POST /api/contact-inquiries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getUser.mockResolvedValue({ data: { user: null } });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "contact@example.com" } }, error: null });
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.insert.mockResolvedValue({ error: null });
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, retryAfter: 0 });
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.createServiceClient.mockReturnValue({
       storage: {
         from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })),
@@ -91,15 +91,13 @@ describe("POST /api/contact-inquiries", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
-  it("stops rate-limited submissions before parsing, uploading, or inserting", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 90 });
+  it("stops rate-limited submissions before uploading or inserting", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, remaining: 0, retryAfter: 90 });
     const nextRequest = request(validForm());
-    const formDataSpy = vi.spyOn(nextRequest, "formData");
     const response = await POST(nextRequest);
 
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("90");
-    expect(formDataSpy).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

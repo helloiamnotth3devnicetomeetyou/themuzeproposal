@@ -1,3 +1,5 @@
+import sharp from "sharp";
+
 type ValidatedFileType =
   | "image/jpeg"
   | "image/png"
@@ -5,8 +7,6 @@ type ValidatedFileType =
   | "image/gif"
   | "application/pdf"
   | "application/zip"
-  | "application/vnd.ms-powerpoint"
-  | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
   | "audio/mpeg"
   | "video/mp4";
 
@@ -20,7 +20,7 @@ export type FileValidationProfile =
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
-  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "ppt" | "pptx" | "mp3" | "mp4";
+  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "mp3" | "mp4";
 };
 
 const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType>> = {
@@ -33,11 +33,7 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
     "image/gif",
     "application/pdf",
   ]),
-  "contact-attachment": new Set([
-    "application/pdf",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  ]),
+  "contact-attachment": new Set(["application/pdf"]),
   "business-asset": new Set(["application/pdf", "application/zip"]),
   // Images (portfolio screenshots, photos) and PDF for audition attachments.
   "audition-attachment": new Set([
@@ -58,13 +54,14 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
   "image/gif": "gif",
   "application/pdf": "pdf",
   "application/zip": "zip",
-  "application/vnd.ms-powerpoint": "ppt",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
   "audio/mpeg": "mp3",
   "video/mp4": "mp4",
 };
 
 const SIGNATURE_HEADER_BYTES = 4 * 1024;
+const MAX_EVIDENCE_PIXELS = 25_000_000;
+const MAX_EVIDENCE_EDGE = 10_000;
+const MAX_EVIDENCE_FRAMES = 20;
 
 function startsWith(bytes: Uint8Array, signature: readonly number[]) {
   return signature.every((value, index) => bytes[index] === value);
@@ -72,25 +69,6 @@ function startsWith(bytes: Uint8Array, signature: readonly number[]) {
 
 function ascii(bytes: Uint8Array, start: number, length: number) {
   return new TextDecoder("ascii").decode(bytes.subarray(start, start + length));
-}
-
-function includesAscii(bytes: Uint8Array, value: string) {
-  return ascii(bytes, 0, bytes.length).includes(value);
-}
-
-function includesUtf16Le(bytes: Uint8Array, value: string) {
-  const pattern = new Uint8Array(value.length * 2);
-  for (let index = 0; index < value.length; index += 1) {
-    pattern[index * 2] = value.charCodeAt(index);
-  }
-
-  outer: for (let index = 0; index <= bytes.length - pattern.length; index += 1) {
-    for (let offset = 0; offset < pattern.length; offset += 1) {
-      if (bytes[index + offset] !== pattern[offset]) continue outer;
-    }
-    return true;
-  }
-  return false;
 }
 
 function detectType(bytes: Uint8Array): ValidatedFileType | null {
@@ -102,17 +80,9 @@ function detectType(bytes: Uint8Array): ValidatedFileType | null {
   const pdfHeader = ascii(bytes.subarray(0, 1024), 0, Math.min(bytes.length, 1024));
   if (pdfHeader.includes("%PDF-")) return "application/pdf";
 
-  const isOle = startsWith(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
-  if (isOle && includesUtf16Le(bytes, "PowerPoint Document")) {
-    return "application/vnd.ms-powerpoint";
-  }
-
   const isZip = startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])
     || startsWith(bytes, [0x50, 0x4b, 0x05, 0x06])
     || startsWith(bytes, [0x50, 0x4b, 0x07, 0x08]);
-  if (isZip && includesAscii(bytes, "[Content_Types].xml") && includesAscii(bytes, "ppt/")) {
-    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-  }
   if (isZip) return "application/zip";
 
   if (ascii(bytes, 0, 3) === "ID3") return "audio/mpeg";
@@ -130,27 +100,26 @@ export async function validateFileSignature(
   const headerBytes = new Uint8Array(
     await file.slice(0, Math.min(file.size, SIGNATURE_HEADER_BYTES)).arrayBuffer(),
   );
-  let mimeType = detectType(headerBytes);
-
-  // Legacy PPT and PPTX validation needs to inspect container metadata that
-  // may live beyond the header. Only the contact profile accepts these types,
-  // and it is rate-limited before parsing with a 20 MB route-level cap.
-  const isOleContainer = startsWith(
-    headerBytes,
-    [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1],
-  );
-  const isZipContainer =
-    startsWith(headerBytes, [0x50, 0x4b, 0x03, 0x04])
-    || startsWith(headerBytes, [0x50, 0x4b, 0x05, 0x06])
-    || startsWith(headerBytes, [0x50, 0x4b, 0x07, 0x08]);
-
-  if (!mimeType
-    && profile === "contact-attachment"
-    && (isOleContainer || isZipContainer)) {
-    mimeType = detectType(new Uint8Array(await file.arrayBuffer()));
-  }
+  const mimeType = detectType(headerBytes);
 
   if (!mimeType || !PROFILE_TYPES[profile].has(mimeType)) return null;
+
+  if ((profile === "protect-evidence" || profile === "audition-attachment")
+    && mimeType.startsWith("image/")) {
+    try {
+      const metadata = await sharp(await file.arrayBuffer(), {
+        animated: true,
+        limitInputPixels: MAX_EVIDENCE_PIXELS,
+      }).metadata();
+      const width = metadata.width ?? 0;
+      const height = metadata.height ?? 0;
+      const frames = metadata.pages ?? 1;
+      if (!width || !height || width > MAX_EVIDENCE_EDGE || height > MAX_EVIDENCE_EDGE
+        || width * height * frames > MAX_EVIDENCE_PIXELS || frames > MAX_EVIDENCE_FRAMES) return null;
+    } catch {
+      return null;
+    }
+  }
 
   return { mimeType, extension: EXTENSIONS[mimeType] };
 }

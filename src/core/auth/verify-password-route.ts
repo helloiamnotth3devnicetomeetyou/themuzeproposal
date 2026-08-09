@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
+import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
@@ -25,12 +26,9 @@ function hashIdentifier(value: string, secret: string) {
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return jsonError("INVALID_REQUEST", 400);
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (contentLength > MAX_BODY_BYTES) return jsonError("INVALID_REQUEST", 400);
-
   let body: unknown;
   try {
-    body = await request.json();
+    body = await parseJsonWithinLimit(request, MAX_BODY_BYTES);
   } catch {
     return jsonError("INVALID_REQUEST", 400);
   }
@@ -59,7 +57,7 @@ export async function POST(request: NextRequest) {
   if (!limiterSecret) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
-  const ipHash = hashIdentifier(`ip:${clientIp(request)}`, limiterSecret);
+  const ipHash = hashIdentifier(`ip:${clientIp(request) ?? `account:${email}`}`, limiterSecret);
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 

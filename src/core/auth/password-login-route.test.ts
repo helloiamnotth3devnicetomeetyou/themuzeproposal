@@ -19,13 +19,14 @@ vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }
 import { POST } from "./password-login-route";
 
 const request = (body: unknown, headers: HeadersInit = {}) => new NextRequest("http://localhost/api/auth/login", {
-  method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", ...headers }, body: JSON.stringify(body),
+  method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "x-test-client-ip": "203.0.113.10", ...headers }, body: JSON.stringify(body),
 });
 
 describe("POST /api/auth/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
+    process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
     mocks.getConfig.mockReturnValue({ url: "https://project.supabase.co", anonKey: "anon" });
     mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
     mocks.createServerClient.mockImplementation((_url: string, _key: string, options: { cookies: { setAll: (cookies: Array<{ name: string; value: string; options: object }>) => void } }) => ({
@@ -61,11 +62,43 @@ describe("POST /api/auth/login", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
+  it("rejects an oversized streamed body without Content-Length", async () => {
+    const oversized = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "http://localhost" },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(`{"email":"user@example.com","password":"${"x".repeat(17 * 1024)}"}`));
+          controller.close();
+        },
+      }),
+      duplex: "half",
+    });
+
+    const response = await POST(oversized);
+    expect(response.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it("returns rate-limit information without attempting authentication", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: false, retry_after_seconds: 32 }], error: null });
     const response = await POST(request({ email: "USER@example.com", password: "password" }));
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("32");
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("fails closed before creating an account-wide limiter key when client IP is unavailable", async () => {
+    delete process.env.TRUSTED_CLIENT_IP_HEADER;
+
+    const response = await POST(new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "http://localhost" },
+      body: JSON.stringify({ email: "victim@example.com", password: "password" }),
+    }));
+
+    expect(response.status).toBe(503);
+    expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
@@ -75,6 +108,18 @@ describe("POST /api/auth/login", () => {
     const response = await POST(request({ email: "user@example.com", password: "password" }));
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_CREDENTIALS" });
+  });
+
+  it("scopes the account throttle to the client IP", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true }], error: null });
+    mocks.signInWithPassword.mockResolvedValue({ error: new Error("invalid") });
+
+    await POST(request({ email: "user@example.com", password: "password" }, { "x-test-client-ip": "203.0.113.10" }));
+    const firstKey = mocks.rpc.mock.calls[0][1].p_identifier_hash;
+    mocks.rpc.mockClear();
+    await POST(request({ email: "user@example.com", password: "password" }, { "x-test-client-ip": "203.0.113.11" }));
+
+    expect(mocks.rpc.mock.calls[0][1].p_identifier_hash).not.toBe(firstKey);
   });
 
   it("returns generic invalid credentials without an identity-provider lookup", async () => {

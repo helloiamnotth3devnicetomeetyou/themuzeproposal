@@ -1,9 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { createSupabaseServerClient } from "@/core/supabase/server";
+import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
 
 const MAX_SVG_BYTES = 10 * 1024 * 1024;
@@ -24,9 +25,6 @@ function errorResponse(code: string, status: number) {
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (contentLength > MAX_SVG_BYTES + 64 * 1024) return errorResponse("FILE_TOO_LARGE", 413);
-
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
@@ -34,7 +32,9 @@ export async function POST(request: NextRequest) {
 
   let formData: FormData;
   try {
-    formData = await request.formData();
+    const parsed = await parseFormDataWithinLimit(request, MAX_SVG_BYTES + 64 * 1024);
+    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
+    formData = parsed;
   } catch {
     return errorResponse("INVALID_FILE", 400);
   }
@@ -71,13 +71,9 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE", 400);
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) return errorResponse("SERVICE_UNAVAILABLE", 503);
-
-  const { url, storageUrl } = getPublicSupabaseConfig();
-  const adminClient = createClient(url, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const adminClient = createServiceRoleClient();
+  if (!adminClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  const { storageUrl } = getPublicSupabaseConfig();
   const artistKey = safePathPart(formData.get("artistKey"), "draft");
   const entityKey = safePathPart(formData.get("entityKey"), "asset");
   const assetFolder = formData.get("assetKind") === "album-typography"
@@ -92,6 +88,21 @@ export async function POST(request: NextRequest) {
     });
 
   if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
+
+  const { error: auditError } = await adminClient.from("admin_audit_logs").insert({
+    actor_id: user.id,
+    actor_email: user.email ?? null,
+    operation: "INSERT",
+    table_name: "storage.objects",
+    record_id: `artist-assets/${path}`,
+    record_label: `Artist logo: ${path}`,
+    changed_fields: ["name", "metadata"],
+    after_values: { bucket: "artist-assets", path, mime_type: "image/svg+xml", size: sanitized.length },
+  });
+  if (auditError) {
+    await adminClient.storage.from("artist-assets").remove([path]);
+    return errorResponse("AUDIT_FAILED", 503);
+  }
 
   const response = NextResponse.json({
     asset: {

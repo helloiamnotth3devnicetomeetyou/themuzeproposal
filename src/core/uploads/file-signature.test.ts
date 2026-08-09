@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import sharp from "sharp";
 import {
   extensionMatches,
   validateFileSignature,
@@ -21,20 +22,14 @@ describe("validateFileSignature", () => {
     await expect(validateFileSignature(disguisedHtml, "public-image")).resolves.toBeNull();
   });
 
-  it("accepts only presentation-shaped OLE and OOXML files for contact attachments", async () => {
+  it("rejects active presentation formats for contact attachments", async () => {
     const pptName = Array.from("PowerPoint Document").flatMap((character) => [character.charCodeAt(0), 0]);
     const ppt = blob([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, ...pptName]);
     const pptx = blob("PK\u0003\u0004payload/[Content_Types].xml/ppt/presentation.xml");
     const genericZip = blob("PK\u0003\u0004payload/[Content_Types].xml/word/document.xml");
 
-    await expect(validateFileSignature(ppt, "contact-attachment")).resolves.toEqual({
-      mimeType: "application/vnd.ms-powerpoint",
-      extension: "ppt",
-    });
-    await expect(validateFileSignature(pptx, "contact-attachment")).resolves.toEqual({
-      mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      extension: "pptx",
-    });
+    await expect(validateFileSignature(ppt, "contact-attachment")).resolves.toBeNull();
+    await expect(validateFileSignature(pptx, "contact-attachment")).resolves.toBeNull();
     await expect(validateFileSignature(genericZip, "contact-attachment")).resolves.toBeNull();
   });
 
@@ -65,11 +60,25 @@ describe("validateFileSignature", () => {
     await expect(validateFileSignature(blob("ID3audio"), "audition-attachment")).resolves.toEqual({ mimeType: "audio/mpeg", extension: "mp3" });
     await expect(validateFileSignature(blob([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]), "audition-attachment")).resolves.toEqual({ mimeType: "video/mp4", extension: "mp4" });
   });
+
+  it("rejects evidence images whose decoded dimensions exceed the pixel budget", async () => {
+    const safe = new Blob([await sharp({
+      create: { width: 16, height: 16, channels: 3, background: "white" },
+    }).png().toBuffer()]);
+    const oversizedHeader = new Uint8Array(await sharp({
+      create: { width: 1, height: 1, channels: 3, background: "white" },
+    }).png().toBuffer());
+    new DataView(oversizedHeader.buffer).setUint32(16, 20_000);
+    new DataView(oversizedHeader.buffer).setUint32(20, 20_000);
+
+    await expect(validateFileSignature(safe, "protect-evidence")).resolves.toEqual({ mimeType: "image/png", extension: "png" });
+    await expect(validateFileSignature(new Blob([oversizedHeader]), "protect-evidence")).resolves.toBeNull();
+  });
 });
 
 describe("extensionMatches", () => {
   it("handles JPEG aliases and rejects misleading extensions", () => {
     expect(extensionMatches("cover.jpeg", "jpg")).toBe(true);
-    expect(extensionMatches("deck.pdf", "pptx")).toBe(false);
+    expect(extensionMatches("deck.exe", "pdf")).toBe(false);
   });
 });

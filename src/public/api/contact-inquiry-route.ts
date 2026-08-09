@@ -6,7 +6,7 @@ import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const GENERAL_TYPES = new Set(["account", "notice_event", "goods_md", "site_error", "other"]);
 const BUSINESS_TYPES = new Set([
   "brand_collaboration",
@@ -31,10 +31,9 @@ function textField(formData: FormData, name: string) {
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
-
-  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry");
-  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+  const sessionClient = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await sessionClient.auth.getUser();
+  if (userError || !user?.email) return errorResponse("UNAUTHORIZED", 401);
 
   let formData: FormData;
   try {
@@ -51,6 +50,7 @@ export async function POST(request: NextRequest) {
   const contactName = textField(formData, "contactName");
   const phone = textField(formData, "phone");
   const email = textField(formData, "email").toLowerCase();
+  const accountEmail = user.email.trim().toLowerCase();
   const message = textField(formData, "message");
   const consented = textField(formData, "privacyConsent") === "true";
   const validType = category === "general"
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     || email.length < 3
     || email.length > 254
     || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    || email !== accountEmail
     || message.length < 1
     || message.length > 5000
     || (category === "business" && (companyName.length < 1 || companyName.length > 120 || phone.length < 1 || phone.length > 40))) {
@@ -79,6 +80,10 @@ export async function POST(request: NextRequest) {
   if (file && (!validated || !extensionMatches(file.name, validated.extension))) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
+
+  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry", user.id);
+  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
@@ -98,17 +103,15 @@ export async function POST(request: NextRequest) {
     if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
   }
 
-  const sessionClient = await createSupabaseServerClient();
-  const { data: { user } } = await sessionClient.auth.getUser();
   const { error: insertError } = await serviceClient.from("contact_inquiries").insert({
     id: inquiryId,
-    user_id: user?.id ?? null,
+    user_id: user.id,
     category,
     inquiry_type: inquiryType,
     company_name: category === "business" ? companyName : null,
     contact_name: contactName,
     phone: phone || null,
-    email,
+    email: accountEmail,
     message,
     attachment_path: attachmentPath,
     attachment_name: file?.name ?? null,
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("SUBMISSION_FAILED", 503);
   }
 
-  const response = NextResponse.json({ id: inquiryId });
+  const response = NextResponse.json({ id: inquiryId, remaining: rate.remaining });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

@@ -47,7 +47,7 @@ describe("POST /api/audition/submit", () => {
     vi.clearAllMocks();
     process.env.SUBMISSION_RATE_LIMIT_SECRET = "test-secret";
     mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "applicant@example.com", email_confirmed_at: "2026-08-01T00:00:00.000Z" } }, error: null });
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, retryAfter: 0 });
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.update.mockReturnValue(chain({ error: null }));
     mocks.existing = null;
@@ -109,11 +109,12 @@ describe("POST /api/audition/submit", () => {
     expect(mocks.remove).toHaveBeenCalledWith([expect.stringMatching(/\.pdf$/)]);
   });
 
-  it("rate-limits before reading or storing the form", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 60 });
+  it("rate-limits a validated application before storing it", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, remaining: 0, retryAfter: 60 });
     const response = await POST(request());
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("60");
-    expect(service.from).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
 });

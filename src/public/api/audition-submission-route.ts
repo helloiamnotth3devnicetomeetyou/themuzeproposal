@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
-const MAX_BODY_BYTES = 100 * 1024 * 1024 + 256 * 1024;
+const MAX_BODY_BYTES = 30 * 1024 * 1024 + 256 * 1024;
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
 
 function errorResponse(code: string, status: number, retryAfter?: number) {
@@ -46,10 +46,6 @@ export async function POST(request: NextRequest) {
   const session = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await session.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  const rate = await consumeSubmissionRateLimit(request, "audition_submission", user.id);
-  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
-
   let formData: FormData;
   try {
     const parsed = await parseFormDataWithinLimit(request, MAX_BODY_BYTES);
@@ -143,6 +139,10 @@ export async function POST(request: NextRequest) {
   if (duplicateError) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (count) return errorResponse("ALREADY_SUBMITTED", 409);
 
+  const rate = await consumeSubmissionRateLimit(request, "audition_submission", user.id);
+  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+
   const submissionId = requestedSubmissionId || crypto.randomUUID();
   const uploaded: string[] = [];
   try {
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
   }
 
   const timestamp = new Date().toISOString();
-  const result = NextResponse.json({ submission: { id: submissionId, campaign_id: campaignId, user_id: user.id, answers, form_snapshot: fields, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: existing?.created_at ?? timestamp, updated_at: timestamp } }, { status: existing ? 200 : 201 });
+  const result = NextResponse.json({ remaining: rate.remaining, submission: { id: submissionId, campaign_id: campaignId, user_id: user.id, answers, form_snapshot: fields, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: existing?.created_at ?? timestamp, updated_at: timestamp } }, { status: existing ? 200 : 201 });
   result.headers.set("Cache-Control", "no-store");
   return result;
 }

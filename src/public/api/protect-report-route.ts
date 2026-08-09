@@ -6,7 +6,7 @@ import { extensionMatches, validateFileSignature } from "@/core/uploads/file-sig
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 3;
 const REPORT_TYPES = new Set(["defamation", "harassment", "impersonation", "copyright", "privacy", "other"]);
 const PLATFORMS = new Set(["instagram", "x", "youtube", "tiktok", "facebook", "community", "other"]);
@@ -39,10 +39,6 @@ export async function POST(request: NextRequest) {
   const sessionClient = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await sessionClient.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-
-  const rate = await consumeSubmissionRateLimit(request, "protect_report", user.id);
-  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
   let formData: FormData;
   try {
@@ -80,6 +76,10 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
 
+  const rate = await consumeSubmissionRateLimit(request, "protect_report", user.id);
+  if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("SUBMISSION_FAILED", 503);
   }
 
-  const response = NextResponse.json({ id: reportId, createdAt: new Date().toISOString() });
+  const response = NextResponse.json({ id: reportId, createdAt: new Date().toISOString(), remaining: rate.remaining });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

@@ -29,7 +29,7 @@ function validRequest() {
   form.set("postedAt", "2026-01-01");
   form.set("authorName", "Author");
   form.set("confirmation", "true");
-  form.append("evidence", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "proof.png", { type: "image/png" }));
+  form.append("evidence", new File([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64")], "proof.png", { type: "image/png" }));
   return new NextRequest("http://localhost/api/protect-reports", {
     method: "POST", headers: { origin: "http://localhost" }, body: form,
   });
@@ -40,7 +40,7 @@ describe("POST /api/protect-reports", () => {
     vi.clearAllMocks();
     mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "user@example.com" } }, error: null });
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, retryAfter: 0 });
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.insert.mockResolvedValue({ error: null });
@@ -58,14 +58,12 @@ describe("POST /api/protect-reports", () => {
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", confirmation: true }));
   });
 
-  it("stops a rate-limited report before parsing or writing", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, retryAfter: 75 });
+  it("stops a rate-limited report before writing", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, remaining: 0, retryAfter: 75 });
     const nextRequest = validRequest();
-    const formDataSpy = vi.spyOn(nextRequest, "formData");
     const response = await POST(nextRequest);
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("75");
-    expect(formDataSpy).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

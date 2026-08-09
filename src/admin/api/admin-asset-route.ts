@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import {
@@ -37,7 +38,9 @@ export async function POST(request: NextRequest) {
 
   let formData: FormData;
   try {
-    formData = await request.formData();
+    const parsed = await parseFormDataWithinLimit(request, 100 * 1024 * 1024 + 64 * 1024);
+    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
+    formData = parsed;
   } catch {
     return errorResponse("INVALID_FILE", 400);
   }
@@ -45,12 +48,11 @@ export async function POST(request: NextRequest) {
   const bucket = String(formData.get("bucket") || "");
   const requestedPath = String(formData.get("path") || "");
   const file = formData.get("file");
-  const direct = formData.get("direct") === "true";
   const config = BUCKETS[bucket as keyof typeof BUCKETS];
   if (!config || !isSafeStoragePath(requestedPath) || !(file instanceof File)) {
     return errorResponse("INVALID_FILE", 400);
   }
-  const fileSize = direct ? Number(formData.get("size")) : file.size;
+  const fileSize = file.size;
   if (!Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > config.maxBytes) {
     return errorResponse(fileSize > config.maxBytes ? "FILE_TOO_LARGE" : "INVALID_FILE", fileSize > config.maxBytes ? 413 : 400);
   }
@@ -60,9 +62,6 @@ export async function POST(request: NextRequest) {
 
   const path = replacePathExtension(requestedPath, validated.extension);
   if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400);
-  if (direct && (bucket !== "track-assets" || validated.mimeType !== "audio/mpeg")) {
-    return errorResponse("INVALID_FILE", 400);
-  }
   if (bucket === "business-assets" && !["press-kit.zip", "profile.pdf"].includes(path)) {
     return errorResponse("INVALID_FILE", 400);
   }
@@ -70,22 +69,13 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
-  let token: string | undefined;
-  if (direct) {
-    const { data, error } = await serviceClient.storage.from(bucket).createSignedUploadUrl(path, {
-      upsert: formData.get("upsert") === "true",
-    });
-    if (error || !data) return errorResponse("UPLOAD_FAILED", 503);
-    token = data.token;
-  } else {
-    const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
-      contentType: validated.mimeType,
-      upsert: formData.get("upsert") === "true",
-    });
-    if (error) return errorResponse("UPLOAD_FAILED", 503);
-  }
+  const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
+    contentType: validated.mimeType,
+    upsert: formData.get("upsert") === "true",
+  });
+  if (error) return errorResponse("UPLOAD_FAILED", 503);
 
-  await serviceClient.from("admin_audit_logs").insert({
+  const { error: auditError } = await serviceClient.from("admin_audit_logs").insert({
     actor_id: user.id,
     actor_email: user.email ?? null,
     operation: "UPDATE",
@@ -95,10 +85,13 @@ export async function POST(request: NextRequest) {
     changed_fields: ["name", "metadata"],
     after_values: { bucket, path, mime_type: validated.mimeType, size: fileSize },
   });
+  if (auditError) {
+    await serviceClient.storage.from(bucket).remove([path]);
+    return errorResponse("AUDIT_FAILED", 503);
+  }
 
   const { storageUrl } = getPublicSupabaseConfig();
   const response = NextResponse.json({
-    token,
     asset: {
       bucket,
       path,
