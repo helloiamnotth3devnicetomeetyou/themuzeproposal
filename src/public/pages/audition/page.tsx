@@ -8,14 +8,16 @@ export default async function AuditionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/audition");
 
-  const [campaignResult, fieldResult, submissionResult] = await Promise.all([
+  const [campaignResult, fieldResult, submissionResult, profileResult] = await Promise.all([
     supabase.from("audition_campaigns").select("*").order("starts_at", { ascending: false }),
     supabase.from("audition_form_fields").select("*").eq("is_active", true).order("sort_order"),
     supabase.rpc("get_my_audition_submissions"),
+    supabase.from("profiles").select("name").eq("id", user.id).maybeSingle(),
   ]);
 
   return <AuditionClient
     userEmail={user.email || ""}
+    userName={profileResult.data?.name || user.user_metadata?.name || ""}
     initialCampaigns={(campaignResult.data ?? []) as AuditionCampaign[]}
     initialFields={(fieldResult.data ?? []) as AuditionFormField[]}
     initialSubmissions={(submissionResult.data ?? []) as AuditionSubmission[]}

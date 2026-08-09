@@ -10,9 +10,11 @@ import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 import { spotifyAlbumHref } from "@/core/http/spotify";
-import { startSlideTransition } from "./carousel-state";
+import { autoplayProgress, startSlideTransition } from "./carousel-state";
 
 const TRANSITION_DURATION = 1100;
+const AUTOPLAY_DURATION = 10_000;
+const RAIL_GAP = 4;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
@@ -27,11 +29,15 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const prevSlide = transition.previous;
   const isTransitioning = prevSlide !== null;
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
+  const [isFirstImageLoaded, setIsFirstImageLoaded] = useState(!rawSlides[0]?.imageUrl);
 
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isInteractionPaused, setIsInteractionPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoplayElapsed = useRef(0);
+  const autoplayFrame = useRef<number | null>(null);
+  const progressRef = useRef<HTMLElement>(null);
 
   useEffect(() => () => {
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
@@ -73,13 +79,30 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   }, [currentSlide, isTransitioning, slides.length]);
 
   useEffect(() => {
+    autoplayElapsed.current = 0;
+    if (progressRef.current) progressRef.current.style.transform = "scaleX(0)";
+  }, [currentSlide]);
+
+  useEffect(() => {
     if (slides.length <= 1 || isTransitioning || !isPageVisible || isInteractionPaused || prefersReducedMotion) return;
 
-    const timer = setTimeout(() => {
-      goToSlide(currentSlide + 1);
-    }, 6000);
+    let previous = performance.now();
+    const tick = (now: number) => {
+      autoplayElapsed.current += now - previous;
+      previous = now;
+      const progress = autoplayProgress(autoplayElapsed.current, AUTOPLAY_DURATION);
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`;
+      if (progress === 1) {
+        goToSlide(currentSlide + 1);
+        return;
+      }
+      autoplayFrame.current = requestAnimationFrame(tick);
+    };
+    autoplayFrame.current = requestAnimationFrame(tick);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (autoplayFrame.current !== null) cancelAnimationFrame(autoplayFrame.current);
+    };
   }, [currentSlide, goToSlide, isInteractionPaused, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
 
   if (slides.length === 0) {
@@ -94,6 +117,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     <main
       className="relative h-screen w-full overflow-hidden"
       style={{ backgroundColor: "var(--color-static-black)", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
+      aria-busy={!isFirstImageLoaded}
       onFocusCapture={() => setIsInteractionPaused(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setIsInteractionPaused(false);
@@ -134,10 +158,12 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 fetchPriority={index === 0 ? "high" : undefined}
                 loading={index === 0 ? "eager" : "lazy"}
                 quality={80}
+                onLoad={() => { if (index === 0) setIsFirstImageLoaded(true); }}
                 className="object-cover object-center"
                 style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
               />
             )}
+            {index === 0 && !isFirstImageLoaded && <div className="home-hero-loading" role="status"><span>Loading featured release</span></div>}
 
             <div className="home-hero-content">
               <div className="home-hero-copy">
@@ -221,6 +247,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
       {slides.length > 1 && (
         <>
+          <p className="sr-only" aria-live="polite">현재 슬라이드 {currentSlide + 1} / {slides.length}: {slides[currentSlide]?.title}</p>
           <button
             type="button"
             onClick={() => goToSlide(currentSlide - 1)}
@@ -244,7 +271,20 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               <i>/</i>
               <span>{String(slides.length).padStart(2, "0")}</span>
             </span>
-            <div className="home-slide-rail">
+            <div
+              className="home-slide-rail"
+              onFocusCapture={() => setIsInteractionPaused(false)}
+            >
+              <span
+                className="home-slide-highlight"
+                aria-hidden="true"
+                style={{
+                  width: `calc(${100 / slides.length}% - ${(RAIL_GAP * (slides.length - 1)) / slides.length}px)`,
+                  left: `calc(${(currentSlide * 100) / slides.length}% + ${(currentSlide * RAIL_GAP) / slides.length}px)`,
+                }}
+              >
+                <i ref={progressRef} />
+              </span>
               {slides.map((slide, index) => (
                 <button
                   key={slide.id}
@@ -253,7 +293,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                   aria-label={`Show ${slide.title}`}
                   aria-current={index === currentSlide ? "true" : undefined}
                   className={index === currentSlide ? "is-active" : undefined}
-                />
+                >
+                  <span className="home-slide-label">{slide.title}</span>
+                </button>
               ))}
             </div>
           </div>

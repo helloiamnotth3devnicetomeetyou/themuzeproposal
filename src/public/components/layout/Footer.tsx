@@ -72,7 +72,7 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
                     rel="noopener noreferrer"
                     aria-label={accessibleLabel}
                     title={accessibleLabel}
-                    className="flex size-11 items-center justify-center rounded-full transition-all duration-slow hover:text-brand-pink hover:border-brand-pink"
+                    className="flex size-11 items-center justify-center rounded-full transition-all duration-slow hover:-translate-y-0.5 hover:text-brand-pink hover:border-brand-pink active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-pink motion-reduce:transform-none motion-reduce:transition-none"
                     style={{
                       backgroundColor: "var(--bg-input)",
                       border: "1px solid var(--border-default)",

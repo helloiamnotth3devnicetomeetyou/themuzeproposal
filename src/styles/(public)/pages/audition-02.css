@@ -359,3 +359,15 @@
 .audition-page input,
 .audition-page textarea,
 .audition-page button { font-size: max(14px, 1em); }
+
+.pageNavBack:active,.pageNavNext:active:not(:disabled),.categoryChip:active,.fieldFileTrigger:active,.submitBtn:active:not(:disabled),.closedNoticeLink:active { transform:translateY(1px); }
+.pageNavBack:focus-visible,.pageNavNext:focus-visible,.categoryChip:focus-visible,.fieldFileTrigger:has(input:focus-visible),.fieldFileRemove:focus-visible,.submitBtn:focus-visible,.closedNoticeLink:focus-visible { outline:2px solid var(--color-brand-pink); outline-offset:3px; }
+.fieldFileChosen,.errorBanner { animation:publicFeedbackIn var(--duration-base) ease both; }
+.successScreen { animation:publicFeedbackIn var(--duration-slow) ease both; }
+.fieldFileRemove { transition:color var(--duration-fast) ease,transform var(--duration-fast) ease; }
+.fieldFileRemove:active { transform:scale(.92); }
+
+@media (prefers-reduced-motion:reduce) {
+  .pageNavBack,.pageNavNext,.categoryChip,.fieldFileTrigger,.fieldFileRemove,.submitBtn,.closedNoticeLink { transition:none; }
+  .fieldFileChosen,.errorBanner,.successScreen { animation:none; }
+}

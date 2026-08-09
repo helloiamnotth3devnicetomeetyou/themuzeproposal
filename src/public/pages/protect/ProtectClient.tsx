@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CircleAlert, FileCheck2, LockKeyhole } from "lucide-react";
+import { ArrowRight, CircleAlert, FileCheck2 } from "lucide-react";
+import AccountProfileLink from "@/public/components/AccountProfileLink";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import styles from "@/styles/(public)/pages/protect.module.css";
@@ -22,11 +23,13 @@ export type MyReport = {
 
 export default function ProtectClient({
   initialUserEmail,
+  initialUserName,
   initialArtists,
   initialReports,
   initialLoadFailed = false,
 }: {
   initialUserEmail: string;
+  initialUserName: string;
   initialArtists: Artist[];
   initialReports: MyReport[];
   initialLoadFailed?: boolean;
@@ -90,11 +93,7 @@ export default function ProtectClient({
                 {t.protect.report}
               </button>
             </nav>
-            <div>
-              <LockKeyhole aria-hidden="true" />
-              <span>{t.protect.privateReport}</span>
-              <b>{userEmail}</b>
-            </div>
+            <AccountProfileLink name={initialUserName} email={userEmail} />
           </div>
         </header>
 

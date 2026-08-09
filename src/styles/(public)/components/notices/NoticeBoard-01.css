@@ -186,7 +186,13 @@
   border-bottom: 1px solid var(--border-default);
   color: var(--text-primary);
   text-decoration: none;
+  transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
+
+.item:hover,
+.item:focus-visible { background: var(--bg-subtle); }
+
+.item:active { transform: translateY(1px); }
 
 .item::before {
   position: absolute;
@@ -323,17 +329,17 @@
   overflow-wrap: anywhere;
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: clamp(42px, 5vw, 82px);
-  font-weight: 800;
-  letter-spacing: -0.07em;
-  line-height: 0.88;
+  font-size: clamp(28px, 3vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  margin-top: 32px;
+  margin-top: 20px;
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 650;

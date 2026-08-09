@@ -65,9 +65,28 @@
   transition: color var(--duration-base) ease;
 }
 
+.navLink::after {
+  position: absolute;
+  right: 0;
+  bottom: 7px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  transform: scaleX(.35);
+  transition: opacity var(--duration-fast) ease, transform var(--duration-base) ease;
+}
+
 .navLink:hover,
 .navLinkActive {
   color: var(--color-brand-pink);
+}
+
+.navLink:hover::after,
+.navLinkActive::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .artistLogoBadge {
@@ -110,6 +129,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 8px;
+  animation: dropdownEnter var(--duration-base) cubic-bezier(.16, 1, .3, 1) both;
 }
 
 .dropdownItem {
@@ -229,24 +249,23 @@
   gap: 7px;
   padding: 0 14px;
   border-radius: 9999px;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 0.6875rem;
-  font-weight: 750;
-  letter-spacing: 0.12em;
-  transition: all var(--duration-base) ease;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: color var(--duration-base) ease, background-color var(--duration-base) ease, border-color var(--duration-base) ease;
   cursor: pointer;
 }
 
 .accountBtnLoggedIn {
   color: var(--color-brand-pink);
-  border: 1px solid var(--alpha-fc6fcf-4);
-  background-color: var(--alpha-fc6fcf-1);
-  box-shadow: 0 2px 10px var(--alpha-fc6fcf-15);
+  border: 1px solid var(--alpha-fc6fcf-35);
+  background-color: var(--alpha-fc6fcf-06);
 }
 
 .accountBtnLoggedIn:hover {
-  background-color: var(--alpha-fc6fcf-18);
-  border-color: var(--alpha-fc6fcf-6);
+  background-color: var(--alpha-fc6fcf-1);
+  border-color: var(--color-brand-pink);
 }
 
 .accountBtnLoggedOut {
@@ -393,7 +412,13 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  transition: color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
+
+.mobileArtistTrigger:hover,
+.mobileArtistTrigger[aria-expanded="true"] { color: var(--color-brand-pink); }
+
+.mobileArtistTrigger:active { transform: translateY(1px); }
 
 .mobileArtistChevron {
   width: 16px;
@@ -426,4 +451,42 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes dropdownEnter {
+  from { opacity: 0; transform: translateY(-5px); }
+}
+
+.navLink:active,
+.dropdownItem:active,
+.themeToggleBtn:active,
+.iconLink:active,
+.accountBtn:active { transform: translateY(1px); }
+
+.navLink:focus-visible,
+.dropdownItem:focus-visible,
+.themeToggleBtn:focus-visible,
+.iconLink:focus-visible,
+.accountBtn:focus-visible,
+.mobileArtistTrigger:focus-visible {
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header,
+  .container,
+  .navLink,
+  .navLink::after,
+  .logoImage,
+  .dropdownItem,
+  .themeToggleBtn,
+  .themeToggleThumb,
+  .iconLink,
+  .accountBtn,
+  .mobileArtistTrigger,
+  .mobileArtistChevron { transition: none; }
+  .dropdownCard,
+  .mobileMenu,
+  .mobileArtistSublist { animation: none; }
 }

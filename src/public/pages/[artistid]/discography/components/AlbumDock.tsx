@@ -55,7 +55,7 @@ export function AlbumDock({
               : t.discography.sortDescending
           }
           title={sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
-          className="flex w-11 h-11 sm:w-auto min-h-11 items-center justify-center gap-1 px-1 sm:px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)]"
+          className="flex w-11 h-11 sm:w-auto min-h-11 items-center justify-center gap-1 px-1 sm:px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -77,7 +77,7 @@ export function AlbumDock({
           onClick={() => selectAlbum(Math.max(albumIndex - 1, 0))}
           disabled={albumIndex === 0}
           aria-label={t.discography.previousAlbum}
-          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] active:scale-95 disabled:opacity-20 disabled:cursor-default disabled:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",
@@ -104,7 +104,7 @@ export function AlbumDock({
                 onClick={() => selectAlbum(index)}
                 data-album-index={index}
                 aria-pressed={isCurrent}
-                className="flex min-h-11 items-center gap-2 sm:gap-2.5 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97]"
+                className="flex min-h-11 items-center gap-2 sm:gap-2.5 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl border shrink-0 group cursor-pointer hover:bg-[var(--alpha-ffffff-04)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
                 style={{
                   backgroundColor: isCurrent
                     ? "var(--alpha-ffffff-06)"
@@ -180,7 +180,7 @@ export function AlbumDock({
           onClick={() => selectAlbum(Math.min(albumIndex + 1, albums.length - 1))}
           disabled={albumIndex === albums.length - 1}
           aria-label={t.discography.nextAlbum}
-          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] disabled:opacity-20 disabled:cursor-default"
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] active:scale-95 disabled:opacity-20 disabled:cursor-default disabled:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
             backgroundColor: "var(--alpha-ffffff-03)",

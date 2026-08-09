@@ -50,6 +50,7 @@
 .applicationPanel { min-height: 560px; padding-top: 34px; }
 .campaignPicker { padding: 0 14px 30px; border-bottom: 1px solid var(--border-default); }
 .campaignIntro { padding: 34px 14px 28px; border-bottom: 1px solid var(--border-default); }
+.campaignStatus { display:inline-flex; margin-bottom:12px; color:var(--color-brand-pink); font-size:9px; font-weight:800; letter-spacing:.12em; }
 .campaignIntro h2 { margin: 0; color: var(--text-primary); font-family: var(--font-display); font-size: clamp(24px, 3vw, 38px); letter-spacing: -.04em; }
 .campaignIntro p { max-width: 680px; margin: 12px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.75; white-space: pre-wrap; }
 .campaignIntro time { display: block; margin-top: 18px; color: var(--text-faint); font-size: 10px; }
@@ -67,10 +68,25 @@
 .inlineSuccess p { margin: 10px 0 0; color: var(--text-muted); font-size: 11px; }
 .inlineSuccess button { margin-top: 28px; padding: 0; border: 0; background: transparent; color: var(--text-primary); font-size: 11px; font-weight: 700; cursor: pointer; }
 
+.campaignCard { transition:border-color var(--duration-base) ease,transform var(--duration-base) ease; }
+.campaignCard:hover { border-color:var(--alpha-fc6fcf-35); transform:translateY(-2px); }
+.campaignCard a,.successCard a,.formActions button,.editButton,.inlineSuccess button { transition:color var(--duration-fast) ease,filter var(--duration-fast) ease,transform var(--duration-fast) ease; }
+.campaignCard a:hover,.successCard a:hover,.formActions button:hover:not(:disabled) { filter:brightness(.94); }
+.campaignCard a:active,.successCard a:active,.formActions button:active:not(:disabled),.editButton:active,.inlineSuccess button:active { transform:translateY(1px); }
+.campaignCard a:focus-visible,.successCard a:focus-visible,.formActions button:focus-visible,.editButton:focus-visible,.inlineSuccess button:focus-visible { outline:2px solid var(--color-brand-pink); outline-offset:3px; }
+.choiceList label { transition:border-color var(--duration-fast) ease,color var(--duration-fast) ease,background-color var(--duration-fast) ease; }
+.inlineSuccess { animation:publicFeedbackIn var(--duration-slow) ease both; }
+
 @media (max-width: 760px) {
   .applicationPanel { padding-top: 24px; }
   .campaignPicker,.campaignIntro { padding-right: 0; padding-left: 0; }
   .fieldHelp { grid-column: 1; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .campaignCard,.campaignCard a,.successCard a,.formActions button,.editButton,.inlineSuccess button,.choiceList label { transition:none; }
+  .campaignCard:hover { transform:none; }
+  .inlineSuccess { animation:none; }
 }
 
 .header {

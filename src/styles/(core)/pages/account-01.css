@@ -108,10 +108,10 @@
   height: 58px;
   overflow: hidden;
   place-items: center;
-  border: 1px solid var(--border-default);
-  border-radius: 2px;
-  background: var(--bg-subtle);
-  color: var(--color-brand-pink);
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-brand-pink);
+  color: var(--color-static-black);
 }
 
 .accountMetaAvatar img {
@@ -205,11 +205,11 @@
 
 .form {
   display: flex;
-  min-height: 420px;
+  min-height: 0;
   flex-direction: column;
   gap: 28px;
   max-width: 580px;
-  padding: 44px 14px 0;
+  padding: 44px 14px;
 }
 
 .formRow {

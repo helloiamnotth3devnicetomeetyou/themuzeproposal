@@ -44,6 +44,11 @@ const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
 };
 const PAGE_SIZE = 5;
 const dateAtLocalMidnight = (value: string) => new Date(`${value}T00:00:00`);
+const daysUntil = (value: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((dateAtLocalMidnight(value).getTime() - today.getTime()) / 86_400_000);
+};
 
 export default function ArtistSchedulePage() {
   const { artistid } = useParams<{ artistid: string }>();
@@ -59,6 +64,8 @@ export default function ArtistSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
+  const [categoryFilters, setCategoryFilters] = useState<Category[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,8 +133,9 @@ export default function ArtistSchedulePage() {
     const date = dateAtLocalMidnight(item.event_date);
     return date.getFullYear() === cursor.getFullYear() && date.getMonth() === cursor.getMonth();
   }), [cursor, effectiveEvents]);
-  const totalPages = Math.max(1, Math.ceil(monthEvents.length / PAGE_SIZE));
-  const visibleEvents = monthEvents.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const filteredMonthEvents = useMemo(() => categoryFilters.length ? monthEvents.filter((item) => categoryFilters.includes(item.category)) : monthEvents, [categoryFilters, monthEvents]);
+  const totalPages = Math.max(1, Math.ceil(filteredMonthEvents.length / PAGE_SIZE));
+  const visibleEvents = filteredMonthEvents.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const firstWeekday = new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay();
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const calendarCells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => index < firstWeekday ? null : index - firstWeekday + 1);
@@ -152,6 +160,10 @@ export default function ArtistSchedulePage() {
     setCursor(nextCursor);
     setPage(0);
   };
+  const toggleCategory = (category: Category) => {
+    setCategoryFilters((current) => current.includes(category) ? current.filter((item) => item !== category) : [...current, category]);
+    setPage(0);
+  };
   const moveYear = (amount: number) => changeCursor(new Date(cursor.getFullYear() + amount, cursor.getMonth(), 1));
   const goToday = () => changeCursor(new Date(now.getFullYear(), now.getMonth(), 1));
   const eventsOnDay = (day: number) => monthEvents.filter((event) => dateAtLocalMidnight(event.event_date).getDate() === day);
@@ -167,28 +179,32 @@ export default function ArtistSchedulePage() {
           <div className={styles.list} aria-live="polite">
             {visibleEvents.map((event) => {
               const date = dateAtLocalMidnight(event.event_date);
+              const remaining = daysUntil(event.event_date);
               const category = CATEGORIES[event.category] || CATEGORIES.etc;
               const CategoryIcon = category.icon;
-              const content = <>
-                <div className={styles.eventDate}><strong>{date.getDate()}</strong><span>{weekdays[date.getDay()]}</span></div>
-                <div>
-                  <p className={styles.eventTitle}>{localized(event, "title")}</p>
-                  <div className={styles.eventMeta}>
-                    <span className={styles.eventType}><i><CategoryIcon aria-hidden="true" /></i>{t.schedule.categories[event.category] ?? t.schedule.categories.etc}</span>
-                    {event.start_time && <b>{event.start_time.slice(0, 5)}</b>}
-                    {localizedLocation(event) && <b>{localizedLocation(event)}</b>}
-                  </div>
-                </div>
-              </>;
               const eventStyle = { "--event-color": category.color } as CSSProperties;
               const href = safeHref(event.link_url);
-              return href
-                ? <a key={event.id} className={styles.event} style={eventStyle} href={href} target="_blank" rel="noreferrer">{content}</a>
-                : <article key={event.id} className={styles.event} style={eventStyle}>{content}</article>;
+              const isSelected = selectedEventId === event.id;
+              return <article key={event.id} id={`schedule-event-${event.id}`} className={`${styles.event} ${isSelected ? styles.eventSelected : ""}`} style={eventStyle}>
+                <button type="button" className={styles.eventMain} onClick={() => setSelectedEventId((id) => id === event.id ? null : event.id)} aria-expanded={isSelected}>
+                  <div className={styles.eventDate}><strong>{date.getDate()}</strong><span>{weekdays[date.getDay()]}</span></div>
+                  <p className={styles.eventTitle}>{localized(event, "title")}</p>
+                </button>
+                <div className={styles.eventMeta}>
+                  <button type="button" className={styles.eventType} aria-pressed={categoryFilters.includes(event.category)} onClick={() => toggleCategory(event.category)}><i><CategoryIcon aria-hidden="true" /></i>{t.schedule.categories[event.category] ?? t.schedule.categories.etc}</button>
+                  {remaining >= 0 && <span className={styles.eventCountdown}>{remaining ? `D-${remaining}` : "D-DAY"}</span>}
+                  {event.start_time && <b>{event.start_time.slice(0, 5)}</b>}
+                  {localizedLocation(event) && <b>{localizedLocation(event)}</b>}
+                </div>
+                {isSelected && <div className={styles.eventDetail}>
+                  {localized(event, "description") && <p>{localized(event, "description")}</p>}
+                  {href && <a href={href} target="_blank" rel="noreferrer">{t.schedule.categories[event.category] ?? t.schedule.categories.etc} {"→"}</a>}
+                </div>}
+              </article>;
             })}
             {!visibleEvents.length && !error && <div className={styles.empty}>{t.schedule.empty}</div>}
           </div>
-          {monthEvents.length > PAGE_SIZE && <div className={styles.pager} aria-label={t.schedule.pageLabel}>
+          {filteredMonthEvents.length > PAGE_SIZE && <div className={styles.pager} aria-label={t.schedule.pageLabel}>
             <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0} aria-label={t.schedule.previous}><ChevronLeft aria-hidden="true" /></button>
             <span>{page + 1} / {totalPages}</span>
             <button type="button" onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))} disabled={page >= totalPages - 1} aria-label={t.schedule.next}><ChevronRight aria-hidden="true" /></button>
@@ -211,18 +227,23 @@ export default function ArtistSchedulePage() {
           <div className={styles.days}>
             {calendarCells.map((day, index) => {
               if (!day) return <span key={`empty-${index}`} aria-hidden="true" />;
-              const dayEvents = eventsOnDay(day);
+              const dayEvents = eventsOnDay(day).filter((event) => !categoryFilters.length || categoryFilters.includes(event.category));
               const isToday = day === now.getDate() && cursor.getMonth() === now.getMonth() && cursor.getFullYear() === now.getFullYear();
               return <button key={day} type="button" className={`${styles.day} ${index % 7 === 0 ? styles.sunday : ""} ${dayEvents.length ? styles.hasEvents : ""} ${isToday ? styles.isToday : ""}`} disabled={!dayEvents.length} aria-label={t.schedule.dayLabel(cursor.getMonth() + 1, day, dayEvents.length)} onClick={() => {
-                const target = monthEvents.findIndex((event) => dateAtLocalMidnight(event.event_date).getDate() === day);
-                if (target >= 0) setPage(Math.floor(target / PAGE_SIZE));
+                const target = filteredMonthEvents.findIndex((event) => dateAtLocalMidnight(event.event_date).getDate() === day);
+                if (target >= 0) {
+                  const eventId = filteredMonthEvents[target].id;
+                  setPage(Math.floor(target / PAGE_SIZE));
+                  setSelectedEventId(eventId);
+                  window.setTimeout(() => document.getElementById(`schedule-event-${eventId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+                }
               }}>
                 <span className={styles.dayNumber}>{day}</span>
                 {!!dayEvents.length && <span className={styles.dots}>{[...new Set(dayEvents.map((event) => event.category))].slice(0, 3).map((category) => <i key={category} style={{ "--dot-color": CATEGORIES[category].color } as CSSProperties} />)}</span>}
               </button>;
             })}
           </div>
-          <div className={styles.legend} aria-label={t.schedule.eventTypes}>{(Object.keys(CATEGORIES) as Category[]).map((key) => { const CategoryIcon = CATEGORIES[key].icon; return <span key={key} style={{ "--event-color": CATEGORIES[key].color } as CSSProperties}><i><CategoryIcon aria-hidden="true" /></i>{t.schedule.categories[key]}</span>; })}</div>
+          <div className={styles.legend} aria-label={t.schedule.eventTypes}>{(Object.keys(CATEGORIES) as Category[]).map((key) => { const CategoryIcon = CATEGORIES[key].icon; return <button key={key} type="button" aria-pressed={categoryFilters.includes(key)} onClick={() => toggleCategory(key)} style={{ "--event-color": CATEGORIES[key].color } as CSSProperties}><i><CategoryIcon aria-hidden="true" /></i>{t.schedule.categories[key]}</button>; })}</div>
         </section>
       </div>
     </main>

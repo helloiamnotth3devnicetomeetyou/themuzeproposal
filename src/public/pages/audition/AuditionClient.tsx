@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, CircleAlert, LockKeyhole } from "lucide-react";
+import { ArrowRight, CircleAlert } from "lucide-react";
+import AccountProfileLink from "@/public/components/AccountProfileLink";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { campaignDescription, isCampaignOpen, type AuditionCampaign, type AuditionFormField, type AuditionSubmission } from "@/core/auditions/types";
 import { localeTags } from "@/core/i18n/localized";
@@ -14,7 +15,7 @@ import { auditionMessages } from "./messages";
 
 type Tab = "mine" | "apply";
 
-export default function AuditionClient({ userEmail, initialCampaigns, initialFields, initialSubmissions, initialLoadFailed }: { userEmail: string; initialCampaigns: AuditionCampaign[]; initialFields: AuditionFormField[]; initialSubmissions: AuditionSubmission[]; initialLoadFailed: boolean }) {
+export default function AuditionClient({ userEmail, userName, initialCampaigns, initialFields, initialSubmissions, initialLoadFailed }: { userEmail: string; userName: string; initialCampaigns: AuditionCampaign[]; initialFields: AuditionFormField[]; initialSubmissions: AuditionSubmission[]; initialLoadFailed: boolean }) {
   const { locale } = useLocale();
   const m = auditionMessages[locale];
   const searchParams = useSearchParams();
@@ -41,7 +42,7 @@ export default function AuditionClient({ userEmail, initialCampaigns, initialFie
     <header className={protectStyles.header}><div className={protectStyles.headerSticky}>
       <h1>AUDITION</h1><p>{m.description}</p>
       <nav className={protectStyles.tabs} aria-label={m.menu}><button type="button" className={activeTab === "mine" ? protectStyles.activeTab : ""} onClick={() => { setActiveTab("mine"); setError(""); }}>{m.mine}</button><button type="button" className={activeTab === "apply" ? protectStyles.activeTab : ""} onClick={() => openApply()}>{m.apply}</button></nav>
-      <div><LockKeyhole aria-hidden="true" /><span>{m.account}</span><b>{userEmail}</b></div>
+      <AccountProfileLink name={userName} email={userEmail} />
     </div></header>
     <div className={protectStyles.contentColumn}>
       {error && <div className={protectStyles.error} role="alert"><CircleAlert aria-hidden="true" /><span>{error}</span><button type="button" onClick={() => setError("")} aria-label={m.closeError}>×</button></div>}
@@ -50,7 +51,7 @@ export default function AuditionClient({ userEmail, initialCampaigns, initialFie
       </section>}
       {activeTab === "apply" && <section className={styles.applicationPanel}>
         <div className={`${protectStyles.formRow} ${styles.campaignPicker}`}><span className={protectStyles.rowLabel}>{m.campaign} <i>*</i></span><div className={protectStyles.selectControl}><CustomSelect className={protectStyles.customSelect} ariaLabel={m.campaign} value={campaignId} placeholder={m.selectCampaign} options={openCampaigns.map((item) => ({ value: item.id, label: item.title }))} onChange={(value) => { setCampaignId(value); setEditingId(submissions.find((submission) => submission.campaign_id === value)?.id ?? ""); }} /></div></div>
-        {!campaign ? <div className={protectStyles.emptyState}><p>{m.noCampaign}</p><span>{m.noCampaignDescription}</span></div> : <><div className={styles.campaignIntro}><h2>{campaign.title}</h2><p>{campaignDescription(campaign, locale)}</p>{campaign.ends_at && <time dateTime={campaign.ends_at}>{m.deadline(new Intl.DateTimeFormat(localeTags[locale], { dateStyle: "long" }).format(new Date(campaign.ends_at)))}</time>}</div><CampaignFormClient key={`${campaign.id}-${editing?.id || "new"}`} campaign={campaign} fields={initialFields.filter((field) => field.campaign_id === campaign.id)} initialSubmission={editing?.campaign_id === campaign.id ? editing : null} userEmail={userEmail} onSaved={(submission) => { setSubmissions((current) => [submission, ...current.filter((item) => item.id !== submission.id)]); setEditingId(submission.id); }} onViewMine={() => setActiveTab("mine")} /></>}
+        {!campaign ? <div className={protectStyles.emptyState}><p>{m.noCampaign}</p><span>{m.noCampaignDescription}</span></div> : <><div className={styles.campaignIntro}><span className={styles.campaignStatus}>OPEN</span><h2>{campaign.title}</h2><p>{campaignDescription(campaign, locale)}</p>{campaign.starts_at && <time dateTime={campaign.starts_at}>{new Intl.DateTimeFormat(localeTags[locale], { dateStyle: "long" }).format(new Date(campaign.starts_at))} 시작</time>}{campaign.ends_at && <time dateTime={campaign.ends_at}>{m.deadline(new Intl.DateTimeFormat(localeTags[locale], { dateStyle: "long" }).format(new Date(campaign.ends_at)))}</time>}</div><CampaignFormClient key={`${campaign.id}-${editing?.id || "new"}`} campaign={campaign} fields={initialFields.filter((field) => field.campaign_id === campaign.id)} initialSubmission={editing?.campaign_id === campaign.id ? editing : null} userEmail={userEmail} onSaved={(submission) => { setSubmissions((current) => [submission, ...current.filter((item) => item.id !== submission.id)]); setEditingId(submission.id); }} onViewMine={() => setActiveTab("mine")} /></>}
       </section>}
     </div>
   </section></main>;

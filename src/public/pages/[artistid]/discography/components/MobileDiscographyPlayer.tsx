@@ -99,8 +99,8 @@ export function MobileDiscographyPlayer({
     const finish = () => onViewChange("tracks");
     currentTarget.animate(
       [
-        { transform: "perspective(900px) rotateY(0deg) scale(1)", opacity: 1 },
-        { transform: "perspective(900px) rotateY(90deg) scale(.96)", opacity: 0.3 },
+        { transform: "scale(1)", opacity: 1 },
+        { transform: "scale(.985)", opacity: 0.35 },
       ],
       { duration: 220, easing: "cubic-bezier(.4, 0, .2, 1)", fill: "forwards" },
     ).finished.then(finish, finish);
@@ -159,20 +159,20 @@ export function MobileDiscographyPlayer({
     selectAlbum(nextIndex);
   };
 
-  const tabClass = (tab: MobileView) => `relative flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-display text-[10px] font-black tracking-[0.14em] transition-all duration-base focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${view === tab ? "bg-[var(--alpha-ffffff-06)] text-[var(--color-static-white)]" : "text-[var(--palette-6b7280)]"}`;
+  const tabClass = (tab: MobileView) => `relative flex min-h-10 items-center gap-2 px-1 text-[11px] font-medium transition-colors duration-base focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${view === tab ? "text-[var(--color-static-white)]" : "text-[var(--palette-6b7280)]"}`;
 
   return (
-    <section className="w-full [&_.font-black]:font-bold [&_.font-bold]:font-semibold [&_.font-semibold]:font-medium">
+    <section className="w-full font-[family-name:var(--font-sans)]">
       <div
-        className="sticky z-30 -mx-5 bg-[var(--alpha-080808-65)] px-5 py-3 backdrop-blur-2xl"
+        className="sticky z-30 -mx-5 bg-[var(--alpha-080808-65)] px-5"
         style={{ top: "calc(var(--banner-height, 0px) + var(--site-header-height))" }}
       >
-        <header role="tablist" aria-label="Discography view" className="flex rounded-xl border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-050505-54)] p-1 shadow-[inset_0_1px_0_var(--alpha-ffffff-04)]">
+        <header role="tablist" aria-label="Discography view" className="flex gap-6 border-b border-[var(--alpha-ffffff-08)]">
           {(["album", "tracks"] as const).map((tab) => (
             <button key={tab} type="button" role="tab" aria-selected={view === tab} aria-controls={`discography-${tab}-panel`} className={tabClass(tab)} onClick={() => onViewChange(tab)}>
               {tab.toUpperCase()}
-              {tab === "tracks" && <span className="font-mono text-[8px] opacity-55">{String(album.tracks.length).padStart(2, "0")}</span>}
-              <span className={`absolute inset-x-5 bottom-0 h-px origin-center transition-transform duration-base ${view === tab ? "scale-x-100" : "scale-x-0"}`} style={{ backgroundColor: album.color }} />
+              {tab === "tracks" && <span className="text-[9px] opacity-55">{String(album.tracks.length).padStart(2, "0")}</span>}
+              <span className={`absolute inset-x-1 bottom-0 h-px origin-center transition-transform duration-base ${view === tab ? "scale-x-100" : "scale-x-0"}`} style={{ backgroundColor: album.color }} />
             </button>
           ))}
         </header>
@@ -206,12 +206,12 @@ export function MobileDiscographyPlayer({
                 </div>
               </div>
               <div className="w-1/3 shrink-0 px-4">
-                <button type="button" aria-label="TRACKS" onClick={openTracks} className="group relative mx-auto block aspect-square w-full max-w-[390px] touch-manipulation overflow-hidden rounded-[1.35rem] border border-[var(--alpha-ffffff-08)] text-left transition-transform duration-base active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-4" style={{ boxShadow: `0 24px 60px ${album.color}38`, transformStyle: "preserve-3d", outlineColor: album.color }}>
+                <button type="button" aria-label="TRACKS" onClick={openTracks} className="group relative mx-auto block aspect-square w-full max-w-[390px] touch-manipulation overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)] text-left transition-transform duration-base active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-4" style={{ outlineColor: album.color }}>
                   <Image src={album.cover} alt={album.title} fill priority sizes="(max-width: 640px) calc(100vw - 72px), 390px" className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-b from-[var(--alpha-ffffff-08)] via-transparent to-[var(--alpha-000000-45)]" />
-                  <div className="absolute bottom-4 right-4 flex min-h-9 items-center gap-2 rounded-lg border border-[var(--alpha-ffffff-12)] bg-[var(--alpha-050505-54)] px-3 text-[var(--color-static-white)] backdrop-blur-xl transition-transform duration-base group-active:translate-y-px">
+                  <div className="absolute bottom-3 right-3 flex min-h-8 items-center gap-2 rounded-md border border-[var(--alpha-ffffff-12)] bg-[var(--alpha-050505-54)] px-2.5 text-[var(--color-static-white)] backdrop-blur-md transition-transform duration-base group-active:translate-y-px">
                     <ListMusic className="h-3.5 w-3.5" style={{ color: album.color }} aria-hidden="true" />
-                    <span className="font-display text-[8px] font-black tracking-[0.14em]">{String(album.tracks.length).padStart(2, "0")} TRACKS</span>
+                    <span className="font-display text-[8px] font-bold tracking-[0.08em]">{String(album.tracks.length).padStart(2, "0")} TRACKS</span>
                   </div>
                 </button>
               </div>
@@ -224,19 +224,19 @@ export function MobileDiscographyPlayer({
           </div>
 
           <div className="mt-4 flex items-center gap-3">
-            <button type="button" disabled={!previousAlbum} onClick={() => selectAlbum(albumIndex - 1)} className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] text-[var(--palette-9ca3af)] transition-all duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.previousAlbum}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
+            <button type="button" disabled={!previousAlbum} onClick={() => selectAlbum(albumIndex - 1)} className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--alpha-ffffff-08)] text-[var(--palette-9ca3af)] transition-colors duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.previousAlbum}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between font-mono text-[8px] tracking-[0.12em] text-[var(--palette-6b7280)]"><span>ALBUM</span><span>{String(albumIndex + 1).padStart(2, "0")} / {String(albums.length).padStart(2, "0")}</span></div>
+              <div className="flex items-center justify-between text-[10px] text-[var(--palette-6b7280)]"><span>ALBUM</span><span>{String(albumIndex + 1).padStart(2, "0")} / {String(albums.length).padStart(2, "0")}</span></div>
               <div className="mt-2 h-px overflow-hidden bg-[var(--alpha-ffffff-08)]"><span className="block h-full transition-[width] duration-slow" style={{ width: `${((albumIndex + 1) / albums.length) * 100}%`, backgroundColor: album.color }} /></div>
             </div>
-            <button type="button" disabled={!nextAlbum} onClick={() => selectAlbum(albumIndex + 1)} className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] text-[var(--palette-9ca3af)] transition-all duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.nextAlbum}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+            <button type="button" disabled={!nextAlbum} onClick={() => selectAlbum(albumIndex + 1)} className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--alpha-ffffff-08)] text-[var(--palette-9ca3af)] transition-colors duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.nextAlbum}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
           </div>
 
           <div key={album.id} className="mobile-album-info-enter">
             <div className="mt-5 flex items-end justify-between gap-4">
               <div className="min-w-0">
-                <p className="font-display text-[9px] font-bold tracking-[0.14em] text-[var(--palette-9ca3af)] uppercase">{album.type} · {album.tracks.length} TRACKS</p>
-                <h1 className="mt-1 flex min-h-10 items-center font-hero text-4xl font-black leading-none tracking-[-0.055em] text-[var(--color-static-white)]">
+                <p className="text-[10px] font-medium text-[var(--palette-9ca3af)]">{album.type} · {album.tracks.length} TRACKS</p>
+                <h1 className="mt-1 flex min-h-10 items-center font-display text-3xl font-semibold leading-none tracking-[-0.04em] text-[var(--color-static-white)]">
                   {album.typoLogoUrl ? (
                     <span
                       aria-label={album.title}
@@ -248,7 +248,7 @@ export function MobileDiscographyPlayer({
                     />
                   ) : album.title}
                 </h1>
-                <p className="mt-2 font-mono text-[11px] text-[var(--palette-6b7280)]">{artistName} · {album.releaseDate}</p>
+                <p className="mt-2 text-[12px] text-[var(--palette-6b7280)]">{artistName} · {album.releaseDate}</p>
               </div>
               <button type="button" disabled={!canPlay} onClick={onTogglePlay} className="flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-static-black)] shadow-lg transition-transform duration-base active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-30" style={{ backgroundColor: album.color, outlineColor: album.color }} aria-label={isPlaying ? t.discography.pause : t.discography.play}>
                 {isPlaying ? <Pause className="h-6 w-6" aria-hidden="true" /> : <Play className="h-6 w-6 pl-0.5" aria-hidden="true" />}
@@ -256,40 +256,40 @@ export function MobileDiscographyPlayer({
             </div>
 
             {track && (
-              <button type="button" onClick={() => onViewChange("tracks")} className="mt-5 flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-2.5 text-left backdrop-blur-md transition-all duration-base active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2" style={{ outlineColor: album.color }}>
+              <button type="button" onClick={() => onViewChange("tracks")} className="mt-5 flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-lg border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-2.5 text-left transition-transform duration-base active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2" style={{ outlineColor: album.color }}>
                 <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg"><Image src={album.cover} alt="" fill sizes="44px" className="object-cover" /></div>
-                <div className="min-w-0 flex-1"><span className="block font-display text-[8px] font-bold tracking-[0.14em] text-[var(--palette-6b7280)]">{t.discography.nowPlaying}</span><strong className="mt-0.5 block truncate text-sm text-[var(--color-static-white)]">{track.title}</strong></div>
-                <span className="font-mono text-[10px] text-[var(--palette-6b7280)]">{time.current} / {time.total}</span>
+                <div className="min-w-0 flex-1"><span className="block font-display text-[8px] font-bold tracking-[0.08em] text-[var(--palette-6b7280)]">{t.discography.nowPlaying}</span><strong className="mt-0.5 block truncate text-sm text-[var(--color-static-white)]">{track.title}</strong></div>
+                <span className="text-[10px] text-[var(--palette-6b7280)]">{time.current} / {time.total}</span>
                 <ListMusic className="h-4 w-4 shrink-0" style={{ color: album.color }} aria-hidden="true" />
               </button>
             )}
           </div>
 
           <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
-            <h2 className="font-display text-xs font-black tracking-[0.14em] text-[var(--color-static-white)]">INTRO</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-static-white)]">INTRO</h2>
             <p className="mt-3 text-sm font-light leading-6 text-[var(--palette-9ca3af)]">{localizeText(album.desc, locale, t.discography.noDescription)}</p>
           </section>
 
           {album.titleImage && (
             <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
-              <h2 className="mb-3 font-display text-xs font-black tracking-[0.14em] text-[var(--color-static-white)]">{t.discography.tabs.concept}</h2>
+              <h2 className="mb-3 text-sm font-semibold text-[var(--color-static-white)]">{t.discography.tabs.concept}</h2>
               <div className="relative aspect-video overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)]"><Image src={album.titleImage} alt={album.title} fill sizes="calc(100vw - 40px)" className="object-cover" /></div>
             </section>
           )}
 
           <section className="mt-8 h-[520px] border-t border-[var(--alpha-ffffff-08)] pt-6">
-            <h2 className="mb-3 font-display text-xs font-black tracking-[0.14em] text-[var(--color-static-white)]">{t.discography.tabs.members}</h2>
+            <h2 className="mb-3 text-sm font-semibold text-[var(--color-static-white)]">{t.discography.tabs.members}</h2>
             <div className="h-[470px]"><MemberGallery album={album} members={members} gallery={gallery} albumColor={album.color} /></div>
           </section>
         </div>
       ) : (
         <div id="discography-tracks-panel" role="tabpanel" className="animate-page-fade pb-8 pt-4">
-          <div className="sticky z-20 -mx-2 rounded-b-2xl border-b border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] px-2 pb-4 pt-1 backdrop-blur-2xl" style={{ top: "calc(var(--banner-height, 0px) + var(--site-header-height) + 68px)" }}>
+          <div className="sticky z-20 -mx-5 border-b border-[var(--alpha-ffffff-08)] bg-[var(--alpha-050505-30)] px-5 pb-4 pt-3 backdrop-blur-md" style={{ top: "calc(var(--banner-height, 0px) + var(--site-header-height) + 40px)" }}>
             <TrackPlayer albumColor={album.color} isPlaying={isPlaying} time={time} track={track} onNext={onNextTrack} onPrevious={onPreviousTrack} onTogglePlay={onTogglePlay} />
           </div>
           <div className="mt-2 flex items-center justify-between px-1 pb-2">
-            <span className="font-display text-[10px] font-black tracking-[0.14em] text-[var(--palette-9ca3af)]">{album.title}</span>
-            <span className="font-mono text-[9px] text-[var(--palette-4b5563)]">{album.tracks.length} TRACKS</span>
+            <span className="text-sm font-medium text-[var(--palette-9ca3af)]">{album.title}</span>
+            <span className="text-[10px] text-[var(--palette-4b5563)]">{album.tracks.length} TRACKS</span>
           </div>
           <TrackList layout="flow" album={album} currentTrackIndex={currentTrackIndex} hoveredDisc={hoveredDisc} isPlaying={isPlaying} onPlayTrack={onPlayTrack} />
         </div>
