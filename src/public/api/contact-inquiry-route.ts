@@ -3,7 +3,7 @@ import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
-import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -34,6 +34,10 @@ export async function POST(request: NextRequest) {
   const sessionClient = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await sessionClient.auth.getUser();
   if (userError || !user?.email) return errorResponse("UNAUTHORIZED", 401);
+
+  const attempt = await consumeSubmissionAttemptRateLimit(request, "contact_inquiry", user.id);
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
 
   let formData: FormData;
   try {

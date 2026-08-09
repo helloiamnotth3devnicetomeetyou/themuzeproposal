@@ -206,7 +206,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
     setSaving(true);
     setError("");
     try {
-      const asset = await uploadAdminAsset("business-assets", kind === "pressKitUrl" ? "press-kit.zip" : "profile.pdf", file, { upsert: true });
+      const asset = await uploadAdminAsset("business-assets", kind === "pressKitUrl" ? "press-kit.zip" : "profile.pdf", file);
       setBusiness((current) => ({ ...current, [kind]: asset.url }));
       setToast("비즈니스 자료를 업로드했습니다. 변경사항을 저장해 공개하세요.");
     } catch (uploadError) {

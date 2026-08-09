@@ -25,3 +25,21 @@
 .hero-slide-footer button { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--border-default); border-radius: 6px; background: transparent; color: var(--text-secondary); }
 .hero-slide-footer button:disabled { opacity: .35; }
 .hero-slide-footer button svg { width: 14px; height: 14px; }
+
+@media (min-width: 1025px) {
+  .hero-slide-strip {
+    display: flex;
+    min-height: 0;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 12px 14px 15px;
+  }
+
+  .hero-slide-card,
+  .hero-slide-card.is-overlay {
+    width: 210px;
+    min-width: 210px;
+  }
+
+  .hero-slide-frame { aspect-ratio: 16 / 9; }
+}

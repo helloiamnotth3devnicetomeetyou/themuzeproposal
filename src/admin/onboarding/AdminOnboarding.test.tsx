@@ -90,18 +90,26 @@ describe("AdminOnboarding mobile guide", () => {
     expect(container.querySelector(".admin-guide-launcher")).not.toHaveClass("is-collapsed");
   });
 
-  it("marks a core practice complete only after the highlighted action", async () => {
+  it("prefers an enabled repeated target and accepts practice on any matching target", async () => {
     const { container } = render(<>
       <button type="button" data-tour-id="hero-refresh">Refresh</button>
+      <button type="button" data-tour-id="hero-add" disabled>Added</button>
       <button type="button" data-tour-id="hero-add">Add</button>
+      <article data-tour-id="hero-reorder"><button type="button">First slide</button></article>
+      <article data-tour-id="hero-reorder"><button type="button">Second slide</button></article>
       <AdminOnboarding userId="user-1" role="editor" artists={[]} isCollapsed={false} canNavigate={() => true} />
     </>);
     const refresh = container.querySelector<HTMLElement>("[data-tour-id='hero-refresh']")!;
-    const add = container.querySelector<HTMLElement>("[data-tour-id='hero-add']")!;
-    const rect = { x: 20, y: 80, top: 80, left: 20, right: 180, bottom: 124, width: 160, height: 44, toJSON: () => ({}) };
-    refresh.getBoundingClientRect = () => rect;
-    add.getBoundingClientRect = () => rect;
-    Object.defineProperty(document, "elementsFromPoint", { configurable: true, value: () => [refresh, add] });
+    const [added, add] = Array.from(container.querySelectorAll<HTMLElement>("[data-tour-id='hero-add']"));
+    const [firstSlide, secondSlide] = Array.from(container.querySelectorAll<HTMLElement>("[data-tour-id='hero-reorder']"));
+    const place = (element: HTMLElement, top: number) => {
+      element.getBoundingClientRect = () => ({ x: 20, y: top, top, left: 20, right: 180, bottom: top + 44, width: 160, height: 44, toJSON: () => ({}) });
+    };
+    [refresh, added, add, firstSlide, secondSlide].forEach((element, index) => place(element, 80 + index * 60));
+    Object.defineProperty(document, "elementsFromPoint", {
+      configurable: true,
+      value: (_x: number, y: number) => [[refresh], [added], [add], [firstSlide], [secondSlide]][Math.max(0, Math.min(4, Math.floor((y - 58) / 60)))],
+    });
 
     await vi.waitFor(() => expect(container.querySelector(".admin-guide-launcher")).toBeInTheDocument());
     fireEvent.click(container.querySelector<HTMLButtonElement>(".admin-guide-launcher")!);
@@ -112,8 +120,18 @@ describe("AdminOnboarding mobile guide", () => {
     fireEvent.click(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")!);
 
     await vi.waitFor(() => expect(document.querySelector(".admin-guide-task")).toHaveTextContent("메인에 추가"));
+    expect(add).toHaveClass("admin-guide-target");
+    expect(added).not.toHaveClass("admin-guide-target");
     expect(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")).toBeDisabled();
     fireEvent.click(add);
+    await vi.waitFor(() => expect(document.querySelector(".admin-guide-task")).toHaveClass("is-complete"));
+    expect(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")).toBeEnabled();
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")!);
+    await vi.waitFor(() => expect(document.querySelector(".admin-guide-task")).toHaveTextContent("슬라이드 카드 한 장"));
+    expect(firstSlide).toHaveClass("admin-guide-target");
+    expect(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")).toBeDisabled();
+    fireEvent.pointerUp(secondSlide.querySelector("button")!);
     await vi.waitFor(() => expect(document.querySelector(".admin-guide-task")).toHaveClass("is-complete"));
     expect(document.querySelector<HTMLButtonElement>(".admin-guide-popover .is-next")).toBeEnabled();
   });

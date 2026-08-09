@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
   consumeRateLimit: vi.fn(),
+  consumeAttemptRateLimit: vi.fn(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({
@@ -20,6 +21,7 @@ vi.mock("@/core/uploads/service-storage", () => ({
 }));
 vi.mock("@/core/http/submission-rate-limit", () => ({
   consumeSubmissionRateLimit: mocks.consumeRateLimit,
+  consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
 }));
 
 import { POST } from "./contact-inquiry-route";
@@ -55,6 +57,7 @@ describe("POST /api/contact-inquiries", () => {
     mocks.remove.mockResolvedValue({ error: null });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
+    mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
     mocks.createServiceClient.mockReturnValue({
       storage: {
         from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })),
@@ -100,5 +103,12 @@ describe("POST /api/contact-inquiries", () => {
     expect(response.headers.get("retry-after")).toBe("90");
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects exhausted attempt budgets before parsing the body", async () => {
+    mocks.consumeAttemptRateLimit.mockResolvedValueOnce({ error: false, allowed: false, remaining: 0, retryAfter: 30 });
+    const response = await POST(request(validForm()));
+    expect(response.status).toBe(429);
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
   });
 });

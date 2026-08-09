@@ -4,7 +4,7 @@ import NextImage from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
@@ -181,12 +181,10 @@ export default function Sidebar({
       <nav className="cms-nav" aria-label="관리자 메뉴">
         {/* Overview Group */}
         <div className={`cms-nav-section ${collapsedGroups.analytics ? "is-collapsed-group" : ""}`}>
-          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("analytics")}>
+          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("analytics")} aria-expanded={!collapsedGroups.analytics}>
             <p className="cms-nav-label">운영 현황</p>
-            <span className="cms-group-toggle-arrow">
-              {collapsedGroups.analytics ? "▶" : "▼"}
-            </span>
-          </div>
+            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+          </button>
           <div className="cms-nav-group-items">
             {overviewLinks.map((item) => {
               const Icon = item.icon;
@@ -208,10 +206,10 @@ export default function Sidebar({
         </div>
 
         <div className={`cms-nav-section ${collapsedGroups.inbox ? "is-collapsed-group" : ""}`}>
-          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("inbox")}>
+          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("inbox")} aria-expanded={!collapsedGroups.inbox}>
             <p className="cms-nav-label">접수함</p>
-            <span className="cms-group-toggle-arrow">{collapsedGroups.inbox ? "▶" : "▼"}</span>
-          </div>
+            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+          </button>
           <div className="cms-nav-group-items">
             {inboxLinks.map((item) => {
               const Icon = item.icon;
@@ -229,12 +227,10 @@ export default function Sidebar({
 
         {/* Content Group */}
         <div className={`cms-nav-section ${collapsedGroups.service ? "is-collapsed-group" : ""}`}>
-          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("service")}>
+          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("service")} aria-expanded={!collapsedGroups.service}>
             <p className="cms-nav-label">서비스 관리</p>
-            <span className="cms-group-toggle-arrow">
-              {collapsedGroups.service ? "▶" : "▼"}
-            </span>
-          </div>
+            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+          </button>
           <div className="cms-nav-group-items">
             {contentLinks.map((item) => {
               const Icon = item.icon;
@@ -257,12 +253,10 @@ export default function Sidebar({
 
         {/* System Group */}
         <div className={`cms-nav-section ${collapsedGroups.system ? "is-collapsed-group" : ""}`}>
-          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("system")}>
+          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("system")} aria-expanded={!collapsedGroups.system}>
             <p className="cms-nav-label">시스템</p>
-            <span className="cms-group-toggle-arrow">
-              {collapsedGroups.system ? "▶" : "▼"}
-            </span>
-          </div>
+            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+          </button>
           <div className="cms-nav-group-items">
             {systemLinks.map((item) => {
               const Icon = item.icon;
@@ -285,19 +279,16 @@ export default function Sidebar({
 
         {/* Artist Group */}
         <div className={`cms-nav-section cms-artist-section ${collapsedGroups.artist ? "is-collapsed-group" : ""}`}>
-          <div className="cms-nav-label-row clickable" onClick={() => toggleGroup("artist")}>
-            <div className="cms-nav-label-left">
+          <div className="cms-nav-label-row">
+            <button type="button" className="cms-nav-label-left" onClick={() => toggleGroup("artist")} aria-expanded={!collapsedGroups.artist}>
               <p className="cms-nav-label">아티스트</p>
-              <span className="cms-group-toggle-arrow">
-                {collapsedGroups.artist ? "▶" : "▼"}
-              </span>
-            </div>
+              <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            </button>
             {!isCollapsed && !collapsedGroups.artist && (
               <Link
                 href="/admin/artists/new/profile"
                 className="cms-add-artist"
                 aria-label="아티스트 추가"
-                onClick={(e) => e.stopPropagation()}
               >
                 <Plus aria-hidden="true" />
               </Link>

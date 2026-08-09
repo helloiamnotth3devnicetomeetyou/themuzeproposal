@@ -60,10 +60,12 @@ export async function POST(request: NextRequest) {
   const validated = await validateFileSignature(file, config.profile);
   if (!validated) return errorResponse("INVALID_FILE_TYPE", 400);
 
-  const path = replacePathExtension(requestedPath, validated.extension);
+  let path = replacePathExtension(requestedPath, validated.extension);
   if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400);
-  if (bucket === "business-assets" && !["press-kit.zip", "profile.pdf"].includes(path)) {
-    return errorResponse("INVALID_FILE", 400);
+  if (bucket === "business-assets") {
+    if (path === "press-kit.zip" && validated.extension === "zip") path = `press-kit/${crypto.randomUUID()}.zip`;
+    else if (path === "profile.pdf" && validated.extension === "pdf") path = `profile/${crypto.randomUUID()}.pdf`;
+    else return errorResponse("INVALID_FILE", 400);
   }
 
   const serviceClient = createServiceRoleClient();
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
     contentType: validated.mimeType,
-    upsert: formData.get("upsert") === "true",
+    upsert: false,
   });
   if (error) return errorResponse("UPLOAD_FAILED", 503);
 

@@ -277,7 +277,7 @@ export default function AdminOnboarding({
     let skipped = false;
     let awaitingInteraction = false;
     let practiceDone = false;
-    let practiceTarget: HTMLElement | null = null;
+    let practiceArmed = false;
     let revealedTarget: HTMLElement | null = null;
     const usableViewport = () => {
       const mobile = window.matchMedia("(max-width: 700px)").matches;
@@ -311,7 +311,12 @@ export default function AdminOnboarding({
     };
     const visibleTarget = (tourId: string) => {
       const candidates = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour-id="${tourId}"]`)).filter(isRendered);
-      return candidates.find(isExposed) ?? candidates[0] ?? null;
+      const exposed = candidates.filter(isExposed);
+      return exposed.find((candidate) => !candidate.matches(":disabled"))
+        ?? candidates.find((candidate) => !candidate.matches(":disabled"))
+        ?? exposed[0]
+        ?? candidates[0]
+        ?? null;
     };
     const update = () => {
       if (!target) return;
@@ -365,6 +370,8 @@ export default function AdminOnboarding({
       void saveStepProgress(step.chapterId, step.id);
     };
     const completePractice = (event: Event) => {
+      const practiceTourId = step.practice?.target ?? step.target;
+      if (!event.composedPath().some((node) => node instanceof HTMLElement && node.dataset.tourId === practiceTourId)) return;
       if (step.practice?.event === "input" || step.practice?.event === "change") {
         const field = event.target;
         if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
@@ -376,12 +383,11 @@ export default function AdminOnboarding({
       }
       markPracticeComplete();
     };
-    const armPractice = (element: HTMLElement, tourId: string) => {
+    const armPractice = (tourId: string) => {
       const practiceTourId = step.practice?.target ?? step.target;
-      if (!step.practice || tourId !== practiceTourId || practiceTarget === element) return;
-      if (practiceTarget) practiceTarget.removeEventListener(step.practice.event, completePractice, true);
-      practiceTarget = element;
-      practiceTarget.addEventListener(step.practice.event, completePractice, true);
+      if (!step.practice || tourId !== practiceTourId || practiceArmed) return;
+      practiceArmed = true;
+      document.addEventListener(step.practice.event, completePractice, true);
     };
     const attach = (nextTarget: HTMLElement, prompt: string | null = null, tourId = "") => {
       awaitingInteraction = Boolean(prompt);
@@ -390,7 +396,7 @@ export default function AdminOnboarding({
         setInteractionPrompt(prompt);
         if (prompt && window.matchMedia("(max-width: 700px)").matches) setMobileSheetExpanded(false);
       });
-      armPractice(nextTarget, tourId);
+      armPractice(tourId);
       if (target === nextTarget) return true;
       target?.classList.remove("admin-guide-target");
       target = nextTarget;
@@ -451,7 +457,7 @@ export default function AdminOnboarding({
     return () => {
       observer.disconnect();
       target?.classList.remove("admin-guide-target");
-      if (practiceTarget && step.practice) practiceTarget.removeEventListener(step.practice.event, completePractice, true);
+      if (practiceArmed && step.practice) document.removeEventListener(step.practice.event, completePractice, true);
       resizeObserver?.disconnect();
       cancelAnimationFrame(animationFrame);
       cancelAnimationFrame(promptFrame);
@@ -478,6 +484,24 @@ export default function AdminOnboarding({
   useEffect(() => {
     document.body.classList.toggle("is-admin-guide-sandbox", Boolean((run || pausedRun) && isGuideSandboxActive()));
     return () => document.body.classList.remove("is-admin-guide-sandbox");
+  }, [pausedRun, run]);
+
+  useEffect(() => {
+    if (!run && !pausedRun) return;
+    let wasActive = isGuideSandboxActive();
+    const checkSandbox = () => {
+      const active = isGuideSandboxActive();
+      if (wasActive && !active) {
+        window.dispatchEvent(new CustomEvent("admin-toast", { detail: "안전모드가 해제되었습니다. 가이드 진행 상태를 확인해 주세요." }));
+      }
+      wasActive = active;
+    };
+    const timer = window.setInterval(checkSandbox, 500);
+    window.addEventListener("storage", checkSandbox);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("storage", checkSandbox);
+    };
   }, [pausedRun, run]);
 
   useEffect(() => {

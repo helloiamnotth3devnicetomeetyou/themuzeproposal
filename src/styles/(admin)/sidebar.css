@@ -31,8 +31,8 @@
 
 .cms-sidebar-desktop-collapse {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border: 0;
   border-radius: 6px;
@@ -119,8 +119,8 @@
 
 .cms-add-artist {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border: 1px solid var(--border-default);
   border-radius: 6px;
@@ -184,7 +184,7 @@
 .cms-account-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; }
 .cms-account-copy b { overflow: hidden; color: var(--text-secondary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .cms-account-copy small { margin-top: 1px; color: var(--text-faint); font-size: 9px; }
-.cms-account button { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.cms-account button { display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer; }
 .cms-account button:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .cms-account button svg { width: 13px; height: 13px; }
 
@@ -337,12 +337,16 @@
   border-radius: 2px;
 }
 
-.cms-nav-label { font-size: 10px; letter-spacing: .11em; }
-.cms-nav-item { font-size: 12px; }
+.cms-nav-label { color: var(--text-muted); font-size: 12px; letter-spacing: .09em; }
+.cms-nav-item { font-size: 13px; }
 .cms-artist-heading > span,
-.cms-account-copy b { font-size: 12px; }
+.cms-account-copy b { font-size: 13px; }
 .cms-artist-link,
-.cms-account-copy small { font-size: 11px; }
+.cms-account-copy small { color: var(--text-muted); font-size: 12px; }
+.cms-artist-heading,
+.cms-artist-link { min-height: 40px; }
+.cms-artist-link { font-size: 12px; }
+.cms-empty-artist { font-size: 12px; }
 .cms-nav-item.is-active { background: transparent; }
 .cms-artist-link.is-active { background: transparent; }
 .cms-add-artist:hover { background: transparent; }
@@ -387,9 +391,9 @@
     padding: 4px 10px;
   }
   .cms-sidebar:not(.is-collapsed) .cms-nav-section.is-collapsed-group .cms-nav-item {
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
     padding: 0;
     justify-content: center;
     border-radius: 6px;
@@ -404,9 +408,9 @@
     margin: 0;
   }
   .cms-sidebar:not(.is-collapsed) .cms-nav-section.is-collapsed-group .cms-artist-heading {
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
     padding: 0;
     justify-content: center;
     border-radius: 6px;
@@ -450,11 +454,20 @@
   gap: 2px;
 }
 .cms-artist-collapsed-popup-links .cms-artist-link {
-  min-height: 28px;
+  min-height: 40px;
   padding: 6px 10px;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+@media (max-width: 1199px) {
+  .cms-add-artist,
+  .cms-account button { width: 44px; height: 44px; }
+  .cms-nav-item,
+  .cms-artist-heading,
+  .cms-artist-link,
+  .cms-artist-collapsed-popup-links .cms-artist-link { min-height: 44px; }
 }
 
 .cms-avatar.is-loading,
@@ -471,3 +484,95 @@
   border-radius: 6px;
   background: var(--bg-subtle);
 }
+
+/* Sidebar icon controls follow the shared admin button states. */
+.cms-sidebar-desktop-collapse,
+.cms-add-artist,
+.cms-account button,
+.cms-sidebar-mobile-close {
+  border-radius: var(--admin-control-radius);
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+}
+
+:is(.cms-sidebar-desktop-collapse, .cms-add-artist, .cms-account button, .cms-sidebar-mobile-close):active:not(:disabled) { background: var(--bg-elevated); }
+:is(.cms-sidebar-desktop-collapse, .cms-add-artist, .cms-account button, .cms-sidebar-mobile-close):disabled { cursor: not-allowed; opacity: .42; }
+:is(.cms-sidebar-desktop-collapse, .cms-add-artist, .cms-account button, .cms-sidebar-mobile-close) svg {
+  width: var(--admin-control-icon-size);
+  height: var(--admin-control-icon-size);
+  stroke-width: 2;
+}
+
+/* Final sidebar composition */
+@media (min-width: 1200px) {
+  .cms-sidebar:not(.is-collapsed) { width: 244px; flex-basis: 244px; }
+}
+
+.cms-sidebar { background: var(--bg-surface); }
+.cms-sidebar-heading { min-height: 72px; gap: 8px; padding: 14px 12px; }
+.cms-sidebar-search-container { margin: 0; }
+.cms-nav { gap: 18px; padding: 16px 12px 24px; }
+.cms-nav-section,.cms-nav-section + .cms-nav-section { gap: 5px; margin: 0; padding: 0; border: 0; }
+
+.cms-nav-label-row,
+.cms-nav-label-left {
+  display: flex;
+  width: 100%;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--admin-control-radius);
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cms-nav-label-left { width: auto; flex: 1; }
+.cms-nav-label-row:hover,.cms-nav-label-left:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.cms-nav-label-row .cms-nav-label,.cms-nav-label-left .cms-nav-label { margin: 0; padding: 0; color: inherit; font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.cms-group-toggle-arrow { width: 13px; height: 13px; flex: 0 0 13px; color: var(--text-faint); transition: transform var(--duration-fast) ease; }
+.cms-add-artist { border: 0; background: transparent; color: var(--text-muted); }
+.cms-add-artist:hover { border: 0; background: var(--bg-subtle); color: var(--text-primary); }
+.cms-add-artist svg { width: 15px; height: 15px; }
+.cms-nav-label-row[aria-expanded="false"] .cms-group-toggle-arrow,
+.cms-nav-label-left[aria-expanded="false"] .cms-group-toggle-arrow { transform: rotate(-90deg); }
+
+.cms-nav-group-items { gap: 3px; }
+.cms-sidebar:not(.is-collapsed) .cms-nav-section.is-collapsed-group .cms-nav-group-items { display: none; }
+.cms-nav-item {
+  min-height: 42px;
+  gap: 11px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.cms-nav-item:hover { border-color: var(--border-subtle); background: var(--bg-subtle); }
+.cms-nav-item.is-active { border-color: var(--border-default); background: var(--bg-subtle); box-shadow: inset 2px 0 var(--border-strong); color: var(--text-primary); }
+.cms-nav-item.is-active::before { display: none; }
+.cms-nav-item.is-active .cms-nav-icon { color: var(--text-primary); }
+.cms-nav-icon { width: 17px; height: 17px; flex-basis: 17px; color: var(--text-faint); }
+.cms-nav-count { min-width: 24px; padding: 3px 6px; border: 0; border-radius: 5px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 11px; }
+
+.cms-artist-section { padding-top: 2px; }
+.cms-artist-group { width: 100%; min-width: 0; }
+.cms-artist-group + .cms-artist-group { margin-top: 3px; }
+.cms-artist-heading { width: 100%; min-height: 42px; padding: 0 9px; border: 1px solid transparent; border-radius: 7px; box-sizing: border-box; }
+.cms-artist-heading:hover { border-color: transparent; background: var(--bg-subtle); }
+.cms-artist-heading > span { font-size: 13px; font-weight: 650; }
+.cms-artist-logo { width: 24px; height: 24px; flex-basis: 24px; border-radius: 6px; }
+.cms-artist-links { width: calc(100% - 20px); gap: 2px; margin: 3px 0 6px 20px; padding: 2px 0 2px 15px; box-sizing: border-box; }
+.cms-artist-link { display: flex; width: 100%; min-width: 0; min-height: 36px; align-items: center; padding: 0 9px; border-radius: 6px; box-sizing: border-box; font-size: 12px; line-height: 1.35; }
+.cms-artist-link:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.cms-artist-link.is-active { background: var(--bg-subtle); color: var(--text-primary); }
+
+.cms-sidebar-footer { padding: 12px; background: transparent; }
+.cms-account { gap: 10px; padding: 7px 6px 7px 9px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-card); }
+.cms-avatar { width: 32px; height: 32px; flex-basis: 32px; border-radius: 7px; }
+.cms-sidebar.is-collapsed .cms-nav-label-row { display: none; }
+.cms-sidebar.is-collapsed .cms-nav { padding: 14px 8px; }

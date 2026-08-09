@@ -2,8 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const mocks = vi.hoisted(() => ({ consumeRateLimit: vi.fn(), getUser: vi.fn(), insert: vi.fn(), update: vi.fn(), upload: vi.fn(), remove: vi.fn(), existing: null as Record<string, unknown> | null }));
-vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit: mocks.consumeRateLimit }));
+const mocks = vi.hoisted(() => ({ consumeRateLimit: vi.fn(), consumeAttemptRateLimit: vi.fn(), getUser: vi.fn(), insert: vi.fn(), update: vi.fn(), upload: vi.fn(), remove: vi.fn(), existing: null as Record<string, unknown> | null }));
+vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit: mocks.consumeRateLimit, consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: () => service }));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser } }) }));
 
@@ -48,8 +48,9 @@ describe("POST /api/audition/submit", () => {
     process.env.SUBMISSION_RATE_LIMIT_SECRET = "test-secret";
     mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "applicant@example.com", email_confirmed_at: "2026-08-01T00:00:00.000Z" } }, error: null });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
+    mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
     mocks.insert.mockResolvedValue({ error: null });
-    mocks.update.mockReturnValue(chain({ error: null }));
+    mocks.update.mockReturnValue(chain({ data: { id: "submission-1" }, error: null }));
     mocks.existing = null;
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
@@ -63,7 +64,7 @@ describe("POST /api/audition/submit", () => {
   });
 
   it("updates only the signed-in user's existing submission while the campaign is open", async () => {
-    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, created_at: "2026-08-01T00:00:00.000Z" };
+    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
     const original = request("댄스");
     const form = await original.formData();
     form.set("submissionId", "submission-1");

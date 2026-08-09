@@ -102,7 +102,9 @@
 
   .content-workbench-header,
   .music-editor-header {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 15;
     min-height: 0;
     align-items: flex-start;
     flex-direction: column;
@@ -125,6 +127,10 @@
   .content-workbench-actions .draft-save-button,
   .music-header-actions .draft-save-button {
     flex: 1 0 132px;
+  }
+
+  .draft-save-status {
+    margin-right: auto;
   }
 
   .content-workbench-tabs,
@@ -302,3 +308,156 @@
 }
 
 .admin-root-shell :where(.settings-footer-preview)::before { display: none; }
+
+/* Final control system: page CSS may arrange controls, but not reinvent them. */
+.admin-root-shell :is(
+  .content-asset-actions label,
+  .content-asset-actions button,
+  .music-upload-button,
+  .gallery-dropzone > button,
+  .gallery-filterbar > div > button,
+  .gallery-card-actions button:not(.admin-btn),
+  .gallery-inspector-actions button:not(.admin-btn),
+  .social-link-toolbar > button,
+  .audition-campaign-list nav a,
+  .audition-campaign-list nav button,
+  .audition-type-picker button
+) {
+  min-height: var(--admin-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--admin-control-radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: 700 12px/1 var(--font-sans);
+  letter-spacing: .01em;
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+}
+
+.admin-root-shell :is(
+  .content-asset-actions label,
+  .content-asset-actions button,
+  .music-upload-button,
+  .gallery-dropzone > button,
+  .gallery-filterbar > div > button,
+  .gallery-card-actions button:not(.admin-btn),
+  .gallery-inspector-actions button:not(.admin-btn),
+  .social-link-toolbar > button,
+  .audition-campaign-list nav a,
+  .audition-campaign-list nav button,
+  .audition-type-picker button
+):hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.admin-root-shell .audition-type-picker button.is-active {
+  border-color: var(--color-brand-pink);
+  background: color-mix(in srgb,var(--color-brand-pink) 8%,var(--bg-card));
+  color: var(--color-brand-pink);
+}
+
+.admin-root-shell .gallery-delete-button { color: var(--color-status-danger); }
+
+.admin-root-shell :is(
+  .content-rail-heading > button,
+  .music-library-heading button,
+  .hero-admin-row-actions button,
+  .hero-slide-footer button,
+  .settings-history-actions button,
+  .gallery-inspector-heading > button,
+  .admin-accounts-list-head button,
+  .admin-account-remove
+) {
+  display: inline-grid;
+  width: var(--admin-control-height);
+  min-width: var(--admin-control-height);
+  height: var(--admin-control-height);
+  min-height: var(--admin-control-height);
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: var(--admin-control-radius);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.admin-root-shell :is(
+  .content-rail-heading > button,
+  .music-library-heading button,
+  .hero-admin-row-actions button,
+  .hero-slide-footer button,
+  .settings-history-actions button,
+  .gallery-inspector-heading > button,
+  .admin-accounts-list-head button,
+  .admin-account-remove
+) svg {
+  width: var(--admin-control-icon-size);
+  height: var(--admin-control-icon-size);
+  stroke-width: 2;
+}
+
+.admin-root-shell :is(.rich-text-toolbar button,.canvasControls button) {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border-radius: var(--admin-control-radius);
+}
+
+.admin-root-shell :is(.gallery-dropzone,.music-image-dropzone,.content-asset-dropzone) {
+  background: var(--bg-subtle);
+  box-shadow: none;
+}
+
+.admin-root-shell :is(.desk-inbox-panel,.desk-release-panel,.desk-status-card) { border-radius: 8px; }
+
+/* Form language and field hierarchy */
+.admin-root-shell .admin-input {
+  min-height: var(--admin-field-height);
+  border-radius: var(--admin-control-radius);
+  font-size: 14px;
+}
+
+.admin-root-shell :is(
+  .music-field > span,
+  .content-section-heading > span,
+  .desk-translatable-heading > label,
+  .rich-text-label > span,
+  .audition-control-label,
+  .settings-panel label > span
+) {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.admin-root-shell :is(
+  .music-field > small,
+  .content-section-heading > p,
+  .rich-text-label > small,
+  .content-asset-copy small
+) {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.admin-root-shell input[type="checkbox"],
+.admin-root-shell input[type="radio"] { accent-color: var(--color-brand-pink); }
+
+.admin-root-shell input[type="color"] {
+  width: var(--admin-field-height);
+  min-width: var(--admin-field-height);
+  height: var(--admin-field-height);
+  padding: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--admin-control-radius);
+  background: var(--bg-input);
+}
+
+@media (max-width: 767px) {
+  .admin-root-shell .admin-input { font-size: 16px; }
+}

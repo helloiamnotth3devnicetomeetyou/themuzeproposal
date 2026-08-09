@@ -2,24 +2,24 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, CalendarDays, Disc3, FilePlus2, FileText, ListMusic, UserRound } from "lucide-react";
+import { ArrowRight, CalendarDays, Disc3, FileText, UserRound } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
 import { latestRecentItems, type RecentItem } from "./dashboard-model";
 
 type Stats = {
-  artists: number; albums: number; members: number; notices: number;
+  albums: number; notices: number;
   auditionPending: number; contactPending: number;
-  protectActive: number; protectReports: number;
+  protectActive: number;
   albumsPublished: number; albumsDraft: number;
   noticesPublished: number; notesDraft: number;
 };
 type ArtistRef = { id: string; name: string } | null;
 const empty: Stats = {
-  artists: 0, albums: 0, members: 0, notices: 0,
+  albums: 0, notices: 0,
   auditionPending: 0, contactPending: 0,
-  protectActive: 0, protectReports: 0,
+  protectActive: 0,
   albumsPublished: 0, albumsDraft: 0,
   noticesPublished: 0, notesDraft: 0,
 };
@@ -35,11 +35,8 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
     void Promise.all([
-      supabase.from("artists").select("id", { count: "exact", head: true }),
       supabase.from("albums").select("id", { count: "exact", head: true }),
-      supabase.from("artist_members").select("id", { count: "exact", head: true }),
       supabase.from("notices").select("id", { count: "exact", head: true }),
-      supabase.from("protect_reports").select("id", { count: "exact", head: true }),
       supabase.from("albums").select("id", { count: "exact", head: true }).eq("is_published", true),
       supabase.from("albums").select("id", { count: "exact", head: true }).eq("is_published", false),
       supabase.from("notices").select("id", { count: "exact", head: true }).eq("is_published", true),
@@ -50,12 +47,11 @@ export default function AdminDashboard() {
       supabase.from("notices").select("id,title_ko,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(10),
       supabase.from("artists").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle(),
       getAdminInboxCounts(supabase),
-    ]).then(([artists, albums, members, notices, protectReports, albumsPublished, albumsDraft, noticesPublished, notesDraft, recentAlbums, recentMembers, recentSchedules, recentNotices, primaryArtist, inboxCounts]) => {
+    ]).then(([albums, notices, albumsPublished, albumsDraft, noticesPublished, notesDraft, recentAlbums, recentMembers, recentSchedules, recentNotices, primaryArtist, inboxCounts]) => {
       setStats({
-        artists: artists.count || 0, albums: albums.count || 0,
-        members: members.count || 0, notices: notices.count || 0,
+        albums: albums.count || 0, notices: notices.count || 0,
         auditionPending: inboxCounts.auditions, contactPending: inboxCounts.contacts,
-        protectActive: inboxCounts.reports, protectReports: protectReports.count || 0,
+        protectActive: inboxCounts.reports,
         albumsPublished: albumsPublished.count || 0, albumsDraft: albumsDraft.count || 0,
         noticesPublished: noticesPublished.count || 0, notesDraft: notesDraft.count || 0,
       });
@@ -80,26 +76,19 @@ export default function AdminDashboard() {
   if (loading) return <AdminSkeleton variant="cards" rows={4} className="min-h-[320px]" />;
   if (error) return <div className="hero-admin-alert is-error" role="alert"><span>{error}</span><button className="admin-btn" type="button" onClick={loadDashboard}>다시 시도</button></div>;
 
-  const metrics = [
-    { label: "아티스트", value: stats.artists, href: artistHref("profile"), code: "ART" },
-    { label: "멤버", value: stats.members, href: artistHref("members"), code: "MBR" },
-    { label: "앨범", value: stats.albums, href: artistHref("discography"), code: "RLS" },
-    { label: "공지", value: stats.notices, href: "/admin/notices", code: "NTC" },
-  ];
-
   const inboxItems = [
-    { code: "AUDITION", count: stats.auditionPending, label: "접수된 지원서", href: "/admin/auditions/campaigns", alert: false },
-    { code: "CONTACT", count: stats.contactPending, label: "미확인 문의", href: "/admin/contact", alert: false },
-    { code: "PROTECT", count: stats.protectActive, label: "미확인 신고", href: "/admin/protect", alert: true },
+    { count: stats.auditionPending, label: "접수된 지원서", href: "/admin/auditions/campaigns", alert: false },
+    { count: stats.contactPending, label: "미확인 문의", href: "/admin/contact", alert: false },
+    { count: stats.protectActive, label: "미확인 신고", href: "/admin/protect", alert: true },
   ];
 
   const contentStatus = [
     {
-      label: "앨범", code: "RLS", total: stats.albums, href: artistHref("discography"),
+      label: "앨범", total: stats.albums, href: artistHref("discography"),
       items: [{ label: "공개", value: stats.albumsPublished }, { label: "초안", value: stats.albumsDraft }],
     },
     {
-      label: "공지", code: "NTC", total: stats.notices, href: "/admin/notices",
+      label: "공지", total: stats.notices, href: "/admin/notices",
       items: [{ label: "공개", value: stats.noticesPublished }, { label: "초안", value: stats.notesDraft }],
     },
   ];
@@ -107,22 +96,26 @@ export default function AdminDashboard() {
   return (
     <div className="desk-dashboard">
 
-      {/* 1. 서비스 전체 현황 */}
-      <section className="desk-metrics">
-        {metrics.map((item) => (
-          <Link key={item.label} href={item.href} className="desk-metric">
-            <span>{item.code}</span>
-            <strong>{item.value}</strong>
-            <div><b>{item.label}</b><i>관리하기 →</i></div>
-          </Link>
-        ))}
+      <section className="desk-inbox-panel" aria-labelledby="dashboard-inbox-title">
+        <div className="desk-inbox-header">
+          <h2 id="dashboard-inbox-title">확인이 필요한 항목</h2>
+        </div>
+        <ul className="desk-inbox-list">
+          {inboxItems.map((item) => (
+            <li key={item.href}>
+              <Link href={item.href} className={item.alert ? "is-alert" : ""}>
+                <span className="desk-inbox-label">{item.label}</span>
+                <strong className="desk-inbox-count">{item.count}</strong>
+                <ArrowRight aria-hidden="true" className="desk-inbox-arrow" />
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      {/* 2. 최근 편집 (메인) + 확인이 필요한 항목 */}
-      <section className="desk-dashboard-main">
-        <div className="desk-release-panel">
+      <section className="desk-release-panel" aria-labelledby="dashboard-recent-title">
           <div className="desk-panel-heading">
-            <div><h2>최근 편집</h2></div>
+            <h2 id="dashboard-recent-title">최근 편집</h2>
             <Link href="/admin/audit-logs"><span>변경 이력 열기</span><ArrowRight aria-hidden="true" /></Link>
           </div>
           <div className="desk-release-list">
@@ -149,34 +142,12 @@ export default function AdminDashboard() {
             ))}
             {!recentItems.length && <div className="desk-empty-row">아직 편집한 콘텐츠가 없습니다.</div>}
           </div>
-        </div>
-
-        <aside className="desk-inbox-panel">
-          <div className="desk-inbox-header">
-            <span>INBOX</span>
-            <h2>확인이 필요한 항목</h2>
-          </div>
-          <ul className="desk-inbox-list">
-            {inboxItems.map((item) => (
-              <li key={item.code}>
-                <Link href={item.href} className={item.alert ? "is-alert" : ""}>
-                  <span className="desk-inbox-code">{item.code}</span>
-                  <span className="desk-inbox-label">{item.label}</span>
-                  <strong className="desk-inbox-count">{item.count}</strong>
-                  <ArrowRight aria-hidden="true" className="desk-inbox-arrow" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </aside>
       </section>
 
-      {/* 3. 콘텐츠 상태 */}
-      <section className="desk-content-status">
+      <section className="desk-content-status" aria-label="콘텐츠 현황">
         {contentStatus.map((group) => (
-          <Link key={group.code} href={group.href} className="desk-status-card">
+          <Link key={group.label} href={group.href} className="desk-status-card">
             <div className="desk-status-card-head">
-              <span>{group.code}</span>
               <b>{group.label}</b>
               <strong>{group.total}<small>개</small></strong>
             </div>
@@ -190,26 +161,6 @@ export default function AdminDashboard() {
             </div>
           </Link>
         ))}
-      </section>
-
-      {/* 4. 바로 시작하기 */}
-      <section className="desk-shortcuts">
-        <div><h2>바로 시작하기</h2></div>
-        <Link href={artistHref("discography")}>
-          <span><Disc3 aria-hidden="true" /></span>
-          <b>새 앨범 만들기</b>
-          <small>앨범 정보와 트랙 등록</small>
-        </Link>
-        <Link href="/admin/hero">
-          <span><ListMusic aria-hidden="true" /></span>
-          <b>메인 앨범 정렬</b>
-          <small>공개 앨범 상위 5개 노출 관리</small>
-        </Link>
-        <Link href="/admin/notices">
-          <span><FilePlus2 aria-hidden="true" /></span>
-          <b>공지 작성하기</b>
-          <small>새 소식 발행</small>
-        </Link>
       </section>
 
     </div>

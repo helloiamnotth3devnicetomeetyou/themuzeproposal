@@ -15,9 +15,10 @@ type Props = {
   extraDiff?: DraftDiffItem[];
   disabled?: boolean;
   label?: string;
+  requireConfirmation?: boolean;
 };
 
-export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave, labels, extraDiff = [], disabled, label = "변경사항 저장" }: Props) {
+export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave, labels, extraDiff = [], disabled, label = "변경사항 저장", requireConfirmation = false }: Props) {
   const confirm = useAdminConfirm();
   const diff = useMemo(() => {
     let before: unknown = {};
@@ -26,7 +27,7 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
   }, [draft, extraDiff, labels, snapshot]);
 
   const save = async () => {
-    if (!await confirm({
+    if (requireConfirmation && !await confirm({
       title: "변경사항을 저장할까요?",
       description: "아래 내용이 공개 페이지 데이터에 일괄 반영됩니다.",
       confirmLabel: "일괄 반영",
@@ -35,5 +36,7 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
     await onSave();
   };
 
-  return <button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{saving ? "저장 중…" : `${label}${diff.length ? ` (${diff.length})` : ""}`}</button>;
+  const status = saving ? "저장 중…" : dirty ? disabled ? "필수 항목을 확인하세요" : diff.length ? `${diff.length}건 변경됨` : "저장할 변경사항 있음" : "저장됨";
+
+  return <><span className={`draft-save-status${dirty ? " is-dirty" : ""}${disabled ? " is-invalid" : ""}`} role="status" aria-live="polite">{status}</span><button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{saving ? "저장 중…" : `${label}${diff.length ? ` (${diff.length})` : ""}`}</button></>;
 }

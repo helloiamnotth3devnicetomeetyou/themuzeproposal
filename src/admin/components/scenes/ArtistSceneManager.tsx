@@ -280,10 +280,10 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     if (!ACCEPTED_MASK_TYPES.has(file.type) || file.size > MAX_IMAGE_BYTES) return onError("정밀 마스크는 투명 배경 PNG 또는 WebP, 최대 20MB입니다.");
     setBusy(true);
     const extension = file.name.split(".").pop()?.toLowerCase() || "png";
-    const path = `${artistId}/scene-masks/${selectedScene.id}/${selectedMemberId}.${extension}`;
+    const path = `${artistId}/scene-masks/${selectedScene.id}/${selectedMemberId}-${crypto.randomUUID()}.${extension}`;
     let uploadedAsset;
     try {
-      uploadedAsset = await uploadAdminAsset("artist-assets", path, file, { upsert: true });
+      uploadedAsset = await uploadAdminAsset("artist-assets", path, file);
     } catch (uploadError) {
       setBusy(false);
       return onError(uploadError instanceof Error ? uploadError.message : "UPLOAD_FAILED");

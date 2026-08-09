@@ -58,7 +58,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: PendingConfirm; onClose: (
         </div>
         <div className="admin-confirm-actions">
           <button ref={cancelButton} type="button" className="admin-btn admin-btn-secondary" onClick={() => onClose(false)}>{dialog.cancelLabel || "취소"}</button>
-          <button type="button" className={`admin-btn admin-confirm-submit${danger ? " is-danger" : ""}`} onClick={() => onClose(true)}>{dialog.confirmLabel || "계속"}</button>
+          <button type="button" className={`admin-btn admin-btn-primary admin-confirm-submit${danger ? " is-danger" : ""}`} onClick={() => onClose(true)}>{dialog.confirmLabel || "계속"}</button>
         </div>
       </section>
     </div>

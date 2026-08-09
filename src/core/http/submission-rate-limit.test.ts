@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ createServiceRoleClient: vi.fn(), rpc: vi.fn() }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: mocks.createServiceRoleClient }));
 
-import { consumeSubmissionRateLimit, getSubmissionRemaining } from "./submission-rate-limit";
+import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit, getSubmissionRemaining } from "./submission-rate-limit";
 
 describe("submission rate limit", () => {
   beforeEach(() => {
@@ -48,6 +48,23 @@ describe("submission rate limit", () => {
 
     await expect(consumeSubmissionRateLimit(request, "audition_submission", "user-42"))
       .resolves.toEqual({ error: false, allowed: false, remaining: 2, retryAfter: 120 });
+  });
+
+  it("uses a separate short request-attempt budget", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, remaining: 29 }], error: null });
+    const request = new NextRequest("https://themuze.kr", { headers: { "x-vercel-forwarded-for": "203.0.113.4" } });
+    await consumeSubmissionAttemptRateLimit(request, "protect_report", "user-42");
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "consume_submission_rate_limit", expect.objectContaining({
+      p_scope: "protect_report_attempt", p_limit: 30, p_window_seconds: 900,
+    }));
+  });
+
+  it("fails closed in production without a trusted client IP", async () => {
+    delete process.env.VERCEL;
+    process.env.NODE_ENV = "production";
+    await expect(consumeSubmissionRateLimit(new NextRequest("https://themuze.kr"), "protect_report", "user-42"))
+      .resolves.toEqual({ error: true });
+    process.env.NODE_ENV = "test";
   });
 
   it("fails closed when configuration or the RPC fails", async () => {

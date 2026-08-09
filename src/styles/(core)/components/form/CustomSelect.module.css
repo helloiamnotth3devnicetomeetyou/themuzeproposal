@@ -169,6 +169,19 @@
   background: transparent;
 }
 
+:global(.admin-root-shell) .root:not([data-variant="line"]):not([data-variant="pill"]) .trigger {
+  height: var(--admin-field-height);
+  border-radius: var(--admin-control-radius);
+  font-size: 14px;
+}
+
+:global(.admin-root-shell) .option { min-height: 40px; font-size: 13px; }
+
+@media (max-width: 767px) {
+  :global(.admin-root-shell) .root:not([data-variant="line"]):not([data-variant="pill"]) .trigger { font-size: 16px; }
+  :global(.admin-root-shell) .option { min-height: 44px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .trigger svg,

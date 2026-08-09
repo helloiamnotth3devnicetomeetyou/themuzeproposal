@@ -46,9 +46,9 @@
 
 .admin-desktop-topbar { display: flex; min-height: 56px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 28px; border-bottom: 1px solid var(--border-default); background: var(--bg-surface); }
 .admin-desktop-topbar span,.admin-desktop-topbar strong { display: block; }
-.admin-desktop-topbar span { color: var(--color-brand-pink); font-size: 8px; font-weight: 800; letter-spacing: .14em; }
+.admin-desktop-topbar span { color: var(--color-brand-pink); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
 .admin-desktop-topbar strong { margin-top: 3px; color: var(--text-primary); font-size: 13px; }
-.admin-desktop-site-link { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 11px; font-weight: 700; text-decoration: none; }
+.admin-desktop-site-link { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; color: var(--text-muted); font-size: 13px; font-weight: 700; text-decoration: none; }
 .admin-desktop-site-link:hover { color: var(--text-primary); }
 .admin-desktop-site-link svg { width: 14px; height: 14px; }
 
@@ -248,18 +248,22 @@
 
 .cms-page-eyebrow,
 .cms-breadcrumb {
-  font-size: 10px !important;
+  font-size: 12px !important;
   letter-spacing: .11em;
 }
 
 .cms-page-header h1 { font-size: 25px; }
-.cms-page-header > div > p:last-child { font-size: 12px; }
-.cms-header-action { border-radius: 6px; font-size: 12px; }
-.cms-status { font-size: 10px; }
+.cms-page-header > div > p:last-child { font-size: 14px; }
+.cms-header-action { min-height: var(--admin-control-height); border-radius: var(--admin-control-radius); font: 700 13px/1 var(--font-sans); }
+.cms-header-action:hover { border-color: var(--border-strong); }
+.cms-header-action:active { background: var(--bg-elevated); }
+.cms-status { color: var(--text-muted); font-size: 12px; }
 
 @media (max-width: 1199px) {
   .admin-mobile-topbar {
     background: var(--bg-surface);
     backdrop-filter: none;
   }
+  .admin-mobile-title span { font-size: 11px; }
+  .admin-mobile-title strong { font-size: 14px; }
 }

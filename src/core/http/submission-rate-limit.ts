@@ -6,31 +6,39 @@ import { clientIp } from "@/core/http/client-ip";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
 export type SubmissionScope = "contact_inquiry" | "protect_report" | "audition_submission";
+type SubmissionAttemptScope = `${SubmissionScope}_attempt`;
 
 export const DAILY_SUBMISSION_LIMIT = 5;
 const IP_DAILY_LIMIT = 500;
 const WINDOW_SECONDS = 24 * 60 * 60;
+const ATTEMPT_LIMIT = 30;
+const IP_ATTEMPT_LIMIT = 100;
+const ATTEMPT_WINDOW_SECONDS = 15 * 60;
 
 function hashIdentifier(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
-export async function consumeSubmissionRateLimit(
+async function consumeRateLimit(
   request: NextRequest,
-  scope: SubmissionScope,
+  scope: SubmissionScope | SubmissionAttemptScope,
   userId: string,
+  userLimit: number,
+  ipLimit: number,
+  windowSeconds: number,
 ) {
   const client = createServiceRoleClient();
   const secret = process.env.SUBMISSION_RATE_LIMIT_SECRET?.trim();
   if (!client || !secret) return { error: true as const };
 
   const ip = clientIp(request);
+  if (!ip && process.env.NODE_ENV === "production") return { error: true as const };
   const calls = [
     client.rpc("consume_submission_rate_limit", {
       p_scope: scope,
       p_key_hash: hashIdentifier(`${scope}:uid:${userId}`, secret),
-      p_limit: DAILY_SUBMISSION_LIMIT,
-      p_window_seconds: WINDOW_SECONDS,
+      p_limit: userLimit,
+      p_window_seconds: windowSeconds,
     }),
   ];
   if (ip) {
@@ -38,8 +46,8 @@ export async function consumeSubmissionRateLimit(
       client.rpc("consume_submission_rate_limit", {
         p_scope: scope,
         p_key_hash: hashIdentifier(`${scope}:ip:${ip}`, secret),
-        p_limit: IP_DAILY_LIMIT,
-        p_window_seconds: WINDOW_SECONDS,
+        p_limit: ipLimit,
+        p_window_seconds: windowSeconds,
       }),
     );
   }
@@ -52,7 +60,7 @@ export async function consumeSubmissionRateLimit(
     return {
       allowed: Boolean(d?.is_allowed),
       remaining: Math.max(0, Number(d?.remaining) || 0),
-      retryAfter: Number(d?.retry_after_seconds) || WINDOW_SECONDS,
+      retryAfter: Number(d?.retry_after_seconds) || windowSeconds,
     };
   });
 
@@ -61,8 +69,16 @@ export async function consumeSubmissionRateLimit(
     error: false as const,
     allowed: !blocked,
     remaining: parsed[0].remaining,
-    retryAfter: Math.max(1, blocked?.retryAfter ?? WINDOW_SECONDS),
+    retryAfter: Math.max(1, blocked?.retryAfter ?? windowSeconds),
   };
+}
+
+export function consumeSubmissionAttemptRateLimit(request: NextRequest, scope: SubmissionScope, userId: string) {
+  return consumeRateLimit(request, `${scope}_attempt`, userId, ATTEMPT_LIMIT, IP_ATTEMPT_LIMIT, ATTEMPT_WINDOW_SECONDS);
+}
+
+export function consumeSubmissionRateLimit(request: NextRequest, scope: SubmissionScope, userId: string) {
+  return consumeRateLimit(request, scope, userId, DAILY_SUBMISSION_LIMIT, IP_DAILY_LIMIT, WINDOW_SECONDS);
 }
 
 export async function getSubmissionRemaining(scope: SubmissionScope, userId: string) {

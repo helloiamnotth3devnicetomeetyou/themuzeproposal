@@ -3,8 +3,19 @@
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  --admin-text-caption: 0.75rem;
+  --admin-text-body: 0.875rem;
+  --admin-control-height: 40px;
+  --admin-field-height: 44px;
+  --admin-control-radius: 6px;
+  --admin-control-icon-size: 16px;
   min-height: 100vh;
   transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
+}
+
+.admin-layout :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: 2px;
 }
 
 .admin-skeleton {
@@ -162,40 +173,6 @@
 }
 
 /* ─── Buttons ─── */
-.admin-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1.25rem;
-  border-radius: 9999px; /* Rounded pill buttons to match main web design */
-  font-weight: 700;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition: opacity var(--duration-fast), transform var(--duration-fast);
-  cursor: pointer;
-}
-
-.admin-btn-primary {
-  background-color: var(--text-primary);
-  color: var(--bg-base);
-}
-
-.admin-btn-primary:hover {
-  opacity: 0.85;
-}
-
-.admin-btn-secondary {
-  background-color: transparent;
-  border: 1px solid var(--border-default);
-  color: var(--text-primary);
-}
-
-.admin-btn-secondary:hover {
-  background-color: var(--bg-subtle);
-}
-
 /* ─── Cards ─── */
 .admin-card {
   background-color: var(--bg-card);
@@ -248,23 +225,56 @@
 .admin-card, .admin-table-container { border-color: var(--border-default); border-radius: 2px; background: var(--bg-card); box-shadow: none; }
 .admin-card { padding: 22px; }
 .admin-table { background: transparent; }
-.admin-table th { height: 44px; padding: 0 16px; background: transparent; color: var(--text-faint); font-size: 10px; letter-spacing: .1em; }
-.admin-table td { height: 58px; padding: 10px 16px; border-bottom-color: var(--border-subtle); color: var(--text-secondary); font-size: 12px; }
+.admin-table th { height: 44px; padding: 0 16px; background: transparent; color: var(--text-muted); font-size: var(--admin-text-caption); letter-spacing: .08em; }
+.admin-table td { height: 58px; padding: 10px 16px; border-bottom-color: var(--border-subtle); color: var(--text-secondary); font-size: var(--admin-text-body); }
 .admin-table tbody tr { transition: background var(--duration-fast) ease; }
 .admin-table tbody tr:hover { background: var(--bg-subtle); }
-.admin-input { min-height: 42px; padding: 10px 12px; border-color: var(--border-default) !important; border-radius: 6px; background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: 12px; }
+.admin-input { min-height: var(--admin-field-height); padding: 10px 13px; border-color: var(--border-default) !important; border-radius: var(--admin-control-radius); background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: var(--admin-text-body); line-height: 1.45; }
 .admin-input:focus { border-color: var(--color-brand-pink) !important; box-shadow: 0 0 0 3px var(--alpha-fc6fcf-1); }
+.admin-input:read-only { background: var(--bg-subtle) !important; color: var(--text-muted) !important; }
+.admin-input[aria-invalid="true"] { border-color: var(--color-status-danger) !important; }
 textarea.admin-input { min-height: 112px; resize: vertical; }
-.admin-btn { min-height: 38px; padding: 0 15px; border-radius: 6px; font-size: 12px; letter-spacing: .03em; }
-.admin-btn-primary { background: var(--color-brand-pink); color: var(--palette-151015); }
-.admin-btn-primary:hover { opacity: 1; background: var(--palette-ff87d8); transform: none; }
-.admin-btn-secondary { border-color: var(--border-default); background: var(--bg-card); color: var(--text-secondary); }
-.admin-btn-secondary:hover { background: var(--bg-subtle); color: var(--text-primary); }
-.admin-btn-danger { border: 1px solid var(--alpha-e46b6b-2); background: var(--bg-card); color: var(--color-status-danger); }
-.admin-btn-danger:hover { border-color: var(--color-status-danger); background: var(--alpha-e46b6b-07); }
+.admin-btn {
+  display: inline-flex;
+  min-height: var(--admin-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 15px;
+  border: 1px solid transparent;
+  border-radius: var(--admin-control-radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font: 700 13px/1 var(--font-sans);
+  letter-spacing: .01em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+}
 
-.admin-btn:disabled { cursor: not-allowed; opacity: .38; transform: none !important; }
-.admin-btn > svg { width: 13px; height: 13px; flex: 0 0 13px; stroke-width: 2; }
+.admin-btn:hover:not(:disabled) { background: var(--bg-subtle); color: var(--text-primary); }
+.admin-btn:active:not(:disabled) { background: var(--bg-elevated); }
+.admin-btn-primary { border-color: var(--color-brand-pink); background: var(--color-brand-pink); color: var(--palette-151015); }
+.admin-btn-primary:hover:not(:disabled) { border-color: var(--palette-ff87d8); background: var(--palette-ff87d8); color: var(--palette-151015); }
+.admin-btn-primary:active:not(:disabled) { border-color: var(--color-brand-pink); background: var(--color-brand-pink); }
+.admin-btn-secondary { border-color: var(--border-default); background: var(--bg-card); color: var(--text-secondary); }
+.admin-btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: var(--bg-subtle); color: var(--text-primary); }
+.admin-btn-secondary:active:not(:disabled) { background: var(--bg-elevated); }
+.admin-btn-danger { border-color: var(--alpha-e46b6b-2); background: var(--bg-card); color: var(--color-status-danger); }
+.admin-btn-danger:hover:not(:disabled) { border-color: var(--color-status-danger); background: var(--alpha-e46b6b-07); }
+.admin-btn-danger:active:not(:disabled) { background: var(--alpha-e46b6b-1); }
+.admin-btn-quiet { border-color: transparent; background: transparent; color: var(--text-muted); }
+.admin-btn-icon { width: var(--admin-control-height); min-width: var(--admin-control-height); padding: 0; }
+.admin-btn:disabled { cursor: not-allowed; opacity: .42; transform: none !important; }
+.admin-btn > svg { width: var(--admin-control-icon-size) !important; height: var(--admin-control-icon-size) !important; flex: 0 0 var(--admin-control-icon-size); stroke-width: 2; }
+
+@media (max-width: 767px) {
+  .admin-layout { --admin-control-height: 44px; }
+  .admin-input { font-size: 16px; }
+}
 
 /* ─── Shared Lucide Sizing ─── */
 .cms-account button svg,

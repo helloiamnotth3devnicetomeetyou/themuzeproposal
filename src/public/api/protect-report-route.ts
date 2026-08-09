@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
@@ -39,6 +39,10 @@ export async function POST(request: NextRequest) {
   const sessionClient = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await sessionClient.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+
+  const attempt = await consumeSubmissionAttemptRateLimit(request, "protect_report", user.id);
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
 
   let formData: FormData;
   try {

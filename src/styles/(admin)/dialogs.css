@@ -3,12 +3,12 @@
 .delete-confirm-dialog { width: min(460px,100%); padding: 26px; border: 1px solid var(--alpha-e46b6b-22); border-radius: 14px; background: color-mix(in srgb,var(--bg-elevated) 96%,var(--palette-2b1111)); color: var(--text-primary); box-shadow: 0 32px 90px var(--alpha-000000-5); }
 .delete-confirm-mark { display: grid; width: 34px; height: 34px; margin-bottom: 18px; place-items: center; border: 1px solid var(--alpha-e46b6b-34); border-radius: 50%; background: var(--alpha-e46b6b-09); color: var(--color-status-danger); font-size: 13px; font-weight: 800; }
 .delete-confirm-dialog > h2 { margin: 8px 0 0; color: var(--text-primary); font-size: var(--text-xl); letter-spacing: -.04em; }
-.delete-confirm-description { margin: 10px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.65; }
+.delete-confirm-description { margin: 10px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.65; }
 .delete-confirm-value { margin: 20px 0; padding: 13px 14px; border: 1px solid var(--border-default); border-radius: 9px; background: var(--bg-subtle); }
 .delete-confirm-value span,.delete-confirm-value strong { display: block; }
-.delete-confirm-value span { color: var(--text-faint); font-size: 8px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.delete-confirm-value span { color: var(--text-muted); font-size: 12px; font-weight: 700; }
 .delete-confirm-value strong { margin-top: 7px; overflow-wrap: anywhere; color: var(--text-primary); font-size: var(--text-xs); }
-.delete-confirm-hint { margin: 10px 0 0; color: var(--text-faint); font-size: 9px; line-height: 1.5; }
+.delete-confirm-hint { margin: 10px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
 .delete-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .delete-confirm-button { min-width: 158px; border: 1px solid var(--alpha-e46b6b-34); background-color: var(--palette-ba4545); background-image: linear-gradient(90deg,var(--color-status-danger),var(--palette-d45656)); background-repeat: no-repeat; background-position: left; background-size: 0 100%; color: var(--color-static-white); touch-action: none; user-select: none; }
 .delete-confirm-button:hover:not(:disabled) { background-color: var(--palette-c94b4b); }
@@ -31,12 +31,11 @@
 .admin-confirm-dialog.is-danger { border-color: var(--alpha-e46b6b-22); background: color-mix(in srgb,var(--bg-elevated) 96%,var(--palette-2b1111)); }
 .admin-confirm-mark { display: grid; width: 34px; height: 34px; margin-bottom: 18px; place-items: center; border: 1px solid color-mix(in srgb,var(--color-brand-pink) 38%,transparent); border-radius: 50%; background: color-mix(in srgb,var(--color-brand-pink) 10%,transparent); color: var(--color-brand-pink); font-size: 13px; font-weight: 800; }
 .admin-confirm-dialog.is-danger .admin-confirm-mark { border-color: var(--alpha-e46b6b-34); background: var(--alpha-e46b6b-09); color: var(--color-status-danger); }
-.admin-confirm-copy > span { color: var(--text-faint); font-size: 8px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.admin-confirm-copy > span { color: var(--text-muted); font-size: 12px; font-weight: 700; }
 .admin-confirm-copy h2 { margin: 8px 0 0; color: var(--text-primary); font-size: var(--text-xl); letter-spacing: -.04em; }
-.admin-confirm-copy p { margin: 10px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.7; }
+.admin-confirm-copy p { margin: 10px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.7; }
 .admin-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
-.admin-confirm-submit { min-width: 92px; border: 1px solid var(--alpha-fc6fcf-34); background: var(--palette-d85aae); color: var(--color-static-white); }
-.admin-confirm-submit:hover { background: var(--palette-eb69c1); }
+.admin-confirm-submit { min-width: 92px; }
 .admin-confirm-submit.is-danger { border-color: var(--alpha-e46b6b-34); background: var(--palette-ba4545); }
 .admin-confirm-submit.is-danger:hover { background: var(--palette-d45656); }
 

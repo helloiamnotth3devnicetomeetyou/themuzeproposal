@@ -18,7 +18,7 @@
 .profile-workbench .profile-completion > div { min-height: 24px; color: var(--alpha-ffffff-48); }
 .profile-workbench .profile-completion .is-ready { color: var(--alpha-ffffff-78); }
 .profile-workbench .profile-completion i { border-color: var(--alpha-ffffff-18); color: var(--alpha-ffffff-5); }
-.profile-workbench .content-rail-quiet-action { position: absolute; z-index: 4; right: 112px; top: 20px; width: auto; min-height: 31px; margin: 0; padding: 0 11px; border-color: var(--alpha-ffffff-18); color: var(--alpha-ffffff-7); }
+.profile-workbench .content-rail-quiet-action { position: absolute; z-index: 4; right: 34px; top: 20px; width: auto; min-height: var(--admin-control-height); margin: 0; padding: 0 14px; border-color: var(--alpha-ffffff-18); border-radius: var(--admin-control-radius); color: var(--alpha-ffffff-7); }
 .profile-workbench .content-workbench-header { min-height: 72px; padding-top: 11px; padding-bottom: 11px; }
 .profile-workbench .content-identity-art { display: none; }
 .profile-workbench .content-identity-copy h2 { margin-top: 5px; font-size: 15px; }
@@ -86,6 +86,7 @@
   .profile-workbench .profile-context-copy strong { color: var(--color-static-white); font-size: 30px; }
   .profile-workbench .profile-completion { display: none; }
 }
+
 @media (max-width: 480px) {
   .profile-workbench { grid-template-rows: calc(180px - var(--profile-hero-collapse)) minmax(0,1fr); }
   .profile-workbench .content-workbench-header { min-height: 86px; align-items: center; flex-direction: row; gap: 9px; padding: 12px 15px; }
@@ -95,8 +96,9 @@
   .profile-workbench .content-workbench-body { padding: 24px 18px 45px; }
   .profile-workbench .profile-context-copy { bottom: 18px; left: 17px; }
   .profile-workbench .profile-context-copy strong { font-size: 25px; }
-  .profile-workbench .content-rail-quiet-action { right: 94px; top: 12px; }
+  .profile-workbench .content-rail-quiet-action { right: 17px; top: 12px; }
 }
+
 @media (prefers-reduced-motion:reduce) {
   .profile-workbench .profile-completion { transition: none; }
 }

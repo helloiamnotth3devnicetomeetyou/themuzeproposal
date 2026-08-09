@@ -29,33 +29,28 @@ export default function FormField({
   const [activeLang, setActiveLang] = useState<"ko" | "en" | "ja">("ko");
   const fieldId = useId();
   const activeId = `${fieldId}-${activeLang}`;
+  const languageTabs = [
+    { id: "ko" as const, label: "KR", name: "한국어", value: valueKo },
+    { id: "ja" as const, label: "JP", name: "일본어", value: valueJa },
+    { id: "en" as const, label: "EN", name: "영어", value: valueEn },
+  ];
 
   return (
     <div className="desk-translatable-field">
       <div className="desk-translatable-heading">
         <label htmlFor={activeId}>{label}{required && <span>*</span>}</label>
         <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
-          <button 
-            type="button"
-            onClick={() => setActiveLang("ko")}
-            className={activeLang === "ko" ? "is-active" : ""}
-          >
-            KR
-          </button>
-          <button 
-            type="button"
-            onClick={() => setActiveLang("ja")}
-            className={activeLang === "ja" ? "is-active" : ""}
-          >
-            JP
-          </button>
-          <button 
-            type="button"
-            onClick={() => setActiveLang("en")}
-            className={activeLang === "en" ? "is-active" : ""}
-          >
-            EN
-          </button>
+          {languageTabs.map((language) => {
+            const complete = Boolean(language.value.trim());
+            return <button
+              key={language.id}
+              type="button"
+              onClick={() => setActiveLang(language.id)}
+              className={`${activeLang === language.id ? "is-active" : ""}${complete ? " is-complete" : ""}`.trim()}
+              aria-pressed={activeLang === language.id}
+              aria-label={`${language.name}${complete ? " 작성됨" : " 미작성"}`}
+            >{language.label}</button>;
+          })}
         </div>
       </div>
 

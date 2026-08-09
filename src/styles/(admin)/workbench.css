@@ -9,12 +9,6 @@
   overflow: hidden;
   background: var(--bg-card);
 }
-.content-workbench.is-rail-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
-.content-workbench.is-rail-collapsed .content-workbench-rail { visibility: hidden; }
-.content-workbench-rail-toggle { position: absolute; z-index: 8; top: 12px; left: 282px; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-secondary); cursor: pointer; transition: left var(--duration-base); }
-.content-workbench-rail-toggle:hover { border-color: var(--color-brand-pink); color: var(--color-brand-pink); }
-.content-workbench-rail-toggle svg { width: 16px; height: 16px; }
-.content-workbench.is-rail-collapsed .content-workbench-rail-toggle { left: 10px; }
 .content-workbench-rail {
   display: flex;
   min-width: 0;
@@ -34,6 +28,8 @@
   background: var(--bg-card);
 }
 .content-workbench-header {
+  position: sticky;
+  top: 0;
   z-index: 5;
   display: flex;
   min-height: 92px;
@@ -208,8 +204,6 @@
 }
 @media (max-width: 1024px) {
   .content-workbench { display: block; overflow: hidden; }
-  .content-workbench.is-rail-collapsed .content-workbench-rail { visibility: visible; }
-  .content-workbench-rail-toggle { display: none; }
   .content-workbench-rail { height: 280px; max-height: 280px; border-right: 0; border-bottom: 1px solid var(--border-default); }
   .content-workbench-stage { height: calc(100% - 280px); }
   .profile-context-rail { display: grid; grid-template-columns: 180px minmax(0,1fr); grid-template-rows: auto auto 1fr; gap: 0 18px; padding: 18px; }
@@ -260,6 +254,9 @@
 .content-tab-complete { display: inline-grid; width: 13px; height: 13px; margin-left: 5px; vertical-align: -2px; place-items: center; color: var(--color-status-success); }
 .content-tab-complete svg { width: 11px; height: 11px; stroke-width: 2.25; }
 .draft-save-button { min-width: 132px; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
+.draft-save-status { color: var(--color-status-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.draft-save-status.is-dirty { color: var(--text-secondary); }
+.draft-save-status.is-invalid { color: var(--palette-df7777); }
 
 @media (max-width: 600px) {
   .content-draft-recovery { flex-wrap: wrap; padding: 10px var(--page-gutter); }

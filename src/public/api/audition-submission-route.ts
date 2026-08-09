@@ -5,13 +5,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { AuditionAnswer, AuditionCampaign, AuditionFormField } from "@/core/auditions/types";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
-import { consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
 const MAX_BODY_BYTES = 30 * 1024 * 1024 + 256 * 1024;
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
+class SubmissionConflictError extends Error {}
 
 function errorResponse(code: string, status: number, retryAfter?: number) {
   const result = NextResponse.json({ code }, { status });
@@ -46,6 +47,9 @@ export async function POST(request: NextRequest) {
   const session = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await session.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+  const attempt = await consumeSubmissionAttemptRateLimit(request, "audition_submission", user.id);
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
   let formData: FormData;
   try {
     const parsed = await parseFormDataWithinLimit(request, MAX_BODY_BYTES);
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: existing, error: existingError } = requestedSubmissionId
-    ? await service.from("audition_submissions").select("id,campaign_id,answers,created_at").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
+    ? await service.from("audition_submissions").select("id,campaign_id,answers,created_at,updated_at").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
     : { data: null, error: null };
   if (existingError) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (requestedSubmissionId && (!existing || existing.campaign_id !== campaignId)) return errorResponse("SUBMISSION_NOT_FOUND", 404);
@@ -156,10 +160,11 @@ export async function POST(request: NextRequest) {
     const primary = fields.find((field) => field.is_primary_label);
     const primaryAnswer = primary ? answers[primary.field_key] : null;
     const payload = { campaign_id: campaignId, user_id: user.id, name: typeof primaryAnswer === "string" ? primaryAnswer : null, answers, form_snapshot: fields, applicant_email_hash: emailHash, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null };
-    const { error } = existing
-      ? await service.from("audition_submissions").update(payload).eq("id", submissionId).eq("user_id", user.id)
+    const writeResult = existing
+      ? await service.from("audition_submissions").update(payload).eq("id", submissionId).eq("user_id", user.id).eq("updated_at", existing.updated_at).select("id").maybeSingle()
       : await service.from("audition_submissions").insert({ id: submissionId, ...payload });
-    if (error) throw error;
+    if (writeResult.error) throw writeResult.error;
+    if (existing && !writeResult.data) throw new SubmissionConflictError();
     if (existing) {
       const retained = new Set(Object.values(answers).filter(storedFile).map((file) => file.path));
       const replaced = Object.values(existing.answers as Record<string, AuditionAnswer>).filter(storedFile).map((file) => file.path).filter((path) => !retained.has(path));
@@ -167,6 +172,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     if (uploaded.length) await service.storage.from("audition-attachments").remove(uploaded);
+    if (error instanceof SubmissionConflictError) return errorResponse("SUBMISSION_CONFLICT", 409);
     if (typeof error === "object" && error && "code" in error && error.code === "23505") return errorResponse("ALREADY_SUBMITTED", 409);
     return errorResponse("SUBMISSION_FAILED", 503);
   }

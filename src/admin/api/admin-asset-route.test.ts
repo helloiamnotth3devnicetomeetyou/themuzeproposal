@@ -51,7 +51,22 @@ describe("POST /api/uploads/admin-asset", () => {
     expect(mocks.upload).toHaveBeenCalledWith("artist-1/asset.png", expect.any(File), expect.objectContaining({ contentType: "image/png" }));
   });
 
-  it("deletes an uploaded object when its audit event cannot be persisted", async () => {
+  it("never enables caller-controlled overwrites", async () => {
+    const form = new FormData();
+    form.set("bucket", "album-covers");
+    form.set("path", "artist-1/asset.jpg");
+    form.set("upsert", "true");
+    form.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "asset.jpg"));
+
+    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.upload).toHaveBeenCalledWith("artist-1/asset.png", expect.any(File), expect.objectContaining({ upsert: false }));
+  });
+
+  it("deletes only a newly created immutable object when its audit event cannot be persisted", async () => {
     mocks.insert.mockResolvedValueOnce({ error: new Error("audit unavailable") });
     const form = new FormData();
     form.set("bucket", "album-covers");
@@ -64,6 +79,20 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(503);
     expect(mocks.remove).toHaveBeenCalledWith(["artist-1/asset.png"]);
+  });
+
+  it("derives immutable business asset paths on the server", async () => {
+    const form = new FormData();
+    form.set("bucket", "business-assets");
+    form.set("path", "profile.pdf");
+    form.set("file", new File(["%PDF-1.7\ncontent"], "profile.pdf"));
+
+    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.upload).toHaveBeenCalledWith(expect.stringMatching(/^profile\/[0-9a-f-]+\.pdf$/), expect.any(File), expect.objectContaining({ upsert: false }));
   });
 
   it("uploads and validates the actual MP3 object through the service route", async () => {

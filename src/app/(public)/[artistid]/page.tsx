@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 /**
  * /[artistid] 루트 접근 시 /[artistid]/artist 로 리다이렉트.
@@ -10,5 +10,6 @@ export default async function ArtistRootPage({
   params: Promise<{ artistid: string }>;
 }) {
   const { artistid } = await params;
-  redirect(`/${artistid}/artist`);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(artistid)) notFound();
+  redirect(`/${encodeURIComponent(artistid)}/artist`);
 }
