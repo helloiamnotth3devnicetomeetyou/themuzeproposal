@@ -20,7 +20,7 @@ function Input({ id, label, type = "text", value, onChange, placeholder, autoCom
   );
 }
 
-export default function LoginFormPanel({ mode, signupStep, email, password, name, error, loading, t, isDark, showLoginRequired, setEmail, setPassword, setName, switchMode, previousSignupStep, handleLogin, handleSignup, handleGoogleLogin }: LoginFormPanelProps) {
+export default function LoginFormPanel({ mode, signupStep, email, password, name, error, notice, loading, t, isDark, showLoginRequired, setEmail, setPassword, setName, switchMode, previousSignupStep, handleLogin, handleSignup, handleGoogleLogin }: LoginFormPanelProps) {
   const { locale, setLocale } = useLocale();
   const isSignup = mode === "signup";
   const nextLabel = locale === "ko" ? "다음" : locale === "ja" ? "次へ" : "NEXT";
@@ -51,6 +51,7 @@ export default function LoginFormPanel({ mode, signupStep, email, password, name
         {isSignup && <div className="mb-7 flex items-center gap-2" aria-label={`Step ${signupStep} of 2`}><span className="h-1.5 flex-1 rounded-full bg-brand-pink" /><span className="h-1.5 flex-1 rounded-full transition-colors duration-300" style={{ backgroundColor: signupStep === 2 ? "var(--color-brand-pink)" : "var(--border-default)" }} /></div>}
         {showLoginRequired && <p role="status" className="mb-6 flex items-center gap-3 rounded-xl border-l-4 px-4 py-3.5 text-sm font-semibold" style={{ backgroundColor: "color-mix(in srgb, var(--color-brand-pink) 10%, var(--bg-card))", borderColor: "var(--color-brand-pink)", color: "var(--text-primary)" }}><span aria-hidden className="grid h-5 w-5 place-items-center rounded-full bg-brand-pink text-[11px] text-black">!</span>{t.loginRequired}</p>}
         {error && <p role="alert" aria-live="polite" className="mb-5 rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: "var(--color-error-subtle)", color: "var(--color-error)" }}>{error}</p>}
+        {notice && <p role="status" aria-live="polite" className="mb-5 rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-primary)" }}>{notice}</p>}
 
         <form onSubmit={isSignup ? handleSignup : handleLogin} className="space-y-5">
           {(!isSignup || signupStep === 1) && <>

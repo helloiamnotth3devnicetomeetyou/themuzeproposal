@@ -38,6 +38,7 @@ export interface LoginFormState {
   password: string;
   name: string;
   error: string;
+  notice: string;
   loading: boolean;
   currentSlide: number;
   t: LoginTranslations;
@@ -65,6 +66,7 @@ export function useLoginForm({
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState(oauthFailed ? t.googleFailed : "");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -81,6 +83,7 @@ export function useLoginForm({
     setPassword("");
     setName("");
     setError("");
+    setNotice("");
     setSignupStep(1);
   };
 
@@ -114,7 +117,7 @@ export function useLoginForm({
     }
     setLoading(true);
 
-    if (password.length < 8) {
+    if (password.length < 12) {
       setError(t.passwordLengthErr);
       setLoading(false);
       return;
@@ -132,7 +135,13 @@ export function useLoginForm({
 
     try {
       const data = await signUp(email, password, name);
-      if (!data.session) throw new AuthUserError("SIGNUP_FAILED");
+      if (!data.session) {
+        setNotice(t.confirmEmail);
+        setMode("login");
+        setSignupStep(1);
+        setPassword("");
+        return;
+      }
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
     } catch {
@@ -161,6 +170,7 @@ export function useLoginForm({
     password,
     name,
     error,
+    notice,
     loading,
     currentSlide,
     t,

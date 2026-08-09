@@ -28,6 +28,12 @@ describe("safeRedirect", () => {
     expect(safeRedirect("http://evil.com/path")).toBe("/");
   });
 
+  it("rejects backslash and control-character redirect bypasses", () => {
+    expect(safeRedirect("/\\evil.example/path")).toBe("/");
+    expect(safeRedirect("/%5cevil.example/path")).toBe("/");
+    expect(safeRedirect("/safe\nLocation: https://evil.example")).toBe("/");
+  });
+
   it("rejects javascript: URIs", () => {
     expect(safeRedirect("javascript:alert(1)")).toBe("/");
   });

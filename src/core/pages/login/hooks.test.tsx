@@ -90,4 +90,21 @@ describe("useLoginForm", () => {
     expect(push).toHaveBeenCalledWith("/protect");
   });
 
+  it("keeps a confirmation-required signup signed out and shows the email notice", async () => {
+    auth.signUp.mockResolvedValue({ session: null });
+    const { result } = renderHook(() => useLoginForm({ redirectTo: "/protect", oauthFailed: false, locale: "en" }));
+    act(() => {
+      result.current.switchMode("signup");
+      result.current.setEmail("user@example.com");
+      result.current.setName("User");
+    });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+    act(() => { result.current.setPassword("ValidPass123!"); });
+    await act(async () => { await result.current.handleSignup({ preventDefault: vi.fn() } as never); });
+
+    expect(result.current.mode).toBe("login");
+    expect(result.current.notice).toBe(result.current.t.confirmEmail);
+    expect(push).not.toHaveBeenCalled();
+  });
+
 });

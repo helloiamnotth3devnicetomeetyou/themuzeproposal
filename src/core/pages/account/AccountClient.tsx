@@ -58,9 +58,9 @@ const copy = {
     currentPasswordRequired: "현재 비밀번호 확인을 먼저 완료하세요.",
     newPassword: "새 비밀번호",
     confirmPassword: "새 비밀번호 확인",
-    passwordHint: "현재 비밀번호를 확인한 뒤 8자 이상의 새 비밀번호로 변경합니다.",
+    passwordHint: "현재 비밀번호를 확인한 뒤 12자 이상의 새 비밀번호로 변경합니다.",
     changePassword: "비밀번호 변경",
-    passwordLength: "비밀번호는 8자 이상이어야 합니다.",
+    passwordLength: "비밀번호는 12자 이상이어야 합니다.",
     passwordMismatch: "비밀번호가 일치하지 않습니다.",
     currentPasswordInvalid: "현재 비밀번호가 올바르지 않습니다.",
     passwordSaved: "비밀번호를 변경했습니다.",
@@ -104,9 +104,9 @@ const copy = {
     currentPasswordRequired: "Verify your current password first.",
     newPassword: "NEW PASSWORD",
     confirmPassword: "CONFIRM NEW PASSWORD",
-    passwordHint: "Confirm your current password, then use at least 8 characters for the new password.",
+    passwordHint: "Confirm your current password, then use at least 12 characters for the new password.",
     changePassword: "CHANGE PASSWORD",
-    passwordLength: "Password must be at least 8 characters.",
+    passwordLength: "Password must be at least 12 characters.",
     passwordMismatch: "Passwords do not match.",
     currentPasswordInvalid: "The current password is incorrect.",
     passwordSaved: "Your password has been changed.",
@@ -150,9 +150,9 @@ const copy = {
     currentPasswordRequired: "最初に現在のパスワードを確認してください。",
     newPassword: "新しいパスワード",
     confirmPassword: "新しいパスワード（確認）",
-    passwordHint: "現在のパスワードを確認し、8文字以上の新しいパスワードを入力してください。",
+    passwordHint: "現在のパスワードを確認し、12文字以上の新しいパスワードを入力してください。",
     changePassword: "パスワードを変更",
-    passwordLength: "パスワードは8文字以上必要です。",
+    passwordLength: "パスワードは12文字以上必要です。",
     passwordMismatch: "パスワードが一致しません。",
     currentPasswordInvalid: "現在のパスワードが正しくありません。",
     passwordSaved: "パスワードを変更しました。",
@@ -291,7 +291,7 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
       setPasswordStatus({ type: "error", message: t.currentPasswordRequired });
       return;
     }
-    if (password.length < 8) {
+    if (password.length < 12) {
       setPasswordStatus({ type: "error", message: t.passwordLength });
       return;
     }
@@ -413,8 +413,8 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
             <p id="current-password-guide" className={styles.guide}>{t.currentPasswordHint}</p>
             {checkingCurrentPassword && <span id="current-password-status" role="status" className={`${styles.status} ${styles.checking}`}>{t.currentPasswordChecking}</span>}
             {currentPasswordStatus && <span id="current-password-status" role="status" className={`${styles.status} ${currentPasswordStatus.type === "success" ? styles.success : styles.error}`}>{currentPasswordStatus.message}</span>}
-            <div className={styles.formRow}><label htmlFor="account-password">{t.newPassword}</label><input id="account-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" disabled={!currentPasswordVerified} /></div>
-            <div className={styles.formRow}><label htmlFor="account-password-confirm">{t.confirmPassword}</label><input id="account-password-confirm" type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} required minLength={8} autoComplete="new-password" disabled={!currentPasswordVerified} /></div>
+            <div className={styles.formRow}><label htmlFor="account-password">{t.newPassword}</label><input id="account-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={12} autoComplete="new-password" disabled={!currentPasswordVerified} /></div>
+            <div className={styles.formRow}><label htmlFor="account-password-confirm">{t.confirmPassword}</label><input id="account-password-confirm" type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} required minLength={12} autoComplete="new-password" disabled={!currentPasswordVerified} /></div>
             <p className={styles.guide}>{t.passwordHint}</p>
             {passwordStatus && <span role="status" className={`${styles.status} ${passwordStatus.type === "success" ? styles.success : styles.error}`}>{passwordStatus.message}</span>}
             <button className={styles.submit} type="submit" disabled={saving !== null || checkingCurrentPassword || !currentPasswordVerified}>{saving === "password" ? t.saving : t.changePassword}</button>
