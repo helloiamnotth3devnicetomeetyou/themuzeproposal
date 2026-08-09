@@ -57,8 +57,8 @@ const parseBreakdown = (rows: unknown[], dimension: string) => rows.flatMap((row
   return [{ name: record[dimension], pageviews: record.pageviews, visitors: record.visitors }];
 }).sort((a, b) => b.pageviews - a.pageviews);
 
-export async function GET(request?: Request) {
-  const searchParams = request ? new URL(request.url).searchParams : new URLSearchParams();
+export async function GET(request: Request) {
+  const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
   if (!requestedRange || !(requestedRange in ranges)) return Response.json({ error: "invalid range" }, { status: 400 });
   const range = requestedRange as Range;
