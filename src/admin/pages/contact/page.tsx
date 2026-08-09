@@ -99,6 +99,8 @@ export default function ContactAdminPage() {
   const fetchInquiries = useCallback(async () => {
     setLoading(true);
     setError("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10_000);
     let request = supabase
       .from("contact_inquiries")
       .select("*", { count: "exact" })
@@ -107,18 +109,23 @@ export default function ContactAdminPage() {
     if (filter !== "all") request = request.eq("status", filter);
     const keyword = searchTerm(debouncedQuery);
     if (keyword) request = request.or(`contact_name.ilike.%${keyword}%,email.ilike.%${keyword}%,phone.ilike.%${keyword}%,company_name.ilike.%${keyword}%,message.ilike.%${keyword}%`);
-    const [{ data, count, error: fetchError }, general, business] = await Promise.all([
-      request.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ContactInquiry[], { merge: false }>(),
-      supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "general"),
-      supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "business"),
-    ]);
-    if (fetchError) setError(fetchError.message);
-    else {
+    try {
+      const [{ data, count, error: fetchError }, general, business] = await Promise.all([
+        request.abortSignal(controller.signal).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ContactInquiry[], { merge: false }>(),
+        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "general").abortSignal(controller.signal),
+        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "business").abortSignal(controller.signal),
+      ]);
+      const queryError = fetchError || general.error || business.error;
+      if (queryError) throw queryError;
       setInquiries(data ?? []);
       setTotal(count ?? 0);
       setCategoryCounts({ general: general.count ?? 0, business: business.count ?? 0 });
+    } catch (fetchError) {
+      setError(fetchError instanceof Error && fetchError.name === "AbortError" ? "문의 목록을 불러오는 데 시간이 너무 오래 걸립니다." : fetchError instanceof Error ? fetchError.message : "문의 목록을 불러오지 못했습니다.");
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
     }
-    setLoading(false);
   }, [category, debouncedQuery, filter, page]);
 
   useEffect(() => {
@@ -189,6 +196,10 @@ export default function ContactAdminPage() {
 
   if (loading) {
     return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
+  }
+
+  if (error && !viewing) {
+    return <div className={`${base.page} ${styles.fullPage}`}><div className={`${base.error} ${styles.fullWidth}`} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => void fetchInquiries()}>다시 시도</button></div></div>;
   }
 
   if (viewing) {

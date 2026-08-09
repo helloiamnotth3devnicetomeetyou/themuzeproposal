@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, CalendarDays, Disc3, FilePlus2, FileText, ListMusic, UserRound } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
+import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
+import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
 import { latestRecentItems, type RecentItem } from "./dashboard-model";
 
 type Stats = {
@@ -26,16 +28,17 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(empty);
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
   const [primaryArtistId, setPrimaryArtistId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
+    setLoading(true);
+    setError("");
     void Promise.all([
       supabase.from("artists").select("id", { count: "exact", head: true }),
       supabase.from("albums").select("id", { count: "exact", head: true }),
       supabase.from("artist_members").select("id", { count: "exact", head: true }),
       supabase.from("notices").select("id", { count: "exact", head: true }),
-      supabase.from("audition_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).in("status", ["pending", "reviewing"]),
-      supabase.from("protect_reports").select("id", { count: "exact", head: true }).in("status", ["pending", "reviewing"]),
       supabase.from("protect_reports").select("id", { count: "exact", head: true }),
       supabase.from("albums").select("id", { count: "exact", head: true }).eq("is_published", true),
       supabase.from("albums").select("id", { count: "exact", head: true }).eq("is_published", false),
@@ -46,12 +49,13 @@ export default function AdminDashboard() {
       supabase.from("artist_schedules").select("id,title_ko,event_date,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(10),
       supabase.from("notices").select("id,title_ko,is_published,updated_at,artist:artists(id,name)").order("updated_at", { ascending: false }).limit(10),
       supabase.from("artists").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    ]).then(([artists, albums, members, notices, auditionPending, contactPending, protectActive, protectReports, albumsPublished, albumsDraft, noticesPublished, notesDraft, recentAlbums, recentMembers, recentSchedules, recentNotices, primaryArtist]) => {
+      getAdminInboxCounts(supabase),
+    ]).then(([artists, albums, members, notices, protectReports, albumsPublished, albumsDraft, noticesPublished, notesDraft, recentAlbums, recentMembers, recentSchedules, recentNotices, primaryArtist, inboxCounts]) => {
       setStats({
         artists: artists.count || 0, albums: albums.count || 0,
         members: members.count || 0, notices: notices.count || 0,
-        auditionPending: auditionPending.count || 0, contactPending: contactPending.count || 0,
-        protectActive: protectActive.count || 0, protectReports: protectReports.count || 0,
+        auditionPending: inboxCounts.auditions, contactPending: inboxCounts.contacts,
+        protectActive: inboxCounts.reports, protectReports: protectReports.count || 0,
         albumsPublished: albumsPublished.count || 0, albumsDraft: albumsDraft.count || 0,
         noticesPublished: noticesPublished.count || 0, notesDraft: notesDraft.count || 0,
       });
@@ -61,10 +65,20 @@ export default function AdminDashboard() {
       const noticeItems = (recentNotices.data ?? []).map((item) => { const artist = item.artist as unknown as ArtistRef; return { id: item.id, kind: "notice" as const, title: item.title_ko, detail: artist?.name || "전체 공지", updatedAt: item.updated_at, href: artist ? `/admin/artists/${artist.id}/notices` : "/admin/notices", published: item.is_published }; });
       setRecentItems(latestRecentItems([albumItems, memberItems, scheduleItems, noticeItems], 10));
       setPrimaryArtistId(primaryArtist.data?.id ?? null);
-    });
+    }).catch((loadError: unknown) => {
+      setError(loadError instanceof Error ? loadError.message : "대시보드를 불러오지 못했습니다.");
+    }).finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadDashboard(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadDashboard]);
+
   const artistHref = (segment: string) => primaryArtistId ? `/admin/artists/${primaryArtistId}/${segment}` : "/admin/artists/new/profile";
+
+  if (loading) return <AdminSkeleton variant="cards" rows={4} className="min-h-[320px]" />;
+  if (error) return <div className="hero-admin-alert is-error" role="alert"><span>{error}</span><button className="admin-btn" type="button" onClick={loadDashboard}>다시 시도</button></div>;
 
   const metrics = [
     { label: "아티스트", value: stats.artists, href: artistHref("profile"), code: "ART" },
@@ -75,8 +89,8 @@ export default function AdminDashboard() {
 
   const inboxItems = [
     { code: "AUDITION", count: stats.auditionPending, label: "접수된 지원서", href: "/admin/auditions/campaigns", alert: false },
-    { code: "CONTACT", count: stats.contactPending, label: "답변 대기 문의", href: "/admin/contact", alert: false },
-    { code: "PROTECT", count: stats.protectActive, label: "확인 필요한 신고", href: "/admin/protect", alert: true },
+    { code: "CONTACT", count: stats.contactPending, label: "미확인 문의", href: "/admin/contact", alert: false },
+    { code: "PROTECT", count: stats.protectActive, label: "미확인 신고", href: "/admin/protect", alert: true },
   ];
 
   const contentStatus = [

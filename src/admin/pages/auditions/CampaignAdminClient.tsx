@@ -33,6 +33,13 @@ function localDateTime(value: string | null) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
+function campaignPeriod(campaign: AuditionCampaign) {
+  const date = (value: string | null) => value ? new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(new Date(value)) : null;
+  const start = date(campaign.starts_at);
+  const end = date(campaign.ends_at);
+  return start && end ? `${start} — ${end}` : start ? `${start} 시작` : end ? `${end} 마감` : "기간 미설정";
+}
+
 function blankField(campaignId: string, sortOrder: number): AuditionFormField {
   const id = crypto.randomUUID();
   return { id, campaign_id: campaignId, field_key: `field_${id.replaceAll("-", "")}`, label_i18n: { ko: "새 질문" }, help_text: null, field_type: "short_text", options: [], required: false, max_length: 255, max_file_size_mb: null, accepted_file_types: [], sort_order: sortOrder, is_active: true, is_primary_label: false };
@@ -56,13 +63,25 @@ function FieldPreview({ field, locale }: { field: AuditionFormField; locale: key
 export function CampaignListAdmin() {
   const requestConfirm = useAdminConfirm();
   const [campaigns, setCampaigns] = useState<AuditionCampaign[]>([]);
+  const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
-    void supabase.from("audition_campaigns").select("*").order("created_at", { ascending: false }).then(({ data, error: loadError }) => {
+    void Promise.all([
+      supabase.from("audition_campaigns").select("*").order("created_at", { ascending: false }),
+      supabase.from("audition_submissions").select("campaign_id"),
+    ]).then(([{ data, error: loadError }, { data: submissions, error: submissionError }]) => {
       if (!active) return;
-      if (loadError) setError(loadError.message); else setCampaigns((data ?? []) as AuditionCampaign[]);
+      if (loadError || submissionError) setError((loadError || submissionError)?.message || "캠페인을 불러오지 못했습니다.");
+      else {
+        setCampaigns((data ?? []) as AuditionCampaign[]);
+        setSubmissionCounts((submissions ?? []).reduce<Record<string, number>>((counts, submission) => ({ ...counts, [submission.campaign_id]: (counts[submission.campaign_id] ?? 0) + 1 }), {}));
+      }
+      setLoading(false);
+    }).catch((loadError: unknown) => {
+      if (!active) return;
+      setError(loadError instanceof Error ? loadError.message : "캠페인을 불러오지 못했습니다.");
       setLoading(false);
     });
     return () => { active = false; };
@@ -86,7 +105,7 @@ export function CampaignListAdmin() {
   };
   return <div className="audition-campaign-page"><header className="audition-campaign-heading"><div><h1>캠페인 관리</h1><p>캠페인별 지원서와 질문을 관리합니다.</p></div><button data-tour-id="audition-create" className="admin-btn admin-btn-primary" type="button" onClick={() => void create()}><Plus aria-hidden="true" /> 새 캠페인</button></header>
     {error && <div className="hero-admin-alert is-error" role="alert">{error}</div>}
-    {loading ? <AdminSkeleton variant="cards" className="min-h-[180px]" rows={3} /> : <div className="audition-campaign-list" data-tour-id="audition-campaign-list">{campaigns.map((campaign) => <article key={campaign.id}><div><span className={`audition-session-badge ${campaign.is_active ? "is-open" : "is-closed"}`}>{campaign.is_active ? "ACTIVE" : "DRAFT"}</span><h2>{campaign.title}</h2><p>{campaign.description || "소개 없음"}</p></div><nav><button data-tour-id="audition-toggle" type="button" onClick={() => void toggle(campaign)}>{campaign.is_active ? "비활성화" : "활성화"}</button><Link data-tour-id="audition-review" href={`/admin/auditions/campaigns/${campaign.id}/submissions`}><span data-tour-id="audition-status-prerequisite"><Inbox aria-hidden="true" /> 심사</span></Link><Link data-tour-id="audition-builder" href={`/admin/auditions/campaigns/${campaign.id}/builder`}><span data-tour-id="audition-builder-prerequisite">폼 편집</span></Link></nav></article>)}</div>}
+    {loading ? <AdminSkeleton variant="cards" className="min-h-[180px]" rows={3} /> : <div className="audition-campaign-list" data-tour-id="audition-campaign-list">{campaigns.map((campaign) => <article key={campaign.id}><div><span className={`audition-session-badge ${campaign.is_active ? "is-open" : "is-closed"}`}>{campaign.is_active ? "ACTIVE" : "DRAFT"}</span><h2>{campaign.title}</h2><p>{campaign.description || "소개 없음"}</p><small>{campaignPeriod(campaign)} · 지원 {submissionCounts[campaign.id] ?? 0}건</small></div><nav><button data-tour-id="audition-toggle" type="button" onClick={() => void toggle(campaign)}>{campaign.is_active ? "비활성화" : "활성화"}</button><Link data-tour-id="audition-review" href={`/admin/auditions/campaigns/${campaign.id}/submissions`}><span data-tour-id="audition-status-prerequisite"><Inbox aria-hidden="true" /> 심사</span></Link><Link data-tour-id="audition-builder" href={`/admin/auditions/campaigns/${campaign.id}/builder`}><span data-tour-id="audition-builder-prerequisite">폼 편집</span></Link></nav></article>)}</div>}
   </div>;
 }
 

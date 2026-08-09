@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import RichTextEditor from "./RichTextEditor";
 
 interface FormFieldProps {
@@ -27,11 +27,13 @@ export default function FormField({
   required = false
 }: FormFieldProps) {
   const [activeLang, setActiveLang] = useState<"ko" | "en" | "ja">("ko");
+  const fieldId = useId();
+  const activeId = `${fieldId}-${activeLang}`;
 
   return (
     <div className="desk-translatable-field">
       <div className="desk-translatable-heading">
-        <label>{label}{required && <span>*</span>}</label>
+        <label htmlFor={activeId}>{label}{required && <span>*</span>}</label>
         <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
           <button 
             type="button"
@@ -69,15 +71,15 @@ export default function FormField({
           />
         ) : type === "textarea" ? (
           <>
-            <textarea required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} rows={4} />
-            <textarea value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />
-            <textarea value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} rows={4} />
+            <textarea id={`${fieldId}-ko`} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} rows={4} />
+            <textarea id={`${fieldId}-en`} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />
+            <textarea id={`${fieldId}-ja`} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} rows={4} />
           </>
         ) : (
           <>
-            <input type={type} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} />
-            <input type={type} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} />
-            <input type={type} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} />
+            <input id={`${fieldId}-ko`} type={type} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} />
+            <input id={`${fieldId}-en`} type={type} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} />
+            <input id={`${fieldId}-ja`} type={type} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} />
           </>
         )}
       </div>

@@ -7,7 +7,6 @@ import { ExternalLink, Menu } from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
-import Navbar from "@/public/components/layout/Navbar";
 import { formatDraftPeek, type DraftDiffItem } from "@/admin/utils/draft-diff";
 import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
 
@@ -150,9 +149,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     <AdminDialogProvider>
       <div className="admin-root-shell">
         <AdminToast message={toast} />
-        <div className="admin-public-header">
-          <Navbar />
-        </div>
         <header className="admin-mobile-topbar">
           <button
             type="button"
@@ -165,7 +161,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <Menu aria-hidden="true" />
           </button>
           <div className="admin-mobile-title">
-            <span>THE MUZE / ADMIN</span>
             <strong>{getPageLabel(pathname)}</strong>
           </div>
           <Link href="/" className="admin-mobile-site-link" aria-label="공개 사이트 열기">
@@ -190,6 +185,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               />
             )}
             <div className="cms-workspace">
+              <header className="admin-desktop-topbar">
+                <div><strong>{getPageLabel(pathname)}</strong></div>
+                <Link href="/" className="admin-desktop-site-link"><ExternalLink aria-hidden="true" /> 사이트 보기</Link>
+              </header>
               <main key={pathname} data-tour-id="admin-page" className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""}`}>
                 <div className="cms-content-inner">{children}</div>
               </main>

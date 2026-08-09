@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashb
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
+import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
 import SidebarSearch from "./SidebarSearch";
 import ArtistNavGroup from "./ArtistNavGroup";
 import AdminOnboarding from "@/admin/onboarding/AdminOnboarding";
@@ -121,13 +122,9 @@ export default function Sidebar({
 
   useEffect(() => {
     let active = true;
-    const loadUnreadCounts = () => void Promise.all([
-        supabase.from("audition_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      ]).then(([auditions, contacts, reports]) => {
-        if (active) setUnreadCounts({ auditions: auditions.count ?? 0, contacts: contacts.count ?? 0, reports: reports.count ?? 0 });
-      });
+    const loadUnreadCounts = () => void getAdminInboxCounts(supabase)
+      .then((counts) => { if (active) setUnreadCounts(counts); })
+      .catch(() => { if (active) setUnreadCounts({ auditions: 0, contacts: 0, reports: 0 }); });
     loadUnreadCounts();
     window.addEventListener("admin-inbox-changed", loadUnreadCounts);
     return () => { active = false; window.removeEventListener("admin-inbox-changed", loadUnreadCounts); };
