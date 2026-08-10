@@ -16,14 +16,14 @@ import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
-import { DEFAULT_HISTORY, normalizeHistory, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
+import { DEFAULT_HISTORY, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 import {
   EMPTY_COMPANY,
   EMPTY_BUSINESS,
   EMPTY_DRAFT,
   EMPTY_FOOTER,
   EMPTY_SOCIAL,
-  normalizeSiteSocial,
+  parseSettingsRows,
   settingsTabs,
   type CompanySettings,
   type BusinessAssets,
@@ -118,25 +118,12 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         return;
       }
 
-      let nextCompany = EMPTY_COMPANY;
-      let nextHistory = DEFAULT_HISTORY;
-      let nextFooter = EMPTY_FOOTER;
-      let nextSocial: SocialLink[] = EMPTY_SOCIAL;
-      let nextBusiness = EMPTY_BUSINESS;
-      data?.forEach((item) => {
-        if (item.key === "company") nextCompany = { ...EMPTY_COMPANY, ...(item.value as Partial<CompanySettings>) };
-        if (item.key === "history") nextHistory = normalizeHistory(item.value);
-        if (item.key === "footer") nextFooter = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
-        if (item.key === "social") nextSocial = normalizeSiteSocial(item.value);
-        if (item.key === "business_assets" && item.value && typeof item.value === "object") nextBusiness = { ...EMPTY_BUSINESS, ...(item.value as Partial<BusinessAssets>) };
-      });
-
-      const nextDraft = { company: nextCompany, history: nextHistory, footer: nextFooter, social: nextSocial, business: nextBusiness };
-      setCompany(nextCompany);
-      setHistory(nextHistory);
-      setFooter(nextFooter);
-      setSocial(nextSocial);
-      setBusiness(nextBusiness);
+      const nextDraft = parseSettingsRows(data as Array<{ key: string; value: unknown }> | null);
+      setCompany(nextDraft.company);
+      setHistory(nextDraft.history);
+      setFooter(nextDraft.footer);
+      setSocial(nextDraft.social);
+      setBusiness(nextDraft.business);
       setSnapshot(JSON.stringify(nextDraft));
       setLoading(false);
     };

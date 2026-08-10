@@ -1,37 +1,20 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { localizeText } from "@/core/i18n/localized";
-import type { LocalizedText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 
-import { fetchDiscography } from "../lib/discography-data";
-import {
-  readPlaybackMemory,
-  requestedAlbumId,
-  savePlaybackMemory,
-  syncAlbumQuery,
-} from "../lib/playback-memory";
+import { savePlaybackMemory, syncAlbumQuery } from "../lib/playback-memory";
 import type {
   AlbumSort,
-  DiscographyAlbum,
-  DiscographyGalleryItem,
-  DiscographyMember,
   DiscographyTab,
   RailPhase,
   SlideDirection,
 } from "../lib/types";
 import { useAudioPlayback } from "./useAudioPlayback";
-import { newestAlbumsFirst } from "../lib/album-order";
 import { previewToAlbum } from "./discography-controller-utils";
+import { useDiscographyData } from "./useDiscographyData";
 import { useDiscographyRailSort } from "./useDiscographyRailSort";
 
 const ALBUM_TRANSITION_MS = 220;
@@ -42,21 +25,7 @@ export function useDiscographyController(
   albumRailRef: RefObject<HTMLDivElement | null>,
   preview: AlbumPreviewPayload | null,
 ) {
-  const { locale, t } = useLocale();
-  const [albums, setAlbums] = useState<DiscographyAlbum[]>([]);
-  const [members, setMembers] = useState<DiscographyMember[]>([]);
-  const [gallery, setGallery] = useState<DiscographyGalleryItem[]>([]);
-  const [artistName, setArtistName] = useState("");
-  const [artistNames, setArtistNames] = useState<LocalizedText | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const loadErrorMessageRef = useRef(t.discography.loadError);
-
-  useEffect(() => {
-    loadErrorMessageRef.current = t.discography.loadError;
-  }, [t.discography.loadError]);
-
-  const [albumIndex, setAlbumIndex] = useState(0);
+  const { locale } = useLocale();
   const [transitioning, setTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState<SlideDirection>(null);
   const [hoveredDisc, setHoveredDisc] = useState<number | null>(null);
@@ -82,6 +51,18 @@ export function useDiscographyController(
     handleLoadedMetadata,
     handleTimeUpdate: rawHandleTimeUpdate,
   } = useAudioPlayback(audioRef);
+
+  const {
+    albumIndex,
+    artistName,
+    artistNames,
+    albums,
+    gallery,
+    loading,
+    loadError,
+    members,
+    setAlbumIndex,
+  } = useDiscographyData(artistSlug, setCurrentTrackIndex, restoreTimeRef);
 
   const previewAlbum = useMemo(() => previewToAlbum(preview), [preview]);
   const effectiveAlbums = useMemo(() => {
@@ -128,76 +109,6 @@ export function useDiscographyController(
     },
     [artistSlug],
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setLoadError(null);
-      setAlbums([]);
-      setMembers([]);
-      setGallery([]);
-      setArtistName("");
-      setArtistNames(null);
-      setAlbumIndex(0);
-
-      try {
-        const result = await fetchDiscography(artistSlug);
-        if (cancelled) return;
-
-        const orderedAlbums = newestAlbumsFirst(result.albums);
-        const requestedId = requestedAlbumId();
-        const remembered = readPlaybackMemory(artistSlug);
-        const requestedIndex = requestedId
-          ? orderedAlbums.findIndex((item) => item.id === requestedId)
-          : -1;
-        const rememberedIndex = remembered
-          ? orderedAlbums.findIndex((item) => item.id === remembered.albumId)
-          : -1;
-        const nextAlbumIndex =
-          requestedIndex >= 0
-            ? requestedIndex
-            : rememberedIndex >= 0
-              ? rememberedIndex
-              : 0;
-        const rememberedAlbumMatches = Boolean(
-          remembered && orderedAlbums[nextAlbumIndex]?.id === remembered.albumId,
-        );
-        const trackCount = orderedAlbums[nextAlbumIndex]?.tracks.length ?? 0;
-        const rememberedTrackIndex = rememberedAlbumMatches
-          ? Math.max(0, Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)))
-          : 0;
-
-        setArtistName(result.artistName);
-        setArtistNames(result.artistNames);
-        setAlbums(orderedAlbums);
-        setMembers(result.members);
-        setGallery(result.gallery);
-        setAlbumIndex(nextAlbumIndex);
-        setCurrentTrackIndex(rememberedTrackIndex);
-        restoreTimeRef.current = rememberedAlbumMatches
-          ? Math.max(0, remembered?.currentTime ?? 0)
-          : 0;
-
-        const selectedAlbum = orderedAlbums[nextAlbumIndex];
-        if (selectedAlbum) syncAlbumQuery(selectedAlbum.id);
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : loadErrorMessageRef.current,
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void load();
-    return () => { cancelled = true; };
-  }, [artistSlug, setCurrentTrackIndex, restoreTimeRef]);
 
   const switchAlbum = useCallback(
     (newIndex: number) => {

@@ -5,6 +5,7 @@ import {
 } from "@/admin/components/content/SocialLinksField";
 import {
   DEFAULT_HISTORY,
+  normalizeHistory,
   type HistoryEntry,
 } from "@/core/content/site-content";
 
@@ -85,3 +86,19 @@ export const normalizeSiteSocial = (value: unknown): SocialLink[] => {
     },
   );
 };
+
+export function parseSettingsRows(rows: Array<{ key: string; value: unknown }> | null) {
+  let company = EMPTY_COMPANY;
+  let history = DEFAULT_HISTORY;
+  let footer = EMPTY_FOOTER;
+  let social = EMPTY_SOCIAL;
+  let business = EMPTY_BUSINESS;
+  rows?.forEach((item) => {
+    if (item.key === "company") company = { ...EMPTY_COMPANY, ...(item.value as Partial<CompanySettings>) };
+    if (item.key === "history") history = normalizeHistory(item.value);
+    if (item.key === "footer") footer = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
+    if (item.key === "social") social = normalizeSiteSocial(item.value);
+    if (item.key === "business_assets" && item.value && typeof item.value === "object") business = { ...EMPTY_BUSINESS, ...(item.value as Partial<BusinessAssets>) };
+  });
+  return { company, history, footer, social, business };
+}

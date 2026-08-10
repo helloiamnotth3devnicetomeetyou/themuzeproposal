@@ -65,6 +65,7 @@ export default function ArtistSchedulePage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
   const [categoryFilters, setCategoryFilters] = useState<Category[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -133,7 +134,8 @@ export default function ArtistSchedulePage() {
     const date = dateAtLocalMidnight(item.event_date);
     return date.getFullYear() === cursor.getFullYear() && date.getMonth() === cursor.getMonth();
   }), [cursor, effectiveEvents]);
-  const filteredMonthEvents = useMemo(() => categoryFilters.length ? monthEvents.filter((item) => categoryFilters.includes(item.category)) : monthEvents, [categoryFilters, monthEvents]);
+  const dateEvents = useMemo(() => selectedDate ? monthEvents.filter((item) => item.event_date === selectedDate) : monthEvents, [monthEvents, selectedDate]);
+  const filteredMonthEvents = useMemo(() => categoryFilters.length ? dateEvents.filter((item) => categoryFilters.includes(item.category)) : dateEvents, [categoryFilters, dateEvents]);
   const totalPages = Math.max(1, Math.ceil(filteredMonthEvents.length / PAGE_SIZE));
   const visibleEvents = filteredMonthEvents.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const firstWeekday = new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay();
@@ -158,6 +160,7 @@ export default function ArtistSchedulePage() {
   ), [locale]);
   const changeCursor = (nextCursor: Date) => {
     setCursor(nextCursor);
+    setSelectedDate(null);
     setPage(0);
   };
   const toggleCategory = (category: Category) => {
@@ -176,16 +179,17 @@ export default function ArtistSchedulePage() {
         <section className={styles.listPanel} aria-labelledby="schedule-title">
           <h1 id="schedule-title" className={styles.heading}>SCHEDULE</h1>
           {error && <p className={styles.error} role="alert">{error}</p>}
-          <div className={styles.list} aria-live="polite">
+          <div className={`${styles.list} ${selectedDate ? styles.listFiltered : ""}`} aria-live="polite">
             {visibleEvents.map((event) => {
               const date = dateAtLocalMidnight(event.event_date);
               const remaining = daysUntil(event.event_date);
               const category = CATEGORIES[event.category] || CATEGORIES.etc;
               const CategoryIcon = category.icon;
               const eventStyle = { "--event-color": category.color } as CSSProperties;
+              const isPast = remaining < 0;
               const href = safeHref(event.link_url);
               const isSelected = selectedEventId === event.id;
-              return <article key={event.id} id={`schedule-event-${event.id}`} className={`${styles.event} ${isSelected ? styles.eventSelected : ""}`} style={eventStyle}>
+              return <article key={event.id} id={`schedule-event-${event.id}`} className={`${styles.event} ${isPast ? styles.eventPast : ""} ${isSelected ? styles.eventSelected : ""}`} style={eventStyle}>
                 <button type="button" className={styles.eventMain} onClick={() => setSelectedEventId((id) => id === event.id ? null : event.id)} aria-expanded={isSelected}>
                   <div className={styles.eventDate}><strong>{date.getDate()}</strong><span>{weekdays[date.getDay()]}</span></div>
                   <p className={styles.eventTitle}>{localized(event, "title")}</p>
@@ -228,15 +232,14 @@ export default function ArtistSchedulePage() {
             {calendarCells.map((day, index) => {
               if (!day) return <span key={`empty-${index}`} aria-hidden="true" />;
               const dayEvents = eventsOnDay(day).filter((event) => !categoryFilters.length || categoryFilters.includes(event.category));
+              const dateKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const isSelectedDate = selectedDate === dateKey;
+              const isPastDate = daysUntil(dateKey) < 0;
               const isToday = day === now.getDate() && cursor.getMonth() === now.getMonth() && cursor.getFullYear() === now.getFullYear();
-              return <button key={day} type="button" className={`${styles.day} ${index % 7 === 0 ? styles.sunday : ""} ${dayEvents.length ? styles.hasEvents : ""} ${isToday ? styles.isToday : ""}`} disabled={!dayEvents.length} aria-label={t.schedule.dayLabel(cursor.getMonth() + 1, day, dayEvents.length)} onClick={() => {
-                const target = filteredMonthEvents.findIndex((event) => dateAtLocalMidnight(event.event_date).getDate() === day);
-                if (target >= 0) {
-                  const eventId = filteredMonthEvents[target].id;
-                  setPage(Math.floor(target / PAGE_SIZE));
-                  setSelectedEventId(eventId);
-                  window.setTimeout(() => document.getElementById(`schedule-event-${eventId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
-                }
+              return <button key={day} type="button" className={`${styles.day} ${index % 7 === 0 ? styles.sunday : ""} ${dayEvents.length ? styles.hasEvents : ""} ${isPastDate ? styles.pastDate : ""} ${isSelectedDate ? styles.selectedDate : ""} ${isToday ? styles.isToday : ""}`} disabled={!dayEvents.length} aria-pressed={isSelectedDate} aria-label={t.schedule.dayLabel(cursor.getMonth() + 1, day, dayEvents.length)} onClick={() => {
+                setSelectedDate((current) => current === dateKey ? null : dateKey);
+                setPage(0);
+                setSelectedEventId(null);
               }}>
                 <span className={styles.dayNumber}>{day}</span>
                 {!!dayEvents.length && <span className={styles.dots}>{[...new Set(dayEvents.map((event) => event.category))].slice(0, 3).map((category) => <i key={category} style={{ "--dot-color": CATEGORIES[category].color } as CSSProperties} />)}</span>}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, ExternalLink, Inbox, Mail, MessageSquareText, Paperclip, Search } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
@@ -11,28 +11,7 @@ import { supabase } from "@/core/supabase/client";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import styles from "@/styles/(admin)/pages/contact/contact-admin.module.css";
 
-type ContactCategory = "general" | "business";
-type ContactStatus = "pending" | "reviewing" | "answered" | "closed";
-type ContactInquiry = {
-  id: string;
-  user_id: string | null;
-  category: ContactCategory;
-  inquiry_type: string;
-  company_name: string | null;
-  contact_name: string;
-  phone: string | null;
-  email: string;
-  message: string;
-  attachment_path: string | null;
-  attachment_name: string | null;
-  attachment_size: number | null;
-  status: ContactStatus;
-  admin_note: string | null;
-  created_at: string;
-  updated_at: string;
-  answered_at: string | null;
-  answered_by: string | null;
-};
+import { PAGE_SIZE, type ContactCategory, type ContactInquiry, type ContactStatus, useContactInquiries } from "./useContactInquiries";
 
 const statuses: Array<{ value: ContactStatus; label: string }> = [
   { value: "pending", label: "접수" },
@@ -69,23 +48,12 @@ const formatDate = (value: string, detail = false) => new Intl.DateTimeFormat(
 ).format(new Date(value));
 const formatBytes = (value: number | null) =>
   value ? `${(value / 1024 / 1024).toFixed(1)}MB` : "";
-const PAGE_SIZE = 20;
-const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
-
 export default function ContactAdminPage() {
   const confirm = useAdminConfirm();
   const searchParams = useSearchParams();
-  const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<ContactCategory>("general");
   const [viewing, setViewing] = useState<ContactInquiry | null>(null);
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const requestedFilter = statuses.find((status) => status.value === searchParams.get("status"))?.value ?? "all";
-  const [filter, setFilter] = useState(requestedFilter);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<ContactCategory, number>>({ general: 0, business: 0 });
+  const { category, categoryCounts, error: listError, fetchInquiries, filter, inquiries, loading, page, query, setCategory, setFilter, setPage, setQuery, setInquiries, total } = useContactInquiries(requestedFilter);
   const [note, setNote] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [saving, setSaving] = useState(false);
@@ -99,46 +67,7 @@ export default function ContactAdminPage() {
     return () => window.clearTimeout(timer);
   }, [undo]);
 
-  const fetchInquiries = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10_000);
-    let request = supabase
-      .from("contact_inquiries")
-      .select("*", { count: "exact" })
-      .eq("category", category)
-      .order("created_at", { ascending: false });
-    if (filter !== "all") request = request.eq("status", filter);
-    const keyword = searchTerm(debouncedQuery);
-    if (keyword) request = request.or(`contact_name.ilike.%${keyword}%,email.ilike.%${keyword}%,phone.ilike.%${keyword}%,company_name.ilike.%${keyword}%,message.ilike.%${keyword}%`);
-    try {
-      const [{ data, count, error: fetchError }, general, business] = await Promise.all([
-        request.abortSignal(controller.signal).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ContactInquiry[], { merge: false }>(),
-        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "general").abortSignal(controller.signal),
-        supabase.from("contact_inquiries").select("id", { count: "exact", head: true }).eq("category", "business").abortSignal(controller.signal),
-      ]);
-      const queryError = fetchError || general.error || business.error;
-      if (queryError) throw queryError;
-      setInquiries(data ?? []);
-      setTotal(count ?? 0);
-      setCategoryCounts({ general: general.count ?? 0, business: business.count ?? 0 });
-    } catch (fetchError) {
-      setError(fetchError instanceof Error && fetchError.name === "AbortError" ? "문의 목록을 불러오는 데 시간이 너무 오래 걸립니다." : fetchError instanceof Error ? fetchError.message : "문의 목록을 불러오지 못했습니다.");
-    } finally {
-      window.clearTimeout(timeout);
-      setLoading(false);
-    }
-  }, [category, debouncedQuery, filter, page]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { setDebouncedQuery(query); setPage(1); }, 300);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void fetchInquiries(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [fetchInquiries]);
+  const listFailure = error || listError;
 
   const openInquiry = (inquiry: ContactInquiry) => {
     setNote(inquiry.admin_note || "");
@@ -201,8 +130,8 @@ export default function ContactAdminPage() {
     return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
   }
 
-  if (error && !viewing) {
-    return <div className={`${base.page} ${styles.fullPage}`}><div className={`${base.error} ${styles.fullWidth}`} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => void fetchInquiries()}>다시 시도</button></div></div>;
+  if (listFailure && !viewing) {
+    return <div className={`${base.page} ${styles.fullPage}`}><div className={`${base.error} ${styles.fullWidth}`} role="alert"><b>!</b><span>{listFailure}</span><button type="button" onClick={() => void fetchInquiries()}>다시 시도</button></div></div>;
   }
 
   if (viewing) {
@@ -357,7 +286,7 @@ export default function ContactAdminPage() {
               <span className="sr-only">문의 검색</span>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 회사명, 내용 검색" />
             </label>
-            <span data-tour-id="contact-status-filter"><CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} /></span>
+            <span data-tour-id="contact-status-filter"><CustomSelect ariaLabel="처리 상태 필터" value={filter} onChange={(value) => { setFilter(value as ContactStatus | "all"); setPage(1); }} options={[{ value: "all", label: "모든 상태" }, ...statuses]} /></span>
           </div>
         </header>
 

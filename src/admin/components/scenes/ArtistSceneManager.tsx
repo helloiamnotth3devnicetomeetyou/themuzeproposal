@@ -18,17 +18,16 @@ import FormField from "@/admin/components/content/FormField";
 import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
-import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import { adminDbError } from "@/admin/utils/admin-db-error";
+import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import {
   ACCEPTED_MASK_TYPES,
   ACCEPTED_SCENE_TYPES,
   MAX_IMAGE_BYTES,
   imageDimensions,
-  normalizeScene,
-  sceneSelect,
   type MemberLookup,
 } from "./artist-scene-editor-model";
+import { useArtistSceneLoader } from "./useArtistSceneLoader";
 
 type Props = {
   artistId: string | null;
@@ -49,40 +48,9 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [draftOutline, setDraftOutline] = useState<ScenePoint[]>([]);
-  const [loading, setLoading] = useState(Boolean(artistId));
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [schemaMissing, setSchemaMissing] = useState(false);
-
-  const load = useCallback(async (preferredSceneId?: string) => {
-    if (!artistId) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const [sceneResult, memberResult] = await Promise.all([
-      supabase.from("artist_scenes").select(sceneSelect).eq("artist_id", artistId).order("is_hero", { ascending: false }).order("sort_order", { ascending: true }).overrideTypes<ArtistScene[], { merge: false }>(),
-      supabase.from("artist_members").select("id,name,eng_name,color,sort_order").eq("artist_id", artistId).order("sort_order", { ascending: true }),
-    ]);
-    setLoading(false);
-    if (sceneResult.error) {
-      const missing = sceneResult.error.message.includes("artist_scenes");
-      setSchemaMissing(missing);
-      onError(missing ? "인터랙티브 장면 테이블이 없습니다. 019_artist_scenes.sql을 먼저 적용하세요." : adminDbError(sceneResult.error, "장면을 불러오지 못했습니다."));
-      return;
-    }
-    setSchemaMissing(false);
-    const nextScenes = (sceneResult.data ?? []).map(normalizeScene);
-    setScenes(nextScenes);
-    setSnapshot(nextScenes);
-    setMembers((memberResult.data as MemberLookup[] | null) ?? []);
-    setSelectedSceneId((current) => {
-      const candidate = preferredSceneId || current;
-      return candidate && nextScenes.some((scene) => scene.id === candidate) ? candidate : nextScenes[0]?.id ?? null;
-    });
-  }, [artistId, onError]);
-
-  useEffect(() => { void Promise.resolve().then(() => load()); }, [load]);
+  const { load, loading, schemaMissing } = useArtistSceneLoader(artistId, onError, setScenes, setSnapshot, setMembers, setSelectedSceneId);
 
   const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) ?? null;
   const selectedRegion = selectedScene?.artist_scene_members.find((region) => region.member_id === selectedMemberId) ?? null;

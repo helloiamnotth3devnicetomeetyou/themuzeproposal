@@ -1,5 +1,4 @@
 "use client";
-import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Trash2 } from "lucide-react";
@@ -9,7 +8,7 @@ import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { type UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import PreviewButton from "@/admin/components/content/PreviewButton";
-import { hasInvalidSocialLinks, normalizeSocialLinks } from "@/admin/components/content/SocialLinksField";
+import { hasInvalidSocialLinks } from "@/admin/components/content/SocialLinksField";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
@@ -28,6 +27,7 @@ import {
 } from "./profile-editor-model";
 import ProfileEditorSections from "./ProfileEditorSections";
 import ProfileContextRail from "./ProfileContextRail";
+import { useArtistProfileLoader } from "./useArtistProfileLoader";
 import { newArtistSteps, type NewArtistStep } from "./artist-profile-steps";
 export default function ArtistProfileAdmin() {
   const routeId = useParams<{ id: string }>()?.id;
@@ -150,41 +150,7 @@ export default function ArtistProfileAdmin() {
     onError: setError,
   });
 
-  useEffect(() => {
-    if (isNew) return;
-    let cancelled = false;
-    async function loadProfile() {
-      setLoading(true);
-      const { data, error: loadError } = await supabase.from("artists").select("*").eq("id", routeId).single();
-      if (cancelled) return;
-      if (loadError || !data) {
-        setError("아티스트 정보를 불러오지 못했습니다.");
-        setLoading(false);
-        return;
-      }
-      const nextDraft: ProfileDraft = {
-        name: data.name_ko || data.name || "",
-        engName: data.name_en || data.eng_name || "",
-        jaName: data.name_ja || "",
-        type: data.type || "group",
-        debutDate: data.debut_date || "",
-        imageUrl: data.image_url || "",
-        logoUrl: data.logo_url || "",
-        color: data.color || BRAND_PINK_HEX,
-        descKo: data.description_ko || "",
-        descEn: data.description_en || "",
-        descJa: data.description_ja || "",
-        socialLinks: normalizeSocialLinks(data.social_links),
-        isActive: data.is_active ?? true,
-      };
-      setArtistId(data.id);
-      setDraft(nextDraft);
-      setSnapshot(JSON.stringify(nextDraft));
-      setLoading(false);
-    }
-    void Promise.resolve().then(loadProfile);
-    return () => { cancelled = true; };
-  }, [isNew, routeId, setDraft, setSnapshot, setError, setLoading]);
+  useArtistProfileLoader(routeId, isNew, setArtistId, setDraft, setSnapshot, setLoading, setError);
 
   const handleProfileAssetChange = (field: "imageUrl" | "logoUrl", value: string) => {
     patchDraft({ [field]: value } as Pick<ProfileDraft, typeof field>);

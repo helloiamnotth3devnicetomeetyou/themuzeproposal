@@ -36,6 +36,7 @@ import {
   collectAssetUrls,
   createAlbumDraft,
   createTrackDraft,
+  filterAlbums,
   legacyAlbumSelect,
   type RawAlbum,
 } from "./discography-editor-model";
@@ -288,10 +289,7 @@ export default function DiscographyAdmin() {
     patchDraft({ tracks: [...draft.tracks, ...parsed] }); setBulkOpen(false); setBulkValue(""); setTab("tracks");
   };
 
-  const visibleAlbums = albums.filter((album) => {
-    const matchesSearch = `${album.title} ${album.type}`.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && (filter === "all" || (filter === "published" ? album.is_published : !album.is_published));
-  });
+  const visibleAlbums = filterAlbums(albums, search, filter);
 
   if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
