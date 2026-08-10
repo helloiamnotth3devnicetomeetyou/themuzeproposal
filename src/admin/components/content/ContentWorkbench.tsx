@@ -8,6 +8,7 @@ export type WorkbenchTab<T extends string = string> = {
   id: T;
   label: string;
   complete?: boolean;
+  missing?: number;
 };
 
 type ContentWorkbenchProps<T extends string> = {
@@ -64,11 +65,12 @@ export default function ContentWorkbench<T extends string>({
               key={tab.id}
               type="button"
               data-tour-id={`workbench-tab-${tab.id}`}
-              className={activeTab === tab.id ? "is-active" : ""}
+              className={`${activeTab === tab.id ? "is-active" : ""}${tab.missing ? " is-incomplete" : ""}`}
               onClick={() => onTabChange(tab.id)}
               aria-current={activeTab === tab.id ? "page" : undefined}
+              aria-label={`${tab.label}${tab.complete ? " 완료" : tab.missing ? `, 누락 항목 ${tab.missing}개` : ""}`}
             >
-              {tab.label}{tab.complete && <span className="content-tab-complete" aria-label="완료"><Check aria-hidden="true" /></span>}
+              {tab.label}{tab.complete && <span className="content-tab-complete" aria-label="완료"><Check aria-hidden="true" /></span>}{!tab.complete && Boolean(tab.missing) && <span className="content-tab-missing" aria-hidden="true">{tab.missing}</span>}
             </button>
           ))}
         </nav>
