@@ -7,6 +7,7 @@ import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
 export type SubmissionScope = "contact_inquiry" | "protect_report" | "audition_submission";
 type SubmissionAttemptScope = `${SubmissionScope}_attempt`;
+type RateLimitScope = SubmissionScope | SubmissionAttemptScope | "admin_upload_attempt";
 
 export const DAILY_SUBMISSION_LIMIT = 5;
 const IP_DAILY_LIMIT = 500;
@@ -21,7 +22,7 @@ function hashIdentifier(value: string, secret: string) {
 
 async function consumeRateLimit(
   request: NextRequest,
-  scope: SubmissionScope | SubmissionAttemptScope,
+  scope: RateLimitScope,
   userId: string,
   userLimit: number,
   ipLimit: number,
@@ -79,6 +80,10 @@ export function consumeSubmissionAttemptRateLimit(request: NextRequest, scope: S
 
 export function consumeSubmissionRateLimit(request: NextRequest, scope: SubmissionScope, userId: string) {
   return consumeRateLimit(request, scope, userId, DAILY_SUBMISSION_LIMIT, IP_DAILY_LIMIT, WINDOW_SECONDS);
+}
+
+export function consumeAdminUploadAttemptRateLimit(request: NextRequest, userId: string) {
+  return consumeRateLimit(request, "admin_upload_attempt", userId, 10, 100, 60 * 60);
 }
 
 export async function getSubmissionRemaining(scope: SubmissionScope, userId: string) {

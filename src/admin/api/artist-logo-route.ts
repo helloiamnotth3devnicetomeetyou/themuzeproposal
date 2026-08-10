@@ -3,6 +3,7 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
+import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
   if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+  const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429);
 
   let formData: FormData;
   try {

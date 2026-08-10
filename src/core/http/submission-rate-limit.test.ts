@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ createServiceRoleClient: vi.fn(), rpc: vi.fn() }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: mocks.createServiceRoleClient }));
 
-import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit, getSubmissionRemaining } from "./submission-rate-limit";
+import { consumeAdminUploadAttemptRateLimit, consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit, getSubmissionRemaining } from "./submission-rate-limit";
 
 describe("submission rate limit", () => {
   beforeEach(() => {
@@ -56,6 +56,14 @@ describe("submission rate limit", () => {
     await consumeSubmissionAttemptRateLimit(request, "protect_report", "user-42");
     expect(mocks.rpc).toHaveBeenNthCalledWith(1, "consume_submission_rate_limit", expect.objectContaining({
       p_scope: "protect_report_attempt", p_limit: 30, p_window_seconds: 900,
+    }));
+  });
+
+  it("caps admin uploads before storage work", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, remaining: 9 }], error: null });
+    await consumeAdminUploadAttemptRateLimit(new NextRequest("https://themuze.kr"), "admin-1");
+    expect(mocks.rpc).toHaveBeenCalledWith("consume_submission_rate_limit", expect.objectContaining({
+      p_scope: "admin_upload_attempt", p_limit: 10, p_window_seconds: 3600,
     }));
   });
 

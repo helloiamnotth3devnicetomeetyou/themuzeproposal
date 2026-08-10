@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { safeHref } from "@/core/http/safe-href";
 import type { HomeSlideDTO } from "./types";
 
 const HOME_SLIDE_LIMIT = 7 ;
@@ -92,7 +93,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
       imageUrl: album.hero_image_url || album.cover_url || "",
       typoLogoUrl: album.typo_logo_url,
       spotifyId: album.spotify_id,
-      youtubeUrl: album.youtube_url,
+      youtubeUrl: safeHref(album.youtube_url) ?? null,
       descriptions: {
         ko: album.description_ko ?? "",
         en: album.description_en ?? album.description_ko ?? "",

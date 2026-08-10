@@ -10,11 +10,13 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   remove: vi.fn(),
   insert: vi.fn(),
+  consumeUploadAttempt: vi.fn(),
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/core/config/public-env", () => ({ getPublicSupabaseConfig: () => ({ storageUrl: "https://storage.example" }) }));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createSessionClient }));
+vi.mock("@/core/http/submission-rate-limit", () => ({ consumeAdminUploadAttemptRateLimit: mocks.consumeUploadAttempt }));
 vi.mock("@/core/uploads/service-storage", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/core/uploads/service-storage")>(),
   createServiceRoleClient: mocks.createServiceClient,
@@ -27,6 +29,7 @@ describe("POST /api/uploads/admin-asset", () => {
     vi.clearAllMocks();
     mocks.getUser.mockResolvedValue({ data: { user: { id: "admin-1" } }, error: null });
     mocks.isAdmin.mockResolvedValue(true);
+    mocks.consumeUploadAttempt.mockResolvedValue({ error: false, allowed: true });
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
@@ -64,6 +67,16 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.upload).toHaveBeenCalledWith("artist-1/asset.png", expect.any(File), expect.objectContaining({ upsert: false }));
+  });
+
+  it("limits an admin before parsing or writing an upload", async () => {
+    mocks.consumeUploadAttempt.mockResolvedValueOnce({ error: false, allowed: false });
+    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST", headers: { origin: "https://themuze.kr" }, body: new FormData(),
+    }));
+
+    expect(response.status).toBe(429);
+    expect(mocks.createServiceClient).not.toHaveBeenCalled();
   });
 
   it("deletes only a newly created immutable object when its audit event cannot be persisted", async () => {
