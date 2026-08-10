@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import {
+  boundedFileName,
   extensionMatches,
   validateFileSignature,
 } from "./file-signature";
@@ -80,5 +81,12 @@ describe("extensionMatches", () => {
   it("handles JPEG aliases and rejects misleading extensions", () => {
     expect(extensionMatches("cover.jpeg", "jpg")).toBe(true);
     expect(extensionMatches("deck.exe", "pdf")).toBe(false);
+  });
+});
+
+describe("boundedFileName", () => {
+  it("removes control/path characters and caps display metadata", () => {
+    expect(boundedFileName(`${"a".repeat(300)}.pdf`)).toHaveLength(255);
+    expect(boundedFileName("folder\\\u0000/file.pdf")).toBe("folder__file.pdf");
   });
 });

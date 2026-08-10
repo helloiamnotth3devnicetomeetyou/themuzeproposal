@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
+import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 3;
+const MAX_POST_URL_LENGTH = 2048;
 const REPORT_TYPES = new Set(["defamation", "harassment", "impersonation", "copyright", "privacy", "other"]);
 const PLATFORMS = new Set(["instagram", "x", "youtube", "tiktok", "facebook", "community", "other"]);
 
@@ -24,12 +25,15 @@ function textField(formData: FormData, name: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function isHttpUrl(value: string) {
+function canonicalHttpUrl(value: string) {
+  if (value.length > MAX_POST_URL_LENGTH) return null;
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    const canonical = url.href;
+    return canonical.length <= MAX_POST_URL_LENGTH ? canonical : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -58,7 +62,7 @@ export async function POST(request: NextRequest) {
   const title = textField(formData, "title");
   const content = textField(formData, "content");
   const platform = textField(formData, "platform");
-  const postUrl = textField(formData, "postUrl");
+  const postUrl = canonicalHttpUrl(textField(formData, "postUrl"));
   const postedAt = textField(formData, "postedAt");
   const authorName = textField(formData, "authorName");
   const postIp = textField(formData, "postIp");
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   if (!artistId || !REPORT_TYPES.has(reportType) || title.length < 1 || title.length > 120
     || content.length < 1 || content.length > 5000 || !PLATFORMS.has(platform)
-    || !isHttpUrl(postUrl) || !/^\d{4}-\d{2}-\d{2}$/.test(postedAt)
+    || !postUrl || !/^\d{4}-\d{2}-\d{2}$/.test(postedAt)
     || Number.isNaN(Date.parse(`${postedAt}T00:00:00Z`)) || postedAt > new Date().toISOString().slice(0, 10)
     || authorName.length < 1 || authorName.length > 120 || postIp.length > 64
     || !confirmed || files.length < 1 || files.length > MAX_FILES) {
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
     reportCreated = true;
 
     const { error: attachmentError } = await serviceClient.from("protect_report_attachments").insert(
-      paths.map((filePath, index) => ({ report_id: reportId, file_path: filePath, file_name: files[index].name })),
+      paths.map((filePath, index) => ({ report_id: reportId, file_path: filePath, file_name: boundedFileName(files[index].name) })),
     );
     if (attachmentError) throw new Error("SUBMISSION_FAILED");
   } catch {

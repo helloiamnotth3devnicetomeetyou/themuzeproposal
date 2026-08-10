@@ -4,6 +4,23 @@ import { parseFormDataWithinLimit, parseJsonWithinLimit } from "./request-body";
 
 describe("parseFormDataWithinLimit", () => {
   afterEach(() => vi.restoreAllMocks());
+  it("rejects multipart bodies above the part limit", async () => {
+    const form = new FormData();
+    form.set("one", "1");
+    form.set("two", "2");
+    const request = new Request("https://themuze.kr/upload", { method: "POST", body: form });
+
+    await expect(parseFormDataWithinLimit(request, 1024, 1000, { maxParts: 1 })).resolves.toBeNull();
+  });
+
+  it("rejects multipart headers above the metadata budget", async () => {
+    const form = new FormData();
+    form.set("x".repeat(128), "value");
+    const request = new Request("https://themuze.kr/upload", { method: "POST", body: form });
+
+    await expect(parseFormDataWithinLimit(request, 4096, 1000, { maxMetadataBytes: 32 })).resolves.toBeNull();
+  });
+
   it("stops reading an oversized body", async () => {
     const request = new Request("https://themuze.kr/upload", {
       method: "POST",

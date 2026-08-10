@@ -62,6 +62,7 @@ const SIGNATURE_HEADER_BYTES = 4 * 1024;
 const MAX_EVIDENCE_PIXELS = 25_000_000;
 const MAX_EVIDENCE_EDGE = 10_000;
 const MAX_EVIDENCE_FRAMES = 20;
+const MAX_DISPLAY_FILE_NAME_LENGTH = 255;
 
 function startsWith(bytes: Uint8Array, signature: readonly number[]) {
   return signature.every((value, index) => bytes[index] === value);
@@ -128,4 +129,9 @@ export function extensionMatches(fileName: string, extension: ValidatedFile["ext
   const actual = fileName.split(".").pop()?.toLowerCase();
   if (extension === "jpg") return actual === "jpg" || actual === "jpeg";
   return actual === extension;
+}
+
+export function boundedFileName(fileName: string) {
+  const normalized = fileName.normalize("NFC").replace(/[\u0000-\u001f\u007f]/g, "").replace(/[\\/]/g, "_");
+  return Array.from(normalized).slice(0, MAX_DISPLAY_FILE_NAME_LENGTH).join("") || "attachment";
 }

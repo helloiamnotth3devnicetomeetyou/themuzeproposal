@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
+import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     email: accountEmail,
     message,
     attachment_path: attachmentPath,
-    attachment_name: file?.name ?? null,
+    attachment_name: file ? boundedFileName(file.name) : null,
     attachment_size: file?.size ?? null,
     privacy_consent: true,
   });

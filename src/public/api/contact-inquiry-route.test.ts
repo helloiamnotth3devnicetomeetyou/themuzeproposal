@@ -82,6 +82,14 @@ describe("POST /api/contact-inquiries", () => {
     }));
   });
 
+  it("bounds the persisted attachment filename", async () => {
+    const file = new File(["%PDF-1.7\ncontent"], `${"a".repeat(300)}.pdf`, { type: "application/pdf" });
+    const response = await POST(request(validForm(file)));
+
+    expect(response.status).toBe(200);
+    expect(mocks.insert.mock.calls[0][0].attachment_name).toHaveLength(255);
+  });
+
   it("rejects a declared PDF whose bytes are HTML", async () => {
     const file = new File(["<script>alert(1)</script>"], "proposal.pdf", {
       type: "application/pdf",

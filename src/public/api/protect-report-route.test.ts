@@ -19,18 +19,18 @@ vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit
 
 import { POST } from "./protect-report-route";
 
-function validRequest() {
+function validRequest(postUrl = "https://example.com/post", fileName = "proof.png") {
   const form = new FormData();
   form.set("artistId", "artist-1");
   form.set("reportType", "defamation");
   form.set("title", "Report title");
   form.set("content", "Report details");
   form.set("platform", "instagram");
-  form.set("postUrl", "https://example.com/post");
+  form.set("postUrl", postUrl);
   form.set("postedAt", "2026-01-01");
   form.set("authorName", "Author");
   form.set("confirmation", "true");
-  form.append("evidence", new File([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64")], "proof.png", { type: "image/png" }));
+  form.append("evidence", new File([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64")], fileName, { type: "image/png" }));
   return new NextRequest("http://localhost/api/protect-reports", {
     method: "POST", headers: { origin: "http://localhost" }, body: form,
   });
@@ -58,6 +58,21 @@ describe("POST /api/protect-reports", () => {
     expect(mocks.consumeRateLimit).toHaveBeenCalledWith(expect.anything(), "protect_report", "user-1");
     expect(mocks.upload).toHaveBeenCalledWith(expect.stringMatching(/^user-1\/.+\.png$/), expect.any(File), expect.objectContaining({ contentType: "image/png" }));
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", confirmation: true }));
+  });
+
+  it("rejects an oversized post URL", async () => {
+    const response = await POST(validRequest(`https://example.com/${"a".repeat(2048)}`));
+
+    expect(response.status).toBe(400);
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("bounds persisted evidence filenames", async () => {
+    const response = await POST(validRequest("https://example.com/post", `${"a".repeat(300)}.png`));
+
+    expect(response.status).toBe(200);
+    const attachmentInsert = mocks.insert.mock.calls[1][0] as Array<{ file_name: string }>;
+    expect(attachmentInsert[0].file_name).toHaveLength(255);
   });
 
   it("stops a rate-limited report before writing", async () => {
