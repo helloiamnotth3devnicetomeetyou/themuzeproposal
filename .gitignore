@@ -53,6 +53,8 @@ output/
 /docs/*
 !/docs/tech/
 !/docs/tech/**
+!/docs/technical/
+!/docs/technical/**
 
 # temp files
 /tmp/*

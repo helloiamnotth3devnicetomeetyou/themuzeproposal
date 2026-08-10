@@ -14,7 +14,7 @@
 
 ## 런타임 토큰의 정본
 
-과거 `docs/design-system.md`보다 실제 런타임 파일을 우선한다.
+`docs/reference/design-system.md`보다 실제 런타임 파일을 우선한다.
 
 1. `src/styles/(core)/foundations/color-primitives.css`: literal palette/alpha
 2. `src/styles/(core)/foundations/base.css`: semantic theme, font, layout, focus

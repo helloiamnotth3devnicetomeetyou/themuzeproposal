@@ -1,6 +1,6 @@
 # THE MUZE 기술 인수인계
 
-이 문서는 2026-08-08 현재 저장소의 코드, 설정, SQL 마이그레이션을 기준으로 작성한 개발자용 진입점이다. 기획 문서가 아니라 **현재 구현의 동작 방식과 변경 규칙**을 기록한다.
+이 문서는 2026-08-10 현재 저장소의 코드, 설정, SQL 마이그레이션을 기준으로 작성한 개발자용 진입점이다. 기획 문서가 아니라 **현재 구현의 동작 방식과 변경 규칙**을 기록한다.
 
 ## 10분 안에 시작하기
 
@@ -42,7 +42,7 @@ npm run db:test
 | [06-code-style-and-workflows.md](./06-code-style-and-workflows.md) | 코드 스타일과 기능별 구현 절차는 무엇인가? |
 | [07-testing-and-operations.md](./07-testing-and-operations.md) | 테스트, CI, 배포, 장애 확인은 어떻게 하는가? |
 
-기존 `docs/design-system.md`, `docs/design-tokens.json`, `docs/content-data-model.md`는 과거 설계 참고 자료다. 현재 런타임과 불일치할 수 있으므로 구현 판단은 이 폴더와 실제 코드·마이그레이션을 우선한다.
+`docs/reference/`는 참고 문서다. 구현 판단은 실제 코드와 migration을 우선한다. 전체 문서 목록은 [../README.md](../README.md)를 본다.
 
 ## 가장 중요한 규칙
 
@@ -59,7 +59,7 @@ npm run db:test
 
 - 작업 트리에 문서 작업 전부터 미커밋 변경이 존재한다. 인수인계 시 `git status`로 소유자를 확인하고 덮어쓰지 않는다.
 - 루트 `README.md`와 일부 오래된 문서·문자열은 현재 콘솔에서 문자 인코딩이 깨져 보인다. 새 파일은 UTF-8로 유지한다.
-- `supabase/schema.remote.sql`은 최근 migration의 `audition_campaigns`, `avatar_assets`, `admin_onboarding_progress` 등을 포함하지 않는다. 스냅샷만 보고 현재 스키마라고 판단하지 말고 `npm run db:status`와 migration 전체를 확인한다.
+- `supabase/schema.remote.sql`은 `audition_campaigns`, `avatar_assets`, `admin_onboarding_progress`는 포함하지만 2026-08-10의 최신 migration 일부보다 뒤처져 있다. 스냅샷만 보고 현재 스키마라고 판단하지 말고 `npm run db:status`와 migration 전체를 확인한다.
 - 감사 로그에는 자동 보존 기간이 없다. 개인정보·운영 정책이 정해지면 DB 보존 작업을 별도로 추가해야 한다.
 - 요청 IP 신뢰 모델은 Vercel 배포를 전제로 한다. 비 Vercel 호스팅에서는 IP가 `unknown`으로 묶이므로 프록시 신뢰 정책을 먼저 설계해야 한다.
 

@@ -105,6 +105,6 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 | `public/` | 정적 이미지·폰트 |
 | `.github/workflows/` | CI와 보안 검사 |
 | `patches/` | `patch-package`가 install 후 적용하는 dependency patch |
-| `docs/tech/` | 현재 기술 인수인계 문서 |
+| `docs/technical/` | 현재 기술 인수인계 문서 |
 
 `.next`, `coverage`, `test-results`, `output`, `.env.local`은 생성물 또는 비밀정보이며 커밋하지 않는다.

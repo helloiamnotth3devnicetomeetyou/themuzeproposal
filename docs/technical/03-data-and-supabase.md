@@ -1,5 +1,7 @@
 # 데이터와 Supabase
 
+전체 관계도와 도메인별 설명은 [reference/database-schema.md](../reference/database-schema.md)를 함께 본다. 이 문서는 코드를 바꿀 때 필요한 구현 세부사항을 우선한다.
+
 ## client 선택
 
 | 함수/객체 | 자격 | 사용처 |
@@ -65,6 +67,67 @@ private.submission_rate_limits
 - `audition_submissions`: legacy column과 현재 `campaign_id`, `answers`, `form_snapshot`, review field를 함께 보유
 
 새 기능은 `audition_campaigns` 모델을 우선한다. `form_snapshot`은 지원 당시 질문을 보존하며, `answers`는 field key별 값 또는 파일 metadata다. 지원 이메일은 계정의 확인된 이메일과 일치해야 하며 DB에는 캠페인별 HMAC hash를 저장해 중복을 막는다. 사용자 자신의 조회는 제한된 RPC `get_my_audition_submissions()`를 사용해 심사 메모 등 관리자 전용 열 노출을 피한다.
+
+### 실제 FK와 삭제 동작
+
+| 자식 | FK | 삭제 동작 | 구현상 주의 |
+| --- | --- | --- | --- |
+| `albums` | `artist_id → artists.id` | CASCADE | 아티스트 삭제 시 앨범·곡·홈 슬라이드까지 연쇄 삭제 |
+| `artist_members`, `artist_scenes`, `artist_schedules`, `avatar_assets` | `artist_id → artists.id` | CASCADE | 운영에서는 삭제보다 `is_active`/공개 상태 변경 우선 |
+| `artist_gallery` | `artist_id` CASCADE, `member_id`/`album_id` SET NULL | 혼합 | gallery row 자체는 아티스트에 종속 |
+| `artist_scene_members` | `scene_id`, `member_id` | CASCADE | scene 또는 멤버 삭제 시 배치 row 제거 |
+| `tracks`, `home_hero_slides` | `album_id → albums.id` | CASCADE | 앨범 저장 RPC와 정렬 index를 함께 고려 |
+| `notices` | `artist_id → artists.id` | CASCADE | null이면 전역 공지 |
+| `profiles` | `id → auth.users.id` | CASCADE | auth user 삭제가 profile을 제거 |
+| `profiles` | `avatar_asset_id → avatar_assets.id` | SET NULL | avatar 비활성화 trigger도 profile 참조를 정리 |
+| `audition_form_fields` | `campaign_id → audition_campaigns.id` | CASCADE | 캠페인 삭제 시 동적 질문 제거 |
+| `audition_submissions` | `campaign_id` RESTRICT, `audition_id`/user/reviewer SET NULL | 혼합 | 제출 이력이 있으므로 campaign 삭제 제한 |
+| `protect_report_attachments` | `report_id → protect_reports.id` | CASCADE | 신고 삭제 시 metadata도 제거 |
+| `protect_reports` | `artist_id` RESTRICT, `user_id` CASCADE | 혼합 | 신고 대상 아티스트 삭제를 DB가 차단 |
+| `contact_inquiries` | user/answered_by SET NULL | SET NULL | 비로그인 문의와 담당자 삭제를 허용 |
+
+### 테이블 핵심 column 계약
+
+| 영역 | 필수 계약 |
+| --- | --- |
+| 공개 entity | `id uuid`, `created_at`, `updated_at`, 활성/발행 상태와 정렬 값 |
+| 다국어 콘텐츠 | 기존 canonical `name`/`title`을 호환 유지하고 `*_ko`, `*_en`, `*_ja` fallback 사용 |
+| URL | 외부 URL은 HTTP(S) check를 통과해야 하며, 내부 이동은 별도 relative path 규칙을 사용 |
+| JSONB | `social_links`/options/form schema/answers는 `jsonb_typeof` check로 배열·객체 shape 고정 |
+| 파일 metadata | path·name·size가 모두 있거나 모두 없어야 하며 route의 signature 검증 결과와 일치해야 함 |
+| 상태값 | DB check constraint의 enum을 먼저 확인하고 UI에 임의 상태를 추가하지 않음 |
+
+주요 상태값은 다음과 같다.
+
+- `auditions.status`: `tba`, `open`, `closed`, `reviewing`, `done`
+- `audition_submissions.status`: `pending`, `reviewing`, `accepted`, `rejected`
+- `contact_inquiries.status`: `pending`, `reviewing`, `answered`, `closed`
+- `protect_reports.status`: `pending`, `reviewing`, `resolved`, `rejected`
+- `profiles.role`: `null`, `editor`, `super_admin`
+
+### private schema: rate limit
+
+`private.login_rate_limits`와 `private.submission_rate_limits`는 PostgREST 공개 대상이 아니다. `public` 함수가 HMAC으로 만든 identifier를 받아 원자적으로 window/count를 갱신한다.
+
+| 테이블 | key | 용도 | 노출 규칙 |
+| --- | --- | --- | --- |
+| `private.login_rate_limits` | identifier hash, IP hash | 비밀번호 로그인 실패 제한 | public/anon/authenticated 직접 grant 금지 |
+| `private.submission_rate_limits` | scope, key hash | 문의·Protect·오디션 제출 제한 | public/anon/authenticated 직접 grant 금지 |
+
+비밀값이나 원문 이메일·IP를 저장하지 않는다. rate-limit table, RPC, secret 중 하나라도 없으면 route는 fail-open하지 않고 `503`을 반환한다.
+
+### 서버가 호출하는 주요 RPC
+
+| 함수 | 호출 경계 | 목적 |
+| --- | --- | --- |
+| `is_admin()`, `is_super_admin()`, `has_admin_role()` | RLS/policy와 서버 | 현재 auth user role 판정 |
+| `consume_login_rate_limit()`, `reset_login_rate_limit()` | auth route | 로그인 실패 window 소비·성공 reset |
+| `consume_submission_rate_limit()` | 공개 제출 route | scope별 제출 quota 원자 처리 |
+| `get_my_audition_submissions()` | authenticated 사용자 | 관리자 전용 column을 제외한 본인 조회 |
+| `get_admin_audition_submissions()` | admin | 캠페인 지원자 심사 projection |
+| `save_album_with_tracks()` | admin editor | 앨범과 곡을 한 DB 작업으로 저장 |
+| `save_avatar_assets()` | admin editor | avatar asset 정렬·삭제 저장 |
+| `reorder_albums()` | admin editor | 아티스트 앨범 순서 변경 |
 
 ## Storage
 
