@@ -1,7 +1,5 @@
 "use client";
-
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Trash2 } from "lucide-react";
@@ -30,15 +28,7 @@ import {
 } from "./profile-editor-model";
 import ProfileEditorSections from "./ProfileEditorSections";
 import ProfileContextRail from "./ProfileContextRail";
-
-type NewArtistStep = "name" | "visual" | "content" | "done";
-const newArtistSteps: Array<{ id: NewArtistStep; label: string }> = [
-  { id: "name", label: "이름" },
-  { id: "visual", label: "비주얼" },
-  { id: "content", label: "소개" },
-  { id: "done", label: "완료" },
-];
-
+import { newArtistSteps, type NewArtistStep } from "./artist-profile-steps";
 export default function ArtistProfileAdmin() {
   const routeId = useParams<{ id: string }>()?.id;
   const router = useRouter();
@@ -104,7 +94,6 @@ export default function ArtistProfileAdmin() {
 
   const serializedDraft = useMemo(() => draft ? JSON.stringify(draft) : "", [draft]);
   void serializedDraft; // kept for forward-compat; dirty now derived from hook
-
   const saveIssues = useMemo(() => {
     const issues: string[] = [];
     if (!draft) return issues;
@@ -160,7 +149,6 @@ export default function ArtistProfileAdmin() {
     unavailableMessage: "????? ??? ?? ?????? ?? ??? ???.",
     onError: setError,
   });
-
 
   useEffect(() => {
     if (isNew) return;

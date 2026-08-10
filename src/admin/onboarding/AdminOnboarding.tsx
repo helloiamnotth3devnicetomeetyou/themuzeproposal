@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, GripHorizontal, List, Play, ShieldCheck, X } from "lucide-react";
+import { BookOpen, ChevronRight, Play } from "lucide-react";
 import { supabase } from "@/core/supabase/client";
-import { finishGuideSandbox, isGuideSandboxActive, startGuideSandbox } from "@/core/supabase/guide-sandbox";
+import { isGuideSandboxActive, startGuideSandbox } from "@/core/supabase/guide-sandbox";
 import {
   GUIDE_CHAPTERS,
-  availableGuideSteps,
-  guideChapterProgress,
   guidePathMatches,
   parseGuideRun,
   type GuideProgressRow,
@@ -17,7 +14,12 @@ import {
   type GuideRun,
   type GuideStep,
 } from "./guide-content";
-import { getGuideHighlightRect, getGuidePosition, getSnappedGuidePosition, shouldRevealGuideTarget, type GuidePosition } from "./guide-position";
+import { type GuidePosition } from "./guide-position";
+import { useGuideTargetTracking } from "./useGuideTargetTracking";
+import { AdminOnboardingPortal } from "./AdminOnboardingPortal";
+import { useGuidePopoverInteractions } from "./useGuidePopoverInteractions";
+import { useGuideDerivedState } from "./useGuideDerivedState";
+import { useGuideModalInteractions } from "./useGuideModalInteractions";
 
 type Artist = { id: string; name: string };
 type ChapterIntro = GuideRun;
@@ -25,16 +27,6 @@ type Rect = { top: number; left: number; width: number; height: number };
 
 const missingTable = (message?: string) => Boolean(message && /does not exist|schema cache|could not find/i.test(message));
 const emptySubscribe = () => () => {};
-const getScrollableParent = (element: HTMLElement) => {
-  let parent = element.parentElement;
-  while (parent) {
-    const overflowY = window.getComputedStyle(parent).overflowY;
-    if (/(auto|scroll)/.test(overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
-    parent = parent.parentElement;
-  }
-  return null;
-};
-
 export default function AdminOnboarding({
   userId,
   role,
@@ -80,29 +72,13 @@ export default function AdminOnboarding({
   const [capabilities, setCapabilities] = useState({ artistScenes: true, artistGallery: true });
 
   const artistId = artists.find((artist) => pathname.includes(`/artists/${artist.id}/`))?.id ?? artists[0]?.id;
-  const context = useMemo(() => ({
-    role: role ?? "editor",
-    hasArtist: Boolean(artistId),
-    ...capabilities,
-  }), [artistId, capabilities, role]);
-  const chapterSteps = useMemo(() => Object.fromEntries(
-    GUIDE_CHAPTERS.map((chapter) => [chapter.id, availableGuideSteps(chapter.id, context)]),
-  ), [context]);
-  const chapterStats = useMemo(() => Object.fromEntries(GUIDE_CHAPTERS.map((chapter) => [
-    chapter.id,
-    guideChapterProgress(chapter.id, chapterSteps[chapter.id], progressRows[chapter.id]),
-  ])), [chapterSteps, progressRows]);
-  const completed = useMemo(() => new Set(Object.values(progressRows).filter((row) => row.completed_at).map((row) => row.chapter_id)), [progressRows]);
-  const totalSteps = Object.values(chapterStats).reduce((sum, item) => sum + item.total, 0);
-  const reachedSteps = Object.values(chapterStats).reduce((sum, item) => sum + item.reached, 0);
-  const progress = totalSteps ? Math.round((reachedSteps / totalSteps) * 100) : 0;
-  const steps = run ? chapterSteps[run.chapterId] ?? [] : [];
-  const step = run ? steps[run.index] : undefined;
-  const runChapter = run ? GUIDE_CHAPTERS.find((chapter) => chapter.id === run.chapterId) : undefined;
-  const introChapter = chapterIntro ? GUIDE_CHAPTERS.find((chapter) => chapter.id === chapterIntro.chapterId) : undefined;
-  const stepOnCurrentPath = !step || guidePathMatches(step.href.replace(":artistId", artistId ?? "new"), pathname, step.descendantPath);
-  const visibleRect = stepOnCurrentPath ? rect : null;
-  const guideOpen = welcomeOpen || tocOpen || Boolean(chapterIntro) || Boolean(run);
+  const { chapterSteps, chapterStats, completed, totalSteps, reachedSteps, progress, steps, step, runChapter, introChapter, visibleRect, guideOpen } = useGuideDerivedState({
+    role, artistId, capabilities, progressRows, run, chapterIntro, pathname, rect, welcomeOpen, tocOpen,
+  });
+  const { trapFocus, closeGuide } = useGuideModalInteractions({
+    userId, guideOpen, welcomeOpen, tocOpen, chapterIntro, run, dialogRef, launcherRef, previousFocusRef, guideWasOpenRef,
+    setWelcomeOpen, setTocOpen, setChapterIntro, setRun, setPausedRun, setRect, setPopoverPosition,
+  });
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
@@ -258,223 +234,20 @@ export default function AdminOnboarding({
     setTocOpen(true);
   };
 
-  useEffect(() => {
-    if (!step) return;
-    if (!guidePathMatches(resolvedHref(step), pathname, step.descendantPath)) return;
-    const navigationTimer = step.target === "admin-search" || step.interaction?.target === "admin-search"
-      ? window.setTimeout(() => window.dispatchEvent(new Event("admin-guide-open-navigation")), 100)
-      : 0;
-    if (step.tabEvent) window.dispatchEvent(new CustomEvent(step.tabEvent.name, { detail: step.tabEvent.detail }));
-
-    let target: HTMLElement | null = null;
-    let resizeObserver: ResizeObserver | null = null;
-    let searchTimer = 0;
-    let lostTimer = 0;
-    let revealTimer = 0;
-    let animationFrame = 0;
-    let promptFrame = 0;
-    let practiceTimer = 0;
-    let skipped = false;
-    let awaitingInteraction = false;
-    let practiceDone = false;
-    let practiceArmed = false;
-    let revealedTarget: HTMLElement | null = null;
-    const usableViewport = () => {
-      const mobile = window.matchMedia("(max-width: 700px)").matches;
-      const visualHeight = window.visualViewport?.height ?? window.innerHeight;
-      const sheetHeight = mobile ? dialogRef.current?.getBoundingClientRect().height ?? 0 : 0;
-      return {
-        width: window.innerWidth,
-        height: Math.max(160, visualHeight - sheetHeight - (mobile ? 12 : 0)),
-        visualHeight,
-      };
-    };
-    const isRendered = (element: HTMLElement) => {
-      const bounds = element.getBoundingClientRect();
-      const style = window.getComputedStyle(element);
-      return element.isConnected && bounds.width > 0 && bounds.height > 0 && style.display !== "none" && style.visibility !== "hidden";
-    };
-    const isExposed = (element: HTMLElement) => {
-      const bounds = element.getBoundingClientRect();
-      const insetX = Math.min(8, bounds.width / 2);
-      const insetY = Math.min(8, bounds.height / 2);
-      const points = [
-        [bounds.left + bounds.width / 2, bounds.top + bounds.height / 2],
-        [bounds.left + insetX, bounds.top + insetY],
-        [bounds.right - insetX, bounds.bottom - insetY],
-      ];
-      return points.some(([x, y]) => {
-        if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false;
-        const top = document.elementsFromPoint(x, y).find((candidate) => !candidate.closest(".admin-guide-layer"));
-        return Boolean(top && (top === element || element.contains(top)));
-      });
-    };
-    const visibleTarget = (tourId: string) => {
-      const candidates = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour-id="${tourId}"]`)).filter(isRendered);
-      const exposed = candidates.filter(isExposed);
-      return exposed.find((candidate) => !candidate.matches(":disabled"))
-        ?? candidates.find((candidate) => !candidate.matches(":disabled"))
-        ?? exposed[0]
-        ?? candidates[0]
-        ?? null;
-    };
-    const update = () => {
-      if (!target) return;
-      const next = target.getBoundingClientRect();
-      const viewport = usableViewport();
-      const targetRect = { top: next.top, left: next.left, width: next.width, height: next.height };
-      const popover = dialogRef.current?.getBoundingClientRect();
-      setRect(getGuideHighlightRect(targetRect, viewport));
-      setPopoverPosition(getGuidePosition(targetRect, {
-        width: popover?.width ?? Math.min(380, viewport.width - 32),
-        height: popover?.height ?? 360,
-      }, viewport));
-    };
-    const scheduleUpdate = () => {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = requestAnimationFrame(update);
-    };
-    const observeTarget = () => {
-      resizeObserver?.disconnect();
-      resizeObserver = new ResizeObserver(scheduleUpdate);
-      if (target) resizeObserver.observe(target);
-      if (dialogRef.current) resizeObserver.observe(dialogRef.current);
-    };
-    const revealTarget = (element: HTMLElement, force = false) => {
-      if (!force && revealedTarget === element) return;
-      revealedTarget = element;
-      const bounds = element.getBoundingClientRect();
-      const viewport = usableViewport();
-      if (revealTimer || !shouldRevealGuideTarget(bounds, viewport, isExposed(element))) return;
-      element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
-      revealTimer = window.setTimeout(() => {
-        revealTimer = 0;
-        if (!element.isConnected) return;
-        const next = element.getBoundingClientRect();
-        const nextViewport = usableViewport();
-        const delta = next.bottom > nextViewport.height - 20
-          ? next.bottom - nextViewport.height + 20
-          : next.top < 20 ? next.top - 20 : 0;
-        if (delta) {
-          const scrollParent = getScrollableParent(element);
-          if (scrollParent) scrollParent.scrollBy({ top: delta, behavior: "smooth" });
-          else window.scrollBy({ top: delta, behavior: "smooth" });
-        }
-        scheduleUpdate();
-      }, 360);
-    };
-    const markPracticeComplete = () => {
-      if (!step.practice || practiceDone) return;
-      practiceDone = true;
-      setPracticeComplete(true);
-      void saveStepProgress(step.chapterId, step.id);
-    };
-    const completePractice = (event: Event) => {
-      const practiceTourId = step.practice?.target ?? step.target;
-      if (!event.composedPath().some((node) => node instanceof HTMLElement && node.dataset.tourId === practiceTourId)) return;
-      if (step.practice?.event === "input" || step.practice?.event === "change") {
-        const field = event.target;
-        if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
-          if (!field.value.trim()) return;
-        }
-        window.clearTimeout(practiceTimer);
-        practiceTimer = window.setTimeout(markPracticeComplete, 350);
-        return;
-      }
-      markPracticeComplete();
-    };
-    const armPractice = (tourId: string) => {
-      const practiceTourId = step.practice?.target ?? step.target;
-      if (!step.practice || tourId !== practiceTourId || practiceArmed) return;
-      practiceArmed = true;
-      document.addEventListener(step.practice.event, completePractice, true);
-    };
-    const attach = (nextTarget: HTMLElement, prompt: string | null = null, tourId = "") => {
-      awaitingInteraction = Boolean(prompt);
-      cancelAnimationFrame(promptFrame);
-      promptFrame = requestAnimationFrame(() => {
-        setInteractionPrompt(prompt);
-        if (prompt && window.matchMedia("(max-width: 700px)").matches) setMobileSheetExpanded(false);
-      });
-      armPractice(tourId);
-      if (target === nextTarget) return true;
-      target?.classList.remove("admin-guide-target");
-      target = nextTarget;
-      target.classList.add("admin-guide-target");
-      revealTarget(target);
-      scheduleUpdate();
-      observeTarget();
-      window.clearTimeout(lostTimer);
-      lostTimer = 0;
-      return true;
-    };
-    const findPrimary = () => {
-      const nextTarget = visibleTarget(step.target);
-      return nextTarget ? attach(nextTarget, null, step.target) : false;
-    };
-    const findInteraction = () => {
-      const nextTarget = step.interaction ? visibleTarget(step.interaction.target) : null;
-      return nextTarget && step.interaction ? attach(nextTarget, step.interaction.instruction, step.interaction.target) : false;
-    };
-    const skipMissingStep = () => {
-      if (skipped) return;
-      skipped = true;
-      target?.classList.remove("admin-guide-target");
-      setRect(null);
-      setPopoverPosition(null);
-      setInteractionPrompt(null);
-      setIsExploring(false);
-      void finishOrAdvance();
-      window.dispatchEvent(new CustomEvent("admin-toast", { detail: "안내 요소를 찾지 못해 다음 단계로 넘어갑니다." }));
-    };
-    const validateTarget = () => {
-      if (awaitingInteraction && findPrimary()) return;
-      if (!target) { if (!findPrimary()) findInteraction(); return; }
-      if (target && isRendered(target)) return;
-      if (findPrimary()) return;
-      if (findInteraction()) return;
-      if (!lostTimer) lostTimer = window.setTimeout(skipMissingStep, 700);
-    };
-    const observer = new MutationObserver(validateTarget);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
-    window.addEventListener("resize", scheduleUpdate);
-    window.addEventListener("scroll", scheduleUpdate, true);
-    if (!findPrimary() && !findInteraction()) {
-      searchTimer = window.setTimeout(() => {
-        if (findPrimary()) return;
-        if (findInteraction()) return;
-        const fallbackTarget = step.fallbackTarget && step.fallbackTarget !== "admin-page" ? visibleTarget(step.fallbackTarget) : null;
-        if (fallbackTarget) attach(fallbackTarget, null, step.fallbackTarget);
-        else skipMissingStep();
-      }, 4000);
-    }
-    const revealActiveTarget = () => {
-      if (target) revealTarget(target, true);
-    };
-    window.addEventListener("admin-guide-reveal-target", revealActiveTarget);
-    window.visualViewport?.addEventListener("resize", scheduleUpdate);
-    window.visualViewport?.addEventListener("scroll", scheduleUpdate);
-    return () => {
-      observer.disconnect();
-      target?.classList.remove("admin-guide-target");
-      if (practiceArmed && step.practice) document.removeEventListener(step.practice.event, completePractice, true);
-      resizeObserver?.disconnect();
-      cancelAnimationFrame(animationFrame);
-      cancelAnimationFrame(promptFrame);
-      window.clearTimeout(navigationTimer);
-      window.clearTimeout(searchTimer);
-      window.clearTimeout(lostTimer);
-      window.clearTimeout(revealTimer);
-      window.clearTimeout(practiceTimer);
-      window.removeEventListener("resize", scheduleUpdate);
-      window.removeEventListener("scroll", scheduleUpdate, true);
-      window.removeEventListener("admin-guide-reveal-target", revealActiveTarget);
-      window.visualViewport?.removeEventListener("resize", scheduleUpdate);
-      window.visualViewport?.removeEventListener("scroll", scheduleUpdate);
-    };
-    // pathname repeats tab events after a route transition.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, step?.id]);
+  useGuideTargetTracking({
+    step,
+    pathname,
+    artistId,
+    dialogRef,
+    saveStepProgress,
+    finishOrAdvance,
+    setRect,
+    setPopoverPosition,
+    setInteractionPrompt,
+    setIsExploring,
+    setPracticeComplete,
+    setMobileSheetExpanded,
+  });
 
   useEffect(() => {
     document.body.classList.toggle("is-admin-guide-exploring", Boolean(run && isExploring));
@@ -504,46 +277,6 @@ export default function AdminOnboarding({
     };
   }, [pausedRun, run]);
 
-  useEffect(() => {
-    if (guideOpen && !guideWasOpenRef.current) previousFocusRef.current = document.activeElement as HTMLElement | null;
-    if (!guideOpen && guideWasOpenRef.current) {
-      const previous = previousFocusRef.current;
-      requestAnimationFrame(() => (previous?.isConnected ? previous : launcherRef.current)?.focus());
-    }
-    guideWasOpenRef.current = guideOpen;
-  }, [guideOpen]);
-
-  useEffect(() => {
-    if (!welcomeOpen && !tocOpen && !chapterIntro && !run) return;
-    const frame = requestAnimationFrame(() => dialogRef.current?.querySelector<HTMLElement>("button")?.focus());
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setWelcomeOpen(false);
-        setTocOpen(false);
-        setChapterIntro(null);
-        setRun(null);
-        setPausedRun(null);
-        setRect(null);
-        localStorage.removeItem(`admin-guide-paused:${userId}`);
-        if (isGuideSandboxActive()) {
-          window.location.assign(finishGuideSandbox() || window.location.href);
-        }
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener("keydown", onKeyDown); };
-  }, [chapterIntro, run, tocOpen, userId, welcomeOpen]);
-
-  const trapFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Tab") return;
-    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("button:not([disabled])"));
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable.at(-1);
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-  };
-
   const chooseWelcome = async (mode: "full" | "toc") => {
     await completeChapter("0");
     setWelcomeOpen(false);
@@ -551,192 +284,66 @@ export default function AdminOnboarding({
     else setTocOpen(true);
   };
 
-  const closeGuide = () => {
-    setWelcomeOpen(false);
-    setTocOpen(false);
-    setChapterIntro(null);
-    setRun(null);
-    setPausedRun(null);
-    setRect(null);
-    setPopoverPosition(null);
-    localStorage.removeItem(`admin-guide-paused:${userId}`);
-    if (isGuideSandboxActive()) {
-      window.location.assign(finishGuideSandbox() || window.location.href);
-    }
-  };
-
-  const startPopoverDrag = (event: ReactPointerEvent<HTMLElement>) => {
-    if (window.innerWidth <= 700 || event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
-    const bounds = dialogRef.current?.getBoundingClientRect();
-    if (!bounds) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    popoverDragRef.current = { pointerId: event.pointerId, offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top, width: bounds.width, height: bounds.height };
-    setManualPopoverPosition({ top: bounds.top, left: bounds.left });
-    setIsPopoverDragging(true);
-  };
-
-  const movePopover = (event: ReactPointerEvent<HTMLElement>) => {
-    const drag = popoverDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    setManualPopoverPosition(getSnappedGuidePosition(
-      { top: event.clientY - drag.offsetY, left: event.clientX - drag.offsetX },
-      { width: drag.width, height: drag.height },
-      { width: window.innerWidth, height: window.innerHeight },
-    ));
-  };
-
-  const stopPopoverDrag = (event: ReactPointerEvent<HTMLElement>) => {
-    if (popoverDragRef.current?.pointerId !== event.pointerId) return;
-    popoverDragRef.current = null;
-    setIsPopoverDragging(false);
-  };
-
-  const updateMobileSheet = (expanded: boolean) => {
-    setMobileSheetExpanded(expanded);
-    requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event("admin-guide-reveal-target"))));
-  };
-
-  const startMobileSheetDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    mobileSheetDragRef.current = event.clientY;
-  };
-
-  const stopMobileSheetDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const startY = mobileSheetDragRef.current;
-    mobileSheetDragRef.current = null;
-    if (startY === null) return;
-    const distance = event.clientY - startY;
-    if (Math.abs(distance) < 32) return;
-    suppressMobileSheetClickRef.current = true;
-    updateMobileSheet(distance < 0);
-  };
-
-  const toggleMobileSheet = () => {
-    if (suppressMobileSheetClickRef.current) {
-      suppressMobileSheetClickRef.current = false;
-      return;
-    }
-    updateMobileSheet(!mobileSheetExpanded);
-  };
-
+  const { startPopoverDrag, movePopover, stopPopoverDrag, updateMobileSheet, startMobileSheetDrag, stopMobileSheetDrag, toggleMobileSheet } = useGuidePopoverInteractions({
+    dialogRef,
+    popoverDragRef,
+    mobileSheetDragRef,
+    suppressMobileSheetClickRef,
+    mobileSheetExpanded,
+    setManualPopoverPosition,
+    setIsPopoverDragging,
+    setMobileSheetExpanded,
+  });
   const activePopoverPosition = manualPopoverPosition ?? popoverPosition;
 
-  const portal = mounted && (welcomeOpen || tocOpen || chapterIntro || run) ? createPortal(<>
-    {welcomeOpen && <div className="admin-guide-modal-backdrop">
-      <div ref={dialogRef} className="admin-guide-welcome" role="dialog" aria-modal="true" aria-labelledby="admin-guide-welcome-title" onKeyDown={trapFocus}>
-        <button type="button" className="admin-guide-close" aria-label="가이드 닫기" onClick={closeGuide}><X aria-hidden="true" /></button>
-        <span className="admin-guide-kicker">THE MUZE / ADMIN GUIDE</span>
-        <h2 id="admin-guide-welcome-title">어디부터 둘러볼까요?</h2>
-        <p>실제 데이터를 바꾸지 않고 모든 업무 버튼의 용도, 실행 결과와 주의사항을 화면에서 바로 익힐 수 있습니다.</p>
-        <div className="admin-guide-welcome-actions">
-          <button type="button" onClick={() => void chooseWelcome("full")}><span>01</span><b>전체 둘러보기</b><small>메인 노출부터 검색까지 업무 순서대로</small><ArrowRight aria-hidden="true" /></button>
-          <button type="button" onClick={() => void chooseWelcome("toc")}><span>02</span><b>필요한 것만 보기</b><small>목차에서 원하는 업무를 골라 바로 이동</small><List aria-hidden="true" /></button>
-        </div>
-      </div>
-    </div>}
-
-    {tocOpen && <div className="admin-guide-modal-backdrop admin-guide-toc-backdrop">
-      <aside ref={dialogRef} className="admin-guide-toc" role="dialog" aria-modal="true" aria-labelledby="admin-guide-toc-title" onKeyDown={trapFocus}>
-        <header>
-          <div><span>진행 {reachedSteps} / {totalSteps}</span><h2 id="admin-guide-toc-title">관리자 업무 가이드</h2></div>
-          <button type="button" aria-label="목차 닫기" onClick={closeGuide}><X aria-hidden="true" /></button>
-        </header>
-        <div className="admin-guide-toc-progress"><i style={{ width: `${progress}%` }} /><span>{progress}% 확인</span></div>
-        <nav aria-label="가이드 목차">
-          {GUIDE_CHAPTERS.map((chapter, index) => {
-            const stats = chapterStats[chapter.id];
-            const chapterPercent = stats.total ? Math.round((stats.reached / stats.total) * 100) : 0;
-            return <button type="button" key={chapter.id} style={{ "--guide-chapter-delay": `${110 + index * 34}ms` } as CSSProperties} className={completed.has(chapter.id) ? "is-complete" : ""} onClick={() => startChapter(chapter.id)}>
-              <span className="admin-guide-chapter-number">{chapter.id.padStart(2, "0")}</span>
-              <span><b>{chapter.title}</b><em><i style={{ width: `${chapterPercent}%` }} />{stats.reached}/{stats.total}</em></span>
-              <i>{completed.has(chapter.id) ? <Check aria-label="완료" /> : <ChevronRight aria-hidden="true" />}</i>
-            </button>;
-          })}
-        </nav>
-      </aside>
-    </div>}
-
-    {chapterIntro && introChapter && <div className="admin-guide-modal-backdrop admin-guide-chapter-intro-backdrop">
-      <section ref={dialogRef} className="admin-guide-chapter-intro" role="dialog" aria-modal="true" aria-labelledby="admin-guide-chapter-intro-title" onKeyDown={trapFocus}>
-        <button type="button" className="admin-guide-close" aria-label="챕터 소개 닫기" onClick={closeGuide}><X aria-hidden="true" /></button>
-        <span>챕터 {introChapter.id} · {chapterSteps[introChapter.id]?.length ?? 0}개 기능</span>
-        <h2 id="admin-guide-chapter-intro-title">{introChapter.title}</h2>
-        <p>{introChapter.description}</p>
-        <footer>
-          <button type="button" onClick={() => { setChapterIntro(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
-          {chapterIntro.index > 0 && <button type="button" onClick={() => openStep(chapterIntro.chapterId, 0, chapterIntro.mode)}>처음부터 보기</button>}
-          <button type="button" className="is-next" onClick={() => openStep(chapterIntro.chapterId, chapterIntro.index, chapterIntro.mode)}>{chapterIntro.index > 0 ? "이어보기" : "시작하기"}<ArrowRight aria-hidden="true" /></button>
-        </footer>
-      </section>
-    </div>}
-    {run && step && <div className={`admin-guide-layer${isExploring ? " is-exploring" : ""}${isMobileGuide && !mobileSheetExpanded ? " is-sheet-collapsed" : ""}`} aria-live="polite">
-      {visibleRect && !isExploring && <div className="admin-guide-spotlight" style={visibleRect} />}
-      <section
-        key={step.id}
-        ref={dialogRef}
-        className={`admin-guide-popover${visibleRect ? " is-anchored" : " is-loading"}${isPopoverDragging ? " is-dragging" : ""}${isMobileGuide && !mobileSheetExpanded ? " is-mobile-collapsed" : ""}`}
-        style={visibleRect && activePopoverPosition ? { top: activePopoverPosition.top, left: activePopoverPosition.left, right: "auto", bottom: "auto" } : undefined}
-        data-placement={popoverPosition?.placement}
-        role="dialog"
-        aria-modal={!isMobileGuide}
-        aria-labelledby="admin-guide-step-title"
-        onMouseEnter={() => setIsExploring(false)}
-        onMouseLeave={() => setIsExploring(true)}
-        onFocusCapture={() => setIsExploring(false)}
-        onKeyDown={isMobileGuide ? undefined : trapFocus}
-      >
-        <div className="admin-guide-mobile-bar">
-          <button type="button" onClick={toggleMobileSheet} onPointerDown={startMobileSheetDrag} onPointerUp={stopMobileSheetDrag} onPointerCancel={() => { mobileSheetDragRef.current = null; }} aria-expanded={mobileSheetExpanded}>
-            <span>
-              <small>{run.index + 1} / {steps.length}{practiceComplete ? " · 실습 완료" : ""}</small>
-              <b>{interactionPrompt ? "화면에서 직접 해보기" : step.title}</b>
-              <strong>{interactionPrompt ?? step.instruction}</strong>
-            </span>
-            <em>{mobileSheetExpanded ? "화면에서 보기" : "설명 보기"}</em>
-          </button>
-          <button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button>
-        </div>
-        <header onPointerDown={startPopoverDrag} onPointerMove={movePopover} onPointerUp={stopPopoverDrag} onPointerCancel={stopPopoverDrag} title="드래그해서 안내 박스 옮기기"><span>CHAPTER {run.chapterId.padStart(2, "0")} · {runChapter?.title}<GripHorizontal aria-hidden="true" /></span><button type="button" aria-label="가이드 종료" onClick={closeGuide}><X aria-hidden="true" /></button></header>
-        {visibleRect ? <>
-          <div className="admin-guide-step-progress"><i style={{ width: `${((run.index + 1) / steps.length) * 100}%` }} /><span>{run.index + 1} / {steps.length}</span></div>
-          {!isMobileGuide && <div className="admin-guide-badges">
-            <div className="admin-guide-safety">
-              <button type="button" className="admin-guide-badge is-safe" aria-describedby="admin-guide-safety-tooltip"><ShieldCheck aria-hidden="true" />안전 모드</button>
-              <span id="admin-guide-safety-tooltip" role="tooltip">가이드에서 변경·삭제·업로드해도 운영 DB와 실제 파일에는 반영되지 않습니다.</span>
-            </div>
-            <span className="admin-guide-badge is-feature">지금 보고 있는 기능 · {step.controlLabel}</span>
-          </div>}
-          {interactionPrompt ? <>
-            <span className="admin-guide-control-label is-action">먼저 직접 해주세요</span>
-            <h2 id="admin-guide-step-title">세부 화면을 열어주세요</h2>
-            <p className="admin-guide-purpose">{interactionPrompt}</p>
-            <div className="admin-guide-action-cue">강조된 요소를 클릭하면 다음 안내가 자동으로 이어집니다.</div>
-            <footer><button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button></footer>
-            <button type="button" className="admin-guide-skip" onClick={() => { setPausedRun(run); setRun(null); setRect(null); setPopoverPosition(null); }}>여기서 멈추기</button>
-          </> : <>
-            <h2 id="admin-guide-step-title">{step.title}</h2>
-            <p className="admin-guide-purpose">{step.purpose}</p>
-            {step.actionHint && <div className="admin-guide-action-cue">{step.actionHint}</div>}
-            <div className={`admin-guide-task${practiceComplete ? " is-complete" : ""}`}>
-              <span>{step.practice ? practiceComplete ? "실습 완료" : "지금 해볼 일" : "확인할 위치"}</span>
-              <p>{step.instruction}</p>
-              {step.practice?.example && <code>{step.practice.example}</code>}
-              {isMobileGuide && <button type="button" onClick={() => { updateMobileSheet(false); window.dispatchEvent(new Event("admin-guide-reveal-target")); }}>대상 다시 보기</button>}
-            </div>
-            {!isMobileGuide && <span className="admin-guide-explore-hint">카드 밖으로 마우스를 옮기면 화면을 편하게 둘러볼 수 있어요.</span>}
-            <dl><div><dt>사용하면</dt><dd>{step.outcome}</dd></div>{step.caution && <div className="is-caution"><dt>확인하세요</dt><dd>{step.caution}</dd></div>}</dl>
-            <footer>
-              <button type="button" className="admin-guide-jump" onClick={() => { setRun(null); setRect(null); setTocOpen(true); }}><List aria-hidden="true" /> 목차</button>
-              {step.practice && !practiceComplete && <button type="button" className="admin-guide-practice-skip" onClick={() => void finishOrAdvance()}>실습 건너뛰기</button>}
-              <button type="button" disabled={run.index === 0} onClick={() => openStep(run.chapterId, run.index - 1, run.mode)}><ArrowLeft aria-hidden="true" />이전</button>
-              <button type="button" className="is-next" disabled={Boolean(step.practice && !practiceComplete)} onClick={() => void finishOrAdvance()}>{run.index === steps.length - 1 ? "완료" : "다음 기능"}<ArrowRight aria-hidden="true" /></button>
-            </footer>
-            <button type="button" className="admin-guide-skip" onClick={() => { setPausedRun(run); setRun(null); setRect(null); setPopoverPosition(null); }}>여기서 멈추고 나중에 이어보기</button>
-          </>}
-        </> : <><span className="admin-guide-loader" /><p>안내할 위치를 찾고 있어요.</p></>}
-      </section>
-    </div>}
-  </>, document.body) : null;
-
+  const portal = <AdminOnboardingPortal
+    mounted={mounted}
+    welcomeOpen={welcomeOpen}
+    tocOpen={tocOpen}
+    chapterIntro={chapterIntro}
+    introChapter={introChapter}
+    run={run}
+    step={step}
+    dialogRef={dialogRef}
+    trapFocus={trapFocus}
+    closeGuide={closeGuide}
+    chooseWelcome={chooseWelcome}
+    reachedSteps={reachedSteps}
+    totalSteps={totalSteps}
+    progress={progress}
+    chapterStats={chapterStats}
+    completed={completed}
+    startChapter={startChapter}
+    chapterSteps={chapterSteps}
+    openStep={openStep}
+    isExploring={isExploring}
+    isMobileGuide={isMobileGuide}
+    mobileSheetExpanded={mobileSheetExpanded}
+    visibleRect={visibleRect}
+    activePopoverPosition={activePopoverPosition}
+    popoverPosition={popoverPosition}
+    isPopoverDragging={isPopoverDragging}
+    interactionPrompt={interactionPrompt}
+    practiceComplete={practiceComplete}
+    runChapter={runChapter}
+    steps={steps}
+    mobileSheetDragRef={mobileSheetDragRef}
+    toggleMobileSheet={toggleMobileSheet}
+    startMobileSheetDrag={startMobileSheetDrag}
+    stopMobileSheetDrag={stopMobileSheetDrag}
+    startPopoverDrag={startPopoverDrag}
+    movePopover={movePopover}
+    stopPopoverDrag={stopPopoverDrag}
+    updateMobileSheet={updateMobileSheet}
+    setIsExploring={setIsExploring}
+    setChapterIntro={setChapterIntro}
+    setTocOpen={setTocOpen}
+    setRun={setRun}
+    setRect={setRect}
+    setPausedRun={setPausedRun}
+    setPopoverPosition={setPopoverPosition}
+    finishOrAdvance={finishOrAdvance}
+  />;
   if (!ready || !userId || !role) return null;
 
   return <>

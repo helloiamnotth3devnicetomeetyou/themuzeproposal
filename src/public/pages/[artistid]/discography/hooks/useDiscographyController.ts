@@ -12,8 +12,6 @@ import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { localizeText } from "@/core/i18n/localized";
 import type { LocalizedText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
-import { safeHref } from "@/core/http/safe-href";
-import { spotifyAlbumHref } from "@/core/http/spotify";
 
 import { fetchDiscography } from "../lib/discography-data";
 import {
@@ -33,6 +31,8 @@ import type {
 } from "../lib/types";
 import { useAudioPlayback } from "./useAudioPlayback";
 import { newestAlbumsFirst } from "../lib/album-order";
+import { previewToAlbum } from "./discography-controller-utils";
+import { useDiscographyRailSort } from "./useDiscographyRailSort";
 
 const ALBUM_TRANSITION_MS = 220;
 
@@ -83,34 +83,7 @@ export function useDiscographyController(
     handleTimeUpdate: rawHandleTimeUpdate,
   } = useAudioPlayback(audioRef);
 
-  const previewAlbum = useMemo<DiscographyAlbum | null>(() => preview ? {
-    id: preview.album.id,
-    title: preview.album.title,
-    titles: { ko: preview.album.title_ko ?? preview.album.title, en: preview.album.title_en, ja: preview.album.title_ja },
-    type: preview.album.type,
-    releaseDate: preview.album.release_date,
-    cover: preview.album.cover_url,
-    titleImage: preview.album.hero_image_url || undefined,
-    color: preview.album.color,
-    tracks: preview.album.tracks.map((track) => ({
-      title: track.title,
-      titles: { ko: track.title_ko ?? track.title, en: track.title_en, ja: track.title_ja },
-      isTitle: track.is_title,
-      spotifyUrl: safeHref(track.spotify_url),
-      youtubeUrl: safeHref(track.youtube_url),
-      audioUrl: safeHref(track.audio_url),
-      videoUrl: safeHref(track.music_video_url),
-    })),
-    desc: {
-      ko: preview.album.description_ko,
-      en: preview.album.description_en,
-      ja: preview.album.description_ja,
-    },
-    links: {
-      spotify: spotifyAlbumHref(preview.album.spotify_id),
-      youtube: safeHref(preview.album.youtube_url),
-    },
-  } : null, [preview]);
+  const previewAlbum = useMemo(() => previewToAlbum(preview), [preview]);
   const effectiveAlbums = useMemo(() => {
     if (!previewAlbum) return albums;
     const exists = albums.some((item) => item.id === previewAlbum.id);
@@ -362,20 +335,7 @@ export function useDiscographyController(
     [rawHandleTimeUpdate, album, currentTrackIndex, savePlayback],
   );
 
-  const toggleSort = useCallback(() => {
-    if (railPhase !== "idle") return;
-    const exitTime = 80 + sortedAlbums.length * 28;
-    const enterTime = 220 + sortedAlbums.length * 28;
-    setRailPhase("exit");
-    const exitTimer = setTimeout(() => {
-      setSortBy((previous) => previous === "date-desc" ? "date-asc" : "date-desc");
-      setAlbumIndex(0);
-      setRailPhase("enter");
-      const enterTimer = setTimeout(() => setRailPhase("idle"), enterTime);
-      railTimersRef.current.push(enterTimer);
-    }, exitTime);
-    railTimersRef.current.push(exitTimer);
-  }, [railPhase, sortedAlbums.length]);
+  const toggleSort = useDiscographyRailSort({ railPhase, albumCount: sortedAlbums.length, railTimersRef, setRailPhase, setSortBy, setAlbumIndex });
 
   const handleEnded = useCallback(() => {
     if (!album?.tracks.length) return;
