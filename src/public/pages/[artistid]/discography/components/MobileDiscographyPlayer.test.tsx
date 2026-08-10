@@ -74,11 +74,10 @@ describe("MobileDiscographyPlayer", () => {
     expect(document.querySelector('img[loading="eager"]')).toBeInTheDocument();
   });
 
-  it("exposes visible album controls", () => {
+  it("selects albums from the mobile scrubber", () => {
     const props = renderPlayer();
-    fireEvent.click(screen.getAllByRole("button", { name: "Next album" }).at(-1)!);
+    fireEvent.click(screen.getByRole("button", { name: "Show Two" }));
     expect(props.onSelectAlbum).toHaveBeenCalledWith(1);
-    expect(screen.queryByRole("button", { name: "ALL ALBUMS" })).not.toBeInTheDocument();
   });
 
   it("opens tracks when the album cover is selected", () => {

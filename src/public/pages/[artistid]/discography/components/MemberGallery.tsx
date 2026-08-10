@@ -12,9 +12,10 @@ interface MemberGalleryProps {
   members: DiscographyMember[];
   gallery: DiscographyGalleryItem[];
   albumColor: string;
+  layout?: "panel" | "flow";
 }
 
-export function MemberGallery({ album, members, gallery, albumColor }: MemberGalleryProps) {
+export function MemberGallery({ album, members, gallery, albumColor, layout = "panel" }: MemberGalleryProps) {
   const { t } = useLocale();
   const [selectedMemberId, setSelectedMemberId] = useState("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -28,11 +29,11 @@ export function MemberGallery({ album, members, gallery, albumColor }: MemberGal
   }, [albumGallery]);
   const selectedMember = selectedMemberId === "all" ? null : memberMap.get(selectedMemberId) || null;
 
-  if (!members.length) return <div className="h-full flex items-center justify-center p-6 text-center"><p className="text-sm text-[var(--palette-6b7280)]">{t.discography.noMembers}</p></div>;
+  if (!members.length) return <div className={layout === "panel" ? "h-full flex items-center justify-center p-6 text-center" : "min-h-[180px] flex items-center justify-center p-6 text-center"}><p className="text-sm text-[var(--palette-6b7280)]">{t.discography.noMembers}</p></div>;
 
-  return <div className="h-full flex flex-col gap-3 animate-slideIn select-none overflow-hidden">
+  return <div className={layout === "panel" ? "h-full overflow-hidden flex flex-col gap-3 animate-slideIn select-none" : "overflow-visible flex flex-col gap-3 animate-slideIn select-none"}>
     <MemberGalleryFilters albumColor={albumColor} selectedMemberId={selectedMemberId} selectedMember={selectedMember} members={members} photoCounts={photoCounts} totalPhotos={albumGallery.length} filteredPhotos={filteredGallery.length} onSelect={setSelectedMemberId} />
-    <div className="flex-1 min-h-0 overflow-y-auto pr-1"><MemberGalleryGrid album={album} albumColor={albumColor} gallery={filteredGallery} members={memberMap} showMember={selectedMemberId === "all"} onOpen={setLightboxIndex} /></div>
+    <div className={layout === "panel" ? "flex-1 min-h-0 overflow-y-auto pr-1" : "overflow-visible"}><MemberGalleryGrid album={album} albumColor={albumColor} gallery={filteredGallery} members={memberMap} showMember={selectedMemberId === "all"} onOpen={setLightboxIndex} /></div>
     {lightboxIndex !== null && <MemberGalleryLightbox albumColor={albumColor} gallery={filteredGallery} members={memberMap} index={lightboxIndex} onIndexChange={setLightboxIndex} onClose={() => setLightboxIndex(null)} />}
   </div>;
 }

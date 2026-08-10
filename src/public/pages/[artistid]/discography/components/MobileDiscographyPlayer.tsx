@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ListMusic, Pause, Play } from "lucide-react";
+import { ListMusic, Pause, Play } from "lucide-react";
 import { useLayoutEffect, useRef, type MouseEvent, type TouchEvent } from "react";
 import { localizeText } from "@/core/i18n/localized";
 import { safeHref } from "@/core/http/safe-href";
@@ -159,20 +159,19 @@ export function MobileDiscographyPlayer({
     selectAlbum(nextIndex);
   };
 
-  const tabClass = (tab: MobileView) => `relative flex min-h-10 items-center gap-2 px-1 text-[11px] font-medium transition-colors duration-base focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${view === tab ? "text-[var(--color-static-white)]" : "text-[var(--palette-6b7280)]"}`;
+  const tabClass = (tab: MobileView) => `flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-[10px] font-bold tracking-[0.1em] transition-[background-color,color,transform] duration-base active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 ${view === tab ? "text-[var(--color-static-black)]" : "text-[var(--palette-9ca3af)]"}`;
 
   return (
     <section className="w-full font-[family-name:var(--font-sans)]">
       <div
-        className="sticky z-30 -mx-5 bg-[var(--alpha-080808-65)] px-5"
+        className="sticky z-30 -mx-5 bg-[var(--alpha-080808-65)] px-5 pb-3 pt-2 backdrop-blur-xl"
         style={{ top: "calc(var(--banner-height, 0px) + var(--site-header-height))" }}
       >
-        <header role="tablist" aria-label="Discography view" className="flex gap-6 border-b border-[var(--alpha-ffffff-08)]">
+        <header role="tablist" aria-label="Discography view" className="grid grid-cols-2 gap-1 rounded-xl border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-1">
           {(["album", "tracks"] as const).map((tab) => (
-            <button key={tab} type="button" role="tab" aria-selected={view === tab} aria-controls={`discography-${tab}-panel`} className={tabClass(tab)} onClick={() => onViewChange(tab)}>
+            <button key={tab} type="button" role="tab" aria-selected={view === tab} aria-controls={`discography-${tab}-panel`} className={tabClass(tab)} onClick={() => onViewChange(tab)} style={{ backgroundColor: view === tab ? album.color : "transparent" }}>
               {tab.toUpperCase()}
-              {tab === "tracks" && <span className="text-[9px] opacity-55">{String(album.tracks.length).padStart(2, "0")}</span>}
-              <span className={`absolute inset-x-1 bottom-0 h-px origin-center transition-transform duration-base ${view === tab ? "scale-x-100" : "scale-x-0"}`} style={{ backgroundColor: album.color }} />
+              {tab === "tracks" && <span className={`rounded-full px-1.5 py-0.5 text-[8px] leading-none ${view === tab ? "bg-[var(--alpha-000000-18)]" : "bg-[var(--alpha-ffffff-08)]"}`}>{String(album.tracks.length).padStart(2, "0")}</span>}
             </button>
           ))}
         </header>
@@ -223,13 +222,18 @@ export function MobileDiscographyPlayer({
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <button type="button" disabled={!previousAlbum} onClick={() => selectAlbum(albumIndex - 1)} className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--alpha-ffffff-08)] text-[var(--palette-9ca3af)] transition-colors duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.previousAlbum}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between text-[10px] text-[var(--palette-6b7280)]"><span>ALBUM</span><span>{String(albumIndex + 1).padStart(2, "0")} / {String(albums.length).padStart(2, "0")}</span></div>
-              <div className="mt-2 h-px overflow-hidden bg-[var(--alpha-ffffff-08)]"><span className="block h-full transition-[width] duration-slow" style={{ width: `${((albumIndex + 1) / albums.length) * 100}%`, backgroundColor: album.color }} /></div>
-            </div>
-            <button type="button" disabled={!nextAlbum} onClick={() => selectAlbum(albumIndex + 1)} className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--alpha-ffffff-08)] text-[var(--palette-9ca3af)] transition-colors duration-base active:scale-95 disabled:opacity-20" aria-label={t.discography.nextAlbum}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+          <div className="-mx-5 mt-5">
+            <nav aria-label="Albums" className="overflow-x-auto overscroll-x-contain px-5 pb-1 scrollbar-none touch-pan-x">
+              <div className="flex w-max min-w-full items-center justify-center gap-2">
+                {albums.map((item, index) => {
+                  const current = index === albumIndex;
+                  return <button key={item.id} type="button" aria-label={`Show ${item.title}`} aria-current={current ? "true" : undefined} onFocus={() => onIntentAlbum(index)} onTouchStart={() => onIntentAlbum(index)} onClick={() => selectAlbum(index)} className={`relative size-11 shrink-0 overflow-hidden rounded-lg border transition-transform duration-base active:scale-95 ${current ? "scale-110" : "opacity-55"}`} style={{ borderColor: current ? album.color : "var(--alpha-ffffff-08)", boxShadow: current ? `0 0 18px ${album.color}55` : undefined }}>
+                    <Image src={item.cover} alt="" fill sizes="44px" className="object-cover" />
+                  </button>;
+                })}
+              </div>
+            </nav>
+            <div className="mt-3 flex items-center gap-3 px-6 text-[9px] font-medium tracking-[0.12em] text-[var(--palette-6b7280)]"><span>ALBUM</span><span className="h-px flex-1 bg-[var(--alpha-ffffff-08)]"><i className="block h-full transition-[width] duration-slow" style={{ width: `${((albumIndex + 1) / albums.length) * 100}%`, backgroundColor: album.color }} /></span><span>{String(albumIndex + 1).padStart(2, "0")} / {String(albums.length).padStart(2, "0")}</span></div>
           </div>
 
           <div key={album.id} className="mobile-album-info-enter">
@@ -277,13 +281,13 @@ export function MobileDiscographyPlayer({
             </section>
           )}
 
-          <section className="mt-8 h-[520px] border-t border-[var(--alpha-ffffff-08)] pt-6">
+          <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
             <h2 className="mb-3 text-sm font-semibold text-[var(--color-static-white)]">{t.discography.tabs.members}</h2>
-            <div className="h-[470px]"><MemberGallery album={album} members={members} gallery={gallery} albumColor={album.color} /></div>
+            <MemberGallery layout="flow" album={album} members={members} gallery={gallery} albumColor={album.color} />
           </section>
         </div>
       ) : (
-        <div id="discography-tracks-panel" role="tabpanel" className="animate-page-fade pb-8 pt-4">
+        <div id="discography-tracks-panel" role="tabpanel" className="animate-page-fade -mx-5 min-h-[calc(100dvh-var(--site-header-height))] pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4">
           <div className="sticky z-20 -mx-5 border-b border-[var(--alpha-ffffff-08)] bg-[var(--alpha-050505-30)] px-5 pb-4 pt-3 backdrop-blur-md" style={{ top: "calc(var(--banner-height, 0px) + var(--site-header-height) + 40px)" }}>
             <TrackPlayer albumColor={album.color} isPlaying={isPlaying} time={time} track={track} onNext={onNextTrack} onPrevious={onPreviousTrack} onTogglePlay={onTogglePlay} />
           </div>
