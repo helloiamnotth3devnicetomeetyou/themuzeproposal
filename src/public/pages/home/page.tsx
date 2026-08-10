@@ -11,7 +11,7 @@ import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 import { spotifyAlbumHref } from "@/core/http/spotify";
-import { autoplayProgress, startSlideTransition } from "./carousel-state";
+import { autoplayProgress, startSlideTransition, swipeSlideOffset } from "./carousel-state";
 
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
@@ -39,6 +39,8 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const autoplayElapsed = useRef(0);
   const autoplayFrame = useRef<number | null>(null);
   const progressRef = useRef<HTMLElement>(null);
+  const mobileProgressRef = useRef<HTMLElement>(null);
+  const swipeStartX = useRef<number | null>(null);
 
   useEffect(() => () => {
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
@@ -81,7 +83,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
   useEffect(() => {
     autoplayElapsed.current = 0;
-    if (progressRef.current) progressRef.current.style.transform = "scaleX(0)";
+    [progressRef.current, mobileProgressRef.current].forEach((progress) => {
+      if (progress) progress.style.transform = "scaleX(0)";
+    });
   }, [currentSlide]);
 
   useEffect(() => {
@@ -92,7 +96,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       autoplayElapsed.current += now - previous;
       previous = now;
       const progress = autoplayProgress(autoplayElapsed.current, AUTOPLAY_DURATION);
-      if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`;
+      [progressRef.current, mobileProgressRef.current].forEach((progressElement) => {
+        if (progressElement) progressElement.style.transform = `scaleX(${progress})`;
+      });
       if (progress === 1) {
         goToSlide(currentSlide + 1);
         return;
@@ -108,7 +114,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
   if (slides.length === 0) {
     return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[var(--bg-base)] transition-colors duration-slow">
+      <main className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[var(--bg-base)] transition-colors duration-slow">
         <div className="text-center"><p className="font-display text-sm font-black text-[var(--text-muted)]">YOU ARE MY MUZE</p><p className="mt-4 text-xs text-[var(--text-faint)]">No featured albums are available.</p></div>
       </main>
     );
@@ -116,12 +122,29 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
   return (
     <main
-      className="relative h-screen w-full overflow-hidden"
-      style={{ backgroundColor: "var(--color-static-black)", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
+      className="relative h-[100dvh] w-full overflow-hidden"
+      style={{ backgroundColor: "var(--color-static-black)", touchAction: "pan-y", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
       aria-busy={!isFirstImageLoaded}
       onFocusCapture={() => setIsInteractionPaused(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setIsInteractionPaused(false);
+      }}
+      onPointerDown={(event) => {
+        if (event.pointerType !== "touch") return;
+        swipeStartX.current = event.clientX;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setIsInteractionPaused(true);
+      }}
+      onPointerUp={(event) => {
+        if (swipeStartX.current === null) return;
+        const offset = swipeSlideOffset(swipeStartX.current, event.clientX);
+        swipeStartX.current = null;
+        if (offset) goToSlide(currentSlide + offset);
+        setIsInteractionPaused(false);
+      }}
+      onPointerCancel={() => {
+        swipeStartX.current = null;
+        setIsInteractionPaused(false);
       }}
     >
       <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
@@ -272,6 +295,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               <i>/</i>
               <span>{String(slides.length).padStart(2, "0")}</span>
             </span>
+            <span className="home-mobile-progress" aria-hidden="true"><i ref={mobileProgressRef} /></span>
             <div
               className="home-slide-rail"
               onFocusCapture={() => setIsInteractionPaused(false)}

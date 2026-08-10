@@ -8,9 +8,16 @@
     background: linear-gradient(180deg, var(--alpha-000000-16) 0%, transparent 28%, var(--alpha-000000-86) 100%);
   }
 
-  .home-hero-content { bottom: 88px; }
+  .home-hero-content {
+    bottom: max(88px, calc(env(safe-area-inset-bottom) + 72px));
+  }
   .home-hero-copy { gap: 9px; }
-  .home-release-title { font-size: clamp(46px, 15vw, 74px); }
+  .home-release-title {
+    max-width: 100%;
+    font-size: clamp(2.75rem, 13.5vw, 4.625rem);
+    line-height: .86;
+    text-wrap: balance;
+  }
   .home-typo-logo { width: min(86vw, 32rem); height: clamp(4rem, 19vw, 6.5rem); }
   .home-release-description {
     display: -webkit-box;
@@ -21,10 +28,34 @@
     -webkit-line-clamp: 2;
   }
 
+  .home-release-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .home-primary-link,
+  .home-listen-trigger {
+    min-height: 48px;
+  }
+
+  .home-primary-link {
+    width: 100%;
+    justify-content: center;
+  }
+
   .home-stream-actions {
     width: 100%;
     flex-wrap: wrap;
   }
+
+  .home-listen-trigger {
+    width: 100%;
+    grid-template-columns: 24px 1fr 14px;
+    justify-items: start;
+  }
+
+  .home-listen-trigger > span:nth-child(2) { justify-self: center; }
+  .home-listen-chevron { justify-self: end; }
 
   .home-stream-platforms {
     width: 100%;
@@ -41,15 +72,44 @@
     transform: translateY(0);
   }
 
-  .home-slide-arrow { top: 43%; height: 54px; }
+  .home-stream-platforms a { flex: 1 1 0; }
+
+  .home-slide-arrow {
+    top: 43%;
+    width: 40px;
+    height: 52px;
+    border: 1px solid var(--alpha-ffffff-24);
+    background: var(--alpha-000000-18);
+  }
   .home-slide-arrow-left { left: 0; }
   .home-slide-arrow-right { right: 0; }
   .home-slide-index {
     right: auto;
-    bottom: 18px;
+    bottom: max(18px, env(safe-area-inset-bottom));
     left: var(--page-gutter);
-    width: min(240px, calc(100vw - (var(--page-gutter) * 2)));
+    width: calc(100vw - (var(--page-gutter) * 2));
+    gap: 12px;
   }
+
+  .home-mobile-progress {
+    position: relative;
+    display: block;
+    height: 3px;
+    flex: 1;
+    overflow: hidden;
+    background: var(--alpha-ffffff-24);
+  }
+
+  .home-mobile-progress i {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: color-mix(in srgb, var(--slide-accent) 78%, var(--color-static-white) 22%);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .home-slide-rail { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
