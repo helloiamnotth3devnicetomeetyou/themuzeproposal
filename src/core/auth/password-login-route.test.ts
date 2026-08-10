@@ -110,7 +110,7 @@ describe("POST /api/auth/login", () => {
     await expect(response.json()).resolves.toEqual({ code: "INVALID_CREDENTIALS" });
   });
 
-  it("scopes the account throttle to the client IP", async () => {
+  it("keeps the account throttle stable across client IPs", async () => {
     mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true }], error: null });
     mocks.signInWithPassword.mockResolvedValue({ error: new Error("invalid") });
 
@@ -119,7 +119,7 @@ describe("POST /api/auth/login", () => {
     mocks.rpc.mockClear();
     await POST(request({ email: "user@example.com", password: "password" }, { "x-test-client-ip": "203.0.113.11" }));
 
-    expect(mocks.rpc.mock.calls[0][1].p_identifier_hash).not.toBe(firstKey);
+    expect(mocks.rpc.mock.calls[0][1].p_identifier_hash).toBe(firstKey);
   });
 
   it("returns generic invalid credentials without an identity-provider lookup", async () => {

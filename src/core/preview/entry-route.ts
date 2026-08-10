@@ -1,6 +1,7 @@
 import { draftMode } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
+import { isSameOriginRequest } from "@/core/http/same-origin";
 import { isPreviewToken } from "@/core/preview/types";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
@@ -16,10 +17,21 @@ const ALLOWED_PATHS = [
 const isAllowedPreviewPath = (pathname: string) =>
   ALLOWED_PATHS.some((pattern) => pattern.test(pathname));
 
-export async function GET(request: Request) {
+export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ code: "INVALID_REQUEST" }, { status: 400 });
+  }
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });
+  }
+
   const requestUrl = new URL(request.url);
-  const token = requestUrl.searchParams.get("token") ?? "";
-  const rawPath = requestUrl.searchParams.get("path") ?? "";
+  const token = typeof formData.get("token") === "string" ? String(formData.get("token")) : "";
+  const rawPath = typeof formData.get("path") === "string" ? String(formData.get("path")) : "";
 
   if (!isPreviewToken(token) || !rawPath.startsWith("/")) {
     return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });

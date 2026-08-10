@@ -77,19 +77,27 @@ export function useAdminPreview<K extends PreviewKind>({
     activeRef.current = true;
     if (!writePreview()) return;
 
-    const params = new URLSearchParams({
-      token: tokenRef.current,
-      path: targetPath,
-    });
-    const previewWindow = window.open(
-      `/api/admin/preview?${params.toString()}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    const target = `themuze-preview-${crypto.randomUUID()}`;
+    const previewWindow = window.open("about:blank", target);
     if (!previewWindow) {
       onError("팝업이 차단되었습니다. 이 사이트의 새 탭 열기를 허용해 주세요.");
       return;
     }
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/api/admin/preview";
+    form.target = target;
+    for (const [name, value] of [["token", tokenRef.current], ["path", targetPath]] as const) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.append(input);
+    }
+    document.body.append(form);
+    form.submit();
+    form.remove();
   }, [canPreview, onError, payload, targetPath, unavailableMessage, writePreview]);
 
   return { openPreview };

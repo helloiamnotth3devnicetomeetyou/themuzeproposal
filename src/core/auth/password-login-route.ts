@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     return jsonError("SERVICE_UNAVAILABLE", 503);
   }
   const limiterIp = requestIp ?? "development";
-  const identifierHash = hashIdentifier(`email-ip:${email}:${limiterIp}`, limiterSecret);
+  const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
   const ipHash = hashIdentifier(`ip:${limiterIp}`, limiterSecret);
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);

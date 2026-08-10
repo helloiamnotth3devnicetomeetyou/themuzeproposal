@@ -1,1 +1,1 @@
-export { GET } from "@/core/preview/entry-route";
+export { POST } from "@/core/preview/entry-route";
