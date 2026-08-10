@@ -99,7 +99,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     document.body.style.overflow = "hidden";
     const sidebar = document.getElementById("admin-navigation");
     const focusable = Array.from(sidebar?.querySelectorAll<HTMLElement>("a[href],button:not([disabled]),input") ?? []);
-    requestAnimationFrame(() => focusable[0]?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();

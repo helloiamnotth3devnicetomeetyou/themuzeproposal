@@ -160,6 +160,16 @@
   margin: 0 !important;
 }
 
+@media (min-width: 1200px) {
+  .admin-app-frame:has([data-search-open="true"]),
+  .cms-shell:has([data-search-open="true"]) { overflow: visible; }
+  .cms-sidebar:has([data-search-open="true"]) {
+    position: relative;
+    z-index: 80;
+    overflow: visible;
+  }
+}
+
 /* Catalogue-style navigation: hierarchy comes from rules and type, not cards. */
 .cms-sidebar-desktop-collapse,
 .cms-add-artist,

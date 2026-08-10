@@ -3,13 +3,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { Command, Search, X } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, FileText, History, Image, Inbox, LayoutDashboard, Mail, Music2, Search, Settings, ShieldCheck, UserRound, UsersRound, X, type LucideIcon } from "lucide-react";
 import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
 
 interface Artist { id: string; name: string; }
 interface SearchItem { id: string; categoryLabel: string; title: string; url: string; artistName?: string; }
 interface SidebarSearchProps { artists: Artist[]; }
 type ResultsPosition = { top: number; left: number; width: number; maxHeight: number };
+
+const getSearchIcon = (id: string): LucideIcon => {
+  if (id === "dashboard") return LayoutDashboard;
+  if (id === "analytics") return BarChart3;
+  if (id === "hero") return Image;
+  if (id === "notices" || id.endsWith("-notices")) return FileText;
+  if (id === "audit-logs" || id === "history") return History;
+  if (id === "protect") return ShieldCheck;
+  if (id === "contact") return Mail;
+  if (id === "auditions") return Inbox;
+  if (id === "settings") return Settings;
+  if (id === "company") return Building2;
+  if (id.includes("members")) return UsersRound;
+  if (id.includes("discography")) return Music2;
+  if (id.includes("schedule")) return CalendarDays;
+  if (id.includes("profile")) return UserRound;
+  return Search;
+};
 
 export default function SidebarSearch({ artists }: SidebarSearchProps) {
   const router = useRouter();
@@ -28,21 +46,23 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     const rect = wrapper.getBoundingClientRect();
     const viewportPadding = 8;
     const gap = 7;
+    const width = window.innerWidth >= 1200 ? Math.min(Math.max(rect.width, 420), window.innerWidth - viewportPadding * 2) : rect.width;
     setResultsPosition({
       top: rect.bottom + gap,
-      left: Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - rect.width - viewportPadding)),
-      width: rect.width,
-      maxHeight: Math.max(120, Math.min(312, window.innerHeight - rect.bottom - gap - viewportPadding)),
+      left: Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - width - viewportPadding)),
+      width,
+      maxHeight: Math.max(120, Math.min(360, window.innerHeight - rect.bottom - gap - viewportPadding)),
     });
   }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setIsOpen(true);
-        inputRef.current?.focus();
-      }
+      if (event.key.toLowerCase() !== "f" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+      event.preventDefault();
+      setIsOpen(true);
+      inputRef.current?.focus();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -91,7 +111,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
 
   const results = useMemo(() => {
     const terms = query.trim().toLocaleLowerCase("ko").split(/\s+/).filter(Boolean);
-    if (!terms.length) return [];
+    if (!terms.length) return items.filter((item) => !item.artistName).slice(0, 6);
     return items.filter((item) => terms.every((term) => `${item.categoryLabel} ${item.artistName ?? ""} ${item.title}`.toLocaleLowerCase("ko").includes(term)));
   }, [items, query]);
 
@@ -100,7 +120,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
     return result;
   }, {}), [results]);
 
-  const isShowingResults = isOpen && query.trim().length > 0;
+  const isShowingResults = isOpen;
 
   useEffect(() => {
     if (!isShowingResults) return;
@@ -135,22 +155,28 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   };
 
   return (
-    <div className={styles.wrapper} ref={wrapperRef} data-tour-id="admin-search">
+    <div className={styles.wrapper} ref={wrapperRef} data-tour-id="admin-search" data-search-open={isOpen ? "true" : undefined}>
       <div className={`${styles.field} ${isOpen ? styles.fieldOpen : ""}`}>
         <Search className={styles.searchIcon} aria-hidden="true" />
-        <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => setIsOpen(true)} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
-        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <span className={styles.shortcut} aria-hidden="true"><Command />K</span>}
+        <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => { setIsOpen(true); setActiveIndex(results.length ? 0 : -1); }} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
+        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <kbd className={styles.shortcut} aria-hidden="true">F</kbd>}
       </div>
+      {isOpen && typeof document !== "undefined" && createPortal(
+        <button type="button" className={styles.backdrop} aria-label="검색 닫기" onClick={() => { setIsOpen(false); setActiveIndex(-1); }} />,
+        document.body,
+      )}
       {isShowingResults && resultsPosition && typeof document !== "undefined" && createPortal(
-        <div id="admin-search-results" className={styles.results} ref={resultsRef} data-tour-id="admin-search-result" style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">
+        <div id="admin-search-results" className={`${styles.results} ${!query.trim() ? styles.resultsDefault : ""}`} ref={resultsRef} data-tour-id="admin-search-result" style={{ top: resultsPosition.top, left: resultsPosition.left, width: resultsPosition.width, maxHeight: resultsPosition.maxHeight } as CSSProperties} role="listbox" aria-label="검색 결과">
           {Object.entries(groups).map(([label, group]) => <section className={styles.group} key={label} role="group" aria-label={label}>
             <p className={styles.groupLabel}>{label}</p>
             {group.map((item) => {
               const index = results.indexOf(item);
               const selected = activeIndex === index;
               const current = pathname === item.url;
+              const Icon = getSearchIcon(item.id);
               return <button key={item.id} id={`admin-search-result-${index}`} type="button" role="option" data-search-result aria-selected={selected} className={`${styles.result} ${selected ? styles.resultSelected : ""} ${current ? styles.resultCurrent : ""}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(item.url)}>
-                <span>{item.artistName && <small>{item.artistName}</small>}<b>{item.title}</b></span>
+                <Icon className={styles.resultIcon} aria-hidden="true" />
+                <span>{(item.artistName || query.trim()) && <small>{item.artistName ?? item.categoryLabel}</small>}<b>{item.title}</b></span>
               </button>;
             })}
           </section>)}

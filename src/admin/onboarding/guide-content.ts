@@ -194,7 +194,7 @@ const GUIDE_STEP_INPUTS: GuideStepInput[] = [
   { id: "8-admin-invite", chapterId: "8", title: "관리자 초대와 승격", controlLabel: "초대·승격", purpose: "이메일 계정을 관리자 역할로 초대하거나 기존 계정을 승격합니다.", outcome: "선택 역할로 관리자 접근 권한이 부여됩니다.", caution: "권한 부여 전 이메일과 역할을 반드시 확인하세요.", href: "/admin/settings?tab=admins", target: "admin-account-invite", tabEvent: { name: "admin-settings-tab-change", detail: "admins" }, role: "super_admin", ...fallback },
   { id: "8-admin-remove", chapterId: "8", title: "관리자 권한 해제", controlLabel: "관리자 권한 해제", purpose: "선택 계정의 관리자 역할을 제거합니다.", outcome: "해당 계정은 더 이상 관리자 화면에 접근할 수 없습니다.", caution: "본인 또는 마지막 슈퍼 관리자 권한은 해제할 수 없습니다.", href: "/admin/settings?tab=admins", target: "admin-account-remove", tabEvent: { name: "admin-settings-tab-change", detail: "admins" }, role: "super_admin", ...fallback },
 
-  { id: "9-search", chapterId: "9", title: "빠른 검색 열기", controlLabel: "검색창 · Ctrl/⌘ + K", purpose: "화면명이나 아티스트명을 입력해 관리자 기능을 빠르게 찾습니다.", outcome: "검색어와 일치하는 화면·아티스트·세부 탭이 분류되어 표시됩니다.", href: "/admin", target: "admin-search", fallbackTarget: "admin-navigation" },
+  { id: "9-search", chapterId: "9", title: "빠른 검색 열기", controlLabel: "검색창 · F", purpose: "화면명이나 아티스트명을 입력해 관리자 기능을 빠르게 찾습니다.", outcome: "검색어와 일치하는 화면·아티스트·세부 탭이 분류되어 표시됩니다.", href: "/admin", target: "admin-search", fallbackTarget: "admin-navigation" },
   { id: "9-result", chapterId: "9", title: "검색 결과로 이동", controlLabel: "검색 결과", purpose: "원하는 결과를 선택해 해당 화면이나 세부 탭으로 바로 이동합니다.", outcome: "미저장 변경 확인 후 선택한 관리자 화면이 열립니다.", href: "/admin", target: "admin-search-result", interaction: { target: "admin-search", instruction: "검색창에 화면명이나 아티스트명을 입력해 주세요." }, fallbackTarget: "admin-navigation" },
 ];
 

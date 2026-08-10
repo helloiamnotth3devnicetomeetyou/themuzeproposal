@@ -133,18 +133,16 @@ export default function Sidebar({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        if (isCollapsed) {
-          event.preventDefault();
-          onToggleCollapse?.();
-          setTimeout(() => {
-            const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
-            if (searchInput) {
-              searchInput.focus();
-            }
-          }, 120);
-        }
-      }
+      if (event.key.toLowerCase() !== "f" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+      if (!isCollapsed) return;
+      event.preventDefault();
+      onToggleCollapse?.();
+      setTimeout(() => {
+        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
+        if (searchInput) searchInput.focus();
+      }, 120);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
