@@ -1,9 +1,3 @@
-  .content-workbench-tabs,
-  .music-editor-tabs {
-    scroll-behavior: auto;
-  }
-}
-
 /* Admin restraint layer. This file loads last so shared behavior stays intact. */
 .admin-root-shell :where(
   .content-visual-editor,

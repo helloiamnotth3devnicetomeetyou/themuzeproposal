@@ -193,3 +193,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .content-workbench-tabs,
+  .music-editor-tabs {
+    scroll-behavior: auto;
+  }
+}
