@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, Play } from "lucide-react";
-import { supabase } from "@/core/supabase/client";
 import { isGuideSandboxActive, startGuideSandbox } from "@/core/supabase/guide-sandbox";
 import {
   GUIDE_CHAPTERS,
   guidePathMatches,
   parseGuideRun,
-  type GuideProgressRow,
   type GuideRole,
   type GuideRun,
   type GuideStep,
@@ -20,12 +18,12 @@ import { AdminOnboardingPortal } from "./AdminOnboardingPortal";
 import { useGuidePopoverInteractions } from "./useGuidePopoverInteractions";
 import { useGuideDerivedState } from "./useGuideDerivedState";
 import { useGuideModalInteractions } from "./useGuideModalInteractions";
+import { useAdminOnboardingProgress } from "./useAdminOnboardingProgress";
 
 type Artist = { id: string; name: string };
 type ChapterIntro = GuideRun;
 type Rect = { top: number; left: number; width: number; height: number };
 
-const missingTable = (message?: string) => Boolean(message && /does not exist|schema cache|could not find/i.test(message));
 const emptySubscribe = () => () => {};
 export default function AdminOnboarding({
   userId,
@@ -46,13 +44,10 @@ export default function AdminOnboarding({
   const launcherRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const guideWasOpenRef = useRef(false);
-  const progressRef = useRef<Record<string, GuideProgressRow>>({});
   const popoverDragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number; width: number; height: number } | null>(null);
   const mobileSheetDragRef = useRef<number | null>(null);
   const suppressMobileSheetClickRef = useRef(false);
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
-  const [ready, setReady] = useState(false);
-  const [progressRows, setProgressRows] = useState<Record<string, GuideProgressRow>>({});
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [chapterIntro, setChapterIntro] = useState<ChapterIntro | null>(null);
@@ -69,9 +64,9 @@ export default function AdminOnboarding({
   const [isMobileGuide, setIsMobileGuide] = useState(false);
   const [mobileSheetExpanded, setMobileSheetExpanded] = useState(true);
   const [practiceComplete, setPracticeComplete] = useState(false);
-  const [capabilities, setCapabilities] = useState({ artistScenes: true, artistGallery: true });
 
   const artistId = artists.find((artist) => pathname.includes(`/artists/${artist.id}/`))?.id ?? artists[0]?.id;
+  const { ready, progressRows, capabilities, saveStepProgress: persistStepProgress, completeChapter: persistCompleteChapter } = useAdminOnboardingProgress({ userId, role });
   const { chapterSteps, chapterStats, completed, totalSteps, reachedSteps, progress, steps, step, runChapter, introChapter, visibleRect, guideOpen } = useGuideDerivedState({
     role, artistId, capabilities, progressRows, run, chapterIntro, pathname, rect, welcomeOpen, tocOpen,
   });
@@ -95,69 +90,8 @@ export default function AdminOnboarding({
     else localStorage.removeItem(key);
   }, [pausedRun, userId]);
 
-  useEffect(() => {
-    if (!userId || !role) return;
-    let active = true;
-    void Promise.all([
-      supabase.from("admin_onboarding_progress").select("chapter_id,furthest_step_id,completed_at"),
-      supabase.from("artist_scenes").select("id", { head: true, count: "exact" }).limit(1),
-      supabase.from("artist_gallery").select("id", { head: true, count: "exact" }).limit(1),
-    ]).then(([progressResult, scenesResult, galleryResult]) => {
-      if (!active) return;
-      const rows = (progressResult.data ?? []) as GuideProgressRow[];
-      const nextRows = Object.fromEntries(rows.map((row) => [row.chapter_id, row]));
-      progressRef.current = nextRows;
-      setProgressRows(nextRows);
-      setCapabilities({
-        artistScenes: !missingTable(scenesResult.error?.message),
-        artistGallery: !missingTable(galleryResult.error?.message),
-      });
-      setReady(true);
-    });
-    return () => { active = false; };
-  }, [role, userId]);
-
-  const saveStepProgress = async (chapterId: string, stepId: string) => {
-    if (!userId) return;
-    const current = progressRef.current[chapterId];
-    const available = chapterSteps[chapterId] ?? [];
-    const currentIndex = available.findIndex((item) => item.id === current?.furthest_step_id);
-    const nextIndex = available.findIndex((item) => item.id === stepId);
-    if (current?.completed_at || nextIndex <= currentIndex) return;
-    const next: GuideProgressRow = {
-      chapter_id: chapterId,
-      furthest_step_id: stepId,
-      completed_at: current?.completed_at ?? null,
-    };
-    progressRef.current = { ...progressRef.current, [chapterId]: next };
-    setProgressRows(progressRef.current);
-    const { error } = await supabase.from("admin_onboarding_progress").upsert({
-      user_id: userId,
-      ...next,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id,chapter_id" });
-    if (error) window.dispatchEvent(new CustomEvent("admin-toast", { detail: "가이드 진도를 저장하지 못했습니다." }));
-  };
-
-  const completeChapter = async (chapterId: string) => {
-    if (!userId) return;
-    const furthestStepId = chapterId === "0" ? "0-welcome" : chapterSteps[chapterId]?.at(-1)?.id ?? null;
-    const completedAt = new Date().toISOString();
-    const { error } = await supabase.from("admin_onboarding_progress").upsert({
-      user_id: userId,
-      chapter_id: chapterId,
-      furthest_step_id: furthestStepId,
-      completed_at: completedAt,
-      updated_at: completedAt,
-    }, { onConflict: "user_id,chapter_id" });
-    if (error) {
-      window.dispatchEvent(new CustomEvent("admin-toast", { detail: "가이드 진도를 저장하지 못했습니다." }));
-      return;
-    }
-    const next = { chapter_id: chapterId, furthest_step_id: furthestStepId, completed_at: completedAt };
-    progressRef.current = { ...progressRef.current, [chapterId]: next };
-    setProgressRows(progressRef.current);
-  };
+  const saveStepProgress = (chapterId: string, stepId: string) => persistStepProgress(chapterId, stepId, chapterSteps[chapterId] ?? []);
+  const completeChapter = (chapterId: string) => persistCompleteChapter(chapterId, chapterId === "0" ? "0-welcome" : chapterSteps[chapterId]?.at(-1)?.id ?? null);
 
   const resolvedHref = (nextStep: GuideStep) => nextStep.href.replace(":artistId", artistId ?? "new");
 

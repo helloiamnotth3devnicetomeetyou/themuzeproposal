@@ -1,38 +1,21 @@
 "use client";
 
-import { type DragEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { type DragEvent, useId, useState } from "react";
 import type { IconType } from "react-icons";
 import { Building2, Check, FileArchive, FileText, Globe, History, Mail, Plus, Settings2, Share2, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import FormField from "@/admin/components/content/FormField";
-import SocialLinksField, { hasInvalidSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import SocialLinksField from "@/admin/components/content/SocialLinksField";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
-import { supabase } from "@/core/supabase/client";
-import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
-import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
-import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
-import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
-import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
+import { safeHref } from "@/core/http/safe-href";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
-import { DEFAULT_HISTORY, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
-import {
-  EMPTY_COMPANY,
-  EMPTY_BUSINESS,
-  EMPTY_DRAFT,
-  EMPTY_FOOTER,
-  EMPTY_SOCIAL,
-  parseSettingsRows,
-  settingsTabs,
-  type CompanySettings,
-  type BusinessAssets,
-  type FooterSettings,
-  type HistoryLanguage,
-  type SettingsTab,
-} from "./settings-editor-model";
+import type { HistoryEntry } from "@/core/content/site-content";
+import { settingsTabs, type HistoryLanguage, type SettingsTab } from "./settings-editor-model";
 import AdminAccountsPanel from "./AdminAccountsPanel";
 import AvatarAssetManager from "./AvatarAssetManager";
+import { useSettingsEditor } from "./useSettingsEditor";
 
 function BusinessAssetField({ label, hint, accept, icon: Icon, value, busy, onUpload }: {
   label: string;
@@ -51,200 +34,25 @@ function BusinessAssetField({ label, hint, accept, icon: Icon, value, busy, onUp
     setDragging(false);
     upload(event.dataTransfer.files?.[0]);
   };
+  const href = safeHref(value);
 
   return <div className={`track-asset-field ${value ? "has-file" : ""} ${dragging ? "is-dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={drop}>
     <span className="track-asset-icon"><Icon aria-hidden="true" /></span>
     <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
-    {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}
+    {href && <a href={href} target="_blank" rel="noreferrer">보기</a>}
     <label htmlFor={inputId}>{value ? "교체" : "업로드"}</label>
     <input id={inputId} className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => { upload(event.target.files?.[0]); event.currentTarget.value = ""; }} />
   </div>;
 }
 
 export default function SettingsAdmin({ canManageAdminAccounts = false }: { canManageAdminAccounts?: boolean }) {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<SettingsTab>("company");
-  const [company, setCompany] = useState<CompanySettings>(EMPTY_COMPANY);
-  const [history, setHistory] = useState<HistoryEntry[]>(DEFAULT_HISTORY);
-  const [historyLanguage, setHistoryLanguage] = useState<HistoryLanguage>("ko");
-  const [footer, setFooter] = useState<FooterSettings>(EMPTY_FOOTER);
-  const [social, setSocial] = useState<SocialLink[]>(EMPTY_SOCIAL);
-  const [business, setBusiness] = useState<BusinessAssets>(EMPTY_BUSINESS);
-  const [avatarDirty, setAvatarDirty] = useState(false);
-  const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
-  const isSuperAdmin = canManageAdminAccounts;
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2600);
-  }, []);
-
-  const draft = useMemo(() => ({ company, history, footer, social, business }), [business, company, history, footer, social]);
-  const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
-  const settingsDirty = serializedDraft !== snapshot;
-  const dirty = settingsDirty || avatarDirty;
-  const restoreSettings = useCallback((saved: typeof draft) => { setCompany(saved.company); setHistory(saved.history); setFooter(saved.footer); setSocial(saved.social); setBusiness(saved.business); }, []);
-  const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: "admin-draft:settings", draft, snapshot, dirty: settingsDirty, restore: restoreSettings });
-  const nestedDrafts = usePageDrafts();
-  const previewTarget = tab === "company"
-    ? "/about?section=company#about-company"
-    : tab === "history"
-      ? "/about?section=history#about-history"
-      : `/about?section=${tab}#site-footer`;
-  const { openPreview } = useAdminPreview({
-    kind: "site-settings",
-    payload: draft,
-    targetPath: previewTarget,
-    canPreview: true,
-    unavailableMessage: "??? ?? ????? ? ? ????.",
-    onError: setError,
-  });
-
-  const historyEventKey: "event_ko" | "event_en" | "event_ja" = `event_${historyLanguage}`;
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchSettings = async () => {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase.from("site_settings").select("*");
-      if (!active) return;
-
-      if (fetchError) {
-        setError(fetchError.message);
-        setLoading(false);
-        return;
-      }
-
-      const nextDraft = parseSettingsRows(data as Array<{ key: string; value: unknown }> | null);
-      setCompany(nextDraft.company);
-      setHistory(nextDraft.history);
-      setFooter(nextDraft.footer);
-      setSocial(nextDraft.social);
-      setBusiness(nextDraft.business);
-      setSnapshot(JSON.stringify(nextDraft));
-      setLoading(false);
-    };
-
-    void fetchSettings();
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    const handleUrlTab = () => {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get("tab") as SettingsTab;
-      if (tabParam && ["company", "history", "footer", "social", "business", "avatars", ...(isSuperAdmin ? ["admins"] : [])].includes(tabParam)) {
-        setTab(tabParam);
-      }
-    };
-
-    handleUrlTab();
-
-    const handleCustomEvent = (e: Event) => {
-      const detail = (e as CustomEvent).detail as SettingsTab;
-      if (detail && ["company", "history", "footer", "social", "business", "avatars", ...(isSuperAdmin ? ["admins"] : [])].includes(detail)) {
-        setTab(detail);
-      }
-    };
-
-    window.addEventListener("admin-settings-tab-change", handleCustomEvent);
-    return () => {
-      window.removeEventListener("admin-settings-tab-change", handleCustomEvent);
-    };
-  }, [isSuperAdmin]);
-
-  useEffect(() => {
-    const confirmLeave = (event: BeforeUnloadEvent) => {
-      if (!dirty) return;
-      event.preventDefault();
-    };
-    window.addEventListener("beforeunload", confirmLeave);
-    return () => window.removeEventListener("beforeunload", confirmLeave);
-  }, [dirty]);
-
-  const patchHistory = (id: string, patch: Partial<HistoryEntry>) => {
-    setHistory((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
-  };
-
-  const addHistory = () => {
-    const next: HistoryEntry = {
-      id: `history-${Date.now()}`,
-      date: "",
-      event_ko: "",
-      event_en: "",
-      event_ja: "",
-    };
-    setHistory((items) => [next, ...items]);
-  };
-
-  const uploadBusinessAsset = async (kind: "pressKitUrl" | "profilePdfUrl", file: File) => {
-    const expected = kind === "pressKitUrl" ? "zip" : "pdf";
-    if (file.name.split(".").pop()?.toLowerCase() !== expected) {
-      setError(`${expected.toUpperCase()} 파일을 선택해 주세요.`);
-      return;
-    }
-    if (file.size > 100 * 1024 * 1024) {
-      setError("파일은 100MB까지 업로드할 수 있습니다.");
-      return;
-    }
-    setSaving(true);
-    setError("");
-    try {
-      const asset = await uploadAdminAsset("business-assets", kind === "pressKitUrl" ? "press-kit.zip" : "profile.pdf", file);
-      setBusiness((current) => ({ ...current, [kind]: asset.url }));
-      setToast("비즈니스 자료를 업로드했습니다. 변경사항을 저장해 공개하세요.");
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "업로드하지 못했습니다.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setError("");
-    setToast("");
-
-    if (history.some((item) => !item.date.trim() || !item.event_ko.trim())) {
-      setTab("history");
-      setError("연혁의 시점과 한국어 내용을 모두 입력해 주세요.");
-      return;
-    }
-
-    if (hasInvalidSocialLinks(social)) {
-      setTab("social");
-      setError("소셜 채널의 플랫폼, 이름 또는 웹 주소를 확인해 주세요.");
-      return;
-    }
-
-    setSaving(true);
-    const updates = [
-      { key: "company", value: company },
-      { key: "history", value: history },
-      { key: "footer", value: footer },
-      { key: "social", value: social },
-      { key: "business_assets", value: business },
-    ];
-    const { error: saveError } = await supabase.from("site_settings").upsert(updates as never[]);
-    setSaving(false);
-
-    if (saveError) {
-      setError(saveError.message);
-      return;
-    }
-
-    setSnapshot(serializedDraft);
-    discardBackup();
-    void guideSandboxFetch("/api/admin/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag: "public-site-settings" }),
-    });
-    setToast("사이트 설정을 저장했습니다.");
-    window.setTimeout(() => setToast(""), 2600);
-  };
+  const {
+    loading, saving, tab, setTab, company, setCompany, history, setHistory, historyLanguage, setHistoryLanguage,
+    footer, setFooter, social, setSocial, business, avatarDirty, setAvatarDirty, snapshot, error, setError,
+    toast, setToast, isSuperAdmin, showToast, draft, settingsDirty, dirty, recovery, restoreBackup, discardBackup,
+    nestedDrafts, openPreview, historyEventKey, patchHistory, addHistory, uploadBusinessAsset, handleSave,
+    sortHistoryNewestFirst,
+  } = useSettingsEditor(canManageAdminAccounts);
 
   if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
