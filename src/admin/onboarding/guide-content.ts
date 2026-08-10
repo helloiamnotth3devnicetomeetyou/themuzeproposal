@@ -69,10 +69,17 @@ export const GUIDE_CHAPTERS: GuideChapter[] = [
   { id: "9", title: "검색 팁", eyebrow: "SEARCH", description: "검색창으로 관리 화면과 아티스트 업무를 빠르게 찾아 이동합니다." },
 ];
 
+const mobileQuickStart: GuideChapter = { id: "mobile", title: "모바일 빠른 시작", eyebrow: "MOBILE", description: "하단 탭으로 대시보드, 받은 작업, 콘텐츠와 전체 메뉴를 빠르게 오갑니다." };
+GUIDE_CHAPTERS.splice(1, 0, mobileQuickStart);
+
 const page = "admin-page";
 const fallback = { fallbackTarget: page };
 
 const GUIDE_STEP_INPUTS: GuideStepInput[] = [
+  { id: "mobile-dashboard", chapterId: "mobile", title: "대시보드로 돌아가기", controlLabel: "대시보드", purpose: "오늘 확인할 현황과 우선 작업을 한 화면에서 봅니다.", outcome: "관리자 첫 화면으로 바로 이동합니다.", href: "/admin", target: "admin-mobile-dashboard", ...fallback },
+  { id: "mobile-inbox", chapterId: "mobile", title: "받은 작업 확인", controlLabel: "받은 작업", purpose: "처리가 필요한 접수와 문의를 모아 확인합니다.", outcome: "받은 작업 화면이 열립니다.", href: "/admin/inbox", target: "admin-mobile-inbox", ...fallback },
+  { id: "mobile-content", chapterId: "mobile", title: "콘텐츠 관리 열기", controlLabel: "콘텐츠", purpose: "메인과 아티스트 콘텐츠 편집을 시작합니다.", outcome: "콘텐츠 허브가 열립니다.", href: "/admin/content", target: "admin-mobile-content", ...fallback },
+  { id: "mobile-more", chapterId: "mobile", title: "더 많은 메뉴 보기", controlLabel: "더보기", purpose: "설정과 나머지 관리자 기능을 전체 메뉴에서 찾습니다.", outcome: "전체 메뉴가 열립니다.", href: "/admin", target: "admin-mobile-more", ...fallback },
   { id: "1-reset", chapterId: "1", title: "변경사항 되돌리기", controlLabel: "되돌리기", purpose: "현재 화면에서 저장하지 않은 추가·제거·정렬 작업을 모두 취소합니다.", outcome: "마지막 저장 상태를 다시 불러옵니다.", caution: "되돌린 임시 작업은 복구할 수 없습니다.", href: "/admin/hero", target: "draft-reset", ...fallback },
   { id: "1-add", chapterId: "1", title: "메인에 앨범 추가", controlLabel: "메인에 추가", purpose: "앨범 라이브러리의 앨범을 홈 슬라이드 목록에 넣습니다.", outcome: "임시 목록에 추가되며 상단 저장 전까지 공개 사이트에는 반영되지 않습니다.", href: "/admin/hero", target: "hero-add", ...fallback },
   { id: "1-reorder", chapterId: "1", title: "노출 순서 변경", controlLabel: "슬라이드 드래그", purpose: "카드를 끌어 홈 화면의 앨범 노출 순서를 정합니다.", outcome: "변경된 순서가 임시 작업으로 표시됩니다.", href: "/admin/hero", target: "hero-reorder", ...fallback },

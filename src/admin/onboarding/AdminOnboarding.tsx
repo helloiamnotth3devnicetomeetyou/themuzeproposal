@@ -280,7 +280,7 @@ export default function AdminOnboarding({
   const chooseWelcome = async (mode: "full" | "toc") => {
     await completeChapter("0");
     setWelcomeOpen(false);
-    if (mode === "full") startChapter("1", "full", false);
+    if (mode === "full") startChapter(isMobileGuide && document.querySelector('[data-tour-id="admin-mobile-dashboard"]') ? "mobile" : "1", "full", false);
     else setTocOpen(true);
   };
 

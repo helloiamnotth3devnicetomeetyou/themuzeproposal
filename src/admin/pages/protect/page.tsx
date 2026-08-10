@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, FileImage, Inbox, Link, Paperclip, Search, ShieldCheck } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
@@ -59,12 +60,14 @@ const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ProtectAdminPage() {
   const confirm = useAdminConfirm();
+  const searchParams = useSearchParams();
   const [reports, setReports] = useState<ProtectReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<ProtectReport | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const requestedFilter = statuses.find((status) => status.value === searchParams.get("status"))?.value ?? "all";
+  const [filter, setFilter] = useState(requestedFilter);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusCounts, setStatusCounts] = useState({ pending: 0, reviewing: 0 });

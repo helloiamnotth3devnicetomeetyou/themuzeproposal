@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ExternalLink, Menu, Moon, Sun } from "lucide-react";
+import { ExternalLink, FileText, Inbox, LayoutDashboard, Menu, Moon, Sun } from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
 import { formatDraftPeek, type DraftDiffItem } from "@/admin/utils/draft-diff";
+import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
 import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
+import { supabase } from "@/core/supabase/client";
 import { useTheme } from "@/core/providers/ThemeContext";
 
 function getPageLabel(pathname: string) {
@@ -28,12 +30,19 @@ function getPageLabel(pathname: string) {
   return "관리";
 }
 
+const mobileNavItems = [
+  { label: "대시보드", href: "/admin", tourId: "admin-mobile-dashboard", icon: LayoutDashboard, matches: (pathname: string) => pathname === "/admin" },
+  { label: "받은 작업", href: "/admin/inbox", tourId: "admin-mobile-inbox", icon: Inbox, matches: (pathname: string) => ["/admin/inbox", "/admin/auditions", "/admin/contact", "/admin/protect"].some((path) => pathname.startsWith(path)) },
+  { label: "콘텐츠", href: "/admin/content", tourId: "admin-mobile-content", icon: FileText, matches: (pathname: string) => ["/admin/content", "/admin/hero", "/admin/notices", "/admin/artists"].some((path) => pathname.startsWith(path)) },
+] as const;
+
 const emptySubscribe = () => () => {};
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [inboxCount, setInboxCount] = useState(0);
   const [toast, setToast] = useState("");
   const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
@@ -74,6 +83,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setIsNavigationOpen(false));
     return () => cancelAnimationFrame(frame);
+  }, [pathname]);
+
+  useEffect(() => {
+    let active = true;
+    void getAdminInboxCounts(supabase).then(({ auditions, contacts, reports }) => {
+      if (active) setInboxCount(auditions + contacts + reports);
+    }).catch(() => {});
+    return () => { active = false; };
   }, [pathname]);
 
   useEffect(() => {
@@ -154,16 +171,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <div className="admin-root-shell">
         <AdminToast message={toast} />
         <header className="admin-mobile-topbar">
-          <button
-            type="button"
-            className="admin-mobile-menu-button"
-            aria-label="관리 메뉴 열기"
-            aria-expanded={isNavigationOpen}
-            aria-controls="admin-navigation"
-            onClick={() => setIsNavigationOpen(true)}
-          >
-            <Menu aria-hidden="true" />
-          </button>
           <div className="admin-mobile-title">
             <strong>{getPageLabel(pathname)}</strong>
           </div>
@@ -205,6 +212,34 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </div>
+        <nav className="admin-mobile-bottom-nav" aria-label="주요 관리자 메뉴">
+          {mobileNavItems.map(({ label, href, tourId, icon: Icon, matches }) => {
+            const count = href === "/admin/inbox" ? inboxCount : 0;
+            return <Link
+              key={href}
+              href={href}
+              data-tour-id={tourId}
+              className={`admin-mobile-bottom-nav-item ${matches(pathname) ? "is-active" : ""}`}
+              aria-current={matches(pathname) ? "page" : undefined}
+            >
+              <Icon aria-hidden="true" />
+              <span>{label}</span>
+              {count > 0 && <b className="admin-mobile-bottom-nav-badge" aria-label={`미처리 작업 ${count}건`}>{count > 99 ? "99+" : count}</b>}
+            </Link>;
+          })}
+          <button
+            type="button"
+            className="admin-mobile-bottom-nav-item"
+            data-tour-id="admin-mobile-more"
+            aria-label="전체 관리자 메뉴 열기"
+            aria-expanded={isNavigationOpen}
+            aria-controls="admin-navigation"
+            onClick={() => setIsNavigationOpen(true)}
+          >
+            <Menu aria-hidden="true" />
+            <span>더보기</span>
+          </button>
+        </nav>
       </div>
     </AdminDialogProvider>
   );

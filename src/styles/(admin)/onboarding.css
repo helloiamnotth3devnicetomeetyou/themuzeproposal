@@ -278,7 +278,7 @@ body.is-admin-guide-sandbox::after { position: fixed; z-index: 10020; inset: 0; 
   .admin-guide-popover {
     top: auto !important;
     right: 0 !important;
-    bottom: 0 !important;
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
     left: 0 !important;
     width: auto;
     max-height: min(58dvh, 520px);

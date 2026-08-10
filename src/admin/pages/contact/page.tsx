@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, ExternalLink, Inbox, Mail, MessageSquareText, Paperclip, Search } from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
@@ -73,13 +74,15 @@ const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 
 export default function ContactAdminPage() {
   const confirm = useAdminConfirm();
+  const searchParams = useSearchParams();
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<ContactCategory>("general");
   const [viewing, setViewing] = useState<ContactInquiry | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const requestedFilter = statuses.find((status) => status.value === searchParams.get("status"))?.value ?? "all";
+  const [filter, setFilter] = useState(requestedFilter);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<Record<ContactCategory, number>>({ general: 0, business: 0 });

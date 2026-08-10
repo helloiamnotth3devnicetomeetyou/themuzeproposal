@@ -25,6 +25,15 @@ describe("admin guide content", () => {
     expect(practices.get("9-search")?.example).toBe("공지");
   });
 
+  it("keeps the mobile quick start on the planned bottom-navigation routes", () => {
+    expect(availableGuideSteps("mobile", context).map(({ id, href, target }) => ({ id, href, target }))).toEqual([
+      { id: "mobile-dashboard", href: "/admin", target: "admin-mobile-dashboard" },
+      { id: "mobile-inbox", href: "/admin/inbox", target: "admin-mobile-inbox" },
+      { id: "mobile-content", href: "/admin/content", target: "admin-mobile-content" },
+      { id: "mobile-more", href: "/admin", target: "admin-mobile-more" },
+    ]);
+  });
+
   it("skips unavailable migrations and super-admin-only controls", () => {
     const artistSteps = availableGuideSteps("2", { ...context, artistScenes: false, artistGallery: false });
     expect(artistSteps.some((step) => step.requires === "artist_scenes" || step.requires === "artist_gallery")).toBe(false);
