@@ -563,13 +563,13 @@ begin
     raise exception 'REVIEWER_NOTES_TOO_LONG' using errcode = '22023';
   end if;
 
-  update public.audition_submissions
+  update public.audition_submissions as submission
   set status = p_status,
       reviewer_notes = nullif(btrim(coalesce(p_reviewer_notes, '')), ''),
       reviewed_by = auth.uid(),
       reviewed_at = clock_timestamp()
-  where id = p_submission_id
-  returning * into v_saved;
+  where submission.id = p_submission_id
+  returning submission.* into v_saved;
   if not found then
     raise exception 'NOT_FOUND' using errcode = 'P0002';
   end if;
@@ -697,8 +697,8 @@ begin
   end if;
 
   select * into v_campaign
-  from public.audition_campaigns
-  where id = p_campaign_id
+  from public.audition_campaigns as campaign
+  where campaign.id = p_campaign_id
   for update;
 
   if not found then
@@ -711,8 +711,8 @@ begin
   end if;
 
   select * into v_existing
-  from public.audition_submissions
-  where id = p_submission_id
+  from public.audition_submissions as submission
+  where submission.id = p_submission_id
   for update;
 
   if found then
@@ -725,14 +725,14 @@ begin
       raise exception 'SUBMISSION_CONFLICT' using errcode = 'P0001';
     end if;
 
-    update public.audition_submissions
+    update public.audition_submissions as submission
     set name = p_name,
         answers = p_answers,
         form_snapshot = p_form_snapshot,
         applicant_email_hash = p_applicant_email_hash,
         status = 'pending'
-    where id = p_submission_id
-    returning * into v_saved;
+    where submission.id = p_submission_id
+    returning submission.* into v_saved;
   else
     insert into public.audition_submissions (
       id, campaign_id, user_id, name, answers, form_snapshot,
@@ -940,14 +940,14 @@ begin
   end if;
 
   select * into v_current
-  from public.contact_inquiries
-  where id = p_inquiry_id
+  from public.contact_inquiries as inquiry
+  where inquiry.id = p_inquiry_id
   for update;
   if not found then
     raise exception 'NOT_FOUND' using errcode = 'P0002';
   end if;
 
-  update public.contact_inquiries
+  update public.contact_inquiries as inquiry
   set status = p_status,
       admin_note = nullif(btrim(coalesce(p_admin_note, '')), ''),
       answered_by = case
@@ -968,8 +968,8 @@ begin
         when p_status = 'answered' then v_current.answered_at
         else null
       end
-  where id = p_inquiry_id
-  returning * into v_saved;
+  where inquiry.id = p_inquiry_id
+  returning inquiry.* into v_saved;
 
   return query select v_saved.id, v_saved.status, v_saved.admin_note, v_saved.answered_by, v_saved.answered_at;
 end;
