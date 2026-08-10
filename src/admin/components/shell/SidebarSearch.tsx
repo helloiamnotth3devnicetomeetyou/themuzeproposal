@@ -35,6 +35,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [shortcutPulse, setShortcutPulse] = useState(0);
   const [resultsPosition, setResultsPosition] = useState<ResultsPosition | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -61,6 +62,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
       const target = event.target as HTMLElement | null;
       if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
       event.preventDefault();
+      setShortcutPulse((value) => value + 1);
       setIsOpen(true);
       inputRef.current?.focus();
     };
@@ -159,7 +161,7 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
       <div className={`${styles.field} ${isOpen ? styles.fieldOpen : ""}`}>
         <Search className={styles.searchIcon} aria-hidden="true" />
         <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => { setIsOpen(true); setActiveIndex(results.length ? 0 : -1); }} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
-        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <kbd className={styles.shortcut} aria-hidden="true">F</kbd>}
+        {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <kbd key={shortcutPulse} className={`${styles.shortcut} ${shortcutPulse ? styles.shortcutPulse : ""}`} aria-hidden="true">F</kbd>}
       </div>
       {isOpen && typeof document !== "undefined" && createPortal(
         <button type="button" className={styles.backdrop} aria-label="검색 닫기" onClick={() => { setIsOpen(false); setActiveIndex(-1); }} />,
