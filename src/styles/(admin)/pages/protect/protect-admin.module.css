@@ -207,7 +207,7 @@
 }
 
 @media (max-width: 768px) {
-  .page { padding: 16px 14px 42px; }
+  .page { padding: 16px 14px calc(16px + var(--admin-mobile-nav-clearance, 64px)); }
   .summary { grid-template-columns: 1fr; }
   .summary dl { border-top: 1px solid var(--border-default); border-inline: 0; }
   .summary dl div { min-height: 76px; flex: 1; }

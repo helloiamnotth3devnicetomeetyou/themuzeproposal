@@ -203,6 +203,46 @@
   .desk-analytics-compact-metrics > div + div { border-top: 1px solid var(--border-subtle); border-left: 0; }
 }
 
+@media (max-width: 767px) {
+  .desk-dashboard { gap: 12px; }
+  .desk-dashboard-intro { min-height: 0; padding: 2px 0 2px; }
+  .desk-dashboard-intro h1 { font-size: 23px; }
+  .desk-dashboard-intro p { margin-top: 4px; font-size: 12px; line-height: 1.45; }
+  .desk-dashboard-intro time { display: none; }
+  .desk-dashboard-intro { order: -2; }
+  .desk-operations { order: -1; gap: 10px; }
+  .desk-inbox-panel { order: -1; padding: 16px; }
+  .desk-release-panel { padding: 16px; }
+  .desk-inbox-panel .desk-panel-heading { padding: 0; }
+  .desk-inbox-panel .desk-panel-heading h2 { font-size: 15px; }
+  .desk-inbox-panel .desk-panel-heading p { margin-top: 4px; }
+  .desk-inbox-list { margin-top: 10px; }
+  .desk-inbox-list a { min-height: 58px; gap: 10px; }
+  .desk-inbox-label { font-size: 14px; }
+  .desk-inbox-count { min-width: 24px; font-size: 22px; text-align: right; }
+  .desk-quickstart { order: 1; }
+  .desk-quickstart .desk-content-heading { min-height: 50px; padding-inline: 16px; }
+  .desk-quickstart .desk-content-heading span { display: none; }
+  .desk-quickstart-grid > a { min-height: 64px; grid-template-columns: 28px minmax(0,1fr) 18px; gap: 10px; padding: 10px 16px; }
+  .desk-quickstart-grid small { display: none; }
+  .desk-analytics-compact { order: 2; }
+  .desk-analytics-compact-heading { min-height: 58px; padding: 12px 16px; }
+  .desk-analytics-compact-heading p { display: none; }
+  .desk-analytics-compact-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .desk-analytics-compact-metrics > div { min-height: 70px; padding: 12px; }
+  .desk-analytics-compact-metrics > div + div { border-top: 0; border-left: 1px solid var(--border-subtle); }
+  .desk-analytics-compact-metrics strong { margin-top: 7px; font-size: 20px; }
+  .desk-content-status { order: 3; }
+  .desk-panel-heading > a,
+  .desk-analytics-compact-heading > a,
+  .desk-breakdown-more { min-height: 44px; align-items: center; }
+  .desk-range-tabs { width: 100%; scrollbar-width: none; }
+  .desk-range-tabs button { min-height: 40px; flex: 1 0 56px; }
+  .desk-chart-points button { width: 44px; height: 44px; }
+  .desk-release-list > a,
+  .desk-inbox-list a { padding-inline: 4px; }
+}
+
 /* Translatable desk fields */
 .desk-translatable-field { display: flex; flex-direction: column; gap: 9px; }
 .desk-translatable-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }

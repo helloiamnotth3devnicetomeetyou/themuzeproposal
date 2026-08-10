@@ -82,6 +82,8 @@
   .calendarToolbar { align-items:flex-start; flex-direction:column; gap:13px; }
   .calendarControls { width:100%; }
   .addScheduleButton { margin-left:auto; }
+  .todayButton,.monthButtons button,.addScheduleButton { min-height:44px; }
+  .monthButtons button { width:44px; }
   .calendar { min-width:690px; }
   .dayCell { min-height:92px; }
   .calendarFooter { flex-direction:column; }

@@ -108,6 +108,12 @@
   .profile-workbench .profile-completion { transition: none; }
 }
 
+@media (max-width: 767px) {
+  .profile-workbench .content-workbench-body { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+  .profile-workbench .content-workbench-actions :where(button,a) { min-height: 44px; }
+  .profile-workbench .content-rail-quiet-action { min-height: 44px; }
+}
+
 .artist-create-wizard .content-workbench-tabs button { flex: 1; justify-content: center; }
 .artist-create-ready { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; color: var(--text-muted); font-size: 12px; }
 .artist-create-ready svg { width: 15px; height: 15px; color: var(--color-brand-pink); }

@@ -257,5 +257,42 @@
 }
 
 @media (max-width: 767px) {
-  .admin-root-shell .admin-input { font-size: 16px; }
+  .admin-root-shell {
+    --admin-mobile-nav-clearance: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .cms-content:not(.is-full-bleed) {
+    padding-top: 12px;
+    padding-bottom: calc(16px + var(--admin-mobile-nav-clearance));
+  }
+
+  .cms-page-header { gap: 8px; padding-block: 14px; }
+  .cms-page-header h1 { font-size: 21px; }
+  .cms-page-header > div > p:last-child { margin-top: 4px; font-size: 12px; }
+
+  .admin-root-shell :is(.admin-card, .notice-preview-card, .gallery-empty, .gallery-save-first) { padding: 16px; }
+  .admin-root-shell :is(.content-section-heading h2, .music-section-title h2, .settings-section-heading h3, .hero-admin-panel-heading h2) { font-size: 16px; }
+  .admin-root-shell :is(.content-section-heading p, .music-section-title p, .settings-section-heading p) { font-size: 11px; line-height: 1.5; }
+
+  .rich-text-editor { min-height: 180px; padding: 16px; font-size: 14px; line-height: 1.7; }
+  .notice-preview-card { padding: 18px; }
+  .notice-preview-card h3 { font-size: 18px; }
+  .notice-preview-content { margin-top: 16px; padding-top: 14px; }
+
+  .admin-root-shell :is(
+    .content-workbench-actions,
+    .music-header-actions,
+    .audition-status-bar,
+    .audition-review-detail footer,
+    .fullPage article > footer
+  ) {
+    bottom: var(--admin-mobile-nav-clearance);
+  }
+
+  .admin-root-shell :is(.content-workbench-body, .music-editor-body, .settings-workbench .content-workbench-body, .profile-workbench .content-workbench-body) {
+    padding-bottom: calc(24px + var(--admin-mobile-nav-clearance));
+  }
+
+  .content-asset-preview { min-height: 128px; }
+  .social-link-empty { min-height: 144px; }
 }

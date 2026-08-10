@@ -312,6 +312,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   return (
     <ContentWorkbench
       rail={rail}
+      railLabel="설정 선택"
       identity={identity}
       actions={tab === "admins" ? null : <>{tab !== "avatars" && <PreviewButton onClick={openPreview} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={settingsDirty || nestedDrafts.dirty} saving={saving} extraDiff={nestedDrafts.diff} onSave={async () => { if (settingsDirty) await handleSave(); await nestedDrafts.commit(); }} /></>}
       tabs={(isSuperAdmin ? settingsTabs : settingsTabs.filter((item) => item.id !== "admins")).map((item) => ({ ...item, complete: railItems.find((railItem) => railItem.id === item.id)?.ready, missing: railItems.find((railItem) => railItem.id === item.id)?.ready ? 0 : 1 }))}

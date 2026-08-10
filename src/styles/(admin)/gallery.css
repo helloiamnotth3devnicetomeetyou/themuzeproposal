@@ -103,3 +103,14 @@
 @media (prefers-reduced-motion:reduce) {
   .gallery-dropzone,.gallery-card-image img,.gallery-tile > img,.gallery-tile-overlay { transition: none; }
 }
+
+@media (max-width: 767px) {
+  .gallery-manager:has(.gallery-inspector)::before { content: ""; position: fixed; z-index: 318; inset: 0; background: var(--alpha-000000-52); }
+  .gallery-inspector { position: fixed; z-index: 320; right: 0; bottom: var(--admin-mobile-nav-clearance, 64px); left: 0; max-height: min(76dvh, 620px); overflow: auto; border-radius: 16px 16px 0 0; box-shadow: 0 -24px 64px var(--alpha-000000-34); }
+  .gallery-inspector-heading { position: sticky; z-index: 1; top: 0; min-height: 52px; padding: 8px 12px; background: var(--bg-card); }
+  .gallery-inspector-heading > button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--border-default); border-radius: 50%; background: var(--bg-subtle); color: var(--text-primary); }
+  .gallery-inspector-preview { aspect-ratio: 16 / 8; }
+  .gallery-inspector-fields { gap: 12px; padding: 14px; }
+  .gallery-inspector-actions { position: sticky; bottom: 0; padding: 10px 14px; background: var(--bg-card); }
+  .gallery-inspector-actions > button { min-height: 44px; }
+}

@@ -132,3 +132,14 @@
 @media (prefers-reduced-motion:reduce) {
   .music-toast,.music-crop-stage img,.music-image-dropzone { transition:none; }
 }
+
+@media (max-width: 767px) {
+  .music-editor-shell { min-height: auto; }
+  .music-library { height: 224px; max-height: 224px; flex-basis: 224px; }
+  .music-workbench { height: auto; min-height: calc(100dvh - 224px); overflow: visible; }
+  .music-editor-header { gap: 10px; padding-inline: var(--page-gutter); }
+  .music-header-actions :where(button,a) { min-height: 44px; }
+  .music-editor-tabs { min-height: 50px; padding-inline: var(--page-gutter); }
+  .music-editor-tabs button { min-height: 50px; }
+  .music-editor-body { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+}

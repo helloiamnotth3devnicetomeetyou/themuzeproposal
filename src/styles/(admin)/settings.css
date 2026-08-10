@@ -188,3 +188,13 @@
 @media (prefers-reduced-motion: reduce) {
   .avatar-manager-card { transition: none; }
 }
+
+@media (max-width: 767px) {
+  .settings-workbench .content-workbench-body { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+  .settings-rail-nav button,
+  .admin-account-remove,
+  .avatar-manager-card-actions button { min-height: 44px; }
+  .avatar-manager-toolbar .admin-btn { min-height: 44px; }
+  .avatar-crop-modal { padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+  .avatar-crop-card footer :where(button,a) { min-height: 44px; }
+}

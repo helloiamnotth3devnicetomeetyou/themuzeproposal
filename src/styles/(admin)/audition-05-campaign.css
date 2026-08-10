@@ -215,3 +215,26 @@
     width: 100%;
   }
 }
+
+@media (max-width: 767px) {
+  .audition-campaign-heading { gap: 14px; margin-bottom: 20px; }
+  .audition-campaign-heading h1 { font-size: 22px; }
+  .audition-review-tools { width: 100%; }
+  .audition-review-tools input { width: 100%; min-width: 0; }
+  .audition-review-tools :where(input,select,button),
+  .audition-campaign-heading > nav > :where(a,button),
+  .audition-campaign-list nav > :where(a,button) { min-height: 44px; }
+  .audition-campaign-list { gap: 10px; }
+  .audition-campaign-list article { min-height: 0; padding: 18px; }
+  .audition-question-list { max-height: 240px; }
+  .audition-question-item { min-height: 52px; }
+  .audition-question-item button:last-child { min-width: 44px; min-height: 44px; }
+  .audition-question-form-grid { grid-template-columns: 1fr; gap: 14px; }
+  .audition-type-picker button { min-height: 44px; }
+  .audition-review-list button { grid-template-columns: minmax(0,1fr) auto; gap: 6px; min-height: 64px; padding: 12px 14px; }
+  .audition-review-list button > :first-child { display: none; }
+  .audition-review-detail { margin: 12px 0; border-inline: 0; border-radius: 0; }
+  .audition-review-detail dl div { grid-template-columns: 1fr; gap: 5px; padding: 14px 16px; }
+  .audition-review-detail footer { position: sticky; bottom: 0; z-index: 4; padding-bottom: max(20px, env(safe-area-inset-bottom)); background: var(--bg-card); }
+  .audition-review-detail footer button { min-height: 44px; }
+}

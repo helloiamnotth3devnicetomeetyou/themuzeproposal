@@ -259,11 +259,31 @@
 .draft-save-status { color: var(--color-status-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .draft-save-status.is-dirty { color: var(--text-secondary); }
 .draft-save-status.is-invalid { color: var(--palette-df7777); }
+.content-mobile-rail-trigger,.content-mobile-rail-close { display: none; }
 
 @media (max-width: 600px) {
   .content-draft-recovery { flex-wrap: wrap; padding: 10px var(--page-gutter); }
   .content-draft-recovery p { min-width: calc(100% - 11px); flex-direction: column; gap: 2px; }
   .content-draft-recovery button:first-of-type { margin-left: auto; }
+}
+
+@media (max-width: 767px) {
+  .content-workbench { overflow: visible; }
+  .content-workbench-rail { position: fixed; z-index: 320; right: 0; bottom: 0; left: 0; height: min(76dvh, 620px); max-height: none; padding-top: 52px; border: 1px solid var(--border-default); border-radius: 16px 16px 0 0; background: var(--bg-elevated); box-shadow: 0 -24px 64px var(--alpha-000000-34); visibility: hidden; transform: translateY(100%); transition: transform var(--duration-base),visibility 0s linear var(--duration-base); }
+  .content-workbench.is-rail-open .content-workbench-rail { visibility: visible; transform: translateY(0); transition-delay: 0s; }
+  .content-workbench-stage { height: auto; min-height: 100dvh; overflow: visible; }
+  .content-workbench-header { min-height: 72px; gap: 10px; padding: 10px var(--page-gutter); }
+  .content-mobile-rail-trigger { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card); color: var(--text-secondary); font: 700 11px/1 var(--font-sans); white-space: nowrap; }
+  .content-mobile-rail-close { position: absolute; z-index: 1; top: 8px; right: var(--page-gutter); display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--border-default); border-radius: 50%; background: var(--bg-card); color: var(--text-primary); }
+  .content-workbench.is-rail-open::before { content: ""; position: fixed; z-index: 319; inset: 0; background: var(--alpha-000000-52); }
+  .content-workbench-actions :where(button,a) { min-height: 44px; }
+  .content-workbench-tabs { height: 50px; flex-basis: 50px; gap: 22px; overflow-x: auto; padding-inline: var(--page-gutter); scrollbar-width: none; }
+  .content-workbench-tabs button { height: 50px; min-width: max-content; font-size: 11px; }
+  .content-workbench-body { overflow: visible; padding: 20px var(--page-gutter) calc(32px + env(safe-area-inset-bottom)); }
+  .content-rail-heading > button { width: 44px; height: 44px; flex-basis: 44px; }
+  .content-library-item { min-height: 56px; }
+  .content-choice { min-height: 72px; }
+  .content-draft-recovery button { min-height: 40px; }
 }
 
 /* Operational copy must remain readable without sacrificing table density. */
