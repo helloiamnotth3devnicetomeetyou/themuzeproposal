@@ -77,10 +77,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: existing, error: existingError } = requestedSubmissionId
-    ? await service.from("audition_submissions").select("id,campaign_id,answers,created_at,updated_at").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
+    ? await service.from("audition_submissions").select("id,campaign_id,answers,status,reviewer_notes,reviewed_by,reviewed_at,created_at,updated_at").eq("id", requestedSubmissionId).eq("user_id", user.id).maybeSingle()
     : { data: null, error: null };
   if (existingError) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (requestedSubmissionId && (!existing || existing.campaign_id !== campaignId)) return errorResponse("SUBMISSION_NOT_FOUND", 404);
+  if (existing && (existing.status !== "pending" || existing.reviewer_notes !== null || existing.reviewed_by !== null || existing.reviewed_at !== null)) {
+    return errorResponse("SUBMISSION_NOT_EDITABLE", 409);
+  }
   if (!requestedSubmissionId) {
     const { count, error } = await service.from("audition_submissions").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("user_id", user.id);
     if (error) return errorResponse("SERVICE_UNAVAILABLE", 503);
@@ -159,9 +162,9 @@ export async function POST(request: NextRequest) {
     }
     const primary = fields.find((field) => field.is_primary_label);
     const primaryAnswer = primary ? answers[primary.field_key] : null;
-    const payload = { campaign_id: campaignId, user_id: user.id, name: typeof primaryAnswer === "string" ? primaryAnswer : null, answers, form_snapshot: fields, applicant_email_hash: emailHash, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null };
+    const payload = { campaign_id: campaignId, user_id: user.id, name: typeof primaryAnswer === "string" ? primaryAnswer : null, answers, form_snapshot: fields, applicant_email_hash: emailHash, status: "pending" };
     const writeResult = existing
-      ? await service.from("audition_submissions").update(payload).eq("id", submissionId).eq("user_id", user.id).eq("updated_at", existing.updated_at).select("id").maybeSingle()
+      ? await service.from("audition_submissions").update(payload).eq("id", submissionId).eq("user_id", user.id).eq("status", "pending").is("reviewer_notes", null).is("reviewed_by", null).is("reviewed_at", null).eq("updated_at", existing.updated_at).select("id").maybeSingle()
       : await service.from("audition_submissions").insert({ id: submissionId, ...payload });
     if (writeResult.error) throw writeResult.error;
     if (existing && !writeResult.data) throw new SubmissionConflictError();

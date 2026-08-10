@@ -17,8 +17,8 @@ const fields = [
 ];
 
 function chain(result: unknown) {
-  const query = { select: vi.fn(), eq: vi.fn(), neq: vi.fn(), order: vi.fn(), maybeSingle: vi.fn(), then: (resolve: (value: unknown) => unknown) => resolve(result) };
-  query.select.mockReturnValue(query); query.eq.mockReturnValue(query); query.neq.mockReturnValue(query); query.order.mockReturnValue(query); query.maybeSingle.mockResolvedValue(result);
+  const query = { select: vi.fn(), eq: vi.fn(), neq: vi.fn(), is: vi.fn(), order: vi.fn(), maybeSingle: vi.fn(), then: (resolve: (value: unknown) => unknown) => resolve(result) };
+  query.select.mockReturnValue(query); query.eq.mockReturnValue(query); query.neq.mockReturnValue(query); query.is.mockReturnValue(query); query.order.mockReturnValue(query); query.maybeSingle.mockResolvedValue(result);
   return query;
 }
 
@@ -64,7 +64,7 @@ describe("POST /api/audition/submit", () => {
   });
 
   it("updates only the signed-in user's existing submission while the campaign is open", async () => {
-    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
+    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
     const original = request("댄스");
     const form = await original.formData();
     form.set("submissionId", "submission-1");
@@ -73,8 +73,21 @@ describe("POST /api/audition/submit", () => {
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", status: "pending", answers: expect.objectContaining({ part: "댄스" }) }));
   });
 
+  it("does not let applicants edit a reviewed submission", async () => {
+    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, status: "accepted", reviewer_notes: "keep", reviewed_by: "admin-1", reviewed_at: "2026-08-02T00:00:00.000Z", created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
+
+    const original = request();
+    const form = await original.formData();
+    form.set("submissionId", "submission-1");
+    const response = await POST(new NextRequest(original.url, { method: "POST", headers: { origin: "http://localhost" }, body: form }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ code: "SUBMISSION_NOT_EDITABLE" });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
   it("removes replacement uploads when an edit loses the version race", async () => {
-    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
+    mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
     mocks.update.mockReturnValueOnce(chain({ data: null, error: null }));
     const original = request();
     const form = await original.formData();
