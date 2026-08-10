@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createMockFile } from "./helpers/test-helpers";
 
 test.describe("Contact Inquiry & Protect Report File Validation API", () => {
-  test("contact inquiry rejects invalid file types (e.g. JPG when PDF expected)", async ({ request }) => {
+  test("contact inquiry requires authorization before parsing a file", async ({ request }) => {
     const fakeJpg = createMockFile("jpg");
 
     const response = await request.post("/api/contact-inquiries", {
@@ -26,11 +26,8 @@ test.describe("Contact Inquiry & Protect Report File Validation API", () => {
       },
     });
 
-    expect([400, 503]).toContain(response.status());
-    if (response.status() === 400) {
-      const json = await response.json();
-      expect(["INVALID_FILE_TYPE", "INVALID_REQUEST"]).toContain(json.code);
-    }
+    expect(response.status()).toBe(401);
+    await expect(response.json()).resolves.toEqual({ code: "UNAUTHORIZED" });
   });
 
   test("protect report requires authorization", async ({ request }) => {

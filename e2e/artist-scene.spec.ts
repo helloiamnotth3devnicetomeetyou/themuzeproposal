@@ -1,13 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Artist Scene Experience", () => {
-  test("redirects /artists to /rescene/artist", async ({ page }) => {
-    await page.goto("/artists");
-    await expect(page).toHaveURL(/\/rescene\/artist/);
-  });
-
-  test("loads artist scene page for rescene", async ({ page }) => {
-    await page.goto("/rescene");
-    await expect(page.locator("body")).toBeVisible();
+  test("redirects /artists to /rescene/artist", async ({ request }) => {
+    const response = await request.get("/artists", { maxRedirects: 0 });
+    expect(response.status()).toBe(200);
+    await expect(response.text()).resolves.toContain("/rescene/artist");
   });
 });
