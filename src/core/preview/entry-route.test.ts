@@ -47,6 +47,11 @@ describe("POST /api/admin/preview", () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
+  it("rejects an oversized preview body before authentication", async () => {
+    expect((await POST(request(`/${"a".repeat(17_000)}`))).status).toBe(413);
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
   it("requires an authenticated administrator", async () => {
     mocks.getClaims.mockResolvedValueOnce({ data: null, error: new Error("invalid session") });
     expect((await POST(request("/about"))).status).toBe(401);

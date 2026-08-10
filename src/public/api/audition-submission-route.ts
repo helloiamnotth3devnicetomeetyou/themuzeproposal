@@ -14,6 +14,14 @@ const MAX_BODY_BYTES = 30 * 1024 * 1024 + 256 * 1024;
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
 class SubmissionConflictError extends Error {}
 
+function databaseError(error: unknown) {
+  if (!error || typeof error !== "object") return { code: "", message: "" };
+  return {
+    code: "code" in error && typeof error.code === "string" ? error.code : "",
+    message: "message" in error && typeof error.message === "string" ? error.message : "",
+  };
+}
+
 function errorResponse(code: string, status: number, retryAfter?: number) {
   const result = NextResponse.json({ code }, { status });
   result.headers.set("Cache-Control", "no-store");
@@ -152,6 +160,7 @@ export async function POST(request: NextRequest) {
 
   const submissionId = requestedSubmissionId || crypto.randomUUID();
   const uploaded: string[] = [];
+  let persistedSubmission: { created_at?: string; updated_at?: string } | null = null;
   try {
     for (const { field, file, extension, mimeType } of pendingFiles) {
       const path = `${campaignId}/${submissionId}/${field.id}/${crypto.randomUUID()}.${extension}`;
@@ -162,12 +171,19 @@ export async function POST(request: NextRequest) {
     }
     const primary = fields.find((field) => field.is_primary_label);
     const primaryAnswer = primary ? answers[primary.field_key] : null;
-    const payload = { campaign_id: campaignId, user_id: user.id, name: typeof primaryAnswer === "string" ? primaryAnswer : null, answers, form_snapshot: fields, applicant_email_hash: emailHash, status: "pending" };
-    const writeResult = existing
-      ? await service.from("audition_submissions").update(payload).eq("id", submissionId).eq("user_id", user.id).eq("status", "pending").is("reviewer_notes", null).is("reviewed_by", null).is("reviewed_at", null).eq("updated_at", existing.updated_at).select("id").maybeSingle()
-      : await service.from("audition_submissions").insert({ id: submissionId, ...payload });
+    const writeResult = await service.rpc("save_audition_submission", {
+      p_submission_id: submissionId,
+      p_campaign_id: campaignId,
+      p_user_id: user.id,
+      p_name: typeof primaryAnswer === "string" ? primaryAnswer : null,
+      p_answers: answers,
+      p_form_snapshot: fields,
+      p_applicant_email_hash: emailHash,
+    });
     if (writeResult.error) throw writeResult.error;
-    if (existing && !writeResult.data) throw new SubmissionConflictError();
+    const persisted = Array.isArray(writeResult.data) ? writeResult.data[0] : writeResult.data;
+    if (!persisted) throw new SubmissionConflictError();
+    persistedSubmission = persisted;
     if (existing) {
       const retained = new Set(Object.values(answers).filter(storedFile).map((file) => file.path));
       const replaced = Object.values(existing.answers as Record<string, AuditionAnswer>).filter(storedFile).map((file) => file.path).filter((path) => !retained.has(path));
@@ -176,12 +192,15 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (uploaded.length) await service.storage.from("audition-attachments").remove(uploaded);
     if (error instanceof SubmissionConflictError) return errorResponse("SUBMISSION_CONFLICT", 409);
-    if (typeof error === "object" && error && "code" in error && error.code === "23505") return errorResponse("ALREADY_SUBMITTED", 409);
+    const dbError = databaseError(error);
+    if (dbError.code === "P0001" && dbError.message === "CAMPAIGN_CLOSED") return errorResponse("CAMPAIGN_CLOSED", 404);
+    if (dbError.code === "P0001" && dbError.message === "SUBMISSION_CONFLICT") return errorResponse("SUBMISSION_CONFLICT", 409);
+    if (dbError.code === "23505") return errorResponse("ALREADY_SUBMITTED", 409);
     return errorResponse("SUBMISSION_FAILED", 503);
   }
 
   const timestamp = new Date().toISOString();
-  const result = NextResponse.json({ remaining: rate.remaining, submission: { id: submissionId, campaign_id: campaignId, user_id: user.id, answers, form_snapshot: fields, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: existing?.created_at ?? timestamp, updated_at: timestamp } }, { status: existing ? 200 : 201 });
+  const result = NextResponse.json({ remaining: rate.remaining, submission: { id: submissionId, campaign_id: campaignId, user_id: user.id, answers, form_snapshot: fields, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: existing?.created_at ?? persistedSubmission?.created_at ?? timestamp, updated_at: persistedSubmission?.updated_at ?? timestamp } }, { status: existing ? 200 : 201 });
   result.headers.set("Cache-Control", "no-store");
   return result;
 }

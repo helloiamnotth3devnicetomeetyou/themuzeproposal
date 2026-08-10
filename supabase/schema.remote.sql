@@ -546,6 +546,43 @@ $$;
 ALTER FUNCTION "public"."reset_login_rate_limit"("p_identifier_hash" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."review_audition_submission"("p_submission_id" "uuid", "p_status" "text", "p_reviewer_notes" "text") RETURNS TABLE("id" "uuid", "status" "text", "reviewer_notes" "text", "reviewed_by" "uuid", "reviewed_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare
+  v_saved public.audition_submissions%rowtype;
+begin
+  if not public.is_admin() then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if p_status is null or p_status not in ('pending', 'reviewing', 'accepted', 'rejected') then
+    raise exception 'INVALID_STATUS' using errcode = '22023';
+  end if;
+  if p_reviewer_notes is not null and char_length(p_reviewer_notes) > 10000 then
+    raise exception 'REVIEWER_NOTES_TOO_LONG' using errcode = '22023';
+  end if;
+
+  update public.audition_submissions
+  set status = p_status,
+      reviewer_notes = nullif(btrim(coalesce(p_reviewer_notes, '')), ''),
+      reviewed_by = auth.uid(),
+      reviewed_at = clock_timestamp()
+  where id = p_submission_id
+  returning * into v_saved;
+  if not found then
+    raise exception 'NOT_FOUND' using errcode = 'P0002';
+  end if;
+
+  return query select v_saved.id, v_saved.status, v_saved.reviewer_notes,
+    v_saved.reviewed_by, v_saved.reviewed_at, v_saved.updated_at;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."review_audition_submission"("p_submission_id" "uuid", "p_status" "text", "p_reviewer_notes" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") RETURNS "uuid"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'
@@ -639,6 +676,80 @@ $$;
 
 
 ALTER FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text") RETURNS TABLE("id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $_$
+declare
+  v_campaign public.audition_campaigns%rowtype;
+  v_existing public.audition_submissions%rowtype;
+  v_saved public.audition_submissions%rowtype;
+  v_now timestamptz := clock_timestamp();
+begin
+  if p_submission_id is null or p_campaign_id is null or p_user_id is null
+    or p_applicant_email_hash is null
+    or p_applicant_email_hash !~ '^[0-9a-f]{64}$'
+    or p_answers is null or jsonb_typeof(p_answers) <> 'object'
+    or p_form_snapshot is null or jsonb_typeof(p_form_snapshot) <> 'array' then
+    raise exception 'INVALID_SUBMISSION' using errcode = '22023';
+  end if;
+
+  select * into v_campaign
+  from public.audition_campaigns
+  where id = p_campaign_id
+  for update;
+
+  if not found then
+    raise exception 'CAMPAIGN_CLOSED' using errcode = 'P0001';
+  end if;
+  if not v_campaign.is_active
+    or (v_campaign.starts_at is not null and v_campaign.starts_at > v_now)
+    or (v_campaign.ends_at is not null and v_campaign.ends_at < v_now) then
+    raise exception 'CAMPAIGN_CLOSED' using errcode = 'P0001';
+  end if;
+
+  select * into v_existing
+  from public.audition_submissions
+  where id = p_submission_id
+  for update;
+
+  if found then
+    if v_existing.user_id is distinct from p_user_id
+      or v_existing.campaign_id is distinct from p_campaign_id
+      or v_existing.status is distinct from 'pending'
+      or v_existing.reviewer_notes is not null
+      or v_existing.reviewed_by is not null
+      or v_existing.reviewed_at is not null then
+      raise exception 'SUBMISSION_CONFLICT' using errcode = 'P0001';
+    end if;
+
+    update public.audition_submissions
+    set name = p_name,
+        answers = p_answers,
+        form_snapshot = p_form_snapshot,
+        applicant_email_hash = p_applicant_email_hash,
+        status = 'pending'
+    where id = p_submission_id
+    returning * into v_saved;
+  else
+    insert into public.audition_submissions (
+      id, campaign_id, user_id, name, answers, form_snapshot,
+      applicant_email_hash, status
+    ) values (
+      p_submission_id, p_campaign_id, p_user_id, p_name, p_answers,
+      p_form_snapshot, p_applicant_email_hash, 'pending'
+    )
+    returning * into v_saved;
+  end if;
+
+  return query select v_saved.id, v_saved.created_at, v_saved.updated_at;
+end;
+$_$;
+
+
+ALTER FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[] DEFAULT ARRAY[]::"uuid"[]) RETURNS "void"
@@ -808,6 +919,64 @@ $$;
 
 
 ALTER FUNCTION "public"."touch_audition_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_contact_inquiry_workflow"("p_inquiry_id" "uuid", "p_status" "text", "p_admin_note" "text") RETURNS TABLE("id" "uuid", "status" "text", "admin_note" "text", "answered_by" "uuid", "answered_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare
+  v_current public.contact_inquiries%rowtype;
+  v_saved public.contact_inquiries%rowtype;
+begin
+  if not public.is_admin() then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if p_status is null or p_status not in ('pending', 'reviewing', 'answered', 'closed') then
+    raise exception 'INVALID_STATUS' using errcode = '22023';
+  end if;
+  if p_admin_note is not null and char_length(p_admin_note) > 10000 then
+    raise exception 'ADMIN_NOTE_TOO_LONG' using errcode = '22023';
+  end if;
+
+  select * into v_current
+  from public.contact_inquiries
+  where id = p_inquiry_id
+  for update;
+  if not found then
+    raise exception 'NOT_FOUND' using errcode = 'P0002';
+  end if;
+
+  update public.contact_inquiries
+  set status = p_status,
+      admin_note = nullif(btrim(coalesce(p_admin_note, '')), ''),
+      answered_by = case
+        when p_status = 'answered' and (
+          v_current.status <> 'answered'
+          or v_current.answered_by is null
+          or v_current.answered_at is null
+        ) then auth.uid()
+        when p_status = 'answered' then v_current.answered_by
+        else null
+      end,
+      answered_at = case
+        when p_status = 'answered' and (
+          v_current.status <> 'answered'
+          or v_current.answered_by is null
+          or v_current.answered_at is null
+        ) then clock_timestamp()
+        when p_status = 'answered' then v_current.answered_at
+        else null
+      end
+  where id = p_inquiry_id
+  returning * into v_saved;
+
+  return query select v_saved.id, v_saved.status, v_saved.admin_note, v_saved.answered_by, v_saved.answered_at;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."update_contact_inquiry_workflow"("p_inquiry_id" "uuid", "p_status" "text", "p_admin_note" "text") OWNER TO "postgres";
 
 SET default_tablespace = '';
 
@@ -1835,10 +2004,6 @@ CREATE OR REPLACE TRIGGER "tracks_set_updated_at" BEFORE UPDATE ON "public"."tra
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_audition_submissions" AFTER UPDATE ON "public"."audition_submissions" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'sensitive');
-
-
-
 CREATE OR REPLACE TRIGGER "trg_auditions_updated_at" BEFORE UPDATE ON "public"."auditions" FOR EACH ROW EXECUTE FUNCTION "public"."touch_audition_updated_at"();
 
 
@@ -2397,9 +2562,20 @@ GRANT ALL ON FUNCTION "public"."reset_login_rate_limit"("p_identifier_hash" "tex
 
 
 
+REVOKE ALL ON FUNCTION "public"."review_audition_submission"("p_submission_id" "uuid", "p_status" "text", "p_reviewer_notes" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."review_audition_submission"("p_submission_id" "uuid", "p_status" "text", "p_reviewer_notes" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."review_audition_submission"("p_submission_id" "uuid", "p_status" "text", "p_reviewer_notes" "text") TO "authenticated";
+
+
+
 REVOKE ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text") TO "service_role";
 
 
 
@@ -2425,6 +2601,12 @@ REVOKE ALL ON FUNCTION "public"."set_updated_at"() FROM PUBLIC;
 
 
 GRANT ALL ON FUNCTION "public"."touch_audition_updated_at"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."update_contact_inquiry_workflow"("p_inquiry_id" "uuid", "p_status" "text", "p_admin_note" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."update_contact_inquiry_workflow"("p_inquiry_id" "uuid", "p_status" "text", "p_admin_note" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."update_contact_inquiry_workflow"("p_inquiry_id" "uuid", "p_status" "text", "p_admin_note" "text") TO "authenticated";
 
 
 
@@ -2505,7 +2687,7 @@ GRANT SELECT("id") ON TABLE "public"."audition_submissions" TO "authenticated";
 
 
 
-GRANT SELECT("status"),UPDATE("status") ON TABLE "public"."audition_submissions" TO "authenticated";
+GRANT SELECT("status") ON TABLE "public"."audition_submissions" TO "authenticated";
 
 
 
@@ -2533,18 +2715,6 @@ GRANT SELECT("form_snapshot") ON TABLE "public"."audition_submissions" TO "authe
 
 
 
-GRANT UPDATE("reviewer_notes") ON TABLE "public"."audition_submissions" TO "authenticated";
-
-
-
-GRANT UPDATE("reviewed_by") ON TABLE "public"."audition_submissions" TO "authenticated";
-
-
-
-GRANT UPDATE("reviewed_at") ON TABLE "public"."audition_submissions" TO "authenticated";
-
-
-
 GRANT ALL ON TABLE "public"."auditions" TO "service_role";
 
 
@@ -2556,22 +2726,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."avatar_assets" TO "authenti
 
 GRANT ALL ON TABLE "public"."contact_inquiries" TO "service_role";
 GRANT SELECT ON TABLE "public"."contact_inquiries" TO "authenticated";
-
-
-
-GRANT UPDATE("status") ON TABLE "public"."contact_inquiries" TO "authenticated";
-
-
-
-GRANT UPDATE("admin_note") ON TABLE "public"."contact_inquiries" TO "authenticated";
-
-
-
-GRANT UPDATE("answered_at") ON TABLE "public"."contact_inquiries" TO "authenticated";
-
-
-
-GRANT UPDATE("answered_by") ON TABLE "public"."contact_inquiries" TO "authenticated";
 
 
 

@@ -8,9 +8,15 @@ begin
     or has_column_privilege('authenticated', 'public.protect_reports', 'content', 'update') then
     raise exception 'authenticated reviewers can still rewrite submitted content';
   end if;
-  if not has_column_privilege('authenticated', 'public.contact_inquiries', 'status', 'update')
-    or not has_column_privilege('authenticated', 'public.protect_reports', 'status', 'update') then
-    raise exception 'review workflow columns are not updateable';
+  if has_column_privilege('authenticated', 'public.contact_inquiries', 'status', 'update')
+    or has_column_privilege('authenticated', 'public.contact_inquiries', 'answered_by', 'update')
+    or has_column_privilege('authenticated', 'public.audition_submissions', 'reviewed_by', 'update') then
+    raise exception 'browser roles can still write workflow attribution columns';
+  end if;
+  if not has_column_privilege('authenticated', 'public.protect_reports', 'status', 'update')
+    or not has_function_privilege('authenticated', 'public.update_contact_inquiry_workflow(uuid,text,text)', 'execute')
+    or not has_function_privilege('authenticated', 'public.review_audition_submission(uuid,text,text)', 'execute') then
+    raise exception 'review workflow boundary functions are unavailable';
   end if;
   if has_table_privilege('authenticated', 'public.contact_inquiries', 'delete')
     or has_table_privilege('authenticated', 'public.protect_reports', 'delete')

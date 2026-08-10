@@ -1,6 +1,7 @@
 import { draftMode } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
+import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { isPreviewToken } from "@/core/preview/types";
 import { createSupabaseServerClient } from "@/core/supabase/server";
@@ -13,6 +14,12 @@ const ALLOWED_PATHS = [
   /^\/[^/]+\/schedule\/?$/,
   /^\/[^/]+\/notice\/[^/]+\/?$/,
 ];
+const MAX_PREVIEW_BODY_BYTES = 16 * 1024;
+const MAX_PREVIEW_BODY_TIMEOUT_MS = 5_000;
+const MAX_PREVIEW_PARTS = 4;
+const MAX_PREVIEW_METADATA_BYTES = 8 * 1024;
+const MAX_PREVIEW_TOKEN_LENGTH = 64;
+const MAX_PREVIEW_PATH_LENGTH = 2_048;
 
 const isAllowedPreviewPath = (pathname: string) =>
   ALLOWED_PATHS.some((pattern) => pattern.test(pathname));
@@ -24,7 +31,16 @@ export async function POST(request: NextRequest) {
 
   let formData: FormData;
   try {
-    formData = await request.formData();
+    const parsed = await parseFormDataWithinLimit(
+      request,
+      MAX_PREVIEW_BODY_BYTES,
+      MAX_PREVIEW_BODY_TIMEOUT_MS,
+      { maxParts: MAX_PREVIEW_PARTS, maxMetadataBytes: MAX_PREVIEW_METADATA_BYTES },
+    );
+    if (!parsed || Array.from(parsed.keys()).length > MAX_PREVIEW_PARTS) {
+      return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 413 });
+    }
+    formData = parsed;
   } catch {
     return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });
   }
@@ -33,7 +49,8 @@ export async function POST(request: NextRequest) {
   const token = typeof formData.get("token") === "string" ? String(formData.get("token")) : "";
   const rawPath = typeof formData.get("path") === "string" ? String(formData.get("path")) : "";
 
-  if (!isPreviewToken(token) || !rawPath.startsWith("/")) {
+  if (token.length > MAX_PREVIEW_TOKEN_LENGTH || rawPath.length > MAX_PREVIEW_PATH_LENGTH
+    || !isPreviewToken(token) || !rawPath.startsWith("/")) {
     return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });
   }
 

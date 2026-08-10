@@ -11,7 +11,7 @@ import { supabase } from "@/core/supabase/client";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import styles from "@/styles/(admin)/pages/contact/contact-admin.module.css";
 
-import { PAGE_SIZE, type ContactCategory, type ContactInquiry, type ContactStatus, useContactInquiries } from "./useContactInquiries";
+import { PAGE_SIZE, type ContactInquiry, type ContactStatus, useContactInquiries } from "./useContactInquiries";
 
 const statuses: Array<{ value: ContactStatus; label: string }> = [
   { value: "pending", label: "접수" },
@@ -58,7 +58,7 @@ export default function ContactAdminPage() {
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [undo, setUndo] = useState<{ id: string; previous: Pick<ContactInquiry, "status" | "answered_at" | "answered_by"> } | null>(null);
+  const [undo, setUndo] = useState<{ id: string; previous: ContactStatus } | null>(null);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -89,39 +89,40 @@ export default function ContactAdminPage() {
   }, [viewing]);
 
   const updateInquiry = async (
-    changes: Partial<Pick<ContactInquiry, "status" | "admin_note" | "answered_at" | "answered_by">>,
+    changes: Partial<Pick<ContactInquiry, "status" | "admin_note">>,
   ) => {
     if (!viewing) return;
     setSaving(true);
     setError("");
-    const { error: updateError } = await supabase
-      .from("contact_inquiries")
-      .update(changes)
-      .eq("id", viewing.id);
-    if (updateError) {
-      setError(updateError.message);
+    const { data, error: updateError } = await supabase.rpc("update_contact_inquiry_workflow", {
+      p_inquiry_id: viewing.id,
+      p_status: changes.status ?? viewing.status,
+      p_admin_note: changes.admin_note !== undefined ? changes.admin_note : viewing.admin_note,
+    });
+    const patch = Array.isArray(data) ? data[0] : data;
+    if (updateError || !patch) {
+      setError(updateError?.message || "문의를 저장하지 못했습니다.");
     } else {
-      const updated = { ...viewing, ...changes };
+      const updated = { ...viewing, ...patch };
       setViewing(updated);
       setInquiries((current) => current.map((item) => item.id === viewing.id ? updated : item));
       window.dispatchEvent(new Event("admin-inbox-changed"));
     }
     setSaving(false);
+    return !updateError && Boolean(patch);
   };
 
   const changeStatus = async (status: ContactStatus) => {
     if (!viewing || status === viewing.status) return;
     if (["answered", "closed"].includes(status) && !await confirm({ title: status === "answered" ? "답변 완료로 기록할까요?" : "문의를 종결할까요?", description: "처리 상태와 담당자 기록이 즉시 반영됩니다.", confirmLabel: "상태 변경" })) return;
-    const previous = { status: viewing.status, answered_at: viewing.answered_at, answered_by: viewing.answered_by };
-    const userId = status === "answered" ? (await supabase.auth.getUser()).data.user?.id ?? null : viewing.answered_by;
-    await updateInquiry({ status, answered_at: status === "answered" ? new Date().toISOString() : viewing.answered_at, answered_by: userId });
-    setUndo({ id: viewing.id, previous });
+    if (!await updateInquiry({ status })) return;
+    setUndo({ id: viewing.id, previous: viewing.status });
     setToast("처리 상태를 변경했습니다.");
   };
 
   const undoStatus = async () => {
     if (!undo || !viewing || viewing.id !== undo.id) return;
-    await updateInquiry(undo.previous);
+    if (!await updateInquiry({ status: undo.previous })) return;
     setUndo(null);
     setToast("이전 처리 상태로 되돌렸습니다.");
   };

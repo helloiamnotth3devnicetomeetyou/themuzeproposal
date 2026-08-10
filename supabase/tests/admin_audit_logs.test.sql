@@ -152,14 +152,27 @@ insert into public.audition_submissions (
 );
 
 set local role authenticated;
-update public.audition_submissions
-set reviewer_notes = '수정된 심사 메모'
-where id = '00000000-0000-0000-0000-000000000401';
+select * from public.review_audition_submission(
+  '00000000-0000-0000-0000-000000000401',
+  'reviewing',
+  '수정된 심사 메모'
+);
 
 do $$
 declare
   v_log public.admin_audit_logs%rowtype;
+  v_count integer;
 begin
+  select count(*) into v_count
+  from public.admin_audit_logs
+  where table_name = 'audition_submissions'
+    and record_id = '00000000-0000-0000-0000-000000000401'
+    and operation = 'UPDATE';
+
+  if v_count <> 1 then
+    raise exception 'audition submission update produced % audit rows', v_count;
+  end if;
+
   select * into v_log
   from public.admin_audit_logs
   where table_name = 'audition_submissions'
@@ -168,9 +181,11 @@ begin
   order by id desc
   limit 1;
 
-  if v_log.changed_fields <> array['reviewer_notes']::text[]
+  if v_log.after_values ->> 'status' <> 'reviewing'
     or v_log.before_values ->> 'reviewer_notes' <> '초기 심사 메모'
-    or v_log.after_values ->> 'reviewer_notes' <> '수정된 심사 메모' then
+    or v_log.after_values ->> 'reviewer_notes' <> '수정된 심사 메모'
+    or v_log.after_values ? 'reviewed_by'
+    or v_log.after_values ? 'reviewed_at' then
     raise exception 'reviewer_notes audit snapshot is incomplete';
   end if;
 end;
@@ -197,9 +212,11 @@ insert into public.contact_inquiries (
 );
 
 set local role authenticated;
-update public.contact_inquiries
-set status = 'reviewing', admin_note = '확인 중'
-where id = '00000000-0000-0000-0000-000000000301';
+select * from public.update_contact_inquiry_workflow(
+  '00000000-0000-0000-0000-000000000301',
+  'reviewing',
+  '확인 중'
+);
 
 do $$
 declare

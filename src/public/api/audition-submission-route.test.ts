@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const mocks = vi.hoisted(() => ({ consumeRateLimit: vi.fn(), consumeAttemptRateLimit: vi.fn(), getUser: vi.fn(), insert: vi.fn(), update: vi.fn(), upload: vi.fn(), remove: vi.fn(), existing: null as Record<string, unknown> | null }));
+const mocks = vi.hoisted(() => ({ consumeRateLimit: vi.fn(), consumeAttemptRateLimit: vi.fn(), getUser: vi.fn(), rpc: vi.fn(), upload: vi.fn(), remove: vi.fn(), existing: null as Record<string, unknown> | null }));
 vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit: mocks.consumeRateLimit, consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: () => service }));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser } }) }));
@@ -26,8 +26,9 @@ const service = {
   from: vi.fn((table: string) => {
     if (table === "audition_campaigns") return chain({ data: campaign, error: null });
     if (table === "audition_form_fields") return chain({ data: fields, error: null });
-    return { select: vi.fn((columns: string) => columns.includes("answers") ? chain({ data: mocks.existing, error: null }) : chain({ count: 0, error: null })), insert: mocks.insert, update: mocks.update };
+    return { select: vi.fn((columns: string) => columns.includes("answers") ? chain({ data: mocks.existing, error: null }) : chain({ count: 0, error: null })) };
   }),
+  rpc: mocks.rpc,
   storage: { from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })) },
 };
 
@@ -49,18 +50,17 @@ describe("POST /api/audition/submit", () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "applicant@example.com", email_confirmed_at: "2026-08-01T00:00:00.000Z" } }, error: null });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
-    mocks.insert.mockResolvedValue({ error: null });
-    mocks.update.mockReturnValue(chain({ data: { id: "submission-1" }, error: null }));
+    mocks.rpc.mockResolvedValue({ data: [{ id: "submission-1", created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" }], error: null });
     mocks.existing = null;
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
   });
 
-  it("builds the snapshot server-side and ties the service-role insert to the signed-in user", async () => {
+  it("builds the snapshot server-side and ties the service-role write to the signed-in user", async () => {
     const response = await POST(request());
     expect(response.status).toBe(201);
     expect(mocks.consumeRateLimit).toHaveBeenCalledWith(expect.anything(), "audition_submission", "user-1");
-    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ campaign_id: campaign.id, user_id: "user-1", answers: expect.objectContaining({ email: "applicant@example.com", part: "보컬", privacy: "true" }), form_snapshot: fields, applicant_email_hash: expect.any(String) }));
+    expect(mocks.rpc).toHaveBeenCalledWith("save_audition_submission", expect.objectContaining({ p_campaign_id: campaign.id, p_user_id: "user-1", p_answers: expect.objectContaining({ email: "applicant@example.com", part: "보컬", privacy: "true" }), p_form_snapshot: fields, p_applicant_email_hash: expect.any(String) }));
   });
 
   it("updates only the signed-in user's existing submission while the campaign is open", async () => {
@@ -70,7 +70,7 @@ describe("POST /api/audition/submit", () => {
     form.set("submissionId", "submission-1");
     const response = await POST(new NextRequest(original.url, { method: "POST", headers: { origin: "http://localhost" }, body: form }));
     expect(response.status).toBe(200);
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", status: "pending", answers: expect.objectContaining({ part: "댄스" }) }));
+    expect(mocks.rpc).toHaveBeenCalledWith("save_audition_submission", expect.objectContaining({ p_user_id: "user-1", p_campaign_id: campaign.id, p_answers: expect.objectContaining({ part: "댄스" }) }));
   });
 
   it("does not let applicants edit a reviewed submission", async () => {
@@ -83,12 +83,12 @@ describe("POST /api/audition/submit", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({ code: "SUBMISSION_NOT_EDITABLE" });
-    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("removes replacement uploads when an edit loses the version race", async () => {
     mocks.existing = { id: "submission-1", campaign_id: campaign.id, user_id: "user-1", answers: {}, status: "pending", reviewer_notes: null, reviewed_by: null, reviewed_at: null, created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-01T00:00:00.000Z" };
-    mocks.update.mockReturnValueOnce(chain({ data: null, error: null }));
+    mocks.rpc.mockResolvedValueOnce({ data: [], error: null });
     const original = request();
     const form = await original.formData();
     form.set("submissionId", "submission-1");
@@ -104,7 +104,7 @@ describe("POST /api/audition/submit", () => {
     const response = await POST(request("연기"));
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_OPTION" });
-    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("rejects an application email that does not belong to the authenticated account", async () => {
@@ -114,7 +114,7 @@ describe("POST /api/audition/submit", () => {
     const response = await POST(new NextRequest(forged.url, { method: "POST", headers: { origin: "http://localhost" }, body: form }));
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toEqual({ code: "EMAIL_ACCOUNT_MISMATCH" });
-    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("rejects a calendar date that JavaScript would otherwise normalize", async () => {
@@ -126,8 +126,8 @@ describe("POST /api/audition/submit", () => {
     await expect(response.json()).resolves.toEqual({ code: "INVALID_DATE" });
   });
 
-  it("removes uploaded private files when the database insert fails", async () => {
-    mocks.insert.mockResolvedValueOnce({ error: { code: "XX000" } });
+  it("removes uploaded private files when the database write fails", async () => {
+    mocks.rpc.mockResolvedValueOnce({ error: { code: "XX000" } });
     const invalid = request();
     const form = await invalid.formData();
     form.set("answers[portfolio]", new File(["%PDF-1.7\ncontent"], "portfolio.pdf", { type: "application/pdf" }));
@@ -142,7 +142,7 @@ describe("POST /api/audition/submit", () => {
     const response = await POST(request());
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("60");
-    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
   });
 });
