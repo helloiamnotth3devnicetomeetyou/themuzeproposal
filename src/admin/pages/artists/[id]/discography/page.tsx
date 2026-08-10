@@ -296,11 +296,11 @@ export default function DiscographyAdmin() {
   if (loading) return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
   const workbenchTabs: WorkbenchTab<EditorTab>[] = [
-    { id: "basic", label: "기본 정보", complete: Boolean(draft?.title && draft.release_date && draft.cover_url) },
-    { id: "content", label: "콘텐츠", complete: Boolean(draft?.description_ko) },
-    { id: "tracks", label: `트랙 ${draft?.tracks.length || 0}`, complete: Boolean(draft?.tracks.length) },
+    { id: "basic", label: "기본 정보", complete: Boolean(draft?.title && draft.release_date && draft.cover_url), missing: [draft?.title, draft?.release_date, draft?.cover_url].filter((value) => !value).length },
+    { id: "content", label: "콘텐츠", complete: Boolean(draft?.description_ko), missing: draft?.description_ko ? 0 : 1 },
+    { id: "tracks", label: `트랙 ${draft?.tracks.length || 0}`, complete: Boolean(draft?.tracks.length), missing: draft?.tracks.length ? 0 : 1 },
     { id: "gallery", label: "갤러리", complete: Boolean(draft && albums.some((album) => album.id === draft.id)) },
-    { id: "publish", label: "공개 설정", complete: Boolean(validation?.canPublish) },
+    { id: "publish", label: "공개 설정", complete: Boolean(validation?.canPublish), missing: validation?.publishIssues.length || 0 },
   ];
   const rail = <>
       <div className="music-library-heading" data-tour-id="entity-create"><div><h2>앨범 라이브러리</h2></div><button type="button" onClick={() => void addAlbum()} aria-label="새 앨범"><Plus aria-hidden="true" /></button></div>

@@ -34,14 +34,19 @@ export function useArtistSceneData({ artistSlug, profilePreview, memberPreview, 
     const previewMember = (current.memberPreview as { member?: Member & { artist: Artist } } | null)?.member;
     let query = supabase.from("artists").select(`id,slug,name,eng_name,name_ko,name_en,name_ja,image_url,logo_url,color,description_ko,description_en,description_ja,artist_members(${memberSelect}),artist_scenes(${sceneSelect})`);
     query = previewArtist ? query.eq("id", previewArtist.id) : previewMember ? query.eq("id", previewMember.artist.id) : query.eq("slug", artistSlug).eq("is_active", true);
-    const result = await query.maybeSingle();
-    const fetched = result.data as (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] }) | null;
-    const artist = previewArtist ?? previewMember?.artist ?? fetched;
+    let result = await query.maybeSingle();
+    let fetched = result.data as (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] }) | null;
+    if (!fetched && (previewArtist || previewMember)) {
+      result = await supabase.from("artists").select(`id,slug,name,eng_name,name_ko,name_en,name_ja,image_url,logo_url,color,description_ko,description_en,description_ja,artist_members(${memberSelect}),artist_scenes(${sceneSelect})`).eq("slug", artistSlug).eq("is_active", true).maybeSingle();
+      fetched = result.data as (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] }) | null;
+    }
+    const artist = fetched ? { ...fetched, ...previewMember?.artist, ...previewArtist } : previewArtist ?? previewMember?.artist;
     if (!artist) { setError(result.error?.message || "Artist not found."); setLoading(false); return; }
     let members = [...(fetched?.artist_members ?? [])].sort((a, b) => a.sort_order - b.sort_order);
     if (previewMember) members = [...members.filter((member) => member.id !== previewMember.id), previewMember].sort((a, b) => a.sort_order - b.sort_order);
     let scenes = [...(fetched?.artist_scenes ?? [])].filter((scene) => scene.is_published).map((scene) => ({ ...scene, member_ids: scene.artist_scene_members?.map((region) => region.member_id) ?? [], artist_scene_members: [] })).sort((a, b) => Number(b.is_hero) - Number(a.is_hero) || a.sort_order - b.sort_order);
     if (!scenes.length && artist.image_url) scenes = [{ id: "legacy-hero", artist_id: artist.id, title: "Main scene", title_ko: "메인 장면", title_en: "Main scene", title_ja: "メインシーン", link_url: null, image_url: artist.image_url, image_width: null, image_height: null, is_hero: true, is_published: true, sort_order: 0, member_ids: [], artist_scene_members: [] }];
+    loadedSceneIds.current = new Set(scenes.filter((scene) => !scene.member_ids?.length).map((scene) => scene.id));
     setData({ artist, members, scenes });
     setError(result.error?.message || (!artist.image_url && !scenes.length ? "No hero scene has been published." : ""));
     setLoading(false);

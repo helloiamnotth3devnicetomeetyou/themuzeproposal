@@ -10,6 +10,7 @@ import {
   type PreviewPayloadByKind,
 } from "@/core/preview/types";
 
+
 type UseAdminPreviewOptions<K extends PreviewKind> = {
   kind: K;
   payload: PreviewPayloadByKind[K] | null;
@@ -87,6 +88,7 @@ export function useAdminPreview<K extends PreviewKind>({
     );
     if (!previewWindow) {
       onError("팝업이 차단되었습니다. 이 사이트의 새 탭 열기를 허용해 주세요.");
+      return;
     }
   }, [canPreview, onError, payload, targetPath, unavailableMessage, writePreview]);
 

@@ -339,7 +339,7 @@ export default function ArtistProfileAdmin() {
       rail={<ProfileContextRail completion={completion.slice(0, 3)} draft={draft} isNew onCancel={() => void cancelNewArtist()} />}
       identity={identity}
       actions={wizardActions}
-      tabs={newArtistSteps.map((item) => ({ ...item, complete: item.id === "name" ? creationReady.name : item.id === "visual" ? creationReady.visual : item.id === "content" ? creationReady.content : creationComplete }))}
+      tabs={newArtistSteps.map((item) => ({ ...item, complete: item.id === "name" ? creationReady.name : item.id === "visual" ? creationReady.visual : item.id === "content" ? creationReady.content : creationComplete, missing: item.id === "name" ? (creationReady.name ? 0 : 1) : item.id === "visual" ? (creationReady.visual ? 0 : 1) : item.id === "content" ? (creationReady.content ? 0 : 1) : creationComplete ? 0 : 1 }))}
       activeTab={newStep}
       onTabChange={(next) => { if (newArtistSteps.findIndex((item) => item.id === next) <= stepIndex) setNewStep(next); }}
       error={error}
@@ -367,7 +367,7 @@ export default function ArtistProfileAdmin() {
       rail={rail}
       identity={identity}
       actions={<>{!isNew && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || nestedDrafts.dirty || pendingDelete} saving={saving} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "아티스트", before: draft.name, after: "삭제" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return handleDelete(); if (dirty) await handleSave(); await nestedDrafts.commit(); }} disabled={!pendingDelete && Boolean(saveIssues.length)} label={isNew ? "아티스트 만들기" : "변경사항 저장"} /></>}
-      tabs={profileTabs.map((item, index) => ({ ...item, complete: completion[index]?.ready }))}
+      tabs={profileTabs.map((item, index) => ({ ...item, complete: completion[index]?.ready, missing: completion[index]?.ready ? 0 : 1 }))}
       activeTab={tab}
       onTabChange={setTab}
       bodyRef={editorBodyRef}

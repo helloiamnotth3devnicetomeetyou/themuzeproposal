@@ -222,7 +222,8 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
   if (kind === "artist-profile") {
     const artist = payload.artist;
     return isRecord(artist)
-      && hasStrings(artist, ["id", "slug", "name", "eng_name", "name_ko", "name_en", "name_ja", "type"])
+      && hasStrings(artist, ["id", "slug", "name", "eng_name", "name_ko", "name_en", "type"])
+      && isNullableString(artist.name_ja)
       && isNullableString(artist.debut_date)
       && isNullableString(artist.image_url)
       && isNullableString(artist.logo_url)

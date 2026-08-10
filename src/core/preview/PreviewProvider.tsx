@@ -39,6 +39,11 @@ export function PreviewProvider({
   const [envelope, setEnvelope] = useState<PreviewEnvelope | null>(null);
   const [resolved, setResolved] = useState(!previewRequested);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setResolved(!previewRequested), 0);
+    return () => window.clearTimeout(timer);
+  }, [previewRequested, token]);
+
   const readEnvelope = useCallback(() => {
     if (!previewRequested || !token) {
       setEnvelope(null);
@@ -89,8 +94,37 @@ export function PreviewProvider({
     target.searchParams.set("preview", token);
     const next = `${target.pathname}${target.search}${target.hash}`;
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (next !== current) router.replace(next, { scroll: false });
+    if (next !== current && !window.location.pathname.startsWith(`${target.pathname}/`)) router.replace(next, { scroll: false });
   }, [envelope, pathname, router, token]);
+
+  const previewLabel = useMemo(() => {
+    if (!envelope) return "";
+    if (envelope.kind === "artist-profile") return `아티스트 프로필 · ${envelope.payload.artist.name}`;
+    if (envelope.kind === "artist-member") return `멤버 프로필 · ${envelope.payload.member.name}`;
+    if (envelope.kind === "album") return `앨범 · ${envelope.payload.album.title}`;
+    if (envelope.kind === "notice") return `공지 · ${envelope.payload.notice.title.ko}`;
+    if (envelope.kind === "schedule") return `일정 · ${envelope.payload.schedule.title_ko}`;
+    return "사이트 설정";
+  }, [envelope]);
+
+  useEffect(() => {
+    if (!envelope) return;
+    const target = new URL(envelope.targetPath, window.location.origin);
+    const confirmLeaving = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as Element | null)?.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement) || anchor.target === "_blank") return;
+      const destination = new URL(anchor.href, window.location.href);
+      const staysInPreview = destination.origin === target.origin
+        && (destination.pathname === target.pathname || destination.pathname.startsWith(`${target.pathname}/`));
+      if (!staysInPreview && !window.confirm(`${previewLabel} 미리보기를 벗어납니다. 계속할까요?`)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener("click", confirmLeaving, true);
+    return () => document.removeEventListener("click", confirmLeaving, true);
+  }, [envelope, previewLabel]);
 
   const exitPreview = async () => {
     if (token) {
@@ -137,13 +171,19 @@ export function PreviewProvider({
     <PreviewContext.Provider value={contextValue}>
       {children}
       {previewRequested && (
-        <aside className="fixed inset-x-0 bottom-4 z-[9999] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full border border-white/15 bg-black/90 px-4 py-2 text-xs font-bold text-white shadow-2xl backdrop-blur" role="status">
-          <span className="size-2 animate-pulse rounded-full bg-brand-pink" aria-hidden="true" />
-          <span>관리자 미리보기 · 실시간 반영 중</span>
-          <button type="button" onClick={() => void exitPreview()} className="rounded-full bg-white/10 px-3 py-1.5 transition-colors hover:bg-white/20">
-            종료
-          </button>
-        </aside>
+        <>
+          <div className="pointer-events-none fixed inset-0 z-[9998] border-[3px] border-brand-pink" aria-hidden="true" />
+          <aside className="fixed inset-x-0 bottom-4 z-[9999] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full border border-white/15 bg-black/90 px-4 py-2 text-white shadow-2xl backdrop-blur" role="status">
+            <span className="size-2 shrink-0 animate-pulse rounded-full bg-brand-pink" aria-hidden="true" />
+            <span className="flex min-w-0 flex-col">
+              <strong className="truncate text-xs">{previewLabel}</strong>
+              <small className="text-[10px] font-bold text-white/60">관리자 미리보기 · 실시간 반영 중</small>
+            </span>
+            <button type="button" onClick={() => void exitPreview()} className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold transition-colors hover:bg-white/20">
+              종료
+            </button>
+          </aside>
+        </>
       )}
     </PreviewContext.Provider>
   );
