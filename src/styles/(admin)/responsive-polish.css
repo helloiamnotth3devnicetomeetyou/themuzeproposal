@@ -221,7 +221,6 @@
 
 .admin-root-shell :is(
   .music-field > span,
-  .content-section-heading > span,
   .desk-translatable-heading > label,
   .rich-text-label > span,
   .audition-control-label,

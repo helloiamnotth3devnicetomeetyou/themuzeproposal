@@ -330,8 +330,8 @@ export default function DiscographyAdmin() {
     <ContentWorkbench rail={rail} identity={identity} actions={actions} tabs={workbenchTabs} activeTab={tab} onTabChange={changeTab} error={error} onDismissError={() => setError("")} toast={toast} className="music-editor-shell" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
       {!draft ? <div className="music-no-selection"><span><Disc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> :
         <div className="music-editor-body">
-          {tab === "basic" && <div className="music-section-stack">
-            <div className="music-section-title music-release-heading"><div><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div></div>
+          {tab === "basic" && <div className="music-section-stack music-basic-section">
+            <div className="content-section-heading"><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div>
             <div className="music-field-grid two"><label className="music-field"><span>앨범 제목 <b>*</b></span><input className="admin-input" value={draft.title} onChange={(event) => handleTitle(event.target.value)} autoFocus /></label><div className="music-field"><span>앨범 종류 <b>*</b></span><CustomSelect ariaLabel="앨범 종류" value={draft.type} onChange={(type) => patchDraft({ type })} options={ALBUM_TYPES.map((type) => ({ value: type, label: type }))} /></div></div>
             <FormField label="표시 제목" valueKo={draft.title_ko} valueEn={draft.title_en} valueJa={draft.title_ja} onChangeKo={(value) => patchDraft({ title_ko: value })} onChangeEn={(value) => patchDraft({ title_en: value })} onChangeJa={(value) => patchDraft({ title_ja: value })} />
             <label className="music-field music-date-field"><span>발매일</span><input type="date" className="admin-input" value={draft.release_date} onChange={(event) => patchDraft({ release_date: event.target.value })} /></label>
@@ -343,7 +343,7 @@ export default function DiscographyAdmin() {
           </div>}
 
           {tab === "content" && <div className="music-section-stack">
-            <div className="music-section-title"><div><h3>앨범 소개와 외부 링크</h3><span>언어별 소개를 작성하고 앨범 단위 스트리밍 링크를 연결합니다.</span></div></div>
+            <div className="content-section-heading"><h3>앨범 소개와 외부 링크</h3><span>언어별 소개를 작성하고 앨범 단위 스트리밍 링크를 연결합니다.</span></div>
             <div className="music-language-tabs">{(["ko", "en", "ja"] as Language[]).map((item) => <button type="button" key={item} className={language === item ? "is-active" : ""} onClick={() => setLanguage(item)}>{item.toUpperCase()}<i className={draft[`description_${item}`].trim() ? "is-complete" : ""} /></button>)}</div>
             <label className="music-field"><span>{language === "ko" ? "한국어" : language === "en" ? "영어" : "일본어"} 앨범 소개</span><textarea className="admin-input" rows={9} value={draft[`description_${language}`]} onChange={(event) => patchDraft({ [`description_${language}`]: event.target.value } as Partial<AlbumEditorDraft>)} placeholder="앨범의 콘셉트와 이야기를 입력하세요." /></label>
             <div className="music-field-grid two"><label className="music-field"><span>Spotify 앨범 ID 또는 URL</span><input className="admin-input" value={draft.spotify_id} onChange={(event) => patchDraft({ spotify_id: event.target.value })} onBlur={() => patchDraft({ spotify_id: spotifyAlbumId(draft.spotify_id) || "" })} placeholder="Spotify 앨범 ID 또는 URL" /></label><label className="music-field"><span>YouTube Music URL</span><input type="url" className="admin-input" value={draft.youtube_url} onChange={(event) => patchDraft({ youtube_url: event.target.value })} placeholder="https://music.youtube.com/…" /></label></div>
@@ -376,12 +376,12 @@ export default function DiscographyAdmin() {
           </div>}
 
           {tab === "gallery" && <div className="music-section-stack music-gallery-section">
-            <div className="music-section-title"><div><h3>앨범 갤러리</h3><span>이 앨범의 이미지를 모으고, 이미지에 등장하는 멤버를 함께 지정합니다.</span></div></div>
+            <div className="content-section-heading"><h3>앨범 갤러리</h3><span>이 앨범의 이미지를 모으고, 이미지에 등장하는 멤버를 함께 지정합니다.</span></div>
             <GalleryManager artistId={artistId || null} scope="album" albumId={albums.some((album) => album.id === draft.id) ? draft.id : null} onError={setError} onToast={setToast} />
           </div>}
 
           {tab === "publish" && <div className="music-section-stack">
-            <div className="music-section-title music-release-heading"><div><h3>공개 설정</h3><span>공개 전 필수 정보를 확인하고,<br />연결된 미디어를 마지막으로 점검합니다.</span></div></div>
+            <div className="content-section-heading"><h3>공개 설정</h3><span>공개 전 필수 정보를 확인하고,<br />연결된 미디어를 마지막으로 점검합니다.</span></div>
             <div className="music-publish-summary"><div className="music-publish-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="120px" /> : <span>커버 없음</span>}</div><div><p>{draft.type}</p><h4>{draft.title || "제목 없음"}</h4><span>{draft.release_date || "발매일 미설정"} · {draft.tracks.length}곡</span><div className="music-summary-badges"><AssetBadge active={draft.tracks.some((track) => Boolean(track.audio_url))}>MP3 {draft.tracks.filter((track) => track.audio_url).length}</AssetBadge><AssetBadge active={draft.tracks.some((track) => Boolean(track.youtube_url))}>YouTube {draft.tracks.filter((track) => track.youtube_url).length}</AssetBadge><AssetBadge active={Boolean(draft.typo_logo_url)}>Typo</AssetBadge></div></div></div>
             <div className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}><span>{validation?.canPublish ? <Check aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}</span><div><b>{validation?.canPublish ? "공개할 준비가 되었습니다." : "공개 전 확인이 필요합니다."}</b><p>{validation?.canPublish ? "필수 정보가 모두 입력되었습니다." : validation?.publishIssues.join(" · ")}</p></div></div>
             <label className="music-publish-toggle"><span><b>웹사이트에 공개</b><small>공개하면 디스코그래피에서 앨범과 업로드한 음원을 볼 수 있습니다.</small></span><input type="checkbox" checked={draft.is_published} onChange={(event) => { if (event.target.checked && !validation?.canPublish) { setError(`공개 전 확인: ${validation?.publishIssues.join(", ")}`); return; } patchDraft({ is_published: event.target.checked }); }} /></label>

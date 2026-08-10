@@ -42,10 +42,11 @@
 .music-editor-tabs { display:flex; height:46px; align-items:flex-end; gap:25px; padding:0 25px; border-bottom:1px solid var(--border-default); }
 .music-editor-tabs button { position:relative; height:46px; padding:0; border:0; background:transparent; color:var(--text-faint); font-size:10px; font-weight:700; cursor:pointer; }
 .music-editor-tabs button.is-active { color:var(--text-primary); }.music-editor-tabs button.is-active::after { content:""; position:absolute; right:0; bottom:-1px; left:0; height:2px; border-radius:2px; background:var(--color-brand-pink); }
-.music-editor-body { max-height:calc(100vh - 310px); overflow-y:auto; padding:28px; }
+.music-editor-body { max-height:calc(100vh - 310px); overflow-y:auto; }
 .music-section-stack { display:flex; max-width:880px; flex-direction:column; gap:23px; margin:0 auto; }
+.music-basic-section { width:100%; max-width:none; margin:0; }
 .music-section-title { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-.music-section-title h3 { margin:0; color:var(--text-primary); font-size:19px; letter-spacing:-.035em; }.music-section-title > div > span { display:block; margin-top:6px; color:var(--text-muted); font-size:10px; }
+.music-section-title h3 { margin:0; color:var(--text-primary); font-size:19px; font-weight:400; letter-spacing:-.035em; }.music-section-title > div > span { display:block; max-width:390px; margin-top:7px; color:var(--text-faint); font-size:10px; font-weight:200; line-height:1.7; }
 .music-section-title > div + div { display:flex; align-items:center; gap:7px; }
 .music-section-title > div:first-child { display:block; min-width:0; }
 .music-field-grid { display:grid; gap:15px; }.music-field-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -84,9 +85,8 @@
 /* Full-bleed overrides */
 .music-editor-shell { min-height:calc(100vh - 118px); border:0; border-radius:0; background:var(--bg-card); }
 .music-library { background:color-mix(in srgb,var(--bg-surface) 67%,var(--bg-card)); }
-.music-editor-body { max-height:calc(100vh - 302px); padding:34px clamp(28px,4vw,58px) 60px; }
+.music-editor-body { max-height:calc(100vh - 302px); }
 .music-section-stack { max-width:1120px; }
-.music-track-section { max-width:none; }
 .music-editor-header { padding-inline:clamp(24px,3vw,42px); }
 .music-editor-tabs { padding-inline:clamp(24px,3vw,42px); }
 
@@ -97,7 +97,6 @@
 .music-workbench { display:flex; height:100%; min-height:0; flex-direction:column; overflow:hidden; }
 .music-editor-header,.music-editor-tabs { flex:0 0 auto; }
 .music-editor-body { min-height:0; max-height:none; flex:1; overflow:visible; }
-.music-release-heading > div > span { max-width:290px; font-size:11px; line-height:1.75; }
 
 @media (max-width: 1280px) {
   .music-editor-shell { grid-template-columns:260px minmax(0,1fr); }
@@ -108,7 +107,7 @@
   .music-editor-shell { display:block; overflow:visible; }
   .music-library { max-height:290px; border-right:0; border-bottom:1px solid var(--border-default); }
   .music-album-list { min-height:100px; max-height:155px; }
-  .music-editor-body { max-height:none; padding:20px; }
+  .music-editor-body { max-height:none; }
   .music-editor-header { top:0; }
   .music-field-grid.two { grid-template-columns:1fr; }
   .music-track-head { display:none; }

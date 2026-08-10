@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
 import { SiSpotify, SiYoutube } from "react-icons/si";
+import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
@@ -163,7 +164,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
               />
             )}
-            {index === 0 && !isFirstImageLoaded && <div className="home-hero-loading" role="status"><span>Loading featured release</span></div>}
+            {index === 0 && !isFirstImageLoaded && <div className="home-hero-loading"><LoadingIndicator label="Loading featured release" /></div>}
 
             <div className="home-hero-content">
               <div className="home-hero-copy">
