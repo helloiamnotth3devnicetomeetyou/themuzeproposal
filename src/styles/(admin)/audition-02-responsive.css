@@ -1,0 +1,112 @@
+@media (max-width: 1280px) {
+  .audition-inbox-summary {
+    grid-template-columns: minmax(210px, 1fr) auto;
+  }
+  .audition-inbox-summary > p {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .audition-admin-page {
+    padding: 20px 16px 42px;
+  }
+  .audition-inbox-summary {
+    min-height: 98px;
+  }
+  .audition-inbox-summary > div:first-child {
+    padding: 16px;
+  }
+  .audition-inbox-summary dl > div {
+    min-width: 83px;
+  }
+  .audition-inbox-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .audition-inbox-filters {
+    width: 100%;
+  }
+  .audition-table {
+    min-width: 720px;
+  }
+  .audition-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .audition-info-grid > div:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--border-default);
+  }
+  .audition-info-grid > div:nth-child(4) {
+    border-top: 1px solid var(--border-default);
+  }
+}
+
+@media (max-width: 480px) {
+  .audition-inbox-summary {
+    grid-template-columns: 1fr;
+  }
+  .audition-inbox-summary dl {
+    display: none;
+  }
+  .audition-inbox-filters {
+    grid-template-columns: 1fr;
+  }
+  .audition-table-wrap { overflow: visible; }
+  .audition-table,
+  .audition-table tbody,
+  .audition-table tr,
+  .audition-table td { display: block; width: 100%; }
+  .audition-table { min-width: 0; border-collapse: separate; }
+  .audition-table thead { display: none; }
+  .audition-table tbody { display: grid; gap: 10px; padding: 10px; }
+  .audition-table tbody tr { position: relative; padding: 14px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-card); }
+  .audition-table td { display: grid; height: auto; min-height: 30px; grid-template-columns: 82px minmax(0,1fr); align-items: center; padding: 5px 0; border: 0; line-height: 1.5; }
+  .audition-table td[data-label]::before { color: var(--text-faint); font-size: 7px; font-weight: 800; letter-spacing: .08em; content: attr(data-label); }
+  .audition-table td:last-child { position: absolute; top: 10px; right: 10px; display: block; width: auto; min-height: 44px; padding: 0; }
+  .audition-table td:last-child button { min-width: 44px; min-height: 44px; font-size: 0; }
+  .audition-table td:last-child button span { margin: 0; font-size: 14px; }
+  .audition-detail-header {
+    grid-template-columns: 50px minmax(0, 1fr);
+    padding: 16px;
+  }
+  .audition-detail-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  .audition-detail-header > .audition-status {
+    grid-column: 2;
+  }
+  .audition-contact-strip {
+    grid-template-columns: 1fr;
+  }
+  .audition-contact-strip a + a {
+    border-top: 1px solid var(--border-default);
+    border-left: 0;
+  }
+  .audition-detail-body {
+    padding: 25px 16px 34px;
+  }
+  .audition-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .audition-info-grid > div + div {
+    border-top: 1px solid var(--border-default);
+    border-left: 0;
+  }
+  .audition-media-link {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .audition-media-link em {
+    display: none;
+  }
+  .audition-status-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .audition-status-bar > div:last-child {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

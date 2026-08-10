@@ -4,6 +4,7 @@ import { ChevronDown, LogIn, Moon, Sun } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
+import mobileStyles from "@/styles/(public)/components/layout/Navbar.mobile.module.css";
 
 type Props = {
   menuButtonRef: React.RefObject<HTMLButtonElement | null>;
@@ -62,23 +63,23 @@ export default function MobileNav({
         </span>
       </button>
     </div>
-    {isOpen && <div ref={mobileMenuRef} id="mobile-menu" role="dialog" tabIndex={-1} aria-modal="true" aria-label={t.common.mobileMenu} className={styles.mobileMenu}>
+    {isOpen && <div ref={mobileMenuRef} id="mobile-menu" role="dialog" tabIndex={-1} aria-modal="true" aria-label={t.common.mobileMenu} className={mobileStyles.mobileMenu}>
       <div className="flex min-h-full flex-col px-6 pb-[max(24px,env(safe-area-inset-bottom))] pt-5">
         <nav aria-label={t.common.mainMenu} className="text-[var(--text-primary)]">
           <Link href="/about" onClick={onClose} className={mobileLinkClass("/about")}>{t.nav.about}</Link>
           {(artists || []).map((artist) => {
             const open = mobileOpenArtist === artist.slug;
-            return <div key={artist.id} className={styles.mobileArtistAccordion}>
-              <button type="button" onClick={() => setMobileOpenArtist(open ? null : artist.slug)} className={styles.mobileArtistTrigger}>
+            return <div key={artist.id} className={mobileStyles.mobileArtistAccordion}>
+              <button type="button" onClick={() => setMobileOpenArtist(open ? null : artist.slug)} className={mobileStyles.mobileArtistTrigger}>
                 <span className="inline-flex items-center gap-2">
                   <span className={styles.artistLogoBadge}>
                     {artist.logo_url ? <Image src={artist.logo_url} alt="" width={16} height={16} unoptimized={/\.svg(?:$|\?)/i.test(artist.logo_url)} className={/\.svg(?:$|\?)/i.test(artist.logo_url) ? "is-theme-svg" : undefined} /> : <i />}
                   </span>
                   {artist.name}
                 </span>
-                <ChevronDown className={`${styles.mobileArtistChevron} ${open ? styles.mobileArtistChevronOpen : ""}`} />
+                <ChevronDown className={`${mobileStyles.mobileArtistChevron} ${open ? mobileStyles.mobileArtistChevronOpen : ""}`} />
               </button>
-              {open && <div className={styles.mobileArtistSublist}>
+              {open && <div className={mobileStyles.mobileArtistSublist}>
                 {links(artist.slug).map(({ href, label }) => <Link key={href} href={href} onClick={onClose} className={`flex min-h-10 items-center font-display text-xs font-bold tracking-[0.1em] transition-colors hover:text-brand-pink ${pathname === href ? "text-brand-pink" : "text-[var(--text-secondary)]"}`}>{label}</Link>)}
               </div>}
             </div>;

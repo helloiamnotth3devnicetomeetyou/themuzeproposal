@@ -3,7 +3,6 @@
   padding: var(--page-top-space) 0 var(--page-bottom-space);
   background: var(--bg-base);
 }
-
 .shell {
   display: grid;
   width: 100%;
@@ -14,18 +13,15 @@
   margin: 0 auto;
   padding: 0 var(--page-gutter);
 }
-
 .header {
   min-width: 0;
   overflow: visible;
   align-self: stretch;
 }
-
 .headerSticky {
   position: sticky;
   top: var(--page-top-space);
 }
-
 .header h1 {
   max-width: 100%;
   margin: 0;
@@ -37,7 +33,6 @@
   line-height: .86;
   white-space: nowrap;
 }
-
 .headerSticky > p {
   max-width: 290px;
   margin: 30px 0 0 4px;
@@ -45,7 +40,6 @@
   font-size: 11px;
   line-height: 1.7;
 }
-
 .headerSticky > div {
   display: grid;
   max-width: 290px;
@@ -57,11 +51,9 @@
   color: var(--text-muted);
   font-size: 9px;
 }
-
 .headerSticky > div svg { width: 14px; height: 14px; grid-row: 1 / span 2; color: var(--color-brand-pink); }
 .headerSticky > div span { color: var(--text-faint); font-weight: 650; letter-spacing: .06em; }
 .headerSticky > div b { margin-top: 6px; overflow: hidden; color: var(--text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-
 .accountBlock { max-width: 290px; margin: 18px 0 0 4px; padding-top: 16px; border-top: 1px solid var(--border-default); }
 .accountProfile {
   display: grid;
@@ -71,7 +63,6 @@
   color: inherit;
   text-decoration: none;
 }
-
 .accountProfile > span { display: grid; width: 32px; height: 32px; overflow: hidden; grid-row: 1 / span 2; place-items: center; border-radius: 50%; background: var(--color-brand-pink); color: var(--color-static-black); font-size: 11px; font-weight: 800; }
 .accountProfile > span img { width: 100%; height: 100%; object-fit: cover; }
 .accountProfile > b { overflow: hidden; color: var(--text-primary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
@@ -84,13 +75,11 @@
 .quotaInfo { position: relative; display: grid; width: 15px; height: 15px; place-items: center; border: 1px solid var(--border-strong); border-radius: 50%; color: var(--text-muted); font-size: 9px; font-weight: 700; cursor: help; }
 .quotaInfo > span { position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: 2; width: max-content; max-width: 210px; padding: 7px 9px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 10px; font-weight: 500; line-height: 1.4; opacity: 0; pointer-events: none; transform: translate(-50%, 3px); transition: opacity var(--duration-fast), transform var(--duration-fast); }
 .quotaInfo:hover > span,.quotaInfo:focus-visible > span { opacity: 1; transform: translate(-50%, 0); }
-
 .contentColumn {
   min-width: 0;
   align-self: start;
   border-top: 2px solid var(--text-primary);
 }
-
 .tabs {
   display: grid;
   width: min(290px, 100%);
@@ -99,7 +88,6 @@
   border-top: 1px solid var(--border-default);
   border-bottom: 1px solid var(--border-default);
 }
-
 .tabs button {
   position: relative;
   height: 54px;
@@ -113,9 +101,7 @@
   text-align: left;
   cursor: pointer;
 }
-
 .tabs button + button { border-top: 1px solid var(--border-default); }
-
 .tabs button::after {
   position: absolute;
   top: 0;
@@ -125,11 +111,9 @@
   background: transparent;
   content: "";
 }
-
 .tabs button:hover { color: var(--text-primary); }
 .tabs .activeTab { color: var(--text-primary); }
 .tabs .activeTab::after { background: var(--color-brand-pink); }
-
 .error {
   display: flex;
   min-height: 52px;
@@ -142,24 +126,20 @@
   color: var(--palette-e47777);
   font-size: var(--text-xs);
 }
-
 .error svg { width: 17px; height: 17px; flex: 0 0 17px; }
 .error span { flex: 1; }
 .error button { border: 0; background: transparent; color: inherit; cursor: pointer; }
-
 .form {
   display: flex;
   flex-direction: column;
   gap: 28px;
   padding: 44px 14px 0;
 }
-
 .myReports { min-height: 500px; }
 .listHeading { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 30px; padding: 0 14px; border-bottom: 1px solid var(--border-default); }
 .listHeading h2 { margin: 0; color: var(--text-primary); font-size: 13px; letter-spacing: -.02em; }
 .listHeading p { display: none; }
 .listHeading > span { color: var(--text-faint); font-size: 9px; letter-spacing: .06em; }
-
 .reportList { min-height: 440px; }
 .reportItem { position: relative; display: flex; min-height: 138px; align-items: center; justify-content: space-between; gap: 36px; padding: 30px 14px; border-bottom: 1px solid var(--border-default); }
 .reportItem::before { position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--color-brand-pink); content: ""; opacity: 0; transform: scaleY(.25); transition: opacity var(--duration-fast), transform var(--duration-fast); }
@@ -174,13 +154,11 @@
 .reportStatus > span[data-status="resolved"] { border-color: var(--alpha-58b38c-35); color: var(--palette-58b38c); }
 .reportStatus > span[data-status="rejected"] { color: var(--text-faint); }
 .reportStatus time { color: var(--text-faint); font-size: 10px; }
-
 .emptyState { display: flex; min-height: 360px; align-items: center; justify-content: center; flex-direction: column; border-bottom: 1px solid var(--border-default); text-align: center; }
 .emptyState p { margin: 0; color: var(--text-primary); font-size: var(--text-base); font-weight: 700; }
 .emptyState > span { margin-top: 10px; color: var(--text-muted); font-size: var(--text-xs); }
 .emptyState button { display: flex; align-items: center; gap: 8px; margin-top: 26px; padding: 0; border: 0; background: transparent; color: var(--text-primary); font-size: var(--text-xs); font-weight: 700; cursor: pointer; }
 .emptyState button:hover { color: var(--color-brand-pink); }
-
 .formRow {
   display: grid;
   min-width: 0;
@@ -188,7 +166,6 @@
   align-items: center;
   gap: 34px;
 }
-
 .formRow > label,
 .rowLabel {
   color: var(--text-secondary);
@@ -196,13 +173,11 @@
   font-weight: 650;
   line-height: 1.45;
 }
-
 .formRow i,
 .rowLabel i {
   color: var(--color-brand-pink);
   font-style: normal;
 }
-
 .selectControl { min-width: 0; }
 .customSelect > button {
   height: 56px;
@@ -215,7 +190,6 @@
 }
 .customSelect > button:hover { background: transparent; }
 .customSelect > div { border-radius: 2px; }
-
 .formRow > input,
 .formRow > select,
 .controlWithMeta > input,
@@ -230,20 +204,17 @@
   font-size: var(--text-sm);
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
-
 .formRow > input,
 .formRow > select,
 .controlWithMeta > input {
   height: 56px;
   padding: 0 16px;
 }
-
 .controlWithMeta { position: relative; min-width: 0; }
 .controlWithMeta > input { padding-right: 82px; }
 .controlWithMeta > textarea { min-height: 150px; padding: 15px 16px 32px; line-height: 1.7; resize: vertical; }
 .controlWithMeta > span { position: absolute; right: 14px; bottom: 11px; color: var(--text-faint); font-size: 10px; pointer-events: none; }
 .controlWithMeta > input + span { top: 21px; bottom: auto; }
-
 .formRow input::placeholder,
 .formRow textarea::placeholder { color: var(--text-faint) !important; }
 .formRow input:hover,
@@ -254,9 +225,7 @@
 .formRow textarea:focus { border-color: var(--color-brand-pink) !important; box-shadow: 0 0 0 3px var(--alpha-fc6fcf-08); }
 .alignTop { align-items: start; }
 .alignTop > label { padding-top: 20px; }
-
 .fileUploadArea { min-width: 0; }
-
 .uploadButton {
   position: relative;
   display: flex;
@@ -269,7 +238,6 @@
   cursor: pointer;
   transition: border-color var(--duration-fast), color var(--duration-fast);
 }
-
 .uploadButton:hover { border-color: var(--color-brand-pink); }
 .uploadButton > svg { width: 17px; height: 17px; flex: 0 0 17px; color: var(--color-brand-pink); }
 .uploadButton > span { min-width: 0; flex: 1; }
@@ -281,7 +249,6 @@
 .uploadButton input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .uploadButton:has(input:focus-visible) { outline: 2px solid var(--color-brand-pink); outline-offset: 2px; }
 .uploadButton:has(input:disabled) { cursor: default; opacity: .65; }
-
 .fileList { border-right: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); border-left: 1px solid var(--border-default); }
 .fileItem { display: flex; min-height: 52px; align-items: center; gap: 12px; padding: 9px 12px 9px 16px; }
 .fileItem + .fileItem { border-top: 1px solid var(--border-default); }
@@ -290,14 +257,12 @@
 .fileItem button { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; border: 0; background: transparent; color: var(--text-faint); cursor: pointer; }
 .fileItem button:hover { color: var(--palette-e47777); }
 .fileItem button svg { width: 14px; height: 14px; }
-
 .guide {
   margin: 6px 0 4px;
   color: var(--text-muted);
   font-size: var(--text-xs);
   line-height: 1.75;
 }
-
 .confirm {
   position: relative;
   display: flex;
@@ -308,13 +273,11 @@
   font-weight: 650;
   cursor: pointer;
 }
-
 .confirm input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .confirm > span { display: grid; width: 20px; height: 20px; flex: 0 0 20px; place-items: center; border: 1px solid var(--border-strong); border-radius: 3px; color: transparent; }
 .confirm > span svg { width: 12px; height: 12px; }
 .confirm input:checked + span { border-color: var(--color-brand-pink); background: var(--color-brand-pink); color: var(--palette-171017); }
 .confirm:has(input:focus-visible) > span { outline: 2px solid var(--color-brand-pink); outline-offset: 2px; }
-
 .submit {
   width: 100%;
   height: 56px;
@@ -335,17 +298,13 @@
   user-select: none;
   transition: border-color var(--duration-fast), background-color var(--duration-fast), color var(--duration-fast);
 }
-
 .submit:hover:not(:disabled) { border-color: var(--color-brand-pink); }
 .submit.holding { border-color: var(--color-brand-pink); background-size: 100% 100%; color: var(--palette-171017); transition: background-size 1.5s linear, border-color var(--duration-fast), color var(--duration-fast); }
 .submit:disabled { opacity: .5; cursor: wait; }
-
 .submitHint { margin: 0 0 -17px; color: var(--text-faint); font-size: 10px; line-height: 1.5; text-align: center; }
-
 .validationSummary { padding: 15px 17px; border: 1px solid var(--alpha-e46b6b-3); border-left: 2px solid var(--color-status-danger); background: var(--alpha-e46b6b-05); }
 .validationSummary b { display: block; color: var(--palette-e47777); font-size: 11px; }
 .validationSummary p { margin: 7px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
-
 .success {
   display: flex;
   width: min(620px, calc(100% - 40px));
@@ -356,7 +315,6 @@
   margin: 2vh auto 0;
   text-align: center;
 }
-
 .success > svg { width: 42px; height: 42px; color: var(--color-brand-pink); }
 .success > p { margin: 25px 0 0; color: var(--color-brand-pink); font-family: var(--font-display); font-size: 9px; letter-spacing: .14em; }
 .success h1 { margin: 13px 0 0; color: var(--text-primary); font-size: clamp(27px, 4vw, 38px); letter-spacing: -.05em; }
@@ -368,7 +326,6 @@
 .success dd { margin: 8px 0 0; color: var(--text-primary); font-size: 13px; font-weight: 700; }
 .success button { display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--text-primary); font-size: var(--text-xs); font-weight: 700; cursor: pointer; }
 .success button:hover { color: var(--color-brand-pink); }
-
 @media (max-width: 1024px) {
   .page { padding-top: 124px; }
   .shell { grid-template-columns: minmax(210px, .27fr) minmax(0, .73fr); gap: 40px; padding: 0 28px; }
@@ -376,7 +333,6 @@
   .header h1 { font-size: clamp(38px, 5.4vw, 56px); }
   .formRow { grid-template-columns: 140px minmax(0, 1fr); gap: 24px; }
 }
-
 @media (max-width: 767px) {
   .page { padding: var(--page-top-space) 0 var(--page-bottom-space); }
   .shell { display: block; padding: 0 var(--page-gutter); }
@@ -393,7 +349,6 @@
   .guide { margin-top: 8px; }
   .reportItem { min-height: 116px; }
 }
-
 @media (max-width: 480px) {
   .form { gap: 22px; }
   .formRow > input,
@@ -408,7 +363,6 @@
   .reportStatus { width: 100%; align-items: center; justify-content: space-between; flex-direction: row; }
   .success { min-height: calc(100vh - 104px); }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .formRow input,
   .formRow select,
@@ -417,7 +371,6 @@
   .submit { transition: none; }
 }
 .page p, .page label, .page input, .page textarea, .page button { font-size: max(14px, 1em); }
-
 .accountProfile,.tabs button,.reportItem,.fileItem button,.confirm > span { transition:color var(--duration-fast) ease,background-color var(--duration-fast) ease,transform var(--duration-fast) ease; }
 .accountProfile:active,.tabs button:active,.submit:active:not(:disabled):not(.holding) { transform:translateY(1px); }
 .accountProfile:focus-visible { outline:2px solid var(--color-brand-pink); outline-offset:4px; }
@@ -428,7 +381,6 @@
 .fileItem button:focus-visible,.submit:focus-visible { outline:2px solid var(--color-brand-pink); outline-offset:3px; }
 .error,.validationSummary { animation:publicFeedbackIn var(--duration-base) ease both; }
 .success { animation:publicFeedbackIn var(--duration-slow) ease both; }
-
 @media (prefers-reduced-motion:reduce) {
   .accountProfile,.tabs button,.reportItem,.fileItem button,.confirm > span { transition:none; }
   .error,.fileItem,.validationSummary,.success { animation:none; }

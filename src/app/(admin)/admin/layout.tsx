@@ -5,7 +5,8 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import "@/styles/(admin)/base.css";
 import "@/styles/(admin)/shell.css";
-import "@/styles/(admin)/sidebar.css";
+import "@/styles/(admin)/sidebar-layout.css";
+import "@/styles/(admin)/sidebar-commands.css";
 import "@/styles/(admin)/dashboard.css";
 import "@/styles/(admin)/music.css";
 import "@/styles/(admin)/workbench.css";
@@ -19,7 +20,8 @@ import "@/styles/(admin)/gallery.css";
 import "@/styles/(admin)/settings.css";
 import "@/styles/(admin)/hero.css";
 import "@/styles/(admin)/audition.css";
-import "@/styles/(admin)/responsive.css";
+import "@/styles/(admin)/responsive-base.css";
+import "@/styles/(admin)/responsive-polish.css";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 

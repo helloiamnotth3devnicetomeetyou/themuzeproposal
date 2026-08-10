@@ -11,6 +11,7 @@ import type { Locale } from "@/core/i18n/translations";
 import type { Artist, Member, SceneCopy } from "./artist-scene-types";
 import { getEnglishFirstMemberName } from "./artist-scene-types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
+import inlineMemberStyles from "@/styles/(public)/pages/artist-scene-inline-member.module.css";
 
 type Props = {
   artist: Artist;
@@ -204,18 +205,18 @@ export default function MobileArtistScene({
       <section className={styles.mobileSceneControls} aria-label={copy.select}>
         {selectedMember ? (
           /* Member Info Display (Revealed Inline) */
-          <div className={styles.mobileInlineMemberPanel}>
-            <div className={styles.mobileInlineMemberHeader}>
+          <div className={inlineMemberStyles.mobileInlineMemberPanel}>
+            <div className={inlineMemberStyles.mobileInlineMemberHeader}>
               <div>
                 <h2>{getEnglishFirstMemberName(selectedMember)}</h2>
                 {selectedMember.name !== getEnglishFirstMemberName(selectedMember) && <p>{selectedMember.name}</p>}
               </div>
-              <button type="button" className={styles.mobileInlineClose} onClick={onCloseMember} aria-label={copy.close}>
+              <button type="button" className={inlineMemberStyles.mobileInlineClose} onClick={onCloseMember} aria-label={copy.close}>
                 <X aria-hidden="true" />
               </button>
             </div>
-            {memberBio && <p className={styles.mobileInlineMemberBio}>{memberBio}</p>}
-            <div className={styles.mobileInlineSheetNavigation}>
+            {memberBio && <p className={inlineMemberStyles.mobileInlineMemberBio}>{memberBio}</p>}
+            <div className={inlineMemberStyles.mobileInlineSheetNavigation}>
               <button type="button" onClick={() => onNavigateMember(-1)}>
                 <ArrowLeft aria-hidden="true" />
                 {copy.previous}
