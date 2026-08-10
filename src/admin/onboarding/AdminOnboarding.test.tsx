@@ -43,8 +43,8 @@ describe("AdminOnboarding mobile guide", () => {
   });
 
   it("collapses the mobile sheet without trapping the admin screen", async () => {
-    const { container } = render(<><button type="button" data-tour-id="hero-refresh">Refresh</button><AdminOnboarding userId="user-1" role="editor" artists={[]} isCollapsed={false} canNavigate={() => true} /></>);
-    const target = container.querySelector<HTMLElement>("[data-tour-id='hero-refresh']")!;
+    const { container } = render(<><button type="button" data-tour-id="draft-reset">Reset</button><AdminOnboarding userId="user-1" role="editor" artists={[]} isCollapsed={false} canNavigate={() => true} /></>);
+    const target = container.querySelector<HTMLElement>("[data-tour-id='draft-reset']")!;
     target.getBoundingClientRect = () => ({ x: 20, y: 80, top: 80, left: 20, right: 180, bottom: 124, width: 160, height: 44, toJSON: () => ({}) });
     Object.defineProperty(document, "elementsFromPoint", { configurable: true, value: () => [target] });
 
@@ -66,7 +66,7 @@ describe("AdminOnboarding mobile guide", () => {
     expect(sheet).toHaveClass("is-mobile-collapsed");
     expect(sheet).toHaveAttribute("aria-modal", "false");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle.querySelector("strong")).toHaveTextContent("강조된 ‘새로고침’ 위치를 확인하세요.");
+    expect(toggle.querySelector("strong")).toHaveTextContent("강조된 ‘되돌리기’ 위치를 확인하세요.");
   });
 
   it("offers resume and restart before reopening a paused guide", async () => {
@@ -92,23 +92,23 @@ describe("AdminOnboarding mobile guide", () => {
 
   it("prefers an enabled repeated target and accepts practice on any matching target", async () => {
     const { container } = render(<>
-      <button type="button" data-tour-id="hero-refresh">Refresh</button>
+      <button type="button" data-tour-id="draft-reset">Reset</button>
       <button type="button" data-tour-id="hero-add" disabled>Added</button>
       <button type="button" data-tour-id="hero-add">Add</button>
       <article data-tour-id="hero-reorder"><button type="button">First slide</button></article>
       <article data-tour-id="hero-reorder"><button type="button">Second slide</button></article>
       <AdminOnboarding userId="user-1" role="editor" artists={[]} isCollapsed={false} canNavigate={() => true} />
     </>);
-    const refresh = container.querySelector<HTMLElement>("[data-tour-id='hero-refresh']")!;
+    const reset = container.querySelector<HTMLElement>("[data-tour-id='draft-reset']")!;
     const [added, add] = Array.from(container.querySelectorAll<HTMLElement>("[data-tour-id='hero-add']"));
     const [firstSlide, secondSlide] = Array.from(container.querySelectorAll<HTMLElement>("[data-tour-id='hero-reorder']"));
     const place = (element: HTMLElement, top: number) => {
       element.getBoundingClientRect = () => ({ x: 20, y: top, top, left: 20, right: 180, bottom: top + 44, width: 160, height: 44, toJSON: () => ({}) });
     };
-    [refresh, added, add, firstSlide, secondSlide].forEach((element, index) => place(element, 80 + index * 60));
+    [reset, added, add, firstSlide, secondSlide].forEach((element, index) => place(element, 80 + index * 60));
     Object.defineProperty(document, "elementsFromPoint", {
       configurable: true,
-      value: (_x: number, y: number) => [[refresh], [added], [add], [firstSlide], [secondSlide]][Math.max(0, Math.min(4, Math.floor((y - 58) / 60)))],
+      value: (_x: number, y: number) => [[reset], [added], [add], [firstSlide], [secondSlide]][Math.max(0, Math.min(4, Math.floor((y - 58) / 60)))],
     });
 
     await vi.waitFor(() => expect(container.querySelector(".admin-guide-launcher")).toBeInTheDocument());

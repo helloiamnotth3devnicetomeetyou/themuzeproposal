@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, Undo2 } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import { buildDraftDiff, type DraftDiffItem } from "@/admin/utils/draft-diff";
 
@@ -39,6 +39,17 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
     await onSave();
   };
 
+  const reset = async () => {
+    if (!await confirm({
+      title: "변경사항을 모두 되돌릴까요?",
+      description: "이 페이지에서 저장하지 않은 변경사항을 버리고 마지막 저장 상태로 돌아갑니다.",
+      confirmLabel: "모두 되돌리기",
+      tone: "danger",
+    })) return;
+    window.dispatchEvent(new Event("admin-draft-reset"));
+    window.setTimeout(() => window.location.reload(), 0);
+  };
+
   useEffect(() => {
     if (!saveRequested.current || saving || dirty) return;
     saveRequested.current = false;
@@ -56,6 +67,7 @@ export default function DraftSaveButton({ snapshot, draft, dirty, saving, onSave
   }, [dirty]);
 
   const buttonLabel = saving ? "저장 중…" : justSaved && !dirty ? "저장됨" : `${label}${diff.length ? ` (${diff.length})` : ""}`;
+  const saveStatus = saving ? "저장 중" : dirty ? "저장하지 않은 변경사항" : "저장됨";
 
-  return <><span className="sr-only" role="status" aria-live="polite">{saving ? "저장 중…" : justSaved ? "저장됨" : ""}</span><button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{buttonLabel}</button></>;
+  return <><span className={`draft-save-status${dirty ? " is-dirty" : ""}`} role="status" aria-live="polite">{saveStatus}</span><button type="button" data-tour-id="draft-reset" className="admin-btn admin-btn-secondary draft-reset-button" disabled={!dirty || saving} onClick={() => void reset()}><Undo2 aria-hidden="true" />되돌리기</button><button type="button" data-tour-id="draft-save" className="admin-btn admin-btn-primary draft-save-button" disabled={disabled || !dirty || saving} onClick={() => void save()}><Save aria-hidden="true" />{buttonLabel}</button></>;
 }

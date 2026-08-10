@@ -76,6 +76,7 @@
 .content-workbench-tabs button:hover { color: var(--text-secondary); }
 .content-workbench-tabs button.is-active { color: var(--text-primary); }
 .content-workbench-tabs button.is-active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; border-radius: 2px; background: var(--color-brand-pink); }
+.content-tab-missing { display: inline-grid; min-width: 15px; height: 15px; place-items: center; margin-left: 5px; border-radius: 999px; background: var(--alpha-e46b6b-12); color: var(--color-status-danger); font-size: 8px; font-weight: 700; }
 .content-workbench-body {
   min-height: 0;
   flex: 1;
@@ -254,6 +255,7 @@
 .content-tab-complete { display: inline-grid; width: 13px; height: 13px; margin-left: 5px; vertical-align: -2px; place-items: center; color: var(--color-status-success); }
 .content-tab-complete svg { width: 11px; height: 11px; stroke-width: 2.25; }
 .draft-save-button { min-width: 132px; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
+.draft-reset-button { min-width: 92px; flex: 0 0 auto; white-space: nowrap; }
 .draft-save-status { color: var(--color-status-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .draft-save-status.is-dirty { color: var(--text-secondary); }
 .draft-save-status.is-invalid { color: var(--palette-df7777); }

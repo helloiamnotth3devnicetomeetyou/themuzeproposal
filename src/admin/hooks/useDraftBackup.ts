@@ -42,6 +42,12 @@ export function useDraftBackup<T>({ key, draft, snapshot, dirty, restore }: { ke
     return () => { window.dispatchEvent(new CustomEvent("admin-draft-dirty", { detail: { key, dirty: false } })); };
   }, [diff, dirty, key]);
 
+  useEffect(() => {
+    const reset = () => { localStorage.removeItem(key); setRecovery(null); };
+    window.addEventListener("admin-draft-reset", reset);
+    return () => window.removeEventListener("admin-draft-reset", reset);
+  }, [key]);
+
   const restoreBackup = useCallback(() => { if (recovery) { restore(recovery.draft); window.dispatchEvent(new CustomEvent("admin-toast", { detail: "임시 작업을 복구했습니다." })); } setRecovery(null); }, [recovery, restore]);
   const discardBackup = useCallback(() => { localStorage.removeItem(key); setRecovery(null); }, [key]);
   return { recovery, restoreBackup, discardBackup };

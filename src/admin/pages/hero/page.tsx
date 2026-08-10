@@ -21,7 +21,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Image as ImageIcon, Plus, RefreshCw, Search } from "lucide-react";
+import { Image as ImageIcon, Plus, Search } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
@@ -183,10 +183,7 @@ export default function HeroAdminPage() {
           <div><dt>등록</dt><dd>{slides.length}</dd></div>
           <div><dt>공개 방식</dt><dd className="is-label">자동</dd></div>
         </dl>
-        <button type="button" data-tour-id="hero-refresh" className="admin-btn admin-btn-secondary hero-admin-refresh" onClick={() => void load(true)} disabled={Boolean(savingId)}>
-          <RefreshCw aria-hidden="true" /> 새로고침
-        </button>
-        <DraftSaveButton snapshot={orderSnapshot} draft={slides} dirty={orderDirty} saving={savingId === "order"} onSave={saveSlides} labels={{ $root: "메인 노출 목록" }} />
+        <div className="hero-admin-save-actions"><DraftSaveButton snapshot={orderSnapshot} draft={slides} dirty={orderDirty} saving={savingId === "order"} onSave={saveSlides} labels={{ $root: "메인 노출 목록" }} /></div>
       </section>
 
       {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={discardBackup}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={restoreBackup}>복구</button></div>}

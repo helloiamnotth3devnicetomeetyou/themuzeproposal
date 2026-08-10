@@ -236,7 +236,7 @@
 
 @media (max-width: 1280px) {
   .hero-admin-summary {
-    grid-template-columns: 52px minmax(0, 1fr) auto auto;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
   }
   .hero-admin-summary dl {
     display: none;
@@ -260,7 +260,7 @@
     padding: 20px 16px 42px;
   }
   .hero-admin-summary {
-    grid-template-columns: 44px minmax(0, 1fr) auto auto;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     min-height: 96px;
     padding: 16px;
   }
@@ -337,12 +337,10 @@
   .hero-admin-summary {
     grid-template-columns: 40px minmax(0, 1fr);
   }
-  .hero-admin-summary .draft-save-button {
+  .hero-admin-save-actions {
     width: 100%;
     grid-column: 1 / -1;
-  }
-  .hero-admin-refresh {
-    display: none;
+    flex-wrap: wrap;
   }
   .hero-admin-panel-heading > em {
     display: none;

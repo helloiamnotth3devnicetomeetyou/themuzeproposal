@@ -131,12 +131,22 @@ export function useAdminEntityEditor<T>({
   }, [toast]);
 
   useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => {
-      if (dirty) event.preventDefault();
+    let resetting = false;
+    const reset = () => {
+      resetting = true;
+      if (storageKey) window.localStorage.removeItem(storageKey);
+      setRecovery(null);
     };
+    const warn = (event: BeforeUnloadEvent) => {
+      if (dirty && !resetting) event.preventDefault();
+    };
+    window.addEventListener("admin-draft-reset", reset);
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+    return () => {
+      window.removeEventListener("admin-draft-reset", reset);
+      window.removeEventListener("beforeunload", warn);
+    };
+  }, [dirty, storageKey]);
 
   useEffect(() => {
     let active = true;
