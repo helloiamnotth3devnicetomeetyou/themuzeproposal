@@ -137,6 +137,47 @@ $$;
 
 reset role;
 
+insert into public.audition_submissions (
+  id,
+  name,
+  category,
+  status,
+  reviewer_notes
+) values (
+  '00000000-0000-0000-0000-000000000401',
+  '감사 지원자',
+  '보컬',
+  'pending',
+  '초기 심사 메모'
+);
+
+set local role authenticated;
+update public.audition_submissions
+set reviewer_notes = '수정된 심사 메모'
+where id = '00000000-0000-0000-0000-000000000401';
+
+do $$
+declare
+  v_log public.admin_audit_logs%rowtype;
+begin
+  select * into v_log
+  from public.admin_audit_logs
+  where table_name = 'audition_submissions'
+    and record_id = '00000000-0000-0000-0000-000000000401'
+    and operation = 'UPDATE'
+  order by id desc
+  limit 1;
+
+  if v_log.changed_fields <> array['reviewer_notes']::text[]
+    or v_log.before_values ->> 'reviewer_notes' <> '초기 심사 메모'
+    or v_log.after_values ->> 'reviewer_notes' <> '수정된 심사 메모' then
+    raise exception 'reviewer_notes audit snapshot is incomplete';
+  end if;
+end;
+$$;
+
+reset role;
+
 insert into public.contact_inquiries (
   id,
   category,

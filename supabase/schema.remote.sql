@@ -87,7 +87,7 @@ begin
       v_safe_fields := case tg_table_name
         when 'contact_inquiries' then array['status', 'admin_note', 'answered_at', 'answered_by']
         when 'protect_reports' then array['status', 'admin_note', 'answered_at', 'answered_by']
-        when 'audition_submissions' then array['status', 'notes']
+        when 'audition_submissions' then array['status', 'reviewer_notes']
         else array[]::text[]
       end;
     else
@@ -115,7 +115,7 @@ begin
       v_safe_fields := case tg_table_name
         when 'contact_inquiries' then array['id', 'category', 'inquiry_type', 'status', 'admin_note', 'answered_at', 'answered_by']
         when 'protect_reports' then array['id', 'report_type', 'status', 'admin_note']
-        when 'audition_submissions' then array['id', 'category', 'status', 'notes']
+        when 'audition_submissions' then array['id', 'category', 'status', 'reviewer_notes']
         else array['id']
       end;
 
@@ -282,7 +282,7 @@ $$;
 ALTER FUNCTION "public"."consume_login_rate_limit"("p_identifier_hash" "text", "p_ip_hash" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) RETURNS TABLE("is_allowed" boolean, "retry_after_seconds" integer)
+CREATE OR REPLACE FUNCTION "public"."consume_submission_rate_limit"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) RETURNS TABLE("is_allowed" boolean, "retry_after_seconds" integer, "remaining" integer)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'private', 'public', 'pg_temp'
     AS $$
@@ -290,33 +290,24 @@ declare
   v_attempt_count integer;
   v_window_started_at timestamptz;
 begin
-  if p_scope not in ('contact_inquiry', 'protect_report', 'audition_submission')
+  if p_scope not in ('contact_inquiry', 'protect_report', 'audition_submission', 'contact_inquiry_attempt', 'protect_report_attempt', 'audition_submission_attempt', 'admin_upload_attempt')
     or length(p_key_hash) <> 64
-    or p_limit < 1 or p_limit > 100
+    or p_limit < 1 or p_limit > 1000
     or p_window_seconds < 1 or p_window_seconds > 86400 then
     raise exception 'invalid submission rate-limit arguments' using errcode = '22023';
   end if;
 
-  insert into private.submission_rate_limits as limits (
-    scope, key_hash, attempt_count, window_started_at, updated_at
-  ) values (p_scope, p_key_hash, 1, now(), now())
+  insert into private.submission_rate_limits as limits (scope, key_hash, attempt_count, window_started_at, updated_at)
+  values (p_scope, p_key_hash, 1, now(), now())
   on conflict (scope, key_hash) do update set
-    attempt_count = case
-      when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then 1
-      else limits.attempt_count + 1
-    end,
-    window_started_at = case
-      when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then now()
-      else limits.window_started_at
-    end,
+    attempt_count = case when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then 1 else limits.attempt_count + 1 end,
+    window_started_at = case when limits.window_started_at < now() - make_interval(secs => p_window_seconds) then now() else limits.window_started_at end,
     updated_at = now()
   returning attempt_count, window_started_at into v_attempt_count, v_window_started_at;
 
-  return query select
-    v_attempt_count <= p_limit,
-    case when v_attempt_count <= p_limit then 0
-      else greatest(1, ceil(extract(epoch from (v_window_started_at + make_interval(secs => p_window_seconds) - now())))::integer)
-    end;
+  return query select v_attempt_count <= p_limit,
+    case when v_attempt_count <= p_limit then 0 else greatest(1, ceil(extract(epoch from (v_window_started_at + make_interval(secs => p_window_seconds) - now())))::integer) end,
+    greatest(0, p_limit - v_attempt_count);
 end;
 $$;
 
@@ -398,6 +389,28 @@ $$;
 
 
 ALTER FUNCTION "public"."get_my_audition_submissions"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_submission_rate_limit_remaining"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) RETURNS TABLE("remaining" integer)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'private', 'public', 'pg_temp'
+    AS $$
+  select case
+    when limits.window_started_at is null
+      or limits.window_started_at < now() - make_interval(secs => p_window_seconds) then p_limit
+    else greatest(0, p_limit - limits.attempt_count)
+  end
+  from (select 1) seed
+  left join private.submission_rate_limits limits
+    on limits.scope = p_scope and limits.key_hash = p_key_hash
+  where p_scope in ('contact_inquiry', 'protect_report', 'audition_submission')
+    and length(p_key_hash) = 64
+    and p_limit between 1 and 1000
+    and p_window_seconds between 1 and 86400;
+$$;
+
+
+ALTER FUNCTION "public"."get_submission_rate_limit_remaining"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."has_admin_role"("p_role" "text") RETURNS boolean
@@ -683,6 +696,48 @@ $$;
 
 
 ALTER FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare
+  v_actor_id uuid := auth.uid();
+  v_actor_role text;
+  v_target_role text;
+begin
+  if p_role is not null and p_role not in ('super_admin', 'editor') then
+    raise exception 'INVALID_ROLE' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('admin-role-transition'));
+
+  select role into v_actor_role from public.profiles where id = v_actor_id;
+  if v_actor_role is distinct from 'super_admin' then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if v_actor_id = p_target_id then
+    raise exception 'CANNOT_CHANGE_OWN_ROLE' using errcode = 'P0001';
+  end if;
+
+  select role into v_target_role from public.profiles where id = p_target_id;
+  if not found then
+    raise exception 'NOT_FOUND' using errcode = 'P0002';
+  end if;
+  if v_target_role = 'super_admin' and p_role is distinct from 'super_admin'
+    and (select count(*) from public.profiles where role = 'super_admin') <= 1 then
+    raise exception 'LAST_SUPER_ADMIN' using errcode = 'P0001';
+  end if;
+
+  update public.profiles
+  set role = p_role, updated_at = now()
+  where id = p_target_id;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."set_contact_attachment_size_from_storage"() RETURNS "trigger"
@@ -1350,6 +1405,11 @@ ALTER TABLE ONLY "public"."albums"
 
 
 
+ALTER TABLE "public"."albums"
+    ADD CONSTRAINT "albums_youtube_url_http_check" CHECK ((("youtube_url" IS NULL) OR ("youtube_url" ~* '^https?://[^[:space:]]+$'::"text"))) NOT VALID;
+
+
+
 ALTER TABLE ONLY "public"."artist_gallery"
     ADD CONSTRAINT "artist_gallery_pkey" PRIMARY KEY ("id");
 
@@ -1430,6 +1490,11 @@ ALTER TABLE ONLY "public"."avatar_assets"
 
 
 
+ALTER TABLE "public"."contact_inquiries"
+    ADD CONSTRAINT "contact_inquiries_attachment_name_length" CHECK ((("attachment_name" IS NULL) OR ("char_length"("attachment_name") <= 255))) NOT VALID;
+
+
+
 ALTER TABLE ONLY "public"."contact_inquiries"
     ADD CONSTRAINT "contact_inquiries_pkey" PRIMARY KEY ("id");
 
@@ -1455,6 +1520,11 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 
+ALTER TABLE "public"."protect_report_attachments"
+    ADD CONSTRAINT "protect_report_attachments_file_name_length" CHECK ((("char_length"("file_name") >= 1) AND ("char_length"("file_name") <= 255))) NOT VALID;
+
+
+
 ALTER TABLE ONLY "public"."protect_report_attachments"
     ADD CONSTRAINT "protect_report_attachments_pkey" PRIMARY KEY ("id");
 
@@ -1462,6 +1532,11 @@ ALTER TABLE ONLY "public"."protect_report_attachments"
 
 ALTER TABLE ONLY "public"."protect_reports"
     ADD CONSTRAINT "protect_reports_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE "public"."protect_reports"
+    ADD CONSTRAINT "protect_reports_post_url_length" CHECK ((("char_length"("post_url") >= 1) AND ("char_length"("post_url") <= 2048))) NOT VALID;
 
 
 
@@ -1985,11 +2060,7 @@ CREATE POLICY "admins delete audition fields" ON "public"."audition_form_fields"
 
 
 
-CREATE POLICY "admins delete contact inquiries" ON "public"."contact_inquiries" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
-
-
-
-CREATE POLICY "admins delete protect reports" ON "public"."protect_reports" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
+CREATE POLICY "admins delete audition submissions" ON "public"."audition_submissions" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
 
 
 
@@ -2283,6 +2354,11 @@ GRANT ALL ON FUNCTION "public"."get_my_audition_submissions"() TO "authenticated
 
 
 
+REVOKE ALL ON FUNCTION "public"."get_submission_rate_limit_remaining"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_submission_rate_limit_remaining"("p_scope" "text", "p_key_hash" "text", "p_limit" integer, "p_window_seconds" integer) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."has_admin_role"("p_role" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."has_admin_role"("p_role" "text") TO "service_role";
 GRANT ALL ON FUNCTION "public"."has_admin_role"("p_role" "text") TO "authenticated";
@@ -2333,6 +2409,12 @@ GRANT ALL ON FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_ite
 
 
 
+REVOKE ALL ON FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") TO "authenticated";
+
+
+
 REVOKE ALL ON FUNCTION "public"."set_contact_attachment_size_from_storage"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."set_contact_attachment_size_from_storage"() TO "service_role";
 
@@ -2346,7 +2428,7 @@ GRANT ALL ON FUNCTION "public"."touch_audition_updated_at"() TO "service_role";
 
 
 
-GRANT SELECT ON TABLE "public"."admin_audit_logs" TO "service_role";
+GRANT SELECT,INSERT ON TABLE "public"."admin_audit_logs" TO "service_role";
 GRANT SELECT ON TABLE "public"."admin_audit_logs" TO "authenticated";
 
 
@@ -2415,6 +2497,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."audition_form_fields" TO "a
 
 
 GRANT ALL ON TABLE "public"."audition_submissions" TO "service_role";
+GRANT DELETE ON TABLE "public"."audition_submissions" TO "authenticated";
 
 
 
@@ -2472,7 +2555,23 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."avatar_assets" TO "authenti
 
 
 GRANT ALL ON TABLE "public"."contact_inquiries" TO "service_role";
-GRANT SELECT,DELETE,UPDATE ON TABLE "public"."contact_inquiries" TO "authenticated";
+GRANT SELECT ON TABLE "public"."contact_inquiries" TO "authenticated";
+
+
+
+GRANT UPDATE("status") ON TABLE "public"."contact_inquiries" TO "authenticated";
+
+
+
+GRANT UPDATE("admin_note") ON TABLE "public"."contact_inquiries" TO "authenticated";
+
+
+
+GRANT UPDATE("answered_at") ON TABLE "public"."contact_inquiries" TO "authenticated";
+
+
+
+GRANT UPDATE("answered_by") ON TABLE "public"."contact_inquiries" TO "authenticated";
 
 
 
@@ -2489,17 +2588,37 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."notices" TO "authenticated"
 
 
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
-GRANT SELECT,INSERT,UPDATE ON TABLE "public"."profiles" TO "authenticated";
+GRANT SELECT,INSERT ON TABLE "public"."profiles" TO "authenticated";
+
+
+
+GRANT UPDATE("name") ON TABLE "public"."profiles" TO "authenticated";
+
+
+
+GRANT UPDATE("updated_at") ON TABLE "public"."profiles" TO "authenticated";
+
+
+
+GRANT UPDATE("avatar_asset_id") ON TABLE "public"."profiles" TO "authenticated";
 
 
 
 GRANT ALL ON TABLE "public"."protect_report_attachments" TO "service_role";
-GRANT SELECT,DELETE ON TABLE "public"."protect_report_attachments" TO "authenticated";
+GRANT SELECT ON TABLE "public"."protect_report_attachments" TO "authenticated";
 
 
 
 GRANT ALL ON TABLE "public"."protect_reports" TO "service_role";
-GRANT SELECT,DELETE,UPDATE ON TABLE "public"."protect_reports" TO "authenticated";
+GRANT SELECT ON TABLE "public"."protect_reports" TO "authenticated";
+
+
+
+GRANT UPDATE("status") ON TABLE "public"."protect_reports" TO "authenticated";
+
+
+
+GRANT UPDATE("admin_note") ON TABLE "public"."protect_reports" TO "authenticated";
 
 
 

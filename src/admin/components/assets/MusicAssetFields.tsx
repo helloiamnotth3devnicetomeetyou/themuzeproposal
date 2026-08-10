@@ -5,6 +5,7 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { type DragEvent, useId, useState } from "react";
 import { Image as ImageIcon, Music, X } from "lucide-react";
 import type { UploadedAsset } from "@/core/utils/music-editor";
+import { safeHref } from "@/core/http/safe-href";
 import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
@@ -209,6 +210,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
     setDragging(false);
     if (!busy) void choose(event.dataTransfer.files?.[0]);
   };
+  const href = safeHref(value);
 
   return <div
     className={`track-asset-field ${value ? "has-file" : ""} ${dragging ? "is-dragging" : ""}`}
@@ -221,7 +223,7 @@ export function TrackAssetField({ label, hint, accept, maxBytes, artistId, album
       ? <span className="track-asset-logo-preview"><AdminAssetImage src={value} alt="업로드한 타이포 로고" sizes="160px" className={/\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /></span>
       : <span className="track-asset-icon">{kind === "audio" ? <Music aria-hidden="true" /> : <ImageIcon aria-hidden="true" />}</span>}
     <span className="track-asset-copy"><b>{label}</b><small>{busy ? "업로드 중…" : dragging ? "여기에 놓아 업로드" : value ? "업로드 완료" : hint}</small></span>
-    {value && <a href={value} target="_blank" rel="noreferrer">보기</a>}
+    {href && <a href={href} target="_blank" rel="noreferrer">보기</a>}
     <label htmlFor={inputId}>{value ? "교체" : "업로드"}</label>
     {value && <button type="button" onClick={onClear} aria-label={`${label} 제거`}><X aria-hidden="true" /></button>}
     <input id={inputId} className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => { void choose(event.target.files?.[0]); event.currentTarget.value = ""; }} />
