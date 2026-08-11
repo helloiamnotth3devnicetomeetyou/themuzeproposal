@@ -65,8 +65,9 @@ export function PreviewProvider({
       }
     } catch {
       setEnvelope(null);
+    } finally {
+      setResolved(true);
     }
-    setResolved(true);
   }, [previewRequested, token]);
 
   useEffect(() => {

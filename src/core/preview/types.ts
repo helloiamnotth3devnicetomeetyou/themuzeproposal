@@ -310,9 +310,13 @@ export const previewStorageKey = (token: string) =>
 
 export function clearPreviewStorage() {
   if (typeof window === "undefined") return;
-  for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
-    const key = window.localStorage.key(index);
-    if (key?.startsWith(PREVIEW_STORAGE_PREFIX)) window.localStorage.removeItem(key);
+  try {
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith(PREVIEW_STORAGE_PREFIX)) window.localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage access is optional; authentication sign-out must still proceed.
   }
 }
 
