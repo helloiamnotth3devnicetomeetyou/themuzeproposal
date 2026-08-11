@@ -6,9 +6,9 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useLocale } from "@/core/providers/LocaleContext";
-import { preloadImages } from "@/core/utils/image-preload";
+import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
 import { useDiscographyController } from "../hooks/useDiscographyController";
-import { coverPreloadQueue, discographyCoverCandidate } from "../lib/cover-preload";
+import { coverPreloadQueue, discographyCoverCandidate, galleryPreloadQueue } from "../lib/cover-preload";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
@@ -38,10 +38,16 @@ export function DiscographyExperience() {
     () => coverPreloadQueue(coverCandidates, discography.albumIndex),
     [coverCandidates, discography.albumIndex],
   );
+  const queuedGalleryCandidates = useMemo(
+    () => galleryPreloadQueue(discography.gallery, discography.album?.id),
+    [discography.album?.id, discography.gallery],
+  );
 
   useEffect(() => {
     void preloadImages(queuedCoverCandidates, { concurrency: 2 });
   }, [queuedCoverCandidates]);
+
+  useEffect(() => scheduleImagePreload(queuedGalleryCandidates, { concurrency: 3 }), [queuedGalleryCandidates]);
 
   const preloadAlbum = useCallback((index: number) => {
     const candidate = coverCandidates[index];

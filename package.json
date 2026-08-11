@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "validate:env": "node scripts/validate-env.mjs",
+    "verify:content": "node scripts/verify-themuze-content.mjs",
     "db:status": "supabase migration list --linked",
     "db:push": "supabase db push --linked",
     "db:dump": "supabase db dump --linked --schema public --file supabase/schema.remote.sql",
