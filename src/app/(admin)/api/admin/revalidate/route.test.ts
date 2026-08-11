@@ -44,8 +44,8 @@ describe("POST /api/admin/revalidate", () => {
     expect((await POST(request({ tag: "everything" }))).status).toBe(400);
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
 
-    const response = await POST(request({ tag: "artist-scene-data" }));
+    const response = await POST(request({ tag: "public-home-slides" }));
     expect(response.status).toBe(200);
-    expect(mocks.revalidateTag).toHaveBeenCalledWith("artist-scene-data", "max");
+    expect(mocks.revalidateTag).toHaveBeenCalledWith("public-home-slides", "max");
   });
 });

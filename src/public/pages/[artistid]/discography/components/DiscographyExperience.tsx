@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
 import { useDiscographyController } from "../hooks/useDiscographyController";
-import { discographyCoverCandidate } from "../lib/cover-preload";
+import { coverPreloadQueue, discographyCoverCandidate } from "../lib/cover-preload";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
@@ -34,10 +34,15 @@ export function DiscographyExperience() {
     [discography.sortedAlbums],
   );
 
-  useEffect(() => scheduleImagePreload(
-    coverCandidates.filter((_, index) => index !== discography.albumIndex),
-    { concurrency: 2 },
-  ), [coverCandidates, discography.albumIndex]);
+  const queuedCoverCandidates = useMemo(
+    () => coverPreloadQueue(coverCandidates, discography.albumIndex),
+    [coverCandidates, discography.albumIndex],
+  );
+
+  useEffect(() => {
+    void preloadImages(queuedCoverCandidates.slice(0, 4), { concurrency: 2 });
+    return scheduleImagePreload(queuedCoverCandidates.slice(4), { concurrency: 2 });
+  }, [queuedCoverCandidates]);
 
   const preloadAlbum = useCallback((index: number) => {
     const candidate = coverCandidates[index];
@@ -95,7 +100,7 @@ export function DiscographyExperience() {
         isPlaying={discography.isPlaying}
       />
 
-      <div className="lg:hidden w-full max-w-[640px] mx-auto px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--banner-height,0px)+var(--site-header-height))] relative z-10">
+      <div className="lg:hidden w-full max-w-[640px] md:max-w-none mx-auto px-5 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--banner-height,0px)+var(--site-header-height))] relative z-10">
         <MobileDiscographyPlayer
           album={album}
           albumIndex={discography.albumIndex}

@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NoticeDTO, NoticeDetailDTO, NoticeListDTO, NoticeNavigationDTO } from "./types";
 
-const NOTICE_COLUMNS = "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date";
+const NOTICE_LIST_COLUMNS = "id,title_ko,title_en,title_ja,category_ko,category_en,category_ja,date";
+const NOTICE_DETAIL_COLUMNS = "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date";
 const NOTICE_NAVIGATION_COLUMNS = "id,title_ko,title_en,title_ja";
 
 type NoticeRow = {
@@ -51,21 +52,21 @@ export async function getPublicNotices(client: SupabaseClient, artistSlug?: stri
   const scope = await resolveNoticeScope(client, artistSlug);
   let query = client
     .from("notices")
-    .select(NOTICE_COLUMNS)
+    .select(NOTICE_LIST_COLUMNS)
     .eq("is_published", true)
     .order("published_at", { ascending: false });
   query = scope.artistId ? query.eq("artist_id", scope.artistId) : query.is("artist_id", null);
 
   const { data, error } = await query;
   if (error) throw error;
-  return { name: scope.name, notices: ((data ?? []) as NoticeRow[]).map(toNoticeDTO) };
+  return { name: scope.name, notices: ((data ?? []) as NoticeRow[]).map(toNoticeListItemDTO) };
 }
 
 export async function getPublicNotice(client: SupabaseClient, noticeId: string, artistSlug?: string): Promise<NoticeDetailDTO> {
   const scope = await resolveNoticeScope(client, artistSlug);
   let query = client
     .from("notices")
-    .select(NOTICE_COLUMNS)
+    .select(NOTICE_DETAIL_COLUMNS)
     .eq("id", noticeId)
     .eq("is_published", true);
   query = scope.artistId ? query.eq("artist_id", scope.artistId) : query.is("artist_id", null);
@@ -73,6 +74,15 @@ export async function getPublicNotice(client: SupabaseClient, noticeId: string, 
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return { name: scope.name, notice: data ? toNoticeDTO(data as NoticeRow) : null };
+}
+
+function toNoticeListItemDTO(row: NoticeRow) {
+  return {
+    id: row.id,
+    date: row.date ?? "",
+    title: { ko: row.title_ko ?? "", en: row.title_en ?? "", ja: row.title_ja ?? "" },
+    category: { ko: row.category_ko ?? "", en: row.category_en ?? "", ja: row.category_ja ?? "" },
+  };
 }
 
 export async function getPublicNoticeNavigation(client: SupabaseClient, noticeId: string, artistSlug?: string): Promise<NoticeNavigationDTO> {

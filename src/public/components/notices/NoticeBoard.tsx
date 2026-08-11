@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, Search, X } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
-import type { LocalizedTextDTO, NoticeDTO, NoticeListDTO } from "@/public/features/notices/types";
+import type { LocalizedTextDTO, NoticeListItemDTO, NoticeListDTO } from "@/public/features/notices/types";
 import styles from "@/styles/(public)/components/notices/NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";
@@ -57,7 +57,7 @@ const pageCopy: Record<Locale, {
   },
 };
 
-const EMPTY_NOTICES: NoticeDTO[] = [];
+const EMPTY_NOTICES: NoticeListItemDTO[] = [];
 const NOTICES_PER_PAGE = 10;
 const localized = (value: LocalizedTextDTO, locale: Locale) => value[locale] || value.ko || value.en || value.ja;
 
@@ -91,7 +91,7 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
       .filter(({ notice }) => {
         const noticeCategory = localized(notice.category, locale);
         const matchesCategory = selectedCategory === "all" || noticeCategory === selectedCategory;
-        const matchesSearch = !keyword || `${localized(notice.title, locale)} ${localized(notice.content, locale)} ${noticeCategory}`.toLocaleLowerCase().includes(keyword);
+        const matchesSearch = !keyword || `${localized(notice.title, locale)} ${noticeCategory}`.toLocaleLowerCase().includes(keyword);
         return matchesCategory && matchesSearch;
       });
   }, [locale, notices, search, selectedCategory]);

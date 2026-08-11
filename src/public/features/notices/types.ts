@@ -4,12 +4,15 @@ export type LocalizedTextDTO = {
   ja: string;
 };
 
-export type NoticeDTO = {
+export type NoticeListItemDTO = {
   id: string;
   date: string;
   title: LocalizedTextDTO;
-  content: LocalizedTextDTO;
   category: LocalizedTextDTO;
+};
+
+export type NoticeDTO = NoticeListItemDTO & {
+  content: LocalizedTextDTO;
 };
 
 type NoticeScopeDTO = {
@@ -17,7 +20,7 @@ type NoticeScopeDTO = {
 };
 
 export type NoticeListDTO = NoticeScopeDTO & {
-  notices: NoticeDTO[];
+  notices: NoticeListItemDTO[];
 };
 
 export type NoticeDetailDTO = NoticeScopeDTO & {

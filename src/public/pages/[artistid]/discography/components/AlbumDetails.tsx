@@ -2,7 +2,7 @@ import type { Locale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
-import { SiSpotify } from "react-icons/si";
+import { CirclePlay } from "lucide-react";
 
 import type { DiscographyAlbum, DiscographyGalleryItem, DiscographyMember, DiscographyTab } from "../lib/types";
 import { MemberGallery } from "./MemberGallery";
@@ -92,7 +92,7 @@ export function AlbumDetails({
               rel="noreferrer"
               className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[rgba(255,255,255,0.6)] hover:text-[#1DB954] hover:border-[#1DB954] transition-all duration-300"
             >
-              <SiSpotify className="w-4 h-4" />
+              <CirclePlay className="w-4 h-4" />
             </a>
           </div>
         </div>

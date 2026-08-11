@@ -1,5 +1,4 @@
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { SiYoutube } from "react-icons/si";
+import { ChevronLeft, ChevronRight, CirclePlay, Pause, Play } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
 
@@ -97,7 +96,7 @@ export function TrackPlayer({
             aria-label={`${track?.title ?? ""} ${t.discography.musicVideo}`}
             className="discography-youtube-button justify-self-end"
           >
-            <SiYoutube aria-hidden="true" />
+              <CirclePlay aria-hidden="true" />
             <span>MV</span>
           </a>
         ) : (

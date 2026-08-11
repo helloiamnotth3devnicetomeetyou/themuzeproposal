@@ -5,7 +5,7 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
-const revalidateSchema = z.object({ tag: z.enum(["public-notices", "public-navigation-artists", "public-site-settings", "artist-scene-data"]) });
+const revalidateSchema = z.object({ tag: z.enum(["public-notices", "public-navigation-artists", "public-site-settings", "public-home-slides", "artist-scene-data"]) });
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "invalid request" }, { status: 400 });

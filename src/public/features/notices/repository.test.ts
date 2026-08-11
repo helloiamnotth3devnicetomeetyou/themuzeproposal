@@ -55,6 +55,7 @@ describe("Notices Repository", () => {
       expect(result.notices.length).toBe(1);
       expect(result.notices[0].title.ko).toBe("공지사항");
       expect(result.notices[0].category.en).toBe("General");
+      expect(result.notices[0]).not.toHaveProperty("content");
     });
 
     it("returns an empty notice list when no data", async () => {
