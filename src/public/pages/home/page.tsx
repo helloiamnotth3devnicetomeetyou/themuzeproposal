@@ -96,15 +96,18 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   useEffect(() => {
     const videos = [...document.querySelectorAll<HTMLVideoElement>(".home-hero-video")];
     videos.forEach((video) => {
-      if (Number(video.dataset.slideIndex) !== currentSlide || !isPageVisible || prefersReducedMotion) {
+      const slideIndex = Number(video.dataset.slideIndex);
+      const isCurrent = slideIndex === currentSlide;
+      const isLeaving = slideIndex === prevSlide;
+      if ((!isCurrent && !isLeaving) || !isPageVisible || prefersReducedMotion) {
         video.pause();
         return;
       }
-      if (previousVideoSlide.current !== currentSlide) video.currentTime = Number(video.dataset.startTime || 0);
+      if (isCurrent && previousVideoSlide.current !== currentSlide) video.currentTime = Number(video.dataset.startTime || 0);
       void video.play().catch(() => undefined);
     });
     previousVideoSlide.current = currentSlide;
-  }, [currentSlide, isPageVisible, prefersReducedMotion, slides.length]);
+  }, [currentSlide, isPageVisible, prefersReducedMotion, prevSlide]);
 
   useEffect(() => {
     if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
