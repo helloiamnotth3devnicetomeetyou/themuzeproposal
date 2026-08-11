@@ -20,6 +20,7 @@ describe("proxy security headers", () => {
 
     expect(forwarded.headers.get("x-nonce")).toBeTruthy();
     expect(forwarded.headers.get("content-security-policy")).toBe(policy);
+    expect(policy).toContain("media-src 'self' blob: https:");
     expect(policy).toContain("style-src 'self'; style-src-attr 'unsafe-inline'");
     expect(policy).toMatch(/script-src 'self' 'nonce-[^']+'/);
   });
