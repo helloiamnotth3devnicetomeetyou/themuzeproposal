@@ -9,7 +9,11 @@ declare
   v_member_id uuid;
   v_gallery record;
 begin
-  select id into strict v_artist_id from public.artists where slug = 'rescene';
+  select id into v_artist_id from public.artists where slug = 'rescene';
+  if v_artist_id is null then
+    raise notice 'Skipping RESCENE content import because the artist seed is unavailable.';
+    return;
+  end if;
 
   update public.albums
   set youtube_url = case title
