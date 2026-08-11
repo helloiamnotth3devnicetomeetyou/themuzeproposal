@@ -10,7 +10,7 @@ import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 import { spotifyAlbumHref } from "@/core/http/spotify";
-import { autoplayProgress, startSlideTransition, swipeSlideOffset } from "./carousel-state";
+import { startSlideTransition, swipeSlideOffset } from "./carousel-state";
 
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
@@ -36,11 +36,11 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [autoplayElapsed, setAutoplayElapsed] = useState(0);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoplayElapsed = useRef(0);
-  const autoplayFrame = useRef<number | null>(null);
-  const progressRef = useRef<HTMLElement>(null);
-  const mobileProgressRef = useRef<HTMLElement>(null);
+  const autoplayTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoplayElapsedRef = useRef(0);
+  const autoplayStartedAt = useRef<number | null>(null);
   const swipeStartX = useRef<number | null>(null);
   const previousVideoSlide = useRef<number | null>(null);
 
@@ -78,6 +78,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     const normalizedNext = startSlideTransition(currentSlide, next, slides.length).current;
     if (normalizedNext === currentSlide) return;
 
+    autoplayElapsedRef.current = 0;
+    autoplayStartedAt.current = null;
+    setAutoplayElapsed(0);
     setTransition({ current: normalizedNext, previous: currentSlide });
     setOpenStreamingSlideId(null);
 
@@ -87,12 +90,8 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     }, TRANSITION_DURATION);
   }, [currentSlide, isTransitioning, slides.length]);
 
-  useEffect(() => {
-    autoplayElapsed.current = 0;
-    [progressRef.current, mobileProgressRef.current].forEach((progress) => {
-      if (progress) progress.style.transform = "scaleX(0)";
-    });
-  }, [currentSlide]);
+  const goToSlideRef = useRef(goToSlide);
+  useEffect(() => { goToSlideRef.current = goToSlide; }, [goToSlide]);
 
   useEffect(() => {
     const videos = [...document.querySelectorAll<HTMLVideoElement>(".home-hero-video")];
@@ -112,27 +111,24 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
 
   useEffect(() => {
     if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
-
-    let previous = performance.now();
-    const tick = (now: number) => {
-      autoplayElapsed.current += now - previous;
-      previous = now;
-      const progress = autoplayProgress(autoplayElapsed.current, AUTOPLAY_DURATION);
-      [progressRef.current, mobileProgressRef.current].forEach((progressElement) => {
-        if (progressElement) progressElement.style.transform = `scaleX(${progress})`;
-      });
-      if (progress === 1) {
-        goToSlide(currentSlide + 1);
-        return;
-      }
-      autoplayFrame.current = requestAnimationFrame(tick);
-    };
-    autoplayFrame.current = requestAnimationFrame(tick);
+    const remaining = Math.max(0, AUTOPLAY_DURATION - autoplayElapsedRef.current);
+    autoplayStartedAt.current = performance.now();
+    autoplayTimeout.current = setTimeout(() => {
+      autoplayElapsedRef.current = AUTOPLAY_DURATION;
+      setAutoplayElapsed(AUTOPLAY_DURATION);
+      goToSlideRef.current(currentSlide + 1);
+    }, remaining);
 
     return () => {
-      if (autoplayFrame.current !== null) cancelAnimationFrame(autoplayFrame.current);
+      if (autoplayTimeout.current !== null) clearTimeout(autoplayTimeout.current);
+      if (autoplayStartedAt.current !== null) {
+        const elapsed = Math.min(AUTOPLAY_DURATION, autoplayElapsedRef.current + performance.now() - autoplayStartedAt.current);
+        autoplayElapsedRef.current = elapsed;
+        autoplayStartedAt.current = null;
+        setAutoplayElapsed(elapsed);
+      }
     };
-  }, [currentSlide, goToSlide, isPageVisible, prefersReducedMotion, slides.length]);
+  }, [currentSlide, isPageVisible, prefersReducedMotion, slides.length]);
 
   if (slides.length === 0) {
     return (
@@ -141,6 +137,12 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       </main>
     );
   }
+
+  const progressStyle: CSSProperties = {
+    animation: `homeSlideProgress ${AUTOPLAY_DURATION}ms linear both`,
+    animationDelay: `-${autoplayElapsed}ms`,
+    animationPlayState: isPageVisible && !prefersReducedMotion ? "running" : "paused",
+  };
 
   return (
     <main
@@ -323,7 +325,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               <i>/</i>
               <span>{String(slides.length).padStart(2, "0")}</span>
             </span>
-            <span className="home-mobile-progress" aria-hidden="true"><i ref={mobileProgressRef} /></span>
+            <span className="home-mobile-progress" aria-hidden="true"><i key={`mobile-${currentSlide}-${autoplayElapsed}`} style={progressStyle} /></span>
             <div
               className="home-slide-rail"
             >
@@ -335,7 +337,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                   left: `calc(${(currentSlide * 100) / slides.length}% + ${(currentSlide * RAIL_GAP) / slides.length}px)`,
                 }}
               >
-                <i ref={progressRef} />
+                <i key={`desktop-${currentSlide}-${autoplayElapsed}`} style={progressStyle} />
               </span>
               {slides.map((slide, index) => (
                 <button

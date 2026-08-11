@@ -126,6 +126,11 @@
   to { transform: scale(1) translateX(0); }
 }
 
+@keyframes homeSlideProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 @keyframes textShimmer {
   0% { opacity: 0; letter-spacing: 0.5em; filter: blur(6px); }
   60% { opacity: 0.9; filter: blur(0); }
