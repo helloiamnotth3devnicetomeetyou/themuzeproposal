@@ -62,6 +62,7 @@
 .content-identity-copy h2 { margin: 7px 0 0; overflow: hidden; color: var(--text-primary); font-size: 17px; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; }
 .content-identity-copy small { display: block; margin-top: 5px; overflow: hidden; color: var(--text-faint); font-family: var(--font-sans); font-size: 9px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .content-workbench-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
+.content-workbench-toolbar { display: flex; min-height: 40px; align-items: center; justify-content: flex-end; margin: -5px 0 14px; }
 .content-delete-action { white-space: nowrap; }
 .content-workbench-tabs {
   display: flex;
@@ -256,9 +257,13 @@
 .content-tab-complete svg { width: 11px; height: 11px; stroke-width: 2.25; }
 .draft-save-button { min-width: 132px; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
 .draft-reset-button { min-width: 92px; flex: 0 0 auto; white-space: nowrap; }
-.draft-save-status { color: var(--color-status-success); font-size: 12px; font-weight: 700; white-space: nowrap; }
-.draft-save-status.is-dirty { color: var(--text-secondary); }
-.draft-save-status.is-invalid { color: var(--palette-df7777); }
+.draft-save-button.is-success { border-color: var(--color-status-success); background: var(--color-status-success); }
+.draft-save-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+.admin-overflow-menu { position: relative; flex: 0 0 auto; }
+.admin-overflow-trigger { min-width: 40px; padding-inline: 9px; }
+.admin-overflow-menu-list { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; min-width: 132px; padding: 4px; border: 1px solid var(--border-default); border-radius: var(--admin-control-radius); background: var(--bg-card); box-shadow: 0 12px 30px var(--alpha-000000-18); }
+.admin-overflow-delete { display: flex; width: 100%; min-height: 34px; align-items: center; gap: 8px; padding: 0 9px; border: 0; border-radius: calc(var(--admin-control-radius) - 3px); background: transparent; color: var(--color-status-danger); font: 700 12px/1 var(--font-sans); text-align: left; cursor: pointer; }
+.admin-overflow-delete:hover,.admin-overflow-delete:focus-visible { background: var(--alpha-e46b6b-07); }
 .content-mobile-rail-trigger,.content-mobile-rail-close { display: none; }
 
 @media (max-width: 600px) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Check, CircleAlert, Disc3, GripVertical, Music, Plus, Trash2 } from "lucide-react";
+import { Check, CircleAlert, Disc3, GripVertical, Music, Plus } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import { spotifyAlbumId } from "@/core/http/spotify";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
@@ -10,7 +10,9 @@ import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import FormField from "@/admin/components/content/FormField";
+import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
@@ -19,11 +21,10 @@ import {
   type AlbumEditorDraft,
   type EditorTab,
 } from "@/core/utils/music-editor";
-import { useDiscographyEditor, type DiscographyFilter, type DiscographyLanguage } from "./useDiscographyEditor";
+import { useDiscographyEditor, type DiscographyFilter } from "./useDiscographyEditor";
 import { createTrackDraft } from "./discography-editor-model";
 
 type Filter = DiscographyFilter;
-type Language = DiscographyLanguage;
 
 function AssetBadge({ active, children }: { active: boolean; children: React.ReactNode }) {
   return <span className={`music-asset-badge ${active ? "is-ready" : ""}`}>{children}</span>;
@@ -71,18 +72,18 @@ export default function DiscographyAdmin() {
     </>;
   const identity = draft ? <>
             <span className="music-header-cover">{draft.cover_url ? <AdminAssetImage src={draft.cover_url} alt="" sizes="72px" /> : <i />}</span>
-            <div><p><span className={`cms-status ${draft.is_published ? "is-live" : ""}`}>{draft.is_published ? "공개" : "초안"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.title || "제목 없는 새 앨범"}</h2><small>{artistName}</small></div>
+            <div><p><span className={`cms-status ${draft.is_published ? "is-live" : ""}`}>{draft.is_published ? "공개" : "초안"}</span></p><h2>{draft.title || "제목 없는 새 앨범"}</h2><small>{artistName}</small></div>
   </> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>앨범을 선택하세요</h2><small>{artistName}</small></div>;
-  const actions = draft ? <div className="music-header-actions">{albums.some((album) => album.id === draft.id) && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger music-delete-button" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || sortDirty || nestedDrafts.dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !validation?.canSave && dirty} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "앨범", before: draft.title, after: "삭제" }] : []), ...(sortDirty ? [{ kind: "order" as const, field: "앨범 노출 순서", before: "기존 순서", after: "변경된 순서" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return removeAlbum(); if (dirty) await save(); if (sortDirty) await saveOrder(); await nestedDrafts.commit(); }} /></div> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button>;
+  const actions = draft ? <div className="music-header-actions"><PreviewButton onClick={openPreview} disabled={!previewPayload} />{albums.some((album) => album.id === draft.id) && <OverflowDeleteMenu onDelete={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)} deleteLabel={pendingDelete ? "삭제 취소" : "삭제"} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || sortDirty || nestedDrafts.dirty || pendingDelete} saving={saving} disabled={!pendingDelete && !validation?.canSave && dirty} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "앨범", before: draft.title, after: "삭제" }] : []), ...(sortDirty ? [{ kind: "order" as const, field: "앨범 노출 순서", before: "기존 순서", after: "변경된 순서" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return removeAlbum(); if (dirty) await save(); if (sortDirty) await saveOrder(); await nestedDrafts.commit(); }} /></div> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button>;
 
   return <>
-    <ContentWorkbench rail={rail} railLabel="앨범 선택" identity={identity} actions={actions} tabs={workbenchTabs} activeTab={tab} onTabChange={changeTab} error={error} onDismissError={() => setError("")} toast={toast} className="music-editor-shell" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
+    <ContentWorkbench rail={rail} railLabel="앨범 선택" identity={identity} actions={actions} toolbar={draft ? <AdminLanguageTabs activeLang={language} onChange={setLanguage} values={{ ko: draft.description_ko, en: draft.description_en, ja: draft.description_ja }} /> : null} tabs={workbenchTabs} activeTab={tab} onTabChange={changeTab} error={error} onDismissError={() => setError("")} toast={toast} className="music-editor-shell" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
       {!draft ? <div className="music-no-selection"><span><Disc3 aria-hidden="true" /></span><h2>앨범을 선택하세요</h2><p>왼쪽 라이브러리에서 앨범을 열거나 새 앨범을 추가할 수 있습니다.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => void addAlbum()}>새 앨범 만들기</button></div> :
         <div className="music-editor-body">
           {tab === "basic" && <div className="music-section-stack music-basic-section">
             <div className="content-section-heading"><h3>앨범 기본 정보</h3><span>공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.</span></div>
             <div className="music-field-grid two"><label className="music-field"><span>앨범 제목 <b>*</b></span><input className="admin-input" value={draft.title} onChange={(event) => handleTitle(event.target.value)} autoFocus /></label><div className="music-field"><span>앨범 종류 <b>*</b></span><CustomSelect ariaLabel="앨범 종류" value={draft.type} onChange={(type) => patchDraft({ type })} options={ALBUM_TYPES.map((type) => ({ value: type, label: type }))} /></div></div>
-            <FormField label="표시 제목" valueKo={draft.title_ko} valueEn={draft.title_en} valueJa={draft.title_ja} onChangeKo={(value) => patchDraft({ title_ko: value })} onChangeEn={(value) => patchDraft({ title_en: value })} onChangeJa={(value) => patchDraft({ title_ja: value })} />
+            <FormField activeLang={language} label="표시 제목" valueKo={draft.title_ko} valueEn={draft.title_en} valueJa={draft.title_ja} onChangeKo={(value) => patchDraft({ title_ko: value })} onChangeEn={(value) => patchDraft({ title_en: value })} onChangeJa={(value) => patchDraft({ title_ja: value })} />
             <label className="music-field music-date-field"><span>발매일</span><input type="date" className="admin-input" value={draft.release_date} onChange={(event) => patchDraft({ release_date: event.target.value })} /></label>
             <div className="music-divider" />
             <CoverAssetField artistId={artistId} albumId={draft.id} value={draft.cover_url} onError={setError} onUploaded={(asset, color) => { registerUpload(asset); patchDraft({ cover_url: asset.url, color }); }} />
@@ -93,7 +94,6 @@ export default function DiscographyAdmin() {
 
           {tab === "content" && <div className="music-section-stack">
             <div className="content-section-heading"><h3>앨범 소개와 외부 링크</h3><span>언어별 소개를 작성하고 앨범 단위 스트리밍 링크를 연결합니다.</span></div>
-            <div className="music-language-tabs">{(["ko", "en", "ja"] as Language[]).map((item) => <button type="button" key={item} className={language === item ? "is-active" : ""} onClick={() => setLanguage(item)}>{item.toUpperCase()}<i className={draft[`description_${item}`].trim() ? "is-complete" : ""} /></button>)}</div>
             <label className="music-field"><span>{language === "ko" ? "한국어" : language === "en" ? "영어" : "일본어"} 앨범 소개</span><textarea className="admin-input" rows={9} value={draft[`description_${language}`]} onChange={(event) => patchDraft({ [`description_${language}`]: event.target.value } as Partial<AlbumEditorDraft>)} placeholder="앨범의 콘셉트와 이야기를 입력하세요." /></label>
             <div className="music-field-grid two"><label className="music-field"><span>Spotify 앨범 ID 또는 URL</span><input className="admin-input" value={draft.spotify_id} onChange={(event) => patchDraft({ spotify_id: event.target.value })} onBlur={() => patchDraft({ spotify_id: spotifyAlbumId(draft.spotify_id) || "" })} placeholder="Spotify 앨범 ID 또는 URL" /></label><label className="music-field"><span>YouTube Music URL</span><input type="url" className="admin-input" value={draft.youtube_url} onChange={(event) => patchDraft({ youtube_url: event.target.value })} placeholder="https://music.youtube.com/…" /></label></div>
           </div>}
@@ -111,7 +111,7 @@ export default function DiscographyAdmin() {
                 </div>
                 {expandedTrack === track.id && <div className="music-track-assets">
                   <div className="music-track-link-grid">
-                    <FormField label="곡명" valueKo={track.title_ko} valueEn={track.title_en} valueJa={track.title_ja} onChangeKo={(value) => patchTrack(track.id, { title_ko: value })} onChangeEn={(value) => patchTrack(track.id, { title_en: value })} onChangeJa={(value) => patchTrack(track.id, { title_ja: value })} />
+                    <FormField activeLang={language} label="곡명" valueKo={track.title_ko} valueEn={track.title_en} valueJa={track.title_ja} onChangeKo={(value) => patchTrack(track.id, { title_ko: value })} onChangeEn={(value) => patchTrack(track.id, { title_en: value })} onChangeJa={(value) => patchTrack(track.id, { title_ja: value })} />
                   </div>
                   <div className="music-track-link-grid"><label className="music-field"><span>곡별 Spotify 링크</span><input type="url" className="admin-input" value={track.spotify_url} onChange={(event) => patchTrack(track.id, { spotify_url: event.target.value })} placeholder="https://open.spotify.com/track/…" /></label><label className="music-field"><span>곡별 YouTube 링크</span><input type="url" className="admin-input" value={track.youtube_url} onChange={(event) => patchTrack(track.id, { youtube_url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label></div>
                   <div className="music-track-asset-grid is-single">

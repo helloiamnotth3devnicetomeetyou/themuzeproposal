@@ -37,11 +37,13 @@ import {
   type HeroArtist as Artist,
   type HeroSlide,
 } from "./HeroSlideCard";
+import { createHeroSlideDraft, getActiveHeroSlides } from "./hero-model";
 type SortMode = "hero" | "newest" | "title";
 
 export default function HeroAdminPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [storedSlides, setStoredSlides] = useState<HeroSlide[]>([]);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [orderSnapshot, setOrderSnapshot] = useState("[]");
   const [artistId, setArtistId] = useState("all");
@@ -75,14 +77,10 @@ export default function HeroAdminPage() {
       setArtists((artistData ?? []) as Artist[]);
       setAlbums((albumData ?? []) as Album[]);
       const nextSlides = (slideData ?? []) as HeroSlide[];
-      const hiddenIds = nextSlides.filter((slide) => !slide.is_active).map((slide) => slide.id);
-      if (hiddenIds.length) {
-        const { error: activationError } = await supabase.from("home_hero_slides").update({ is_active: true }).in("id", hiddenIds);
-        if (activationError) setError(activationError.message);
-      }
-      const normalizedSlides = nextSlides.map((slide) => ({ ...slide, is_active: true }));
-      setSlides(normalizedSlides);
-      setOrderSnapshot(JSON.stringify(normalizedSlides));
+      const activeSlides = getActiveHeroSlides(nextSlides);
+      setStoredSlides(nextSlides);
+      setSlides(activeSlides);
+      setOrderSnapshot(JSON.stringify(activeSlides));
       setLoadedAt(Date.now());
     }
     if (!silent) setLoading(false);
@@ -126,8 +124,7 @@ export default function HeroAdminPage() {
   const { recovery, restoreBackup, discardBackup } = useDraftBackup({ key: "admin-draft:hero", draft: slides, snapshot: orderSnapshot, dirty: orderDirty, restore: restoreSlides });
 
   const addSlide = (album: Album) => {
-    const sortOrder = Math.max(0, ...slides.map((slide) => slide.sort_order)) + 1;
-    setSlides((current) => [...current, { id: crypto.randomUUID(), album_id: album.id, sort_order: sortOrder, is_active: true }]);
+    setSlides((current) => [...current, createHeroSlideDraft(current, storedSlides, album.id)]);
     setNotice(`‘${album.title}’을(를) 임시 목록에 추가했습니다.`);
   };
 
@@ -142,7 +139,16 @@ export default function HeroAdminPage() {
     ]);
     const saveError = results.find((result) => result.error)?.error;
     if (saveError) setError(saveError.message);
-    else { setOrderSnapshot(JSON.stringify(slides)); discardBackup(); setNotice("메인 노출 변경사항을 저장했습니다."); }
+    else {
+      setStoredSlides((current) => {
+        const next = new Map(current.filter((slide) => !removedIds.includes(slide.id)).map((slide) => [slide.id, slide]));
+        slides.forEach((slide) => next.set(slide.id, slide));
+        return [...next.values()].sort((a, b) => a.sort_order - b.sort_order);
+      });
+      setOrderSnapshot(JSON.stringify(slides));
+      discardBackup();
+      setNotice("메인 노출 변경사항을 저장했습니다.");
+    }
     setSavingId(null);
   };
 

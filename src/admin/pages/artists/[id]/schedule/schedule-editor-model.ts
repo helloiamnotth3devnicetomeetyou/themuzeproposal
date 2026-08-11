@@ -140,3 +140,9 @@ export const scheduleToDraft = (row: ScheduleRow): ScheduleDraft => ({
   isPublished: row.is_published,
   sortOrder: row.sort_order,
 });
+
+export const duplicateScheduleDraft = (draft: ScheduleDraft): ScheduleDraft => ({
+  ...draft,
+  id: "",
+  isPublished: false,
+});

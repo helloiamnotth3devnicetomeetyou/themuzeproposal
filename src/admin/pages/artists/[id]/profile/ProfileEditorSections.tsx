@@ -1,5 +1,6 @@
 import ArtistSceneManager from "@/admin/components/scenes/ArtistSceneManager";
 import FormField from "@/admin/components/content/FormField";
+import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import ImageAssetField, {
   type UploadedImageAsset,
@@ -25,6 +26,7 @@ interface ProfileEditorSectionsProps {
   onUploaded: (asset: UploadedImageAsset) => void;
   onError: (message: string) => void;
   onToast: (message: string) => void;
+  language: AdminLanguage;
 }
 
 export default function ProfileEditorSections({
@@ -38,6 +40,7 @@ export default function ProfileEditorSections({
   onUploaded,
   onError,
   onToast,
+  language,
 }: ProfileEditorSectionsProps) {
   return (
     <div className="content-editor-stack">
@@ -47,7 +50,7 @@ export default function ProfileEditorSections({
             <h3>아티스트 기본 정보</h3>
             <span>공개 페이지와 관리자 목록에서 사용하는 이름과 고유 ID입니다.</span>
           </div>
-          <FormField
+          <FormField activeLang={language}
             label="아티스트명"
             valueKo={draft.name}
             valueEn={draft.engName}
@@ -131,7 +134,7 @@ export default function ProfileEditorSections({
             <h3>아티스트 소개</h3>
             <span>한국어 소개는 필수이며 영문과 일본어는 준비되었을 때 추가할 수 있습니다.</span>
           </div>
-          <FormField
+          <FormField activeLang={language}
             label="아티스트 소개"
             type="richtext"
             required
@@ -161,7 +164,7 @@ export default function ProfileEditorSections({
             <h3>인터랙티브 멤버 장면</h3>
             <span>한 화면 안에서 전환할 콘셉트 이미지와 멤버별 정밀 실루엣을 편집합니다.</span>
           </div>
-          <ArtistSceneManager artistId={isNew ? null : artistId} heroUrl={draft.imageUrl} onError={onError} onToast={onToast} />
+          <ArtistSceneManager artistId={isNew ? null : artistId} heroUrl={draft.imageUrl} onError={onError} onToast={onToast} language={language} />
         </>
       )}
 

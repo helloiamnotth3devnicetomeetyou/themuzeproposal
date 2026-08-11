@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
+import AdminLanguageTabs, { type AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { type UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
@@ -39,6 +41,7 @@ export default function ArtistProfileAdmin() {
   const [tab, setTab] = useState<ProfileTab>("basic");
   const [newStep, setNewStep] = useState<NewArtistStep>("name");
   const [pendingDelete, setPendingDelete] = useState(false);
+  const [language, setLanguage] = useState<AdminLanguage>("ko");
 
   useEffect(() => {
     const handleUrlTab = () => {
@@ -285,7 +288,6 @@ export default function ArtistProfileAdmin() {
     <span className="content-identity-art">{draft.imageUrl ? <AdminAssetImage src={draft.imageUrl} alt="" sizes="56px" /> : <i style={{ background: draft.color }} />}</span>
     <div className="content-identity-copy">
       <h2><span className={`cms-status ${draft.isActive ? "is-live" : ""}`}>{draft.isActive ? "공개" : "비공개"}</span><span>{draft.name || "이름 없는 아티스트"}</span></h2>
-      {dirty && <em>저장하지 않은 변경사항</em>}
     </div>
   </>;
 
@@ -305,6 +307,7 @@ export default function ArtistProfileAdmin() {
       rail={<ProfileContextRail completion={completion.slice(0, 3)} draft={draft} isNew onCancel={() => void cancelNewArtist()} />}
       identity={identity}
       actions={wizardActions}
+      toolbar={<AdminLanguageTabs activeLang={language} onChange={setLanguage} values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }} />}
       tabs={newArtistSteps.map((item) => ({ ...item, complete: item.id === "name" ? creationReady.name : item.id === "visual" ? creationReady.visual : item.id === "content" ? creationReady.content : creationComplete, missing: item.id === "name" ? (creationReady.name ? 0 : 1) : item.id === "visual" ? (creationReady.visual ? 0 : 1) : item.id === "content" ? (creationReady.content ? 0 : 1) : creationComplete ? 0 : 1 }))}
       activeTab={newStep}
       onTabChange={(next) => { if (newArtistSteps.findIndex((item) => item.id === next) <= stepIndex) setNewStep(next); }}
@@ -323,7 +326,7 @@ export default function ArtistProfileAdmin() {
           <div><span>소개</span><strong>{draft.descKo ? "설정 완료" : "확인 필요"}</strong></div>
         </div>
         <p className="artist-create-ready"><CheckCircle2 aria-hidden="true" />상단의 ‘아티스트 만들기’를 누르면 전체 탭 에디터로 이동합니다.</p>
-      </div> : <ProfileEditorSections artistId={artistId} isNew draft={draft} saveIssues={saveIssues} tab={wizardTab} patchDraft={patchDraft} onAssetChange={handleProfileAssetChange} onUploaded={(asset) => { uploadedAssets.current.push(asset); trackDraftImageAsset(asset); }} onError={setError} onToast={setToast} />}
+      </div> : <ProfileEditorSections artistId={artistId} isNew draft={draft} saveIssues={saveIssues} tab={wizardTab} patchDraft={patchDraft} language={language} onAssetChange={handleProfileAssetChange} onUploaded={(asset) => { uploadedAssets.current.push(asset); trackDraftImageAsset(asset); }} onError={setError} onToast={setToast} />}
     </ContentWorkbench>;
   }
 
@@ -332,7 +335,8 @@ export default function ArtistProfileAdmin() {
     <ContentWorkbench
       rail={rail}
       identity={identity}
-      actions={<>{!isNew && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || nestedDrafts.dirty || pendingDelete} saving={saving} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "아티스트", before: draft.name, after: "삭제" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return handleDelete(); if (dirty) await handleSave(); await nestedDrafts.commit(); }} disabled={!pendingDelete && Boolean(saveIssues.length)} label={isNew ? "아티스트 만들기" : "변경사항 저장"} /></>}
+      actions={<><PreviewButton onClick={openPreview} disabled={!previewPayload} />{!isNew && <OverflowDeleteMenu onDelete={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)} deleteLabel={pendingDelete ? "삭제 취소" : "삭제"} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || nestedDrafts.dirty || pendingDelete} saving={saving} extraDiff={[...(pendingDelete ? [{ kind: "delete" as const, field: "아티스트", before: draft.name, after: "삭제" }] : []), ...nestedDrafts.diff]} onSave={async () => { if (pendingDelete) return handleDelete(); if (dirty) await handleSave(); await nestedDrafts.commit(); }} disabled={!pendingDelete && Boolean(saveIssues.length)} label={isNew ? "아티스트 만들기" : "변경사항 저장"} /></>}
+      toolbar={<AdminLanguageTabs activeLang={language} onChange={setLanguage} values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }} />}
       tabs={profileTabs.map((item, index) => ({ ...item, complete: completion[index]?.ready, missing: completion[index]?.ready ? 0 : 1 }))}
       activeTab={tab}
       onTabChange={setTab}
@@ -349,6 +353,7 @@ export default function ArtistProfileAdmin() {
         draft={draft}
         saveIssues={saveIssues}
         tab={tab}
+        language={language}
         patchDraft={patchDraft}
         onAssetChange={handleProfileAssetChange}
         onUploaded={(asset) => {

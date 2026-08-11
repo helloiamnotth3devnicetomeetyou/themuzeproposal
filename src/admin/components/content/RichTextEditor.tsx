@@ -10,6 +10,9 @@ type RichTextEditorProps = {
   label?: string;
   placeholder?: string;
   required?: boolean;
+  id?: string;
+  errorId?: string;
+  invalid?: boolean;
 };
 
 type FormatName = "bold" | "italic" | "underline" | "strikeThrough" | "h2" | "h3" | "blockquote";
@@ -30,6 +33,9 @@ export default function RichTextEditor({
   label = "내용",
   placeholder = "공지 내용을 입력하세요.",
   required = true,
+  id,
+  errorId,
+  invalid = false,
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<Set<FormatName>>(new Set());
@@ -160,10 +166,13 @@ export default function RichTextEditor({
         <div
           ref={editorRef}
           className="rich-text-editor"
+          id={id}
           contentEditable
           role="textbox"
           aria-label={label}
           aria-multiline="true"
+          aria-invalid={invalid}
+          aria-describedby={errorId}
           data-placeholder={placeholder}
           suppressContentEditableWarning
           spellCheck

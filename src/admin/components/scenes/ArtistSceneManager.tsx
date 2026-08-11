@@ -15,6 +15,7 @@ import SceneCanvas from "./SceneCanvas";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
+import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
@@ -34,10 +35,11 @@ type Props = {
   heroUrl: string;
   onError: (message: string) => void;
   onToast: (message: string) => void;
+  language: AdminLanguage;
 };
 
 
-export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast }: Props) {
+export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast, language }: Props) {
   const sceneInputRef = useRef<HTMLInputElement>(null);
   const maskInputRef = useRef<HTMLInputElement>(null);
   const drawingRef = useRef(false);
@@ -292,7 +294,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
         </div>
 
         {selectedScene && <div className={styles.sceneSettings} data-tour-id="scene-settings">
-          <FormField label="장면 제목" valueKo={selectedScene.title_ko || selectedScene.title || ""} valueEn={selectedScene.title_en || ""} valueJa={selectedScene.title_ja || ""} onChangeKo={(value) => patchScene({ title: value, title_ko: value })} onChangeEn={(value) => patchScene({ title_en: value })} onChangeJa={(value) => patchScene({ title_ja: value })} />
+          <FormField activeLang={language} label="장면 제목" valueKo={selectedScene.title_ko || selectedScene.title || ""} valueEn={selectedScene.title_en || ""} valueJa={selectedScene.title_ja || ""} onChangeKo={(value) => patchScene({ title: value, title_ko: value })} onChangeEn={(value) => patchScene({ title_en: value })} onChangeJa={(value) => patchScene({ title_ja: value })} />
           <label className={styles.sceneLinkField}><span>장면 링크 (YouTube 등)</span><input className="admin-input" inputMode="url" value={selectedScene.link_url || ""} onChange={(event) => patchScene({ link_url: event.target.value })} placeholder="https://www.youtube.com/..." /></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_hero} onChange={(event) => { const checked = event.target.checked; setScenes((current) => current.map((scene) => ({ ...scene, is_hero: scene.id === selectedScene.id ? checked : checked ? false : scene.is_hero }))); }} /><span>대표 장면</span></label>
           <label className={styles.toggle}><input type="checkbox" checked={selectedScene.is_published} onChange={(event) => patchScene({ is_published: event.target.checked })} /><span>공개</span></label>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import RichTextEditor from "./RichTextEditor";
+import type { AdminLanguage } from "./AdminLanguageTabs";
 
 interface FormFieldProps {
   label: string;
@@ -9,80 +10,30 @@ interface FormFieldProps {
   valueKo: string;
   valueEn: string;
   valueJa: string;
-  onChangeKo: (val: string) => void;
-  onChangeEn: (val: string) => void;
-  onChangeJa: (val: string) => void;
+  onChangeKo: (value: string) => void;
+  onChangeEn: (value: string) => void;
+  onChangeJa: (value: string) => void;
   required?: boolean;
-  activeLang?: "ko" | "en" | "ja";
+  activeLang?: AdminLanguage;
+  /** @deprecated language selection is now screen-level */
   showLanguageTabs?: boolean;
+  error?: string;
 }
 
-export default function FormField({ 
-  label, 
-  type = "text", 
-  valueKo, 
-  valueEn, 
-  valueJa,
-  onChangeKo,
-  onChangeEn,
-  onChangeJa,
-  required = false,
-  activeLang: controlledActiveLang,
-  showLanguageTabs = true,
-}: FormFieldProps) {
-  const [localActiveLang, setLocalActiveLang] = useState<"ko" | "en" | "ja">("ko");
-  const activeLang = controlledActiveLang ?? localActiveLang;
+export default function FormField({ label, type = "text", valueKo, valueEn, valueJa, onChangeKo, onChangeEn, onChangeJa, required = false, activeLang = "ko", error }: FormFieldProps) {
   const fieldId = useId();
-  const activeId = `${fieldId}-${activeLang}`;
-  const languageTabs = [
-    { id: "ko" as const, label: "KR", name: "한국어", value: valueKo },
-    { id: "ja" as const, label: "JP", name: "일본어", value: valueJa },
-    { id: "en" as const, label: "EN", name: "영어", value: valueEn },
-  ];
+  const value = activeLang === "ko" ? valueKo : activeLang === "en" ? valueEn : valueJa;
+  const onChange = activeLang === "ko" ? onChangeKo : activeLang === "en" ? onChangeEn : onChangeJa;
+  const requiredHere = required && activeLang === "ko";
+  const input = type === "textarea"
+    ? <textarea id={fieldId} required={requiredHere} value={value} onChange={(event) => onChange(event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${fieldId}-error` : undefined} className="admin-input w-full" rows={4} />
+    : <input id={fieldId} type={type} required={requiredHere} value={value} onChange={(event) => onChange(event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${fieldId}-error` : undefined} className="admin-input w-full" />;
 
-  return (
-    <div className="desk-translatable-field">
-      <div className="desk-translatable-heading">
-        <label htmlFor={activeId}>{label}{required && <span>*</span>}</label>
-        {showLanguageTabs && <div className="desk-lang-tabs" aria-label={`${label} 언어`}>
-          {languageTabs.map((language) => {
-            const complete = Boolean(language.value.trim());
-            return <button
-              key={language.id}
-              type="button"
-              onClick={() => setLocalActiveLang(language.id)}
-              className={`${activeLang === language.id ? "is-active" : ""}${complete ? " is-complete" : ""}`.trim()}
-              aria-pressed={activeLang === language.id}
-              aria-label={`${language.name}${complete ? " 작성됨" : " 미작성"}`}
-            >{language.label}</button>;
-          })}
-        </div>}
-      </div>
-
-      <div className="desk-translatable-control">
-        {type === "richtext" ? (
-          <RichTextEditor
-            key={activeLang}
-            label={activeLang === "ko" ? "한국어" : activeLang === "en" ? "영어" : "일본어"}
-            value={activeLang === "ko" ? valueKo : activeLang === "en" ? valueEn : valueJa}
-            onChange={activeLang === "ko" ? onChangeKo : activeLang === "en" ? onChangeEn : onChangeJa}
-            placeholder={`${label}를 입력하세요.`}
-            required={required && activeLang === "ko"}
-          />
-        ) : type === "textarea" ? (
-          <>
-            <textarea id={`${fieldId}-ko`} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} rows={4} />
-            <textarea id={`${fieldId}-en`} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} rows={4} />
-            <textarea id={`${fieldId}-ja`} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} rows={4} />
-          </>
-        ) : (
-          <>
-            <input id={`${fieldId}-ko`} type={type} required={required && activeLang === "ko"} value={valueKo} onChange={e => onChangeKo(e.target.value)} className={`admin-input w-full ${activeLang !== "ko" ? "hidden" : ""}`} />
-            <input id={`${fieldId}-en`} type={type} value={valueEn} onChange={e => onChangeEn(e.target.value)} className={`admin-input w-full ${activeLang !== "en" ? "hidden" : ""}`} />
-            <input id={`${fieldId}-ja`} type={type} value={valueJa} onChange={e => onChangeJa(e.target.value)} className={`admin-input w-full ${activeLang !== "ja" ? "hidden" : ""}`} />
-          </>
-        )}
-      </div>
+  return <div className="desk-translatable-field">
+    <div className="desk-translatable-heading"><label htmlFor={fieldId}>{label}{required && <span>*</span>}</label></div>
+    <div className="desk-translatable-control">
+      {type === "richtext" ? <RichTextEditor key={activeLang} id={fieldId} errorId={error ? `${fieldId}-error` : undefined} invalid={Boolean(error)} label={activeLang === "ko" ? "한국어" : activeLang === "en" ? "영어" : "일본어"} value={value} onChange={onChange} placeholder={`${label}을 입력하세요`} required={requiredHere} /> : input}
+      {error && <p id={`${fieldId}-error`} className="admin-field-error" role="alert">{error}</p>}
     </div>
-  );
+  </div>;
 }

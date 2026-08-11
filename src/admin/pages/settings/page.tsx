@@ -7,12 +7,13 @@ import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import FormField from "@/admin/components/content/FormField";
+import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
 import SocialLinksField from "@/admin/components/content/SocialLinksField";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { safeHref } from "@/core/http/safe-href";
 import { SOCIAL_ICONS } from "@/core/content/social-icons";
 import type { HistoryEntry } from "@/core/content/site-content";
-import { settingsTabs, type HistoryLanguage, type SettingsTab } from "./settings-editor-model";
+import { settingsTabs, type SettingsTab } from "./settings-editor-model";
 import AdminAccountsPanel from "./AdminAccountsPanel";
 import AvatarAssetManager from "./AvatarAssetManager";
 import { useSettingsEditor } from "./useSettingsEditor";
@@ -99,7 +100,6 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
   const identity = <>
     <span className="content-identity-art settings-identity-art"><Settings2 aria-hidden="true" /></span>
     <div className="content-identity-copy">
-      {dirty && <p><em>저장하지 않은 변경사항</em></p>}
       <h2>사이트 공통 설정</h2>
     </div>
   </>;
@@ -109,6 +109,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
       rail={rail}
       railLabel="설정 선택"
       identity={identity}
+      toolbar={<AdminLanguageTabs activeLang={historyLanguage} onChange={setHistoryLanguage} values={{ ko: company.address_ko, en: company.address_en, ja: company.address_ja }} />}
       actions={tab === "admins" ? null : <>{tab !== "avatars" && <PreviewButton onClick={openPreview} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={settingsDirty || nestedDrafts.dirty} saving={saving} extraDiff={nestedDrafts.diff} onSave={async () => { if (settingsDirty) await handleSave(); await nestedDrafts.commit(); }} /></>}
       tabs={(isSuperAdmin ? settingsTabs : settingsTabs.filter((item) => item.id !== "admins")).map((item) => ({ ...item, complete: railItems.find((railItem) => railItem.id === item.id)?.ready, missing: railItems.find((railItem) => railItem.id === item.id)?.ready ? 0 : 1 }))}
       activeTab={tab}
@@ -123,7 +124,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         {tab === "company" && <>
           <div className="content-section-heading settings-section-heading"><div><h3>회사 정보</h3><p>회사명은 기존 값을 유지하고, 사이트에 표시할 주소와 대표 연락처만 관리합니다.</p></div><Building2 aria-hidden="true" /></div>
           <section className="settings-panel">
-            <FormField label="주소" valueKo={company.address_ko} valueEn={company.address_en} valueJa={company.address_ja} onChangeKo={(value) => setCompany({ ...company, address_ko: value })} onChangeEn={(value) => setCompany({ ...company, address_en: value })} onChangeJa={(value) => setCompany({ ...company, address_ja: value })} />
+            <FormField activeLang={historyLanguage} label="주소" valueKo={company.address_ko} valueEn={company.address_en} valueJa={company.address_ja} onChangeKo={(value) => setCompany({ ...company, address_ko: value })} onChangeEn={(value) => setCompany({ ...company, address_en: value })} onChangeJa={(value) => setCompany({ ...company, address_ja: value })} />
             <div className="settings-panel-divider" />
             <label className="music-field content-field-short"><span>대표 이메일</span><div className="settings-input-with-icon"><Mail aria-hidden="true" /><input type="email" value={company.email} onChange={(event) => setCompany({ ...company, email: event.target.value })} className="admin-input" placeholder="contact@example.com" /></div><small>방문자가 회사에 연락할 때 사용하는 공개 이메일입니다.</small></label>
           </section>
@@ -134,9 +135,6 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
           <div className="settings-history-toolbar" data-tour-id="settings-history-actions">
             <span>총 {history.length}개 항목 · 최신순 자동 정렬</span>
             <div className="settings-history-tools">
-              <div className="settings-history-languages" aria-label="연혁 편집 언어">
-                {(["ko", "en", "ja"] as HistoryLanguage[]).map((language) => <button key={language} type="button" className={historyLanguage === language ? "is-active" : ""} onClick={() => setHistoryLanguage(language)}>{language.toUpperCase()}</button>)}
-              </div>
               <button type="button" data-tour-id="history-add" className="admin-btn admin-btn-secondary" onClick={addHistory}><Plus aria-hidden="true" /> 연혁 추가</button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import FormField from "@/admin/components/content/FormField";
+import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import GalleryManager from "@/admin/components/assets/GalleryManager";
 import ImageAssetField, {
   type UploadedImageAsset,
@@ -22,6 +23,7 @@ interface MemberEditorSectionsProps {
   onUploaded: (asset: UploadedImageAsset) => void;
   onError: (message: string) => void;
   onToast: (message: string) => void;
+  language?: AdminLanguage;
 }
 
 export default function MemberEditorSections({
@@ -34,6 +36,7 @@ export default function MemberEditorSections({
   onUploaded,
   onError,
   onToast,
+  language = "ko",
 }: MemberEditorSectionsProps) {
   return (
     <div className="content-editor-stack">
@@ -43,14 +46,14 @@ export default function MemberEditorSections({
             <h3>멤버 기본 정보</h3>
             <span>프로필과 멤버 목록에서 사용하는 이름과 역할입니다.</span>
           </div>
-          <FormField label="멤버 이름" valueKo={draft.name} valueEn={draft.engName} valueJa={draft.jaName} onChangeKo={(value) => patchDraft({ name: value })} onChangeEn={(value) => patchDraft({ engName: value })} onChangeJa={(value) => patchDraft({ jaName: value })} required />
+          <FormField activeLang={language} label="멤버 이름" valueKo={draft.name} valueEn={draft.engName} valueJa={draft.jaName} onChangeKo={(value) => patchDraft({ name: value })} onChangeEn={(value) => patchDraft({ engName: value })} onChangeJa={(value) => patchDraft({ jaName: value })} required />
           <label className="music-field content-field-short">
             <span>공개 경로</span>
             <input className="admin-input" value={`/${toMemberSlug(draft.engName) || "english-name"}`} readOnly />
             <small>영문명을 기준으로 자동 생성됩니다.</small>
           </label>
           <div className="music-divider" />
-          <FormField
+          <FormField activeLang={language}
             label="역할 / 포지션"
             valueKo={draft.roleKo}
             valueEn={draft.roleEn}
@@ -106,7 +109,7 @@ export default function MemberEditorSections({
             <h3>멤버 소개</h3>
             <span>멤버 페이지에서 보여줄 소개를 언어별로 입력합니다.</span>
           </div>
-          <FormField
+          <FormField activeLang={language}
             label="멤버 소개"
             type="textarea"
             valueKo={draft.bioKo}

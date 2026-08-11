@@ -15,6 +15,7 @@ type ContentWorkbenchProps<T extends string> = {
   rail: ReactNode;
   identity: ReactNode;
   actions?: ReactNode;
+  toolbar?: ReactNode;
   tabs: WorkbenchTab<T>[];
   activeTab: T;
   onTabChange: (tab: T) => void;
@@ -32,6 +33,7 @@ export default function ContentWorkbench<T extends string>({
   rail,
   identity,
   actions,
+  toolbar,
   tabs,
   activeTab,
   onTabChange,
@@ -49,6 +51,7 @@ export default function ContentWorkbench<T extends string>({
 
   useEffect(() => {
     if (!railOpen) return;
+    const railTrigger = railTriggerRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setRailOpen(false);
     };
@@ -58,7 +61,7 @@ export default function ContentWorkbench<T extends string>({
     return () => {
       document.removeEventListener("keydown", closeOnEscape);
       document.body.style.overflow = originalOverflow;
-      railTriggerRef.current?.focus();
+      railTrigger?.focus();
     };
   }, [railOpen]);
 
@@ -95,7 +98,7 @@ export default function ContentWorkbench<T extends string>({
             </button>
           ))}
         </nav>
-        <div ref={bodyRef} className="content-workbench-body">{children}</div>
+        <div ref={bodyRef} className="content-workbench-body">{toolbar && <div className="content-workbench-toolbar">{toolbar}</div>}{children}</div>
       </section>
     </div>
   );

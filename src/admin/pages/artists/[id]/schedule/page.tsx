@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Copy, MapPin, Plus } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
+import AdminLanguageTabs, { type AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
@@ -20,6 +22,7 @@ import {
   CATEGORY,
   WEEKDAYS,
   emptyScheduleDraft,
+  duplicateScheduleDraft,
   monthFromDateKey,
   monthKey,
   scheduleTabs,
@@ -43,6 +46,9 @@ export default function ArtistScheduleAdminPage() {
   const [tab, setTab] = useState<ScheduleTab>("calendar");
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDateKey(today()));
   const [pendingDelete, setPendingDelete] = useState(false);
+  const [language, setLanguage] = useState<AdminLanguage>("ko");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const detailsRef = useRef<HTMLDivElement>(null);
 
   const {
     draft,
@@ -119,7 +125,7 @@ export default function ArtistScheduleAdminPage() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const patch = (value: Partial<ScheduleDraft>) => setDraft((current) => current ? { ...current, ...value } : current);
+  const patch = (value: Partial<ScheduleDraft>) => { setFieldErrors({}); setDraft((current) => current ? { ...current, ...value } : current); };
   const add = (eventDate = today()) => { const next = emptyScheduleDraft(eventDate); setPendingDelete(false); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(eventDate)); setTab("details"); setError(""); };
   const select = async (item: ScheduleRow) => { if ((dirty || pendingDelete) && !await requestConfirm({ title: "다른 일정을 열까요?", description: "현재 변경사항은 브라우저 임시 작업에 남지만 편집 화면에서는 전환됩니다.", confirmLabel: "전환" })) return; const next = scheduleToDraft(item); setPendingDelete(false); setDraft(next); setSnapshot(JSON.stringify(next)); setCalendarMonth(monthFromDateKey(item.event_date)); setTab("details"); setError(""); };
   const moveMonth = (offset: number) => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
@@ -131,6 +137,20 @@ export default function ArtistScheduleAdminPage() {
     if (draft.linkUrl && !/^https?:\/\//i.test(draft.linkUrl)) return "연결 링크는 http:// 또는 https://로 시작해야 합니다.";
     return "";
   }, [draft]);
+  const validationErrors = useMemo(() => {
+    if (!draft) return {} as Record<string, string>;
+    if (!draft.eventDate) return { eventDate: "날짜를 입력해 주세요." };
+    if (!draft.titleKo.trim()) return { titleKo: "한국어 일정명을 입력해 주세요." };
+    if (draft.linkUrl && !/^https?:\/\//i.test(draft.linkUrl)) return { linkUrl: "연결 링크는 http:// 또는 https://로 시작해야 합니다." };
+    return {} as Record<string, string>;
+  }, [draft]);
+
+  const showValidation = () => {
+    setFieldErrors(validationErrors);
+    setTab("details");
+    const first = Object.keys(validationErrors)[0];
+    window.setTimeout(() => detailsRef.current?.querySelector<HTMLElement>(first === "titleKo" ? "input" : `input[name=\"${first}\"]`)?.focus());
+  };
 
   const effectiveScheduleId = draft?.id || previewScheduleId;
   const previewPayload = useMemo(() => draft && artistId && artistSlug && draft.eventDate ? {
@@ -166,7 +186,7 @@ export default function ArtistScheduleAdminPage() {
   const save = async () => {
     if (!draft || !artistId) return;
     if (validation) {
-      if (!draft.eventDate || !draft.titleKo.trim()) setTab("details");
+      showValidation();
       setError(validation);
       return;
     }
@@ -200,6 +220,13 @@ export default function ArtistScheduleAdminPage() {
     await loadItems(result.data.id);
   };
 
+  const duplicate = async () => {
+    if (!draft?.id) return;
+    if ((dirty || pendingDelete) && !await requestConfirm({ title: "변경사항을 버리고 복제할까요?", description: "현재 저장하지 않은 변경사항은 사라지고, 선택한 일정의 비공개 복제 초안이 열립니다.", confirmLabel: "버리고 복제", tone: "danger" })) return;
+    const next = duplicateScheduleDraft(draft);
+    setPendingDelete(false); setFieldErrors({}); setDraft(next); setSnapshot(JSON.stringify(draft)); setTab("details"); setError("");
+  };
+
   const remove = async () => {
     if (!draft?.id) return;
     setDeleting(true);
@@ -221,11 +248,11 @@ export default function ArtistScheduleAdminPage() {
       {!monthItems.length && !(draft && !draft.id) && <div className="content-library-empty"><b>이 달의 일정이 없습니다.</b><span>달력에서 날짜를 골라 새 일정을 추가하세요.</span></div>}
     </div>
   </>;
-  const identity = draft ? <><span className={styles.dateArt}><b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b><small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small></span><div className="content-identity-copy"><p><span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>{draft.isPublished ? "공개" : "비공개"}</span>{dirty && <em>저장하지 않은 변경사항</em>}</p><h2>{draft.titleKo || "이름 없는 일정"}</h2><small>{artistName}</small></div></> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>일정을 선택하세요</h2><small>{artistName}</small></div>;
-  const actions = draft ? <>{draft.id && <button type="button" data-tour-id="entity-delete" className="admin-btn admin-btn-danger content-delete-action" onClick={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)}><Trash2 aria-hidden="true" />{pendingDelete ? "삭제 취소" : "삭제"}</button>}<PreviewButton onClick={openPreview} disabled={!previewPayload} /><DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} onSave={() => pendingDelete ? remove() : save()} disabled={!pendingDelete && Boolean(validation)} extraDiff={pendingDelete ? [{ kind: "delete", field: "일정", before: draft.titleKo, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
+  const identity = draft ? <><span className={styles.dateArt}><b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b><small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small></span><div className="content-identity-copy"><p><span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>{draft.isPublished ? "공개" : "비공개"}</span></p><h2>{draft.titleKo || "이름 없는 일정"}</h2><small>{artistName}</small></div></> : <div className="content-identity-copy"><p><span className="cms-status">선택 안 됨</span></p><h2>일정을 선택하세요</h2><small>{artistName}</small></div>;
+  const actions = draft ? <><PreviewButton onClick={openPreview} disabled={!previewPayload} />{draft.id && <button type="button" data-tour-id="entity-duplicate" className="admin-btn admin-btn-secondary" onClick={() => void duplicate()}><Copy aria-hidden="true" />복제</button>}{draft.id && <OverflowDeleteMenu onDelete={() => pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)} deleteLabel={pendingDelete ? "삭제 취소" : "삭제"} />}<DraftSaveButton snapshot={snapshot} draft={draft} dirty={dirty || pendingDelete} saving={saving} onSave={() => pendingDelete ? remove() : save()} extraDiff={pendingDelete ? [{ kind: "delete", field: "일정", before: draft.titleKo, after: "삭제" }] : []} /></> : <button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button>;
 
   return <>
-    <ContentWorkbench rail={rail} railLabel="일정 선택" identity={identity} actions={actions} tabs={scheduleTabs.map((item) => ({ ...item, complete: item.id === "calendar" ? items.length > 0 : item.id === "details" ? Boolean(draft?.eventDate && draft.titleKo.trim()) : Boolean(draft && !validation), missing: item.id === "calendar" ? (items.length ? 0 : 1) : item.id === "details" ? [draft?.eventDate, draft?.titleKo.trim()].filter((value) => !value).length : draft && !validation ? 0 : 1 }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
+    <ContentWorkbench rail={rail} railLabel="일정 선택" identity={identity} actions={actions} toolbar={draft ? <AdminLanguageTabs activeLang={language} onChange={setLanguage} values={{ ko: draft.titleKo, en: draft.titleEn, ja: draft.titleJa }} /> : null} tabs={scheduleTabs.map((item) => ({ ...item, complete: item.id === "calendar" ? items.length > 0 : item.id === "details" ? Boolean(draft?.eventDate && draft.titleKo.trim()) : Boolean(draft && !validation), missing: item.id === "calendar" ? (items.length ? 0 : 1) : item.id === "details" ? [draft?.eventDate, draft?.titleKo.trim()].filter((value) => !value).length : draft && !validation ? 0 : 1 }))} activeTab={tab} onTabChange={setTab} error={error} onDismissError={() => setError("")} toast={toast} className="schedule-workbench" recovery={recovery ? { updatedAt: recovery.updatedAt, onRestore: restoreDraft, onDiscard: discardDraftBackup } : null}>
       {tab === "calendar" ? <section className={styles.calendarView} aria-label={`${calendarTitle} 일정 달력`}>
         <header className={styles.calendarToolbar}>
           <div className={styles.calendarHeading}>
@@ -287,17 +314,17 @@ export default function ArtistScheduleAdminPage() {
           <p><span><Clock3 aria-hidden="true" /> 시간</span><span><MapPin aria-hidden="true" /> 장소는 일정 편집에서 관리</span></p>
         </footer>
       </section> : !draft ? <div className="content-no-selection"><span><CalendarDays aria-hidden="true" /></span><h2>일정을 선택하세요</h2><p>월간 달력에서 일정을 고르거나 날짜를 눌러 새 일정을 추가하세요.</p><button type="button" className="admin-btn admin-btn-primary" onClick={() => add()}>일정 추가</button></div> : <div className="content-editor-stack">
-        {tab === "details" && <>
+        {tab === "details" && <div ref={detailsRef}>
           <div className="content-section-heading"><h3>일정 기본 정보</h3><span>공개 캘린더에서 날짜순으로 표시할 일정의 핵심 정보입니다.</span></div>
-          <FormField label="일정명" valueKo={draft.titleKo} valueEn={draft.titleEn} valueJa={draft.titleJa} onChangeKo={(titleKo) => patch({ titleKo })} onChangeEn={(titleEn) => patch({ titleEn })} onChangeJa={(titleJa) => patch({ titleJa })} required />
-          <div className="music-field-grid two"><label className="music-field"><span>날짜 <b>*</b></span><input type="date" className="admin-input" value={draft.eventDate} onChange={(event) => patch({ eventDate: event.target.value })} /></label><label className="music-field"><span>시작 시간</span><input type="time" className="admin-input" value={draft.startTime} onChange={(event) => patch({ startTime: event.target.value })} /></label></div>
+          <FormField label="일정명" activeLang={language} error={fieldErrors.titleKo} valueKo={draft.titleKo} valueEn={draft.titleEn} valueJa={draft.titleJa} onChangeKo={(titleKo) => patch({ titleKo })} onChangeEn={(titleEn) => patch({ titleEn })} onChangeJa={(titleJa) => patch({ titleJa })} required />
+          <div className="music-field-grid two"><label className="music-field"><span>날짜 <b>*</b></span><input name="eventDate" type="date" className="admin-input" value={draft.eventDate} onChange={(event) => patch({ eventDate: event.target.value })} aria-invalid={Boolean(fieldErrors.eventDate)} aria-describedby={fieldErrors.eventDate ? "schedule-date-error" : undefined} />{fieldErrors.eventDate && <p id="schedule-date-error" className="admin-field-error" role="alert">{fieldErrors.eventDate}</p>}</label><label className="music-field"><span>시작 시간</span><input type="time" className="admin-input" value={draft.startTime} onChange={(event) => patch({ startTime: event.target.value })} /></label></div>
           <div className="music-field-grid two"><div className="music-field"><span>일정 유형 <b>*</b></span><CustomSelect ariaLabel="일정 유형" value={draft.category} onChange={(category) => patch({ category: category as Category })} options={(Object.keys(CATEGORY) as Category[]).map((key) => ({ value: key, label: CATEGORY[key].label }))} /></div><div className="music-field"><span>캘린더 표시</span><div className={styles.categoryPreview} style={{ "--category-color": CATEGORY[draft.category].color } as CSSProperties}>{(() => { const CategoryIcon = CATEGORY[draft.category].icon; return <i><CategoryIcon aria-hidden="true" /></i>; })()}{CATEGORY[draft.category].label}</div></div></div>
-          <FormField label="장소" valueKo={draft.location} valueEn={draft.locationEn} valueJa={draft.locationJa} onChangeKo={(location) => patch({ location })} onChangeEn={(locationEn) => patch({ locationEn })} onChangeJa={(locationJa) => patch({ locationJa })} />
-          <label className="music-field content-field-short"><span>연결 링크</span><input type="url" className="admin-input" value={draft.linkUrl} onChange={(event) => patch({ linkUrl: event.target.value })} placeholder="https://" /></label>
+          <FormField label="장소" activeLang={language} valueKo={draft.location} valueEn={draft.locationEn} valueJa={draft.locationJa} onChangeKo={(location) => patch({ location })} onChangeEn={(locationEn) => patch({ locationEn})} onChangeJa={(locationJa) => patch({ locationJa })} />
+          <label className="music-field content-field-short"><span>연결 링크</span><input name="linkUrl" type="url" className="admin-input" value={draft.linkUrl} onChange={(event) => patch({ linkUrl: event.target.value })} placeholder="https://" aria-invalid={Boolean(fieldErrors.linkUrl)} aria-describedby={fieldErrors.linkUrl ? "schedule-link-error" : undefined} />{fieldErrors.linkUrl && <p id="schedule-link-error" className="admin-field-error" role="alert">{fieldErrors.linkUrl}</p>}</label>
           <div className={styles.sectionDivider} />
           <div className="content-section-heading"><h3>일정 설명</h3><span>언어 탭을 전환해 같은 폼에서 설명을 작성합니다. 번역이 없으면 공개 페이지에서 한국어가 대신 표시됩니다.</span></div>
-          <FormField label="일정 설명" type="textarea" valueKo={draft.descriptionKo} valueEn={draft.descriptionEn} valueJa={draft.descriptionJa} onChangeKo={(descriptionKo) => patch({ descriptionKo })} onChangeEn={(descriptionEn) => patch({ descriptionEn })} onChangeJa={(descriptionJa) => patch({ descriptionJa })} />
-        </>}
+          <FormField label="일정 설명" type="textarea" activeLang={language} valueKo={draft.descriptionKo} valueEn={draft.descriptionEn} valueJa={draft.descriptionJa} onChangeKo={(descriptionKo) => patch({ descriptionKo })} onChangeEn={(descriptionEn) => patch({ descriptionEn })} onChangeJa={(descriptionJa) => patch({ descriptionJa })} />
+        </div>}
         {tab === "publish" && <>
           <div className="content-section-heading"><h3>공개 설정</h3><span>저장 즉시 아티스트 공개 일정 페이지에 반영할지 선택합니다.</span></div>
           <div className="content-publish-summary"><div><span>일정</span><strong>{draft.titleKo || "미입력"}</strong></div><div><span>날짜 · 시간</span><strong>{draft.eventDate || "미입력"}{draft.startTime ? ` · ${draft.startTime}` : ""}</strong></div><div><span>유형</span><strong>{CATEGORY[draft.category].label}</strong></div><div><span>장소</span><strong>{draft.location || "미설정"}</strong></div></div>
