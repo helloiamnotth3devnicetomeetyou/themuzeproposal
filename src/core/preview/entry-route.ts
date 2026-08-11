@@ -1,9 +1,10 @@
 import { draftMode } from "next/headers";
+import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { isPreviewToken } from "@/core/preview/types";
+import { isPreviewToken, PREVIEW_SESSION_COOKIE } from "@/core/preview/types";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
 const ALLOWED_PATHS = [
@@ -72,5 +73,7 @@ export async function POST(request: NextRequest) {
   const draft = await draftMode();
   draft.enable();
   target.searchParams.set("preview", token);
-  return NextResponse.redirect(target, { status: 307 });
+  const response = NextResponse.redirect(target, { status: 307 });
+  (await cookies()).set(PREVIEW_SESSION_COOKIE, `${userId}:${token}`, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 60, secure: process.env.NODE_ENV === "production" });
+  return response;
 }

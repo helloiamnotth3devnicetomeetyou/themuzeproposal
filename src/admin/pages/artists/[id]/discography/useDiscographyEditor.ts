@@ -6,6 +6,7 @@ import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { adminDbError } from "@/admin/utils/admin-db-error";
+import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 import { supabase } from "@/core/supabase/client";
 import { revalidatePublicCache } from "@/core/utils/public-cache";
 import {
@@ -154,7 +155,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
   const removeAssets = async (assets: UploadedAsset[]) => {
     const groups = new Map<string, string[]>();
     assets.forEach((asset) => groups.set(asset.bucket, [...(groups.get(asset.bucket) ?? []), asset.path]));
-    await Promise.all([...groups].map(([bucket, paths]) => supabase.storage.from(bucket).remove(paths)));
+    await Promise.all([...groups].map(([bucket, paths]) => deleteAdminAssets(bucket, paths)));
   };
   const discardQueuedUploads = async () => {
     const queued = [...uploadedAssets.current];
@@ -228,7 +229,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
 
     const referenced = collectAssetUrls(draft);
     const stale = original ? [...collectAssetUrls(original)].filter((url) => !referenced.has(url)).map(managedAssetFromUrl).filter(Boolean) : [];
-    await Promise.all(stale.map((asset) => supabase.storage.from(asset!.bucket).remove([asset!.path])));
+    await Promise.all(stale.map((asset) => deleteAdminAssets(asset!.bucket, [asset!.path])));
     uploadedAssets.current = [];
     setSaving(false);
     setToast("변경사항을 저장했습니다.");
@@ -243,7 +244,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
     const assets = [...collectAssetUrls(draft)].map(managedAssetFromUrl).filter(Boolean);
     const { error: deleteError } = await supabase.from("albums").delete().eq("id", draft.id);
     if (deleteError) { setDeleting(false); setDeleteOpen(false); setError(deleteError.message); return; }
-    await Promise.all(assets.map((asset) => supabase.storage.from(asset!.bucket).remove([asset!.path])));
+    await Promise.all(assets.map((asset) => deleteAdminAssets(asset!.bucket, [asset!.path])));
     setDeleting(false);
     setDeleteOpen(false);
     setToast("앨범을 삭제했습니다.");

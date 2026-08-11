@@ -8,6 +8,7 @@ import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
+import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 import { cropSquareImage, getSquareCrop } from "@/admin/utils/square-image-crop";
 import {
   cleanupAbandonedDraftImageAssets,
@@ -261,7 +262,7 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
       throw error;
     }
 
-    if (removed.length) await supabase.storage.from("artist-assets").remove(removed.map((item) => item.image_path));
+    if (removed.length) await deleteAdminAssets("artist-assets", removed.map((item) => item.image_path));
     const currentPaths = new Set(items.map((item) => item.image_path));
     await finalizeDraftImageAssets(
       supabase,

@@ -13,7 +13,7 @@ function blob(bytes: number[] | string) {
 
 describe("validateFileSignature", () => {
   it("recognizes raster images from bytes instead of the declared MIME type", async () => {
-    const png = blob([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
+    const png = new Blob([await sharp({ create: { width: 1, height: 1, channels: 4, background: "#000" } }).png().toBuffer()]);
     const disguisedHtml = blob("<script>alert(1)</script>");
 
     await expect(validateFileSignature(png, "public-image")).resolves.toEqual({
@@ -80,6 +80,7 @@ describe("validateFileSignature", () => {
 
     await expect(validateFileSignature(safe, "protect-evidence")).resolves.toEqual({ mimeType: "image/png", extension: "png" });
     await expect(validateFileSignature(new Blob([oversizedHeader]), "protect-evidence")).resolves.toBeNull();
+    await expect(validateFileSignature(new Blob([oversizedHeader]), "public-image")).resolves.toBeNull();
   });
 });
 

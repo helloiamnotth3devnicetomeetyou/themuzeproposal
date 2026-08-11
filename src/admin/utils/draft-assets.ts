@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
+import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 
 const PUBLIC_ASSET_MARKER = "/storage/v1/object/public/artist-assets/";
 
@@ -17,7 +18,8 @@ function managedPathFromUrl(value: string): string | null {
 
 async function removePaths(client: SupabaseClient, paths: string[]) {
   const unique = [...new Set(paths.filter(Boolean))];
-  if (unique.length) await client.storage.from("artist-assets").remove(unique);
+  void client;
+  if (unique.length) await deleteAdminAssets("artist-assets", unique);
 }
 
 const DRAFT_ASSET_REGISTRY_KEY = "themuze:admin-draft-assets";

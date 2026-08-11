@@ -63,9 +63,9 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
 };
 
 const SIGNATURE_HEADER_BYTES = 4 * 1024;
-const MAX_EVIDENCE_PIXELS = 25_000_000;
-const MAX_EVIDENCE_EDGE = 10_000;
-const MAX_EVIDENCE_FRAMES = 20;
+const MAX_IMAGE_PIXELS = 25_000_000;
+const MAX_IMAGE_EDGE = 10_000;
+const MAX_IMAGE_FRAMES = 20;
 const MAX_DISPLAY_FILE_NAME_LENGTH = 255;
 
 function startsWith(bytes: Uint8Array, signature: readonly number[]) {
@@ -110,18 +110,17 @@ export async function validateFileSignature(
 
   if (!mimeType || !PROFILE_TYPES[profile].has(mimeType)) return null;
 
-  if ((profile === "protect-evidence" || profile === "audition-attachment")
-    && mimeType.startsWith("image/")) {
+  if (mimeType.startsWith("image/")) {
     try {
       const metadata = await sharp(await file.arrayBuffer(), {
         animated: true,
-        limitInputPixels: MAX_EVIDENCE_PIXELS,
+        limitInputPixels: MAX_IMAGE_PIXELS,
       }).metadata();
       const width = metadata.width ?? 0;
       const height = metadata.height ?? 0;
       const frames = metadata.pages ?? 1;
-      if (!width || !height || width > MAX_EVIDENCE_EDGE || height > MAX_EVIDENCE_EDGE
-        || width * height * frames > MAX_EVIDENCE_PIXELS || frames > MAX_EVIDENCE_FRAMES) return null;
+      if (!width || !height || width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE
+        || width * height * frames > MAX_IMAGE_PIXELS || frames > MAX_IMAGE_FRAMES) return null;
     } catch {
       return null;
     }

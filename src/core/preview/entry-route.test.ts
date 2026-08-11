@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({ draftMode: mocks.draftMode }));
+vi.mock("next/headers", () => ({ draftMode: mocks.draftMode, cookies: () => ({ set: vi.fn() }) }));
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createClient }));
 

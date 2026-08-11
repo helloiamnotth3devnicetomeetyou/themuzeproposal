@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const deleteAdminAssets = vi.hoisted(() => vi.fn());
+vi.mock("@/admin/utils/delete-admin-assets", () => ({ deleteAdminAssets }));
 import {
   cleanupAbandonedDraftImageAssets,
   finalizeDraftImageAssets,
   trackDraftImageAsset,
 } from "./draft-assets";
 
-const remove = vi.fn();
 const client = {
-  storage: { from: vi.fn(() => ({ remove })) },
+  storage: { from: vi.fn() },
 };
 const asset = (path: string) => ({
   bucket: "artist-assets" as const,
@@ -19,7 +20,7 @@ describe("draft image asset lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    remove.mockResolvedValue({ error: null });
+    deleteAdminAssets.mockResolvedValue(true);
   });
 
   it("deletes only abandoned tracked uploads", async () => {
@@ -28,7 +29,7 @@ describe("draft image asset lifecycle", () => {
 
     await cleanupAbandonedDraftImageAssets(client as never);
 
-    expect(remove).toHaveBeenCalledWith(["artist/old.jpg"]);
+    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", ["artist/old.jpg"]);
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
 
@@ -45,7 +46,7 @@ describe("draft image asset lifecycle", () => {
       ["https://storage.example/storage/v1/object/public/artist-assets/artist/old%20logo.jpg", "https://external.example/logo.jpg"],
     );
 
-    expect(remove).toHaveBeenCalledWith(["artist/unused.jpg", "artist/old logo.jpg"]);
+    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", ["artist/unused.jpg", "artist/old logo.jpg"]);
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
 });

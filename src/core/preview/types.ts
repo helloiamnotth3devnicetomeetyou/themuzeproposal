@@ -1,5 +1,6 @@
 export const PREVIEW_VERSION = 1 as const;
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
+export const PREVIEW_SESSION_COOKIE = "themuze-preview-session";
 const PREVIEW_STORAGE_PREFIX = "themuze:admin-preview:";
 
 export type PreviewKind =
@@ -306,6 +307,14 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
 
 export const previewStorageKey = (token: string) =>
   `${PREVIEW_STORAGE_PREFIX}${token}`;
+
+export function clearPreviewStorage() {
+  if (typeof window === "undefined") return;
+  for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+    const key = window.localStorage.key(index);
+    if (key?.startsWith(PREVIEW_STORAGE_PREFIX)) window.localStorage.removeItem(key);
+  }
+}
 
 export function isPreviewToken(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);

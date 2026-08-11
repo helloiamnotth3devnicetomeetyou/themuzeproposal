@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { usePathname, useRouter } from "next/navigation";
 import {
   parsePreviewEnvelope,
-  PREVIEW_TTL_MS,
   previewStorageKey,
   type PreviewEnvelope,
   type PreviewKind,
@@ -44,20 +43,23 @@ export function PreviewProvider({
     return () => window.clearTimeout(timer);
   }, [previewRequested, token]);
 
-  const readEnvelope = useCallback(() => {
+  const readEnvelope = useCallback(async () => {
     if (!previewRequested || !token) {
       setEnvelope(null);
       setResolved(true);
       return;
     }
     try {
+      const validation = await fetch(`/api/admin/preview/validate?token=${encodeURIComponent(token)}`, { cache: "no-store" });
+      if (!validation.ok) {
+        setEnvelope(null);
+        return;
+      }
       const key = previewStorageKey(token);
       const raw = window.localStorage.getItem(key);
       const parsed = raw ? parsePreviewEnvelope(raw, token) : null;
       if (parsed) {
-        const refreshed = { ...parsed, expiresAt: Date.now() + PREVIEW_TTL_MS };
-        window.localStorage.setItem(key, JSON.stringify(refreshed));
-        setEnvelope(refreshed);
+        setEnvelope(parsed);
       } else {
         setEnvelope(null);
       }
@@ -68,7 +70,7 @@ export function PreviewProvider({
   }, [previewRequested, token]);
 
   useEffect(() => {
-    const timer = window.setTimeout(readEnvelope, 0);
+    const timer = window.setTimeout(() => void readEnvelope(), 0);
     return () => window.clearTimeout(timer);
   }, [readEnvelope]);
 
@@ -81,7 +83,7 @@ export function PreviewProvider({
       setResolved(true);
     };
     window.addEventListener("storage", onStorage);
-    const expiryTimer = window.setInterval(readEnvelope, 30_000);
+    const expiryTimer = window.setInterval(() => void readEnvelope(), 30_000);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.clearInterval(expiryTimer);

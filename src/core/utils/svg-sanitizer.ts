@@ -85,12 +85,13 @@ export function sanitizeSvg(source: string): string {
   // Sanitize SVG using DOMPurify with the SVG profile
   const sanitized = DOMPurify.sanitize(input, {
     USE_PROFILES: { svg: true, svgFilters: true },
-    ADD_TAGS: ["style"],
     ADD_ATTR: ["viewBox", "id", "class"],
+    FORBID_TAGS: ["style", "image", "foreignObject"],
+    FORBID_ATTR: ["href", "xlink:href"],
     RETURN_TRUSTED_TYPE: false,
   });
 
-  if (!sanitized || sanitized.trim() === "" || /<script/i.test(sanitized)) {
+  if (!sanitized || sanitized.trim() === "" || /<script|\b(?:href|xlink:href)\s*=|url\s*\(/i.test(sanitized)) {
     throw new UnsafeSvgError();
   }
 

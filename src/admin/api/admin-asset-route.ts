@@ -109,3 +109,21 @@ export async function POST(request: NextRequest) {
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
+
+export async function DELETE(request: NextRequest) {
+  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+  const body = await request.json().catch(() => null) as { bucket?: unknown; paths?: unknown } | null;
+  const bucket = typeof body?.bucket === "string" ? body.bucket : "";
+  const paths = Array.isArray(body?.paths) && body.paths.length <= 100 && body.paths.every((path): path is string => typeof path === "string" && isSafeStoragePath(path))
+    ? [...new Set(body.paths)] : [];
+  if (!(bucket in BUCKETS) || !paths.length) return errorResponse("INVALID_FILE", 400);
+  const serviceClient = createServiceRoleClient();
+  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  const { error } = await serviceClient.storage.from(bucket).remove(paths);
+  if (error) return errorResponse("DELETE_FAILED", 503);
+  return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}

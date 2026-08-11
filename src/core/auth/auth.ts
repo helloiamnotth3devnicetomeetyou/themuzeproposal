@@ -1,4 +1,5 @@
 import { supabase } from '@/core/supabase/client';
+import { clearPreviewStorage } from "@/core/preview/types";
 
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
@@ -71,6 +72,7 @@ export async function signUp(email: string, password: string, name?: string) {
 }
 
 export async function signOut() {
+  clearPreviewStorage();
   const { error } = await supabase.auth.signOut();
   if (error) throw new AuthUserError('SERVICE_UNAVAILABLE');
 }
