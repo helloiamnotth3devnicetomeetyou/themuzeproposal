@@ -23,6 +23,7 @@ export function DiscographyExperience() {
   const albumRailRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
   const [mobileView, setMobileView] = useState<"album" | "tracks">("album");
+  const [isMobileExperience, setIsMobileExperience] = useState<boolean | null>(null);
   const discography = useDiscographyController(
     artistid,
     audioRef,
@@ -49,10 +50,19 @@ export function DiscographyExperience() {
 
   useEffect(() => scheduleImagePreload(queuedGalleryCandidates, { concurrency: 3 }), [queuedGalleryCandidates]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const sync = () => setIsMobileExperience(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
   const preloadAlbum = useCallback((index: number) => {
     const candidate = coverCandidates[index];
     if (candidate) void preloadImages([candidate]);
   }, [coverCandidates]);
+  const toggleDiscs = useCallback(() => discography.setShowDiscs((showDiscs) => !showDiscs), [discography.setShowDiscs]);
 
   const changeMobileView = useCallback((view: "album" | "tracks") => {
     setMobileView(view);
@@ -60,10 +70,11 @@ export function DiscographyExperience() {
     requestAnimationFrame(() => pageRef.current?.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" }));
   }, []);
 
-  if (discography.loading || !discography.album) {
+  if (discography.loading || !discography.album || isMobileExperience === null) {
+    const waiting = discography.loading || isMobileExperience === null;
     const message =
       discography.loadError ||
-      (discography.loading
+      (waiting
         ? t.discography.loading
         : t.discography.empty);
 
@@ -72,7 +83,7 @@ export function DiscographyExperience() {
         className="min-h-[100dvh] flex items-center justify-center px-6"
         style={{ backgroundColor: "var(--palette-050505)" }}
       >
-        {discography.loading ? (
+        {waiting ? (
           <LoadingIndicator
             label={message}
             className="text-[var(--palette-9ca3af)]"
@@ -105,7 +116,7 @@ export function DiscographyExperience() {
         isPlaying={discography.isPlaying}
       />
 
-      <div className="lg:hidden w-full max-w-[640px] md:max-w-none mx-auto px-5 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--banner-height,0px)+var(--site-header-height))] relative z-10">
+      {isMobileExperience ? <div className="w-full max-w-[640px] md:max-w-none mx-auto px-5 md:px-8 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--banner-height,0px)+var(--site-header-height))] relative z-10">
         <MobileDiscographyPlayer
           album={album}
           albumIndex={discography.albumIndex}
@@ -127,8 +138,7 @@ export function DiscographyExperience() {
           onTogglePlay={discography.togglePlay}
           onViewChange={changeMobileView}
         />
-      </div>
-      <div className={`hidden lg:grid lg:flex-1 lg:min-h-0 lg:grid-cols-12 lg:items-center max-w-[1400px] mx-auto px-8 pb-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}>
+      </div> : <div className={`grid flex-1 min-h-0 grid-cols-12 items-center max-w-[1400px] mx-auto px-8 pb-8 w-full relative z-10 overflow-visible pt-28 gap-8 ${discography.contentClass}`}>
         <AlbumArtwork
           album={album}
           artistName={discography.artistName}
@@ -138,9 +148,7 @@ export function DiscographyExperience() {
           showDiscs={discography.showDiscs}
           onHoverDisc={discography.setHoveredDisc}
           onSelectTrack={discography.playTrack}
-          onToggleDiscs={() =>
-            discography.setShowDiscs((showDiscs) => !showDiscs)
-          }
+          onToggleDiscs={toggleDiscs}
         />
         <AlbumDetails
           activeTab={discography.activeTab}
@@ -158,9 +166,9 @@ export function DiscographyExperience() {
           onTabChange={discography.setActiveTab}
           onTogglePlay={discography.togglePlay}
         />
-      </div>
+      </div>}
 
-      <AlbumDock
+      {!isMobileExperience && <AlbumDock
         albumIndex={discography.albumIndex}
         albums={discography.sortedAlbums}
         currentAlbum={album}
@@ -170,7 +178,7 @@ export function DiscographyExperience() {
         onIntentAlbum={preloadAlbum}
         onSelectAlbum={discography.switchAlbum}
         onToggleSort={discography.toggleSort}
-      />
+      />}
     </main>
   );
 }

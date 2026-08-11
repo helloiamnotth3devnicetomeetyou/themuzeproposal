@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { RefObject } from "react";
+import { memo, type RefObject } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 
@@ -21,7 +21,7 @@ interface AlbumDockProps {
   onToggleSort: () => void;
 }
 
-export function AlbumDock({
+export const AlbumDock = memo(function AlbumDock({
   albumIndex,
   albums,
   currentAlbum,
@@ -194,4 +194,4 @@ export function AlbumDock({
       </div>
     </div>
   );
-}
+});

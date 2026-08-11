@@ -1,6 +1,7 @@
 import type { DiscographyAlbum } from "../lib/types";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
+import { memo } from "react";
 
 interface TrackListProps {
   album: DiscographyAlbum;
@@ -11,7 +12,7 @@ interface TrackListProps {
   onPlayTrack: (index: number) => void;
 }
 
-export function TrackList({
+export const TrackList = memo(function TrackList({
   album,
   currentTrackIndex,
   hoveredDisc,
@@ -143,4 +144,4 @@ export function TrackList({
       })}
     </div>
   );
-}
+});

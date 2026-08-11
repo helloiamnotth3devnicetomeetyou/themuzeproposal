@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 
 import type { DiscographyAlbum } from "../lib/types";
 import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
@@ -9,7 +9,7 @@ interface DiscographyBackgroundProps {
   isPlaying: boolean;
 }
 
-export function DiscographyBackground({
+export const DiscographyBackground = memo(function DiscographyBackground({
   album,
   isPlaying,
 }: DiscographyBackgroundProps) {
@@ -25,7 +25,7 @@ export function DiscographyBackground({
           alt=""
           fill
           sizes={DISCOGRAPHY_COVER_SIZES}
-          className="object-cover blur-[100px] scale-[1.4] brightness-[0.1] saturate-150 transition-all duration-1000"
+          className="object-cover blur-[80px] scale-[1.28] brightness-[0.12] saturate-150 transition-opacity duration-700"
         />
       </div>
       <div
@@ -41,4 +41,4 @@ export function DiscographyBackground({
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--alpha-000000-5)] via-transparent to-[var(--alpha-000000-3)]" />
     </div>
   );
-}
+});

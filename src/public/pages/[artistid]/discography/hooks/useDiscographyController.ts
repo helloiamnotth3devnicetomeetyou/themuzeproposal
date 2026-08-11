@@ -245,6 +245,8 @@ export function useDiscographyController(
     },
     [album, currentTrackIndex, playTrack],
   );
+  const nextTrack = useCallback(() => moveTrack(1), [moveTrack]);
+  const previousTrack = useCallback(() => moveTrack(-1), [moveTrack]);
 
   const handleTimeUpdate = useCallback(
     (event: React.SyntheticEvent<HTMLAudioElement>) => {
@@ -296,9 +298,9 @@ export function useDiscographyController(
     loadError,
     members: localizedMembers,
     gallery,
-    nextTrack: () => moveTrack(1),
+    nextTrack,
     playTrack,
-    previousTrack: () => moveTrack(-1),
+    previousTrack,
     railPhase,
     setActiveTab,
     setHoveredDisc,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { MemberGalleryFilters } from "./MemberGalleryFilters";
 import { MemberGalleryGrid } from "./MemberGalleryGrid";
@@ -15,7 +15,7 @@ interface MemberGalleryProps {
   layout?: "panel" | "flow";
 }
 
-export function MemberGallery({ album, members, gallery, albumColor, layout = "panel" }: MemberGalleryProps) {
+export const MemberGallery = memo(function MemberGallery({ album, members, gallery, albumColor, layout = "panel" }: MemberGalleryProps) {
   const { t } = useLocale();
   const [selectedMemberId, setSelectedMemberId] = useState("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -36,4 +36,4 @@ export function MemberGallery({ album, members, gallery, albumColor, layout = "p
     <div className={layout === "panel" ? "flex-1 min-h-0 overflow-y-auto pr-1" : "overflow-visible"}><MemberGalleryGrid album={album} albumColor={albumColor} gallery={filteredGallery} members={memberMap} showMember={selectedMemberId === "all"} onOpen={setLightboxIndex} /></div>
     {lightboxIndex !== null && <MemberGalleryLightbox albumColor={albumColor} gallery={filteredGallery} members={memberMap} index={lightboxIndex} onIndexChange={setLightboxIndex} onClose={() => setLightboxIndex(null)} />}
   </div>;
-}
+});

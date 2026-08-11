@@ -61,6 +61,7 @@ export function useAudioPlayback(
 
   const restoreTimeRef = useRef(0);
   const lastSavedSecondRef = useRef(-1);
+  const lastRenderedSecondRef = useRef(-1);
 
   const time = useMemo(
     () => ({
@@ -98,10 +99,11 @@ export function useAudioPlayback(
     ) => {
       const audio = event.currentTarget;
       const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
-      setAudioDuration(duration);
-      setProgress(duration ? (audio.currentTime / duration) * 100 : 0);
-
       const second = Math.floor(audio.currentTime);
+      if (second !== lastRenderedSecondRef.current) {
+        lastRenderedSecondRef.current = second;
+        setProgress(duration ? (audio.currentTime / duration) * 100 : 0);
+      }
       if (albumId && second !== lastSavedSecondRef.current && second % 2 === 0) {
         lastSavedSecondRef.current = second;
         savePlayback(albumId, trackIndex, audio.currentTime);

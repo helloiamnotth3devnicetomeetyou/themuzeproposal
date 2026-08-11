@@ -180,11 +180,6 @@
   transition: opacity 1.2s ease, filter 1.2s ease;
 }
 
-.discography-ambient-layer.is-playing {
-  opacity: .78;
-  filter: blur(48px) saturate(1.48);
-}
-
 .discography-ambient-orb {
   position: absolute;
   display: block;
@@ -217,6 +212,11 @@
   height: 42%;
   background: radial-gradient(circle, var(--alpha-ffffff-38) 0%, color-mix(in srgb, var(--album-accent) 24%, transparent) 38%, transparent 70%);
   animation: discographyAmbientGlow 18s ease-in-out infinite;
+}
+
+.discography-ambient-layer.is-playing {
+  opacity: .78;
+  filter: blur(48px) saturate(1.48);
 }
 
 .discography-ambient-layer.is-playing .discography-ambient-orb.is-primary { animation-duration: 16s; }

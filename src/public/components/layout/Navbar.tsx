@@ -19,11 +19,13 @@ export default function Navbar({ initialArtists, initialAccount }: { initialArti
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
   const [mobileOpenArtist, setMobileOpenArtist] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileNav, setIsMobileNav] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isDark = theme === "dark";
 
   useEffect(() => { const onScroll = () => setIsScrolled(window.scrollY > 50); onScroll(); window.addEventListener("scroll", onScroll, { passive: true }); return () => window.removeEventListener("scroll", onScroll); }, []);
+  useEffect(() => { const media = window.matchMedia("(max-width: 1279px)"); const sync = () => setIsMobileNav(media.matches); sync(); media.addEventListener("change", sync); return () => media.removeEventListener("change", sync); }, []);
   useEffect(() => {
     const refreshAccount = () => router.refresh();
     window.addEventListener("account-avatar-changed", refreshAccount);
@@ -42,5 +44,5 @@ export default function Navbar({ initialArtists, initialAccount }: { initialArti
     }, locale, artist.name),
   }));
   const shared = { artists: localizedArtists, pathname, isAdmin: initialAccount.isAdmin, isLoggedIn: initialAccount.isLoggedIn, authReady: true, accountAvatarUrl: initialAccount.avatarUrl, accountInitial: initialAccount.initial, accountName: initialAccount.name, isDark, t, onToggleTheme: toggleTheme };
-  return <header className={`${pathname.startsWith("/admin") ? styles.headerAdmin : styles.header} ${scrolled ? styles.headerScrolled : styles.headerTransparent}`}><div className={`${styles.container} ${isScrolled || pathname !== "/" ? styles.containerScrolled : ""}`}><DesktopNav {...shared} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} /><MobileNav {...shared} menuButtonRef={menuButtonRef} mobileMenuRef={mobileMenuRef} isOpen={isMobileMenuOpen} onToggle={() => setIsMobileMenuOpen((open) => !open)} onClose={closeMobileMenu} mobileOpenArtist={mobileOpenArtist} setMobileOpenArtist={setMobileOpenArtist} /></div></header>;
+  return <header className={`${pathname.startsWith("/admin") ? styles.headerAdmin : styles.header} ${scrolled ? styles.headerScrolled : styles.headerTransparent}`}><div className={`${styles.container} ${isScrolled || pathname !== "/" ? styles.containerScrolled : ""}`}>{isMobileNav ? <MobileNav {...shared} menuButtonRef={menuButtonRef} mobileMenuRef={mobileMenuRef} isOpen={isMobileMenuOpen} onToggle={() => setIsMobileMenuOpen((open) => !open)} onClose={closeMobileMenu} mobileOpenArtist={mobileOpenArtist} setMobileOpenArtist={setMobileOpenArtist} /> : <DesktopNav {...shared} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} />}</div></header>;
 }

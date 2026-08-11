@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
+import { memo } from "react";
 
 import type { DiscographyAlbum } from "../lib/types";
 import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
@@ -16,7 +17,7 @@ interface AlbumArtworkProps {
   onToggleDiscs: () => void;
 }
 
-export function AlbumArtwork({
+export const AlbumArtwork = memo(function AlbumArtwork({
   album,
   artistName,
   currentTrackIndex,
@@ -82,7 +83,7 @@ export function AlbumArtwork({
                     : showDiscs
                       ? 40 + trackIndex
                       : 5 - trackIndex,
-                willChange: "transform",
+                willChange: showDiscs ? "transform" : "auto",
                 opacity: showDiscs ? 1 : 0,
                 pointerEvents: showDiscs ? "auto" : "none",
               }}
@@ -100,7 +101,7 @@ export function AlbumArtwork({
                   boxShadow: isActiveTrack
                     ? `0 0 30px ${album.color}40, 0 8px 35px var(--alpha-000000-6)`
                     : "0 6px 25px var(--alpha-000000-5)",
-                  willChange: "transform",
+                  willChange: isActiveTrack && isPlaying ? "transform" : "auto",
                 }}
               >
                  <Image
@@ -194,4 +195,4 @@ export function AlbumArtwork({
       </div>
     </div>
   );
-}
+});
