@@ -1,25 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
-import type { LocalizedTextDTO, NoticeDetailDTO } from "@/public/features/notices/types";
+import type { LocalizedTextDTO, NoticeDetailDTO, NoticeNavigationDTO } from "@/public/features/notices/types";
 import { sanitizeRichText } from "@/core/utils/rich-text";
 import styles from "@/styles/(public)/components/notices/NoticeBoard.module.css";
 
 type Locale = "ko" | "en" | "ja";
 
-const copy: Record<Locale, { back: string; loading: string; notFound: string; article: string }> = {
-  ko: { back: "공지 목록", loading: "공지를 불러오는 중…", notFound: "공지를 찾을 수 없습니다.", article: "공지 본문" },
-  en: { back: "All notices", loading: "Loading notice…", notFound: "Notice not found.", article: "Notice content" },
-  ja: { back: "お知らせ一覧", loading: "お知らせを読み込み中…", notFound: "お知らせが見つかりません。", article: "お知らせ本文" },
+const copy: Record<Locale, { back: string; loading: string; notFound: string; article: string; previous: string; next: string }> = {
+  ko: { back: "공지 목록", loading: "공지를 불러오는 중…", notFound: "공지를 찾을 수 없습니다.", article: "공지 본문", previous: "이전 공지", next: "다음 공지" },
+  en: { back: "All notices", loading: "Loading notice…", notFound: "Notice not found.", article: "Notice content", previous: "Previous notice", next: "Next notice" },
+  ja: { back: "お知らせ一覧", loading: "お知らせを読み込み中…", notFound: "お知らせが見つかりません。", article: "お知らせ本文", previous: "前のお知らせ", next: "次のお知らせ" },
 };
 
 const localized = (value: LocalizedTextDTO, locale: Locale) => value[locale] || value.ko || value.en || value.ja;
 
-export default function NoticeDetail({ artistSlug, initialData, loadFailed = false }: { noticeId: string; artistSlug?: string; initialData: NoticeDetailDTO | null; loadFailed?: boolean }) {
+export default function NoticeDetail({ artistSlug, initialData, initialNavigation, loadFailed = false }: { noticeId: string; artistSlug?: string; initialData: NoticeDetailDTO | null; initialNavigation?: NoticeNavigationDTO | null; loadFailed?: boolean }) {
   const { locale: activeLocale } = useLocale();
   const preview = usePreviewPayload("notice");
   const locale = activeLocale as Locale;
@@ -41,6 +41,7 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
   const error = (!preview && loadFailed) || !notice ? pageCopy.notFound : "";
   const heading = scopeName ? `${scopeName.toUpperCase()} NOTICE` : "NOTICE";
   const listHref = artistSlug ? `/${artistSlug}/notice` : "/notice";
+  const detailHref = (id: string) => artistSlug ? `/${artistSlug}/notice/${id}` : `/notice/${id}`;
 
   return (
     <div className={styles.pageFrame}>
@@ -49,6 +50,10 @@ export default function NoticeDetail({ artistSlug, initialData, loadFailed = fal
           <div className={styles.titleSticky}>
             <p className={styles.detailEyebrow}>{heading}</p>
             <Link href={listHref} className={styles.backLink}><ArrowLeft aria-hidden="true" />{pageCopy.back}</Link>
+            {!preview && initialNavigation && <nav className={styles.detailNavigation} aria-label="공지 이동">
+              {initialNavigation.previous && <Link href={detailHref(initialNavigation.previous.id)}><span>{pageCopy.previous}<ArrowLeft aria-hidden="true" /></span><b>{localized(initialNavigation.previous.title, locale)}</b></Link>}
+              {initialNavigation.next && <Link href={detailHref(initialNavigation.next.id)}><span>{pageCopy.next}<ArrowRight aria-hidden="true" /></span><b>{localized(initialNavigation.next.title, locale)}</b></Link>}
+            </nav>}
           </div>
         </header>
 

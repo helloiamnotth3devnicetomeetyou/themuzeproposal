@@ -23,3 +23,8 @@ export type NoticeListDTO = NoticeScopeDTO & {
 export type NoticeDetailDTO = NoticeScopeDTO & {
   notice: NoticeDTO | null;
 };
+
+export type NoticeNavigationDTO = {
+  previous: { id: string; title: LocalizedTextDTO } | null;
+  next: { id: string; title: LocalizedTextDTO } | null;
+};

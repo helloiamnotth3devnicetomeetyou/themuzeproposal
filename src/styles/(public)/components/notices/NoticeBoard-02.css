@@ -253,6 +253,7 @@
 
   .detailBoard .titleSticky {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
     gap: 20px;
@@ -262,6 +263,8 @@
     flex: 0 0 auto;
     margin: 0 0 2px;
   }
+
+  .detailBoard .detailNavigation { flex-basis: 100%; margin-top: 0; }
 
   .articleColumn {
     min-height: 500px;

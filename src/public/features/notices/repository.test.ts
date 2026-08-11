@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getPublicNotices, getPublicNotice } from "./repository";
+import { getPublicNotices, getPublicNotice, getPublicNoticeNavigation } from "./repository";
 
 /**
  * Creates a supabase mock that faithfully reflects the real query chains:
@@ -117,5 +117,13 @@ describe("Notices Repository", () => {
       const result = await getPublicNotice(mock, "99");
       expect(result.notice?.date).toBe("");
     });
+  });
+
+  it("returns adjacent notices with localized titles", async () => {
+    const supabase = createMockSupabase([makeRow("new", "New"), makeRow("current", "Current"), makeRow("old", "Old")]);
+    const result = await getPublicNoticeNavigation(supabase, "current");
+
+    expect(result.previous).toMatchObject({ id: "old", title: { ko: "Old" } });
+    expect(result.next).toMatchObject({ id: "new", title: { ko: "New" } });
   });
 });

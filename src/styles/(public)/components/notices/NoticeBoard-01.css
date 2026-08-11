@@ -356,3 +356,10 @@
   width: 15px;
   height: 15px;
 }
+
+.detailNavigation { display: grid; gap: 12px; margin-top: 34px; }
+.detailNavigation a { display: grid; gap: 5px; color: var(--text-secondary); text-decoration: none; }
+.detailNavigation a:hover { color: var(--color-brand-pink); }
+.detailNavigation span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-faint); font-size: 9px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.detailNavigation span svg { width: 12px; height: 12px; }
+.detailNavigation b { overflow: hidden; font-size: 11px; font-weight: 650; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }

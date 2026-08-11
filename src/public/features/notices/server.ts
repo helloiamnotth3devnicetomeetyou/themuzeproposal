@@ -3,8 +3,8 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
-import { getPublicNotice, getPublicNotices } from "./repository";
-import type { NoticeDetailDTO, NoticeListDTO } from "./types";
+import { getPublicNotice, getPublicNoticeNavigation, getPublicNotices } from "./repository";
+import type { NoticeDetailDTO, NoticeListDTO, NoticeNavigationDTO } from "./types";
 
 export type ServerDataResult<T> = {
   data: T | null;
@@ -22,6 +22,11 @@ const getCachedPublicNotice = unstable_cache(
   ["public-notice"],
   { revalidate: 300, tags: ["public-notices"] },
 );
+const getCachedPublicNoticeNavigation = unstable_cache(
+  (noticeId: string, artistSlug?: string) => getPublicNoticeNavigation(createClient(url, anonKey), noticeId, artistSlug),
+  ["public-notice-navigation"],
+  { revalidate: 300, tags: ["public-notices"] },
+);
 
 export async function loadPublicNotices(artistSlug?: string): Promise<ServerDataResult<NoticeListDTO>> {
   try {
@@ -34,6 +39,14 @@ export async function loadPublicNotices(artistSlug?: string): Promise<ServerData
 export async function loadPublicNotice(noticeId: string, artistSlug?: string): Promise<ServerDataResult<NoticeDetailDTO>> {
   try {
     return { data: await getCachedPublicNotice(noticeId, artistSlug), loadFailed: false };
+  } catch {
+    return { data: null, loadFailed: true };
+  }
+}
+
+export async function loadPublicNoticeNavigation(noticeId: string, artistSlug?: string): Promise<ServerDataResult<NoticeNavigationDTO>> {
+  try {
+    return { data: await getCachedPublicNoticeNavigation(noticeId, artistSlug), loadFailed: false };
   } catch {
     return { data: null, loadFailed: true };
   }
