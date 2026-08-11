@@ -60,6 +60,7 @@ export function MobileDiscographyPlayer({
   const { t } = useLocale();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const albumTrackRef = useRef<HTMLDivElement | null>(null);
+  const albumRailRef = useRef<HTMLElement | null>(null);
   const transitioningRef = useRef(false);
   const track = album.tracks[currentTrackIndex];
   const canPlay = Boolean(safeHref(track?.audioUrl));
@@ -73,7 +74,19 @@ export function MobileDiscographyPlayer({
       track.style.transform = "translate3d(-33.333333%, 0, 0)";
     }
     transitioningRef.current = false;
-  }, [album.id]);
+
+    const rail = albumRailRef.current;
+    const current = rail?.querySelector<HTMLElement>(`[data-album-index="${albumIndex}"]`);
+    if (!rail || !current) return;
+    const railRect = rail.getBoundingClientRect();
+    const currentRect = current.getBoundingClientRect();
+    const targetScrollLeft =
+      rail.scrollLeft + currentRect.left - railRect.left - (rail.clientWidth - currentRect.width) / 2;
+    rail.scrollTo({
+      left: targetScrollLeft,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [album.id, albumIndex]);
 
   const selectAlbum = (index: number) => {
     if (!albums[index] || transitioningRef.current) return;
@@ -178,7 +191,7 @@ export function MobileDiscographyPlayer({
       </div>
 
       {view === "album" ? (
-        <div id="discography-album-panel" role="tabpanel" className="pb-8 pt-3">
+        <div id="discography-album-panel" role="tabpanel" className="pb-8 pt-4">
           <div
             className="relative -mx-5 overflow-hidden py-3 touch-pan-y"
             onTouchStart={(event) => {
@@ -223,11 +236,11 @@ export function MobileDiscographyPlayer({
           </div>
 
           <div className="-mx-5 mt-5">
-            <nav aria-label="Albums" className="overflow-x-auto overscroll-x-contain px-5 pb-1 scrollbar-none touch-pan-x">
+            <nav ref={albumRailRef} aria-label="Albums" className="overflow-x-auto overscroll-x-contain px-5 pb-1 scrollbar-none touch-pan-x">
               <div className="flex w-max min-w-full items-center justify-center gap-2">
                 {albums.map((item, index) => {
                   const current = index === albumIndex;
-                  return <button key={item.id} type="button" aria-label={`Show ${item.title}`} aria-current={current ? "true" : undefined} onFocus={() => onIntentAlbum(index)} onTouchStart={() => onIntentAlbum(index)} onClick={() => selectAlbum(index)} className={`relative size-11 shrink-0 overflow-hidden rounded-lg border transition-transform duration-base active:scale-95 ${current ? "scale-110" : "opacity-55"}`} style={{ borderColor: current ? album.color : "var(--alpha-ffffff-08)", boxShadow: current ? `0 0 18px ${album.color}55` : undefined }}>
+                  return <button key={item.id} data-album-index={index} type="button" aria-label={`Show ${item.title}`} aria-current={current ? "true" : undefined} onFocus={() => onIntentAlbum(index)} onTouchStart={() => onIntentAlbum(index)} onClick={() => selectAlbum(index)} className={`relative size-11 shrink-0 overflow-hidden rounded-lg border transition-transform duration-base active:scale-95 ${current ? "scale-110" : "opacity-55"}`} style={{ borderColor: current ? album.color : "var(--alpha-ffffff-08)", boxShadow: current ? `0 0 18px ${album.color}55` : undefined }}>
                     <Image src={item.cover} alt="" fill sizes="44px" className="object-cover" />
                   </button>;
                 })}

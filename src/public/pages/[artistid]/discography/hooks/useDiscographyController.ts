@@ -143,7 +143,10 @@ export function useDiscographyController(
     const rail = albumRailRef.current;
     const current = rail?.querySelector<HTMLElement>(`[data-album-index="${albumIndex}"]`);
     if (!rail || !current) return;
-    const targetScrollLeft = current.offsetLeft - rail.clientWidth / 2 + current.offsetWidth / 2;
+    const railRect = rail.getBoundingClientRect();
+    const currentRect = current.getBoundingClientRect();
+    const targetScrollLeft =
+      rail.scrollLeft + currentRect.left - railRect.left - (rail.clientWidth - currentRect.width) / 2;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     rail.scrollTo({ left: targetScrollLeft, behavior: reducedMotion ? "auto" : "smooth" });
   }, [albumIndex, albumRailRef, sortedAlbums.length]);
