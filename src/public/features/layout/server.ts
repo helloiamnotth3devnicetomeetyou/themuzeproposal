@@ -2,13 +2,14 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import type { ArtistNavigationItem, NavigationAccount } from "@/public/components/layout/navbar-types";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import { EMPTY_SETTINGS, normalizeSiteSettings } from "@/public/features/settings/data";
 
-const { url, anonKey } = getPublicSupabaseConfig();
+const { url, anonKey, projectRef } = getPublicSupabaseConfig();
 
 function createPublicClient() {
   return createClient(url, anonKey, {
@@ -46,6 +47,9 @@ export const getCachedSiteSettings = unstable_cache(
 );
 
 export async function getNavigationAccount(): Promise<NavigationAccount> {
+  const hasAuthCookie = (await cookies()).getAll().some(({ name }) => name.startsWith(`sb-${projectRef}-auth-token`));
+  if (!hasAuthCookie) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "愿由ъ옄" };
+
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };

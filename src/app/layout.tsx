@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
@@ -24,8 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  await connection();
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const initialLocale: Locale = "ko";
   const initialTheme: Theme = "dark";
 

@@ -73,7 +73,7 @@ export default function HomeSlide({
     {index === 0 && !firstSlideReady && <div className="home-hero-loading"><LoadingIndicator label="Loading featured release" /></div>}
     <div className="home-hero-content"><div className="home-hero-copy">
       <span className="home-release-meta"><span style={{ color: "var(--slide-accent)" }}>{slide.artistName}</span>{slide.type && <><span style={{ color: "var(--alpha-ffffff-3)", margin: "0 0.4em" }}>·</span><span style={{ color: "var(--color-static-white)" }}>{slide.type}</span></>}</span>
-      <h2 className="home-release-title" aria-label={slide.title}>{slide.typoLogoUrl ? <span aria-hidden="true" className="home-typo-logo" style={{ WebkitMaskImage: `url("${slide.typoLogoUrl}")`, maskImage: `url("${slide.typoLogoUrl}")` }} /> : slide.title}</h2>
+      <h2 className="home-release-title" aria-label={slide.title}>{isVisible && slide.typoLogoUrl ? <span aria-hidden="true" className="home-typo-logo" style={{ WebkitMaskImage: `url("${slide.typoLogoUrl}")`, maskImage: `url("${slide.typoLogoUrl}")` }} /> : slide.title}</h2>
       {localizeText(slide.descriptions, locale) && <p className="home-release-description">{localizeText(slide.descriptions, locale)}</p>}
       <div className="home-release-actions">
         <Link href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`} prefetch={isActive ? null : false} className="home-primary-link">{exploreLabel}</Link>
