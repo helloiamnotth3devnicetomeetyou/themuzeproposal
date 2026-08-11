@@ -21,7 +21,7 @@ const BUCKETS = {
   "album-covers": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },
   "track-assets": { maxBytes: 100 * 1024 * 1024, profile: "track-asset" },
   "business-assets": { maxBytes: 100 * 1024 * 1024, profile: "business-asset" },
-  "hero-videos": { maxBytes: 30 * 1024 * 1024, profile: "hero-video" },
+  "hero-videos": { maxBytes: 18 * 1024 * 1024, profile: "hero-video" },
 } as const satisfies Record<string, { maxBytes: number; profile: FileValidationProfile }>;
 
 function errorResponse(code: string, status: number) {

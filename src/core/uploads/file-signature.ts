@@ -37,7 +37,7 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
   ]),
   "contact-attachment": new Set(["application/pdf"]),
   "business-asset": new Set(["application/pdf", "application/zip"]),
-  "hero-video": new Set(["video/webm"]),
+  "hero-video": new Set(["video/mp4"]),
   // Images (portfolio screenshots, photos) and PDF for audition attachments.
   "audition-attachment": new Set([
     "image/jpeg",

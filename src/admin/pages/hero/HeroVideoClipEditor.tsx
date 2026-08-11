@@ -7,6 +7,7 @@ import { useFocusTrap } from "@/admin/hooks/useFocusTrap";
 import { finishGuideSandbox, isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
 
 const CLIP_SECONDS = 12;
+const MAX_VIDEO_BYTES = 18 * 1024 * 1024;
 
 type Props = {
   slideId: string;
@@ -42,7 +43,8 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
 
   const selectFile = (file: File | null) => {
     if (!file) return;
-    if (file.type !== "video/webm" && !file.name.toLowerCase().endsWith(".webm")) { setError("FHD WebM 파일만 선택할 수 있습니다."); return; }
+    if (file.type !== "video/mp4" && !file.name.toLowerCase().endsWith(".mp4")) { setError("FHD H.264 MP4 파일만 선택할 수 있습니다."); return; }
+    if (file.size > MAX_VIDEO_BYTES) { setError("영상은 18MB 이하여야 합니다."); return; }
     if (source?.startsWith("blob:")) URL.revokeObjectURL(source);
     fileRef.current = file;
     setHasSourceFile(true);
@@ -66,7 +68,7 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const asset = await uploadAdminAsset("hero-videos", `clips/${slideId}/${crypto.randomUUID()}.webm`, file, {
+      const asset = await uploadAdminAsset("hero-videos", `clips/${slideId}/${crypto.randomUUID()}.mp4`, file, {
         signal: controller.signal,
         onProgress: (nextProgress) => setProgress(Math.round(nextProgress * 100)),
       });
@@ -97,7 +99,7 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
 
   const maxStart = Math.max(0, duration - CLIP_SECONDS);
   const clipStatus = videoUrl
-      ? "12초 WebM 저장됨"
+      ? "12초 FHD MP4 저장됨"
     : hasSourceFile
       ? "원본 선택됨 · 12초 클립 저장 필요"
       : "등록된 영상 없음";
@@ -110,7 +112,7 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
       {open && typeof document !== "undefined" && createPortal(<div className="delete-confirm-backdrop hero-video-modal" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) closeModal(); }}>
         <section ref={dialogRef} className="delete-confirm-dialog hero-video-editor" role="dialog" aria-modal="true" aria-labelledby={`hero-video-title-${slideId}`} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeModal(); } }}>
           <header className="hero-video-editor-heading"><div><span>HERO VIDEO</span><b id={`hero-video-title-${slideId}`}>12초 영상 저장</b></div></header>
-          <p className="hero-video-editor-description">FHD WebM에서 원하는 12초 구간만 잘라 메인 슬라이드에 저장합니다.</p>
+          <p className="hero-video-editor-description">FHD H.264 MP4에서 원하는 12초 구간만 메인 슬라이드에 저장합니다.</p>
           <div className="hero-video-workspace">
             <div className="hero-video-preview-pane">{source ? <video ref={previewRef} src={source} muted controls playsInline className="hero-video-preview" onLoadedMetadata={(event) => {
               const nextDuration = event.currentTarget.duration;
@@ -118,7 +120,7 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
               setStart((current) => Math.min(current, Math.max(0, nextDuration - CLIP_SECONDS)));
             }} /> : <p>영상을 선택하면 여기에 미리보기가 표시됩니다.</p>}</div>
             <div className="hero-video-controls">
-              <label className={`hero-video-file ${draggingFile ? "is-dragging" : ""}`} onDragOver={(event) => { event.preventDefault(); setDraggingFile(true); }} onDragLeave={() => setDraggingFile(false)} onDrop={(event) => { event.preventDefault(); setDraggingFile(false); selectFile(event.dataTransfer.files[0] ?? null); }}><span>{videoUrl ? "새 FHD WebM 영상을 끌어놓거나 선택하세요" : "FHD WebM 영상을 끌어놓거나 선택하세요"}</span><small>1920×1080 WebM · 선택한 12초 구간만 저장됩니다</small><input type="file" accept="video/webm,.webm" disabled={disabled || busy} onChange={(event) => selectFile(event.target.files?.[0] ?? null)} /></label>
+              <label className={`hero-video-file ${draggingFile ? "is-dragging" : ""}`} onDragOver={(event) => { event.preventDefault(); setDraggingFile(true); }} onDragLeave={() => setDraggingFile(false)} onDrop={(event) => { event.preventDefault(); setDraggingFile(false); selectFile(event.dataTransfer.files[0] ?? null); }}><span>{videoUrl ? "새 FHD H.264 MP4 영상을 끌어놓거나 선택하세요" : "FHD H.264 MP4 영상을 끌어놓거나 선택하세요"}</span><small>1920×1080 H.264 MP4 · 선택한 12초 구간만 저장됩니다</small><input type="file" accept="video/mp4,.mp4" disabled={disabled || busy} onChange={(event) => selectFile(event.target.files?.[0] ?? null)} /></label>
               {hasSourceFile && duration >= CLIP_SECONDS && <label className="hero-video-range"><span>선택 구간 {start.toFixed(1)}초 - {(start + CLIP_SECONDS).toFixed(1)}초</span><input type="range" min="0" max={maxStart} step="0.1" value={start} disabled={disabled || busy} style={{ "--range-progress": `${maxStart ? start / maxStart * 100 : 0}%` } as React.CSSProperties} onChange={(event) => { const next = Number(event.target.value); setStart(next); if (previewRef.current) previewRef.current.currentTime = next; }} /></label>}
               {hasSourceFile && duration > 0 && duration < CLIP_SECONDS && <p className="hero-video-error">12초 이상의 영상을 선택하세요.</p>}
               {stage && <div className="hero-video-progress" role="status"><div><b>업로드 중</b><span>{progress}%</span></div><i style={{ "--progress": `${progress}%` } as React.CSSProperties} /></div>}

@@ -62,10 +62,10 @@ describe("validateFileSignature", () => {
     await expect(validateFileSignature(blob([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]), "audition-attachment")).resolves.toEqual({ mimeType: "video/mp4", extension: "mp4" });
   });
 
-  it("accepts WebM only for hero clips", async () => {
-    const webm = blob([0x1a, 0x45, 0xdf, 0xa3, ...Array.from("webm", (character) => character.charCodeAt(0))]);
-    await expect(validateFileSignature(webm, "hero-video")).resolves.toEqual({ mimeType: "video/webm", extension: "webm" });
-    await expect(validateFileSignature(webm, "public-image")).resolves.toBeNull();
+  it("accepts MP4 only for hero clips", async () => {
+    const mp4 = blob([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]);
+    await expect(validateFileSignature(mp4, "hero-video")).resolves.toEqual({ mimeType: "video/mp4", extension: "mp4" });
+    await expect(validateFileSignature(mp4, "public-image")).resolves.toBeNull();
   });
 
   it("rejects evidence images whose decoded dimensions exceed the pixel budget", async () => {
