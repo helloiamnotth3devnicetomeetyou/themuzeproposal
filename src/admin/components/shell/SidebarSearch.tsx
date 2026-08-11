@@ -175,7 +175,7 @@ export default function SidebarSearch({ artists, content, canNavigate }: Sidebar
     <div className={styles.wrapper} ref={wrapperRef} data-tour-id="admin-search" data-search-open={isOpen ? "true" : undefined}>
       <div className={`${styles.field} ${isOpen ? styles.fieldOpen : ""}`}>
         <Search className={styles.searchIcon} aria-hidden="true" />
-        <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); }} onFocus={() => { setIsOpen(true); setActiveIndex(results.length ? 0 : -1); }} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
+        <input ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setIsOpen(true); setActiveIndex(-1); }} onFocus={() => { setIsOpen(true); setActiveIndex(results.length ? 0 : -1); }} onKeyDown={onKeyDown} placeholder="메뉴 검색" aria-label="관리자 메뉴 검색" role="combobox" aria-autocomplete="list" aria-expanded={isShowingResults} aria-controls="admin-search-results" aria-activedescendant={activeIndex >= 0 ? `admin-search-result-${activeIndex}` : undefined} />
         {query ? <button type="button" className={styles.clear} onClick={() => { setQuery(""); setActiveIndex(-1); }} aria-label="검색어 지우기"><X aria-hidden="true" /></button> : <kbd key={shortcutPulse} className={`${styles.shortcut} ${shortcutPulse ? styles.shortcutPulse : ""}`} aria-hidden="true">F</kbd>}
       </div>
       {isOpen && typeof document !== "undefined" && createPortal(
