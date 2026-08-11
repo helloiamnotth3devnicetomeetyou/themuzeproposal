@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLZ9wAAAABJRU5ErkJggg==", "base64");
+
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   isAdmin: vi.fn(),
@@ -44,7 +46,7 @@ describe("POST /api/uploads/admin-asset", () => {
     const form = new FormData();
     form.set("bucket", bucket);
     form.set("path", "artist-1/asset.jpg");
-    form.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "asset.jpg", { type: "image/jpeg" }));
+    form.set("file", new File([PNG], "asset.jpg", { type: "image/jpeg" }));
 
     const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
       method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
@@ -59,7 +61,7 @@ describe("POST /api/uploads/admin-asset", () => {
     form.set("bucket", "album-covers");
     form.set("path", "artist-1/asset.jpg");
     form.set("upsert", "true");
-    form.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "asset.jpg"));
+    form.set("file", new File([PNG], "asset.jpg"));
 
     const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
       method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
@@ -84,7 +86,7 @@ describe("POST /api/uploads/admin-asset", () => {
     const form = new FormData();
     form.set("bucket", "album-covers");
     form.set("path", "artist-1/asset.jpg");
-    form.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "asset.jpg"));
+    form.set("file", new File([PNG], "asset.jpg"));
 
     const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
       method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
