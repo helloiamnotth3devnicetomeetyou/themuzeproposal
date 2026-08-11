@@ -73,8 +73,11 @@ begin
       ('a1100000-0000-4000-8000-000000000015'::uuid, 'Glow Up', 'zena', 'Glow Up — ZENA', 'glow-up-zena.webp')
     ) as gallery(id, album_title, member_slug, caption, filename)
   loop
-    select id into strict v_album_id from public.albums where artist_id = v_artist_id and title = v_gallery.album_title;
-    select id into strict v_member_id from public.artist_members where artist_id = v_artist_id and slug = v_gallery.member_slug;
+    select id into v_album_id from public.albums where artist_id = v_artist_id and title = v_gallery.album_title;
+    select id into v_member_id from public.artist_members where artist_id = v_artist_id and slug = v_gallery.member_slug;
+    if v_album_id is null or v_member_id is null then
+      continue;
+    end if;
 
     update public.artist_gallery
     set image_url = 'https://kjsqwfhqjvekahacvfnc.supabase.co/storage/v1/object/public/artist-assets/' || v_artist_id || '/gallery/themuze/' || v_gallery.filename,
@@ -173,7 +176,11 @@ do $$
 declare
   v_artist_id uuid;
 begin
-  select id into strict v_artist_id from public.artists where slug = 'rescene';
+  select id into v_artist_id from public.artists where slug = 'rescene';
+  if v_artist_id is null then
+    raise notice 'Skipping RESCENE notices and schedules because the artist seed is unavailable.';
+    return;
+  end if;
 
   insert into public.notices (
     id, artist_id, title_ko, title_en, title_ja, content_ko, content_en, content_ja,
