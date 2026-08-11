@@ -25,7 +25,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     artistName: localizeText(slide.artistNames, locale, slide.artistName),
     title: localizeText(slide.titles, locale, slide.title),
   })), [locale, rawSlides]);
-  const [transition, setTransition] = useState({ current: 0, previous: null as number | null });
+  const [transition, setTransition] = useState({ current: 0, previous: null as number | null, direction: 1 as -1 | 1 });
   const currentSlide = transition.current;
   const prevSlide = transition.previous;
   const nextSlide = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide;
@@ -75,13 +75,14 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const goToSlide = useCallback((next: number) => {
     if (slides.length <= 1 || isTransitioning) return;
 
-    const normalizedNext = startSlideTransition(currentSlide, next, slides.length).current;
+    const nextTransition = startSlideTransition(currentSlide, next, slides.length);
+    const normalizedNext = nextTransition.current;
     if (normalizedNext === currentSlide) return;
 
     autoplayElapsedRef.current = 0;
     autoplayStartedAt.current = null;
     setAutoplayElapsed(0);
-    setTransition({ current: normalizedNext, previous: currentSlide });
+    setTransition(nextTransition);
     setOpenStreamingSlideId(null);
 
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
@@ -181,9 +182,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               opacity: isVisible ? undefined : 0,
               pointerEvents: isActive ? "auto" : "none",
               animation: isActive
-                ? "slideReveal 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards"
+                ? `${transition.direction === 1 ? "slideRevealReverse" : "slideReveal"} 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards`
                 : isLeaving
-                  ? "slideExit 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards"
+                  ? `${transition.direction === 1 ? "slideExitReverse" : "slideExit"} 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards`
                   : undefined,
               "--slide-accent": slide.color || BRAND_PINK_HEX,
             } as CSSProperties}
@@ -259,7 +260,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                     {t.hero.exploreBtn}
                   </Link>
                   {(slide.youtubeUrl || slide.spotifyId) && (
-                    <div className="home-stream-actions">
+                    <div className={`home-stream-actions ${openStreamingSlideId === slide.id ? "is-open" : ""}`}>
                       <button
                         type="button"
                         aria-expanded={openStreamingSlideId === slide.id}
@@ -270,6 +271,14 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                         <span className="home-listen-icon" aria-hidden="true"><Headphones /></span>
                         <span>{t.hero.listenBtn}</span>
                         <ChevronDown className="home-listen-chevron" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Close streaming options"
+                        onClick={() => setOpenStreamingSlideId(null)}
+                        className="home-listen-back"
+                      >
+                        <ChevronLeft aria-hidden="true" />
                       </button>
                       <div
                         id={`streaming-${slide.id}`}
@@ -325,7 +334,6 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               <i>/</i>
               <span>{String(slides.length).padStart(2, "0")}</span>
             </span>
-            <span className="home-mobile-progress" aria-hidden="true"><i key={`mobile-${currentSlide}-${autoplayElapsed}`} style={progressStyle} /></span>
             <div
               className="home-slide-rail"
             >

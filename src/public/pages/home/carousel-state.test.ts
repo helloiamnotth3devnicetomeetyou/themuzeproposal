@@ -3,8 +3,8 @@ import { autoplayProgress, startSlideTransition, swipeSlideOffset } from "./caro
 
 describe("startSlideTransition", () => {
   it("wraps both directions and keeps the leaving slide", () => {
-    expect(startSlideTransition(0, -1, 3)).toEqual({ current: 2, previous: 0 });
-    expect(startSlideTransition(2, 3, 3)).toEqual({ current: 0, previous: 2 });
+    expect(startSlideTransition(0, -1, 3)).toEqual({ current: 2, previous: 0, direction: -1 });
+    expect(startSlideTransition(2, 3, 3)).toEqual({ current: 0, previous: 2, direction: 1 });
   });
 
   it("caps autoplay progress at completion", () => {

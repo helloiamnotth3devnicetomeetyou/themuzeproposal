@@ -126,6 +126,18 @@
   to { transform: scale(1) translateX(0); }
 }
 
+@keyframes slideRevealReverse {
+  0% { clip-path: inset(0 0 0 100%); opacity: 0; }
+  15% { opacity: 1; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes slideExitReverse {
+  0% { clip-path: inset(0 0 0 0); opacity: 1; }
+  85% { opacity: 1; }
+  100% { clip-path: inset(0 100% 0 0); opacity: 0; }
+}
+
 @keyframes homeSlideProgress {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }

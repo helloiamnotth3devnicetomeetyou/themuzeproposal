@@ -83,32 +83,6 @@
   }
   .home-slide-arrow-left { left: 0; }
   .home-slide-arrow-right { right: 0; }
-  .home-slide-index {
-    right: auto;
-    bottom: max(18px, env(safe-area-inset-bottom));
-    left: var(--page-gutter);
-    width: calc(100vw - (var(--page-gutter) * 2));
-    gap: 12px;
-  }
-
-  .home-mobile-progress {
-    position: relative;
-    display: block;
-    height: 3px;
-    flex: 1;
-    overflow: hidden;
-    background: var(--alpha-ffffff-24);
-  }
-
-  .home-mobile-progress i {
-    position: absolute;
-    inset: 0;
-    display: block;
-    background: color-mix(in srgb, var(--slide-accent) 78%, var(--color-static-white) 22%);
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-
   .home-slide-rail { display: none; }
 }
 
