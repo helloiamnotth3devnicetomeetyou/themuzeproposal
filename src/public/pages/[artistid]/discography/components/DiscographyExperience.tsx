@@ -2,6 +2,7 @@
 
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -13,7 +14,8 @@ import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
 import { DiscographyBackground } from "./DiscographyBackground";
-import { MobileDiscographyPlayer } from "./MobileDiscographyPlayer";
+
+const MobileDiscographyPlayer = dynamic(() => import("./MobileDiscographyPlayer").then(({ MobileDiscographyPlayer }) => MobileDiscographyPlayer));
 
 export function DiscographyExperience() {
   const { locale, t } = useLocale();
