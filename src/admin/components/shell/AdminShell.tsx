@@ -170,6 +170,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <div className="admin-root-shell">
         <AdminToast message={toast} />
         <header className="admin-mobile-topbar">
+          <button type="button" className="admin-mobile-menu-button" onClick={() => setIsNavigationOpen(true)} aria-label="관리 메뉴 열기" aria-expanded={isNavigationOpen} aria-controls="admin-navigation">
+            <Menu aria-hidden="true" />
+          </button>
           <div className="admin-mobile-title">
             <strong>{getPageLabel(pathname)}</strong>
           </div>

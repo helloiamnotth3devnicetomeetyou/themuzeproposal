@@ -1,8 +1,9 @@
 "use client";
 
-import { Link, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
-import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { detectSocialPlatform, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { SocialIcon } from "@/core/content/SocialIcon";
 
 export type SocialLink = { id: string; platform: string; label: string; url: string };
 
@@ -63,12 +64,11 @@ export default function SocialLinksField({ value, onChange }: { value: SocialLin
       <div className="social-link-list">
         {value.map((link, index) => {
           const platform = detectSocialPlatform(link.url) !== "other" ? detectSocialPlatform(link.url) : link.platform;
-          const PlatformIcon = SOCIAL_ICONS[platform] || Link;
           const invalid = Boolean(link.url) && !isValidLink(link.url);
           return (
             <div className={`social-link-row ${platform === "other" ? "has-custom-label" : ""}`} key={link.id}>
               <span className="social-link-index">{String(index + 1).padStart(2, "0")}</span>
-              <span className="social-link-mark" aria-hidden="true"><PlatformIcon /></span>
+              <span className="social-link-mark" aria-hidden="true"><SocialIcon platform={platform} /></span>
               <div className="music-field social-link-platform">
                 <span>플랫폼</span>
                 <CustomSelect ariaLabel="소셜 플랫폼" value={platform} onChange={(nextPlatform) => patchLink(link.id, { platform: nextPlatform })} options={PLATFORM_OPTIONS.map(([optionValue, label]) => ({ value: optionValue, label }))} />

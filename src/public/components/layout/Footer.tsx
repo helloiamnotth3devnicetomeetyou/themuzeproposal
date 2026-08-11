@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
-import { detectSocialPlatform, SOCIAL_ICONS, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { detectSocialPlatform, SOCIAL_LABELS } from "@/core/content/social-icons";
+import { SocialIcon } from "@/core/content/SocialIcon";
 import { useSiteSettings } from "@/public/features/settings/useSiteSettings";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 
@@ -62,7 +63,6 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
             <div className="flex flex-wrap justify-center gap-4 md:justify-end">
               {socialLinks.map((item) => {
                 const platform = detectSocialPlatform(item.url) !== "other" ? detectSocialPlatform(item.url) : item.platform;
-                const SocialIcon = SOCIAL_ICONS[platform] || Link;
                 const accessibleLabel = item.label || SOCIAL_LABELS[platform] || "Official link";
                 return (
                   <a
@@ -79,7 +79,7 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
                       color: "var(--text-muted)",
                     }}
                   >
-                    <SocialIcon className="h-4 w-4" aria-hidden="true" />
+                    <SocialIcon platform={platform} className="h-4 w-4" aria-hidden="true" />
                   </a>
                 );
               })}

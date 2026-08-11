@@ -1,21 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-import { CirclePlay, Globe, Link, Music2, Radio, Users } from "lucide-react";
-
-export const SOCIAL_ICONS: Record<string, LucideIcon> = {
-  instagram: CirclePlay,
-  youtube: CirclePlay,
-  x: CirclePlay,
-  twitter: CirclePlay,
-  tiktok: Music2,
-  spotify: CirclePlay,
-  weverse: Users,
-  facebook: CirclePlay,
-  soundcloud: Radio,
-  "apple-music": Music2,
-  homepage: Globe,
-  other: Link,
-};
-
 export const SOCIAL_LABELS: Record<string, string> = {
   instagram: "Instagram",
   youtube: "YouTube",

@@ -11,7 +11,7 @@ import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
 import SocialLinksField from "@/admin/components/content/SocialLinksField";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { safeHref } from "@/core/http/safe-href";
-import { SOCIAL_ICONS } from "@/core/content/social-icons";
+import { SocialIcon } from "@/core/content/SocialIcon";
 import type { HistoryEntry } from "@/core/content/site-content";
 import { settingsTabs, type SettingsTab } from "./settings-editor-model";
 import AdminAccountsPanel from "./AdminAccountsPanel";
@@ -163,7 +163,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
           <section className="settings-footer-preview" aria-label="푸터 미리보기">
             <div><strong>{company.name_en || company.name_ko || "THE MUZE"}</strong></div>
             <p>{footer.copyright || "저작권 문구가 이곳에 표시됩니다."}</p>
-            <div className="settings-footer-socials">{social.map((item) => { const Icon = SOCIAL_ICONS[item.platform] || Globe; return <Icon key={item.id} aria-label={item.label || item.platform} />; })}</div>
+            <div className="settings-footer-socials">{social.map((item) => <SocialIcon key={item.id} platform={item.platform} aria-label={item.label || item.platform} />)}</div>
           </section>
         </>}
 

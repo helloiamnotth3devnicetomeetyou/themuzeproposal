@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SVGProps } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, CirclePlay, Headphones } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
@@ -274,13 +274,13 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                       >
                         {slide.youtubeUrl && (
                           <a href={slide.youtubeUrl} target="_blank" rel="noreferrer" aria-label={`${slide.title} on YouTube`} className="is-youtube">
-                            <CirclePlay aria-hidden="true" />
+                            <YouTubeIcon aria-hidden="true" />
                             <span>YouTube</span>
                           </a>
                         )}
                         {spotifyAlbumHref(slide.spotifyId) && (
                           <a href={spotifyAlbumHref(slide.spotifyId)} target="_blank" rel="noreferrer" aria-label={`${slide.title} on Spotify`} className="is-spotify">
-                            <CirclePlay aria-hidden="true" />
+                            <SpotifyIcon aria-hidden="true" />
                             <span>Spotify</span>
                           </a>
                         )}
@@ -359,4 +359,12 @@ function videoStartTime(videoUrl: string) {
   const match = new URL(videoUrl).hash.match(/^#t=([\d.]+)/);
   const start = Number(match?.[1]);
   return Number.isFinite(start) && start >= 0 ? start : 0;
+}
+
+function YouTubeIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return <svg viewBox="0 0 24 24" fill="none" className={className} {...props}><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8Z" /><path fill="var(--color-static-black)" d="m9.6 15.8 6.2-3.8-6.2-3.8v7.6Z" /></svg>;
+}
+
+function SpotifyIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return <svg viewBox="0 0 24 24" fill="none" className={className} {...props}><circle cx="12" cy="12" r="10" fill="currentColor" /><path d="M6.7 9.8c3.5-1 7.3-.6 10.4 1M7.3 13c3-0.8 6.3-.5 9 1M8 16c2.5-.6 5.1-.3 7.2.9" stroke="var(--color-static-black)" strokeWidth="1.5" strokeLinecap="round" /></svg>;
 }
