@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SVGProps } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SVGProps, type VideoHTMLAttributes } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
@@ -15,6 +15,7 @@ import { autoplayProgress, startSlideTransition, swipeSlideOffset } from "./caro
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
 const RAIL_GAP = 4;
+const highPriorityVideo = { fetchpriority: "high" } as unknown as VideoHTMLAttributes<HTMLVideoElement>;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
@@ -195,6 +196,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               muted
               playsInline
               preload="auto"
+              {...(isActive ? highPriorityVideo : {})}
               aria-hidden="true"
               onCanPlay={() => setReadyVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
               style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
