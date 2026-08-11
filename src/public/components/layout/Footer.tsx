@@ -53,7 +53,7 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
           <div className="text-xs leading-relaxed font-light mt-2" style={{ color: "var(--text-faint)" }}>
             <p className="font-semibold" style={{ color: "var(--text-muted)" }}>{companyName}</p>
             <p className="mt-1">{address}</p>
-            <p className="mt-2">{copyright}</p>
+            {!copyright.includes("데모 사이트") && <p className="mt-2">{copyright}</p>}
           </div>
         </div>
 
