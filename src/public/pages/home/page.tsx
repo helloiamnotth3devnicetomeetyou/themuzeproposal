@@ -187,7 +187,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
           >
             <div className="home-hero-shade" aria-hidden="true" />
 
-            {shouldLoadMedia && slide.videoUrl && <video
+            {slide.videoUrl && <video
               className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
               src={slide.videoUrl}
               data-slide-index={index}
