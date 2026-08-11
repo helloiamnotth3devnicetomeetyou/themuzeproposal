@@ -60,10 +60,10 @@ describe("submission rate limit", () => {
   });
 
   it("caps admin uploads before storage work", async () => {
-    mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, remaining: 9 }], error: null });
+    mocks.rpc.mockResolvedValue({ data: [{ is_allowed: true, remaining: 29 }], error: null });
     await consumeAdminUploadAttemptRateLimit(new NextRequest("https://themuze.kr"), "admin-1");
     expect(mocks.rpc).toHaveBeenCalledWith("consume_submission_rate_limit", expect.objectContaining({
-      p_scope: "admin_upload_attempt", p_limit: 10, p_window_seconds: 3600,
+      p_scope: "admin_upload_attempt", p_limit: 30, p_window_seconds: 3600,
     }));
   });
 

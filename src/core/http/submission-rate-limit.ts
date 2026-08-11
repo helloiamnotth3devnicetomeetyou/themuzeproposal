@@ -83,7 +83,7 @@ export function consumeSubmissionRateLimit(request: NextRequest, scope: Submissi
 }
 
 export function consumeAdminUploadAttemptRateLimit(request: NextRequest, userId: string) {
-  return consumeRateLimit(request, "admin_upload_attempt", userId, 10, 100, 60 * 60);
+  return consumeRateLimit(request, "admin_upload_attempt", userId, 30, 100, 60 * 60);
 }
 
 export async function getSubmissionRemaining(scope: SubmissionScope, userId: string) {
