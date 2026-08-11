@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   let formData: FormData;
   try {
-    const parsed = await parseFormDataWithinLimit(request, 100 * 1024 * 1024 + 64 * 1024);
+    const parsed = await parseFormDataWithinLimit(request, 100 * 1024 * 1024 + 64 * 1024, 3 * 60 * 1000);
     if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
     formData = parsed;
   } catch {
