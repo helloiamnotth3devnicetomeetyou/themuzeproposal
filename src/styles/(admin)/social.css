@@ -11,7 +11,8 @@
 .social-link-empty span { font-size: 10px; }
 .social-link-empty b { color: var(--text-secondary); font-size: 9px; }
 .social-link-list { display: flex; flex-direction: column; }
-.social-link-row { display: grid; grid-template-columns: 26px 38px minmax(118px,.7fr) minmax(150px,1fr) minmax(220px,1.55fr) 30px; align-items: start; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast); }
+.social-link-row { display: grid; grid-template-columns: 26px 38px minmax(118px,.7fr) minmax(220px,1.55fr) 30px; align-items: start; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast); }
+.social-link-row.has-custom-label { grid-template-columns: 26px 38px minmax(118px,.7fr) minmax(150px,1fr) minmax(220px,1.55fr) 30px; }
 .social-link-row:last-child { border-bottom: 0; }
 .social-link-row:focus-within { background: var(--bg-subtle); }
 .social-link-index { padding-top: 27px; color: var(--text-faint); font-family: var(--font-sans); font-size: 8px; }

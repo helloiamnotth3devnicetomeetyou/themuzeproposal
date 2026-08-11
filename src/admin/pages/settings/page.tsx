@@ -133,8 +133,9 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
         {tab === "history" && <>
           <div className="content-section-heading settings-section-heading"><div><h3>ABOUT 연혁</h3><p>공개 ABOUT 페이지에 표시할 성장 기록을 관리합니다. 현재 목록 순서대로 사이트에 노출됩니다.</p></div><History aria-hidden="true" /></div>
           <div className="settings-history-toolbar" data-tour-id="settings-history-actions">
-            <span>총 {history.length}개 항목 · 최신순 자동 정렬</span>
+            <span>총 {history.length}개 항목</span>
             <div className="settings-history-tools">
+              <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setHistory((items) => sortHistoryNewestFirst(items))}>최신순 정렬</button>
               <button type="button" data-tour-id="history-add" className="admin-btn admin-btn-secondary" onClick={addHistory}><Plus aria-hidden="true" /> 연혁 추가</button>
             </div>
           </div>
@@ -143,7 +144,7 @@ export default function SettingsAdmin({ canManageAdminAccounts = false }: { canM
             {history.map((item, index) => (
               <article key={item.id} className="settings-history-item">
                 <span className="settings-history-order">{String(index + 1).padStart(2, "0")}</span>
-                <label><span className="sr-only">시점</span><input value={item.date} onChange={(event) => patchHistory(item.id, { date: event.target.value })} onBlur={() => setHistory((items) => sortHistoryNewestFirst(items))} className="settings-history-date" placeholder="2026. 07" /></label>
+                <label><span className="sr-only">시점</span><input value={item.date} onChange={(event) => patchHistory(item.id, { date: event.target.value })} className="settings-history-date" placeholder="2026. 07" /></label>
                 <label><span className="sr-only">{historyLanguage.toUpperCase()} 내용</span><input value={item[historyEventKey]} onChange={(event) => patchHistory(item.id, { [historyEventKey]: event.target.value } as Partial<HistoryEntry>)} className="settings-history-event" placeholder={historyLanguage === "ko" ? "연혁 내용을 입력하세요" : `${historyLanguage.toUpperCase()} 번역을 입력하세요`} /></label>
                 <div className="settings-history-actions">
                   <button type="button" data-tour-id="history-delete" className="is-danger" onClick={() => setHistory((items) => items.filter((entry) => entry.id !== item.id))} aria-label="연혁 삭제"><Trash2 aria-hidden="true" /></button>

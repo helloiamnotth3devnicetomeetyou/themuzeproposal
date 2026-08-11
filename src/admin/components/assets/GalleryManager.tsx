@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Filter, ImagePlus, Save, Trash2, Upload, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, Check, Filter, ImagePlus, Trash2, Upload, X } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
@@ -168,9 +168,14 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
     }
   };
 
-  const saveItem = (item: GalleryItem) => {
-    patchItem(item.id, { caption: item.caption.trim() });
-    onToast("이미지 정보를 임시 작업에 적용했습니다. 상단 저장 시 반영됩니다.");
+  const moveItem = (id: string, to: "first" | "last") => {
+    setItems((current) => {
+      const item = current.find((entry) => entry.id === id);
+      if (!item) return current;
+      const rest = current.filter((entry) => entry.id !== id);
+      const ordered = to === "first" ? [item, ...rest] : [...rest, item];
+      return ordered.map((entry, index) => ({ ...entry, sort_order: index + 1 }));
+    });
   };
 
   const removeItem = () => {
@@ -238,7 +243,11 @@ export default function GalleryManager({ artistId, scope, albumId, memberId, onE
             {scope !== "member" && <div className="music-field"><span>멤버</span><CustomSelect ariaLabel="멤버 지정" value={selectedItem.member_id || ""} onChange={(value) => patchItem(selectedItem.id, { member_id: value || null })} options={[{ value: "", label: "멤버 미지정" }, ...members.map((member) => ({ value: member.id, label: member.name }))]} /></div>}
             <label className="gallery-publish-toggle"><input type="checkbox" checked={selectedItem.is_published} onChange={(event) => patchItem(selectedItem.id, { is_published: event.target.checked })} /><span>공개 갤러리에 표시</span></label>
           </div>
-          <div className="gallery-inspector-actions"><button type="button" data-tour-id="gallery-delete" className="gallery-delete-button" onClick={() => setDeleteItem(selectedItem)}><Trash2 aria-hidden="true" />삭제</button><button type="button" data-tour-id="gallery-apply" className="admin-btn admin-btn-primary" onClick={() => saveItem(selectedItem)}><Save aria-hidden="true" />정보 적용</button></div>
+          <div className="gallery-inspector-actions">
+            <button type="button" className="admin-btn admin-btn-secondary" aria-label="맨 앞으로" title="맨 앞으로" onClick={() => moveItem(selectedItem.id, "first")} disabled={items[0]?.id === selectedItem.id}><ArrowUpToLine aria-hidden="true" /></button>
+            <button type="button" className="admin-btn admin-btn-secondary" aria-label="맨 뒤로" title="맨 뒤로" onClick={() => moveItem(selectedItem.id, "last")} disabled={items.at(-1)?.id === selectedItem.id}><ArrowDownToLine aria-hidden="true" /></button>
+            <button type="button" data-tour-id="gallery-delete" className="gallery-delete-button" onClick={() => setDeleteItem(selectedItem)}><Trash2 aria-hidden="true" />삭제</button>
+          </div>
         </aside>}
       </div>}
     </div>

@@ -34,6 +34,7 @@ export default function ArtistNavGroup({
   isCollapsed = false,
 }: ArtistNavGroupProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [hasFocus, setHasFocus] = useState(false);
   const [popupPos, setPopupPos] = useState<{ top: number; left: number } | null>(null);
   const headingRef = useRef<HTMLButtonElement>(null);
 
@@ -47,16 +48,20 @@ export default function ArtistNavGroup({
   }, []);
 
   useEffect(() => {
-    if (isHovered && isCollapsed) {
+    if ((isHovered || hasFocus) && isCollapsed) {
       updatePosition();
     }
-  }, [isHovered, isCollapsed, updatePosition]);
+  }, [hasFocus, isHovered, isCollapsed, updatePosition]);
+
+  const showCollapsedPopup = isCollapsed && (isHovered || hasFocus);
 
   return (
     <div
       className={`cms-artist-group ${isExpanded ? "is-expanded" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocusCapture={() => setHasFocus(true)}
+      onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHasFocus(false); }}
     >
       <button
         ref={headingRef}
@@ -117,7 +122,7 @@ export default function ArtistNavGroup({
       )}
 
       {/* Floating popup for collapsed sidebar */}
-      {isCollapsed && isHovered && popupPos && (
+      {showCollapsedPopup && popupPos && (
         <div
           className="cms-artist-collapsed-popup"
           style={{

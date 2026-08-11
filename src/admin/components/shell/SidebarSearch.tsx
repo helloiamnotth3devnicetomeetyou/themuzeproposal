@@ -8,7 +8,7 @@ import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
 
 interface Artist { id: string; name: string; }
 interface SearchItem { id: string; categoryLabel: string; title: string; url: string; artistName?: string; }
-interface SidebarSearchProps { artists: Artist[]; }
+interface SidebarSearchProps { artists: Artist[]; canNavigate: () => boolean; }
 type ResultsPosition = { top: number; left: number; width: number; maxHeight: number };
 
 const getSearchIcon = (id: string): LucideIcon => {
@@ -29,7 +29,7 @@ const getSearchIcon = (id: string): LucideIcon => {
   return Search;
 };
 
-export default function SidebarSearch({ artists }: SidebarSearchProps) {
+export default function SidebarSearch({ artists, canNavigate }: SidebarSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -136,13 +136,14 @@ export default function SidebarSearch({ artists }: SidebarSearchProps) {
   }, [isShowingResults, updateResultsPosition]);
 
   const select = useCallback((url: string) => {
+    if (!canNavigate()) return;
     router.push(url);
     if (url.includes("settings?tab=")) window.dispatchEvent(new CustomEvent("admin-settings-tab-change", { detail: url.split("tab=")[1] }));
     if (url.includes("profile?tab=")) window.dispatchEvent(new CustomEvent("admin-profile-tab-change", { detail: url.split("tab=")[1] }));
     setQuery("");
     setIsOpen(false);
     setActiveIndex(-1);
-  }, [router]);
+  }, [canNavigate, router]);
 
   useEffect(() => {
     if (activeIndex >= 0) resultsRef.current?.querySelectorAll<HTMLButtonElement>("[data-search-result]")[activeIndex]?.scrollIntoView({ block: "nearest" });

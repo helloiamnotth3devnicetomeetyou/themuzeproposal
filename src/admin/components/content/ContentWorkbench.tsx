@@ -3,6 +3,7 @@
 import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
 import { Check, List, X } from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
+import { useFocusTrap } from "@/admin/hooks/useFocusTrap";
 
 export type WorkbenchTab<T extends string = string> = {
   id: T;
@@ -48,6 +49,7 @@ export default function ContentWorkbench<T extends string>({
 }: ContentWorkbenchProps<T>) {
   const [railOpen, setRailOpen] = useState(false);
   const railTriggerRef = useRef<HTMLButtonElement>(null);
+  const railRef = useFocusTrap<HTMLElement>(railOpen);
 
   useEffect(() => {
     if (!railOpen) return;
@@ -68,7 +70,7 @@ export default function ContentWorkbench<T extends string>({
   return (
     <div className={`content-workbench ${className}${railOpen ? " is-rail-open" : ""}`.trim()}>
       <AdminToast message={toast} />
-      <aside id="admin-mobile-rail" className="content-workbench-rail" role={railOpen ? "dialog" : undefined} aria-label={railLabel || undefined} aria-modal={railOpen || undefined}>{railLabel && <button type="button" className="content-mobile-rail-close" aria-label={`${railLabel} 닫기`} onClick={() => setRailOpen(false)}><X aria-hidden="true" /></button>}{rail}</aside>
+      <aside ref={railRef} id="admin-mobile-rail" className="content-workbench-rail" role={railOpen ? "dialog" : undefined} aria-label={railLabel || undefined} aria-modal={railOpen || undefined}>{railLabel && <button type="button" className="content-mobile-rail-close" aria-label={`${railLabel} 닫기`} onClick={() => setRailOpen(false)}><X aria-hidden="true" /></button>}{rail}</aside>
       <section className="content-workbench-stage">
         {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={recovery.onDiscard}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={recovery.onRestore}>복구</button></div>}
         {error && (

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { DraftDiffItem } from "@/admin/utils/draft-diff";
+import { useFocusTrap } from "@/admin/hooks/useFocusTrap";
 
 type ConfirmTone = "default" | "danger";
 
@@ -23,10 +24,9 @@ type AdminDialogContextValue = (options: ConfirmOptions) => Promise<boolean>;
 const AdminDialogContext = createContext<AdminDialogContextValue | null>(null);
 
 function ConfirmDialog({ dialog, onClose }: { dialog: PendingConfirm; onClose: (confirmed: boolean) => void }) {
-  const cancelButton = useRef<HTMLButtonElement>(null);
+  const dialogRef = useFocusTrap<HTMLElement>(true);
 
   useEffect(() => {
-    cancelButton.current?.focus();
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose(false);
     };
@@ -38,7 +38,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: PendingConfirm; onClose: (
 
   return (
     <div className="admin-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(false); }}>
-      <section className={`admin-confirm-dialog${danger ? " is-danger" : ""}`} role="alertdialog" aria-modal="true" aria-labelledby="admin-confirm-title" aria-describedby="admin-confirm-description">
+      <section ref={dialogRef} className={`admin-confirm-dialog${danger ? " is-danger" : ""}`} role="alertdialog" aria-modal="true" aria-labelledby="admin-confirm-title" aria-describedby="admin-confirm-description">
         <div className="admin-confirm-mark" aria-hidden="true">{danger ? "!" : "?"}</div>
         <div className="admin-confirm-copy">
           <span>{danger ? "주의가 필요한 작업" : "계속하기 전 확인"}</span>
@@ -57,7 +57,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: PendingConfirm; onClose: (
           )}
         </div>
         <div className="admin-confirm-actions">
-          <button ref={cancelButton} type="button" className="admin-btn admin-btn-secondary" onClick={() => onClose(false)}>{dialog.cancelLabel || "취소"}</button>
+          <button type="button" className="admin-btn admin-btn-secondary" onClick={() => onClose(false)}>{dialog.cancelLabel || "취소"}</button>
           <button type="button" className={`admin-btn admin-btn-primary admin-confirm-submit${danger ? " is-danger" : ""}`} onClick={() => onClose(true)}>{dialog.confirmLabel || "계속"}</button>
         </div>
       </section>

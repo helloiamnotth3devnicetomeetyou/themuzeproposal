@@ -66,17 +66,17 @@ export default function SocialLinksField({ value, onChange }: { value: SocialLin
           const PlatformIcon = SOCIAL_ICONS[platform] || Link;
           const invalid = Boolean(link.url) && !isValidLink(link.url);
           return (
-            <div className="social-link-row" key={link.id}>
+            <div className={`social-link-row ${platform === "other" ? "has-custom-label" : ""}`} key={link.id}>
               <span className="social-link-index">{String(index + 1).padStart(2, "0")}</span>
               <span className="social-link-mark" aria-hidden="true"><PlatformIcon /></span>
               <div className="music-field social-link-platform">
                 <span>플랫폼</span>
                 <CustomSelect ariaLabel="소셜 플랫폼" value={platform} onChange={(nextPlatform) => patchLink(link.id, { platform: nextPlatform })} options={PLATFORM_OPTIONS.map(([optionValue, label]) => ({ value: optionValue, label }))} />
               </div>
-              <label className="music-field">
-                <span>{platform === "other" ? "링크 이름" : "계정 이름"}</span>
-                <input className="admin-input" value={link.label} onChange={(event) => patchLink(link.id, { label: event.target.value })} placeholder={platform === "other" ? "플랫폼과 계정 이름" : "@account 또는 채널명"} />
-              </label>
+              {platform === "other" && <label className="music-field">
+                <span>링크 이름</span>
+                <input className="admin-input" value={link.label} onChange={(event) => patchLink(link.id, { label: event.target.value })} placeholder="플랫폼과 계정 이름" />
+              </label>}
               <label className={`music-field social-link-address ${invalid ? "is-invalid" : ""}`}>
                 <span>계정 링크 <b>*</b></span>
                 <input type="url" className="admin-input" value={link.url} onChange={(event) => {

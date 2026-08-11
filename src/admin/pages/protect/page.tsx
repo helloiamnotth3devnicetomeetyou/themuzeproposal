@@ -246,7 +246,7 @@ export default function ProtectAdminPage() {
     <div className={styles.page}>
       {error && <div className={styles.error} role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
       <section className={styles.summary}>
-        <div><span className={styles.summaryIcon}><ShieldCheck aria-hidden="true" /></span><p><small>전체 제보</small><strong>{reports.length}</strong></p></div>
+        <div><span className={styles.summaryIcon}><ShieldCheck aria-hidden="true" /></span><p><small>전체 제보</small><strong>{total}</strong></p></div>
         <dl><div><dt>새 제보</dt><dd>{statusCounts.pending}</dd></div><div><dt>검토 중</dt><dd>{statusCounts.reviewing}</dd></div></dl>
         <p>접수된 권익 침해 내용과 비공개 증거 자료를 확인하고 처리 상태를 기록합니다.</p>
       </section>

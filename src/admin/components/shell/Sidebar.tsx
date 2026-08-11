@@ -160,7 +160,7 @@ export default function Sidebar({
       <div className="cms-sidebar-heading">
         {!isCollapsed && (
           <div className="cms-sidebar-search-container">
-            <SidebarSearch artists={artists} />
+            <SidebarSearch artists={artists} canNavigate={canNavigate} />
           </div>
         )}
         <button type="button" className="cms-sidebar-mobile-close" onClick={onClose} aria-label="관리 메뉴 닫기">
