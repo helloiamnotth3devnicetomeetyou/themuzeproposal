@@ -7,7 +7,7 @@ import { useFocusTrap } from "@/admin/hooks/useFocusTrap";
 import { finishGuideSandbox, isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
 
 const CLIP_SECONDS = 12;
-const MAX_VIDEO_BYTES = 18 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
 
 type Props = {
   slideId: string;
@@ -44,7 +44,7 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
   const selectFile = (file: File | null) => {
     if (!file) return;
     if (file.type !== "video/mp4" && !file.name.toLowerCase().endsWith(".mp4")) { setError("FHD H.264 MP4 파일만 선택할 수 있습니다."); return; }
-    if (file.size > MAX_VIDEO_BYTES) { setError("영상은 18MB 이하여야 합니다."); return; }
+    if (file.size > MAX_VIDEO_BYTES) { setError("영상은 20MB 이하여야 합니다."); return; }
     if (source?.startsWith("blob:")) URL.revokeObjectURL(source);
     fileRef.current = file;
     setHasSourceFile(true);
