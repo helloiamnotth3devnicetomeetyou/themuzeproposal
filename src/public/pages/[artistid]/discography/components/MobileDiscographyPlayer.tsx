@@ -82,10 +82,14 @@ export function MobileDiscographyPlayer({
     const currentRect = current.getBoundingClientRect();
     const targetScrollLeft =
       rail.scrollLeft + currentRect.left - railRect.left - (rail.clientWidth - currentRect.width) / 2;
-    rail.scrollTo({
-      left: targetScrollLeft,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    });
+    if (typeof rail.scrollTo === "function") {
+      rail.scrollTo({
+        left: targetScrollLeft,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
+    } else {
+      rail.scrollLeft = targetScrollLeft;
+    }
   }, [album.id, albumIndex]);
 
   const selectAlbum = (index: number) => {

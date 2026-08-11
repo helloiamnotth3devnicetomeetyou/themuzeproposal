@@ -148,7 +148,11 @@ export function useDiscographyController(
     const targetScrollLeft =
       rail.scrollLeft + currentRect.left - railRect.left - (rail.clientWidth - currentRect.width) / 2;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    rail.scrollTo({ left: targetScrollLeft, behavior: reducedMotion ? "auto" : "smooth" });
+    if (typeof rail.scrollTo === "function") {
+      rail.scrollTo({ left: targetScrollLeft, behavior: reducedMotion ? "auto" : "smooth" });
+    } else {
+      rail.scrollLeft = targetScrollLeft;
+    }
   }, [albumIndex, albumRailRef, sortedAlbums.length]);
 
   // Keyboard navigation
