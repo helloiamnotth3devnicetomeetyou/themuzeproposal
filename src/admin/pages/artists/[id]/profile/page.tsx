@@ -18,6 +18,7 @@ import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
 import { notifyArtistsChanged } from "@/core/utils/artist-events";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
@@ -213,6 +214,7 @@ export default function ArtistProfileAdmin() {
     uploadedAssets.current = [];
     setSaving(false);
     await notifyArtistsChanged();
+    await revalidatePublicCache("public-navigation-artists");
     setToast(isNew ? "아티스트를 만들었습니다." : "변경사항을 저장했습니다.");
     if (routeId !== result.data.id) router.replace(`/admin/artists/${result.data.id}/profile`);
     router.refresh();
@@ -230,6 +232,7 @@ export default function ArtistProfileAdmin() {
       return;
     }
     await notifyArtistsChanged();
+    await revalidatePublicCache("public-navigation-artists");
     router.replace("/admin");
     router.refresh();
   };

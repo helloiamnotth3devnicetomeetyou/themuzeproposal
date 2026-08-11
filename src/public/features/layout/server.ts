@@ -48,7 +48,7 @@ export const getCachedSiteSettings = unstable_cache(
 
 export async function getNavigationAccount(): Promise<NavigationAccount> {
   const hasAuthCookie = (await cookies()).getAll().some(({ name }) => name.startsWith(`sb-${projectRef}-auth-token`));
-  if (!hasAuthCookie) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "愿由ъ옄" };
+  if (!hasAuthCookie) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };
 
   const client = await createSupabaseServerClient();
   const { data: { user } } = await client.auth.getUser();

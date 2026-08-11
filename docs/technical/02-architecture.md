@@ -100,6 +100,21 @@ role은 `super_admin | editor | null`이다.
 
 `usePageDrafts.commit()`은 현재 여러 요청을 순차 실행한다. 서로 다른 테이블이 반드시 함께 성공하거나 함께 실패해야 하는 기능은 이 훅을 확장하지 말고 Postgres RPC로 트랜잭션을 만든다.
 
+### 페이지 통계
+
+`/admin` 대시보드와 `/admin/analytics`는 동일한 관리자 전용 `GET /api/admin/page-stats`를 사용한다. 대시보드는 최근 7일의 요약만 요청하고, 상세 화면은 추이와 차원별 분석을 요청한다. 이 데이터는 Supabase에 저장하지 않고 Vercel Web Analytics API에서 요청마다 조회하므로 cache는 `no-store`다.
+
+```text
+Admin browser
+  → /api/admin/page-stats?range=…
+  → session user + profiles.role 확인
+  → VERCEL_TOKEN / VERCEL_PROJECT_ID 확인
+  → Vercel visits aggregate API (7초 timeout)
+  → 화면 DTO (추이·합계·분석 차원)
+```
+
+Vercel 설정이 없으면 endpoint는 빈 통계와 `configured: false`를 반환한다. 외부 API 실패는 사용자에게 내부 오류를 노출하지 않고 `502` 또는 조회 기간 제한 상태로 변환한다. 이 경계의 상세 계약은 [08-admin-analytics.md](./08-admin-analytics.md)를 따른다.
+
 ### 미리보기와 가이드 sandbox
 
 관리자 preview는 저장 전 payload를 임시 localStorage envelope로 공유하고, 서버는 관리자 확인 후 Next draft mode cookie를 켠다. 허용 경로는 `entry-route.ts`의 정규식 allowlist로 제한된다. preview token과 envelope에는 TTL이 있다.

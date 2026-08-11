@@ -36,7 +36,7 @@ describe("getNavigationAccount", () => {
       from,
     });
 
-    await expect(getNavigationAccount()).resolves.toMatchObject({ isLoggedIn: false, isAdmin: false });
+    await expect(getNavigationAccount()).resolves.toMatchObject({ isLoggedIn: false, isAdmin: false, name: "관리자" });
     expect(from).not.toHaveBeenCalled();
   });
 

@@ -176,9 +176,14 @@ preview 진입은 다음을 모두 요구한다.
 | `SUPABASE_SERVICE_ROLE_KEY` | 아니오 | 서버 RLS 우회 작업 |
 | `AUTH_RATE_LIMIT_SECRET` | 아니오 | 로그인 identifier HMAC |
 | `SUBMISSION_RATE_LIMIT_SECRET` | 아니오 | 제출 identifier HMAC |
+| `VERCEL_TOKEN` | 아니오 | 서버의 Vercel Web Analytics API 인증 |
+| `VERCEL_PROJECT_ID` | 아니오 | 조회할 Vercel 프로젝트 식별자 |
+| `VERCEL_TEAM_ID` | 아니오 | 팀 소속 프로젝트일 때의 선택 식별자 |
 | `STRICT_ENV_VALIDATION` | 설정 | 비 Vercel production의 엄격 검증 |
 
 production/Vercel build는 누락, URL/project 불일치, 32자 미만 rate-limit secret을 실패시킨다. secret은 코드·문서·브라우저·CI 로그에 실제 값을 쓰지 않는다.
+
+Vercel Analytics 설정은 선택 사항이므로 build의 필수 환경 변수는 아니다. 그러나 값이 설정된 환경에서는 `VERCEL_TOKEN`을 service-role key와 같은 수준의 서버 전용 secret으로 취급한다. `/api/admin/page-stats`는 session과 DB admin role을 확인한 뒤에만 token을 사용하고, 외부 API 오류·요금제 정보·응답 원문을 그대로 브라우저에 전달하지 않는다.
 
 ## 보안 변경 완료 조건
 

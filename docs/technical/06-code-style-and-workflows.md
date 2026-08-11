@@ -109,6 +109,16 @@
 7. DB constraint/RLS를 최종 방어선으로 둔다.
 8. 안정된 code/status/no-store 응답과 거부 테스트를 추가한다.
 
+### 새 외부 운영 API 연동
+
+1. 기존 server route가 이미 요구를 충족하는지 확인하고, 단순 조회를 위해 DB 테이블이나 background job을 추가하지 않는다.
+2. token·project 식별자는 server-only 환경 변수로 읽고 client component에 전달하지 않는다.
+3. 사용자 세션과 role을 외부 요청보다 먼저 확인한다.
+4. `AbortSignal.timeout` 등으로 외부 요청의 상한을 두고 `cache: "no-store"` 여부를 명시한다.
+5. provider 응답은 필요한 최소 DTO로 좁히며 provider 오류 본문·token·식별자를 그대로 반환하거나 로그에 남기지 않는다.
+6. 설정 누락, 권한 거부, provider 실패, provider의 기능/요금제 제한을 서로 구분해 UI가 복구 가능한 상태를 표시하게 한다.
+7. URL parameter, 인증 거부, 정상 집계, provider 제한·실패를 route test로 확인한다.
+
 ### 새 파일 업로드
 
 1. 정말 새 MIME이 필요한지 확인한다.

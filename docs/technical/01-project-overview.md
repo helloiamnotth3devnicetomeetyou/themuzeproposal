@@ -7,7 +7,7 @@ THE MUZE 엔터테인먼트의 공식 웹사이트와 콘텐츠 관리 스튜디
 - 공개 사이트: 홈 히어로, 소속 아티스트, 멤버 scene, 디스코그래피와 오디오 재생, 일정, 공지, 회사 소개, 문의, 오디션
 - 계정: 이메일/비밀번호 및 Google OAuth 로그인, 프로필·아바타, 본인 제보 및 오디션 지원 조회
 - Protect: 로그인 사용자의 권리침해 제보와 증빙 파일 제출
-- 관리자: 아티스트·멤버·앨범·트랙·scene·일정·공지·히어로·사이트 설정 편집, 문의·제보·오디션 심사, 관리자 계정, 감사 로그
+- 관리자: 아티스트·멤버·앨범·트랙·scene·일정·공지·히어로·사이트 설정 편집, 문의·제보·오디션 심사, 관리자 계정, 감사 로그, 페이지 통계
 - 운영 보조: 관리자 미리보기, 편집 초안 복구, 온보딩 가이드 sandbox, 캐시 무효화
 
 ## 기술 스택
@@ -63,6 +63,7 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 | `/admin/contact`, `/admin/protect` | 민감 접수함 |
 | `/admin/auditions/**` | 오디션 목록·캠페인 builder·지원 심사 |
 | `/admin/audit-logs` | append-only 변경 이력 |
+| `/admin/analytics` | Vercel Web Analytics 기반 방문·유입 통계 |
 
 ### 서버 API
 
@@ -74,6 +75,7 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 | `/api/audition/submit` | 로그인·확정 이메일·동적 schema·중복·파일 검증 |
 | `/api/uploads/admin-asset`, `/api/uploads/artist-logo` | 관리자, allowlist bucket/path/type |
 | `/api/admin/accounts` | super_admin 전용 역할 관리 |
+| `/api/admin/page-stats` | 관리자 전용 Vercel Web Analytics 조회 |
 | `/api/admin/revalidate` | 관리자, 허용된 cache tag만 무효화 |
 | `/api/admin/preview`, `/api/admin/preview/exit` | 관리자 draft mode 진입·종료 |
 

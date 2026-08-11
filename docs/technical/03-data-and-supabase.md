@@ -13,6 +13,15 @@
 
 Service role client가 `null`일 수 있으므로 route는 `503 SERVICE_UNAVAILABLE`로 실패해야 한다. 클라이언트 bundle에 service key가 들어가는 import 구조는 금지한다.
 
+## 외부 운영 데이터
+
+관리자 페이지 통계는 Supabase 테이블이나 Storage에 원본 방문 데이터를 복제하지 않는다. 인증된 관리자가 `/api/admin/page-stats`를 요청할 때만 Vercel Web Analytics API를 조회해 화면용 집계 DTO로 변환한다.
+
+- 방문자 식별자, 원본 IP, 개별 이벤트는 이 저장소의 DB에 저장하지 않는다.
+- API token과 Vercel project ID는 서버 환경 변수로만 읽고, 브라우저나 Supabase 설정에 저장하지 않는다.
+- 콘텐츠·사용자·감사 로그의 RLS와 별개로, endpoint 자체가 Supabase session과 `profiles.role`을 확인한다.
+- 방문 데이터 보존 기간과 세부 차원은 Vercel의 제품·요금제 정책을 따른다. DB migration으로 기간을 바꾸는 기능이 아니다.
+
 ## 핵심 데이터 모델
 
 ### 콘텐츠 그래프

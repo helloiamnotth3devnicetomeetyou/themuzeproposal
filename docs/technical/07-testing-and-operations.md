@@ -130,6 +130,8 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 - Storage origin과 Supabase origin 일치
 - 두 HMAC secret 32자 이상
 
+`VERCEL_TOKEN`과 `VERCEL_PROJECT_ID`를 설정하면 관리자 대시보드와 `/admin/analytics`에서 Vercel Web Analytics를 조회한다. 두 값이 없으면 해당 화면은 빈 통계로 표시되며 앱 빌드를 막지 않는다. API는 7일·30일·12주·12개월 범위를 지원하고, Vercel 요금제의 기간 제한은 정상 `200` 응답의 제한 상태로 화면에 안내한다. 상세 설정과 API 계약은 [08-admin-analytics.md](./08-admin-analytics.md)를 본다.
+
 `npm run build`는 환경 검증 후 `next build --webpack`을 실행한다. dev에서 warning으로 지나간 env 누락이 production에서는 build 실패가 될 수 있다.
 
 ## 배포 전 체크리스트
@@ -161,6 +163,13 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 ## 관측과 장애 확인
 
 현재 코드에 Vercel Analytics와 Speed Insights가 포함돼 있지만 전용 error tracking/log aggregation은 확인되지 않는다. 장애 시 다음 순서로 범위를 줄인다.
+
+### 관리자 페이지 통계가 비어 있음
+
+1. `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`와 선택적인 `VERCEL_TEAM_ID`가 서버 환경 변수에 있는지 확인
+2. 해당 토큰이 Vercel Web Analytics API와 대상 프로젝트를 조회할 수 있는지 확인
+3. `/api/admin/page-stats?range=7d`가 관리자 세션으로 403 또는 502를 반환하는지 확인
+4. Vercel 요금제의 조회 가능 기간을 넘지 않았는지 확인
 
 ### 페이지가 전체 실패
 
