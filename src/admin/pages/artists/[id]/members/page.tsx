@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { UserRound } from "lucide-react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
@@ -35,6 +35,7 @@ import MemberLibraryRail from "./MemberLibraryRail";
 
 export default function ArtistMembersAdmin() {
   const routeArtistId = useParams<{ id: string }>()?.id;
+  const selectedMemberId = useSearchParams().get("member");
   const requestConfirm = useAdminConfirm();
   const [artistId, setArtistId] = useState("");
   const [artistName, setArtistName] = useState("");
@@ -134,7 +135,7 @@ export default function ArtistMembersAdmin() {
       return;
     }
     const nextMembers = (data as Member[] | null) ?? [];
-    const selected = nextMembers.find((member) => member.id === preferredId) ?? nextMembers[0] ?? null;
+    const selected = nextMembers.find((member) => member.id === (preferredId || selectedMemberId)) ?? nextMembers[0] ?? null;
     setArtistId(artist.id);
     setArtistName(artist.name || "아티스트");
     setArtistSlug(artist.slug || "");
@@ -150,7 +151,7 @@ export default function ArtistMembersAdmin() {
       setSnapshot("");
     }
     setLoading(false);
-  }, [routeArtistId, setDraft, setError, setLoading, setSnapshot]);
+  }, [routeArtistId, selectedMemberId, setDraft, setError, setLoading, setSnapshot]);
 
   useEffect(() => { void Promise.resolve().then(() => loadMembers()); }, [loadMembers]);
 

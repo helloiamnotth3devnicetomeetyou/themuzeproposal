@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Copy, MapPin, Plus } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
@@ -37,6 +37,7 @@ import {
 
 export default function ArtistScheduleAdminPage() {
   const artistId = useParams<{ id: string }>()?.id;
+  const selectedScheduleId = useSearchParams().get("schedule");
   const requestConfirm = useAdminConfirm();
   const [artistName, setArtistName] = useState("");
   const [artistSlug, setArtistSlug] = useState("");
@@ -110,13 +111,14 @@ export default function ArtistScheduleAdminPage() {
     } else {
       const next = (scheduleResult.data ?? []) as ScheduleRow[];
       setItems(next);
-      if (selectId) {
-        const selected = next.find((item) => item.id === selectId);
+      const requestedId = selectId || selectedScheduleId;
+      if (requestedId) {
+        const selected = next.find((item) => item.id === requestedId);
         if (selected) { const nextDraft = scheduleToDraft(selected); setDraft(nextDraft); setSnapshot(JSON.stringify(nextDraft)); }
       }
     }
     setLoading(false);
-  }, [artistId, setDraft, setError, setLoading, setSnapshot]);
+  }, [artistId, selectedScheduleId, setDraft, setError, setLoading, setSnapshot]);
 
   useEffect(() => { void Promise.resolve().then(() => loadItems()); }, [loadItems]);
   useEffect(() => {

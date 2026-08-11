@@ -9,11 +9,12 @@ import { getUserProfile, signOut } from "@/core/auth/auth";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
 import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
-import SidebarSearch from "./SidebarSearch";
+import SidebarSearch, { type SidebarSearchContent } from "./SidebarSearch";
 import ArtistNavGroup from "./ArtistNavGroup";
 import AdminOnboarding from "@/admin/onboarding/AdminOnboarding";
 
 type Artist = { id: string; name: string; logo_url: string | null };
+const emptySearchContent: SidebarSearchContent = { albums: [], members: [], schedules: [], notices: [] };
 
 const overviewLinks = [
   { label: "대시보드", href: "/admin", icon: LayoutDashboard },
@@ -61,6 +62,7 @@ export default function Sidebar({
   const [profile, setProfile] = useState<{ id?: string; email?: string; avatar_asset_id?: string | null; role?: "super_admin" | "editor" | null } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [searchContent, setSearchContent] = useState<SidebarSearchContent>(emptySearchContent);
   const [profileLoading, setProfileLoading] = useState(true);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState({ auditions: 0, contacts: 0, reports: 0 });
@@ -107,8 +109,22 @@ export default function Sidebar({
     };
     void loadProfile();
     const loadArtists = async () => {
-      const { data } = await supabase.from("artists").select("id,name,logo_url").order("name");
-      if (active) { setArtists((data ?? []) as Artist[]); setArtistsLoading(false); }
+      const [artistResult, albumResult, memberResult, scheduleResult, noticeResult] = await Promise.all([
+        supabase.from("artists").select("id,name,logo_url").order("name"),
+        supabase.from("albums").select("id,artist_id,title,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("artist_members").select("id,artist_id,name,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("artist_schedules").select("id,artist_id,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("notices").select("id,artist_id,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
+      ]);
+      if (!active) return;
+      setArtists((artistResult.data ?? []) as Artist[]);
+      setArtistsLoading(false);
+      setSearchContent({
+        albums: (albumResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", title: item.title_ko || item.title || "제목 없는 앨범" })),
+        members: (memberResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", name: item.name || "이름 없는 멤버" })),
+        schedules: (scheduleResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", title: item.title_ko || "제목 없는 일정" })),
+        notices: (noticeResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? null, title: item.title_ko || "제목 없는 공지" })),
+      });
     };
     void loadArtists();
     const refreshArtists = () => void loadArtists();
@@ -160,7 +176,7 @@ export default function Sidebar({
       <div className="cms-sidebar-heading">
         {!isCollapsed && (
           <div className="cms-sidebar-search-container">
-            <SidebarSearch artists={artists} canNavigate={canNavigate} />
+            <SidebarSearch artists={artists} content={searchContent} canNavigate={canNavigate} />
           </div>
         )}
         <button type="button" className="cms-sidebar-mobile-close" onClick={onClose} aria-label="관리 메뉴 닫기">

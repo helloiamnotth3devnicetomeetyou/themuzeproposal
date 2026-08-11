@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Copy, FileText, Plus } from "lucide-react";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import ContentWorkbench, { type WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
@@ -73,6 +74,7 @@ const fromNotice = (notice: Notice): NoticeDraft => ({
 });
 
 export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: string }) {
+  const selectedNoticeId = useSearchParams().get("notice");
   const requestConfirm = useAdminConfirm();
   const [artistId, setArtistId] = useState<string | null>(null);
   const [scopeName, setScopeName] = useState(scopeArtistId ? "아티스트" : "THE MUZE");
@@ -150,7 +152,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       return;
     }
     const nextNotices = (data as Notice[] | null) ?? [];
-    const selected = nextNotices.find((notice) => notice.id === preferredId) ?? nextNotices[0] ?? null;
+    const selected = nextNotices.find((notice) => notice.id === (preferredId || selectedNoticeId)) ?? nextNotices[0] ?? null;
     setNotices(nextNotices);
     if (selected) {
       const nextDraft = fromNotice(selected);
@@ -161,7 +163,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       setSnapshot("");
     }
     setLoading(false);
-  }, [scopeArtistId]);
+  }, [scopeArtistId, selectedNoticeId]);
 
   useEffect(() => { void Promise.resolve().then(() => loadNotices()); }, [loadNotices]);
 

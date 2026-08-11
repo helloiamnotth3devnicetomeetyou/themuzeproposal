@@ -8,7 +8,13 @@ import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
 
 interface Artist { id: string; name: string; }
 interface SearchItem { id: string; categoryLabel: string; title: string; url: string; artistName?: string; }
-interface SidebarSearchProps { artists: Artist[]; canNavigate: () => boolean; }
+export type SidebarSearchContent = {
+  albums: Array<{ id: string; artistId: string; artistName: string; title: string }>;
+  members: Array<{ id: string; artistId: string; artistName: string; name: string }>;
+  schedules: Array<{ id: string; artistId: string; artistName: string; title: string }>;
+  notices: Array<{ id: string; artistId: string | null; artistName: string | null; title: string }>;
+};
+interface SidebarSearchProps { artists: Artist[]; content: SidebarSearchContent; canNavigate: () => boolean; }
 type ResultsPosition = { top: number; left: number; width: number; maxHeight: number };
 
 const getSearchIcon = (id: string): LucideIcon => {
@@ -29,7 +35,7 @@ const getSearchIcon = (id: string): LucideIcon => {
   return Search;
 };
 
-export default function SidebarSearch({ artists, canNavigate }: SidebarSearchProps) {
+export default function SidebarSearch({ artists, content, canNavigate }: SidebarSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -109,7 +115,11 @@ export default function SidebarSearch({ artists, canNavigate }: SidebarSearchPro
       { id: `${artist.id}-schedule`, categoryLabel: "아티스트", artistName: artist.name, title: "일정", url: `/admin/artists/${artist.id}/schedule` },
       { id: `${artist.id}-notices`, categoryLabel: "아티스트", artistName: artist.name, title: "공지", url: `/admin/artists/${artist.id}/notices` },
     ]),
-  ], [artists]);
+    ...content.albums.map((album) => ({ id: `album-${album.id}`, categoryLabel: "앨범", artistName: album.artistName, title: album.title, url: `/admin/artists/${album.artistId}/discography?album=${album.id}` })),
+    ...content.members.map((member) => ({ id: `member-${member.id}`, categoryLabel: "멤버", artistName: member.artistName, title: member.name, url: `/admin/artists/${member.artistId}/members?member=${member.id}` })),
+    ...content.schedules.map((schedule) => ({ id: `schedule-${schedule.id}`, categoryLabel: "일정", artistName: schedule.artistName, title: schedule.title, url: `/admin/artists/${schedule.artistId}/schedule?schedule=${schedule.id}` })),
+    ...content.notices.map((notice) => ({ id: `notice-${notice.id}`, categoryLabel: notice.artistName ? "아티스트 공지" : "전체 공지", artistName: notice.artistName ?? undefined, title: notice.title, url: notice.artistId ? `/admin/artists/${notice.artistId}/notices?notice=${notice.id}` : `/admin/notices?notice=${notice.id}` })),
+  ], [artists, content]);
 
   const results = useMemo(() => {
     const terms = query.trim().toLocaleLowerCase("ko").split(/\s+/).filter(Boolean);
@@ -137,13 +147,17 @@ export default function SidebarSearch({ artists, canNavigate }: SidebarSearchPro
 
   const select = useCallback((url: string) => {
     if (!canNavigate()) return;
+    if (url === pathname) {
+      setIsOpen(false);
+      return;
+    }
     router.push(url);
     if (url.includes("settings?tab=")) window.dispatchEvent(new CustomEvent("admin-settings-tab-change", { detail: url.split("tab=")[1] }));
     if (url.includes("profile?tab=")) window.dispatchEvent(new CustomEvent("admin-profile-tab-change", { detail: url.split("tab=")[1] }));
     setQuery("");
     setIsOpen(false);
     setActiveIndex(-1);
-  }, [canNavigate, router]);
+  }, [canNavigate, pathname, router]);
 
   useEffect(() => {
     if (activeIndex >= 0) resultsRef.current?.querySelectorAll<HTMLButtonElement>("[data-search-result]")[activeIndex]?.scrollIntoView({ block: "nearest" });
@@ -152,8 +166,8 @@ export default function SidebarSearch({ artists, canNavigate }: SidebarSearchPro
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") { setIsOpen(false); setActiveIndex(-1); return; }
     if (!isShowingResults) return;
-    if (event.key === "ArrowDown") { event.preventDefault(); setActiveIndex((index) => Math.min(index + 1, results.length - 1)); }
-    else if (event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => Math.max(index - 1, 0)); }
+    if (event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) { event.preventDefault(); setActiveIndex((index) => Math.min(index + 1, results.length - 1)); }
+    else if (event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) { event.preventDefault(); setActiveIndex((index) => Math.max(index - 1, 0)); }
     else if (event.key === "Enter" && activeIndex >= 0) { event.preventDefault(); select(results[activeIndex].url); }
   };
 
