@@ -8,7 +8,8 @@ type ValidatedFileType =
   | "application/pdf"
   | "application/zip"
   | "audio/mpeg"
-  | "video/mp4";
+  | "video/mp4"
+  | "video/webm";
 
 export type FileValidationProfile =
   | "public-image"
@@ -16,11 +17,12 @@ export type FileValidationProfile =
   | "protect-evidence"
   | "contact-attachment"
   | "business-asset"
+  | "hero-video"
   | "audition-attachment";
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
-  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "mp3" | "mp4";
+  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "mp3" | "mp4" | "webm";
 };
 
 const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType>> = {
@@ -35,6 +37,7 @@ const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType
   ]),
   "contact-attachment": new Set(["application/pdf"]),
   "business-asset": new Set(["application/pdf", "application/zip"]),
+  "hero-video": new Set(["video/webm"]),
   // Images (portfolio screenshots, photos) and PDF for audition attachments.
   "audition-attachment": new Set([
     "image/jpeg",
@@ -56,6 +59,7 @@ const EXTENSIONS: Record<ValidatedFileType, ValidatedFile["extension"]> = {
   "application/zip": "zip",
   "audio/mpeg": "mp3",
   "video/mp4": "mp4",
+  "video/webm": "webm",
 };
 
 const SIGNATURE_HEADER_BYTES = 4 * 1024;
@@ -89,6 +93,7 @@ function detectType(bytes: Uint8Array): ValidatedFileType | null {
   if (ascii(bytes, 0, 3) === "ID3") return "audio/mpeg";
   if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return "audio/mpeg";
   if (ascii(bytes, 4, 4) === "ftyp") return "video/mp4";
+  if (startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3]) && ascii(bytes, 0, bytes.length).includes("webm")) return "video/webm";
   return null;
 }
 

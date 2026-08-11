@@ -53,6 +53,7 @@ export default function HeroAdminPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [videoStatus, setVideoStatus] = useState<string | null>(null);
   const [loadedAt, setLoadedAt] = useState(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [deleteSlideItem, setDeleteSlideItem] = useState<HeroSlide | null>(null);
@@ -68,7 +69,7 @@ export default function HeroAdminPage() {
     const [{ data: artistData, error: artistError }, { data: albumData, error: albumError }, { data: slideData, error: slideError }] = await Promise.all([
       supabase.from("artists").select("id, name, slug, color").order("name", { ascending: true }),
       supabase.from("albums").select("id, artist_id, title, type, cover_url, hero_image_url, color, release_date, is_published, published_at").order("sort_order", { ascending: true }),
-      supabase.from("home_hero_slides").select("id, album_id, sort_order, is_active").order("sort_order", { ascending: true }),
+      supabase.from("home_hero_slides").select("id, album_id, sort_order, is_active, video_url").order("sort_order", { ascending: true }),
     ]);
 
     if (artistError || albumError || slideError) {
@@ -174,6 +175,17 @@ export default function HeroAdminPage() {
     if (target < 0 || target >= slides.length) return;
     setSlides(arrayMove(slides, index, target).map((slide, position) => ({ ...slide, sort_order: position + 1 })));
   };
+  const saveSlideVideo = async (slideId: string, videoUrl: string | null) => {
+    setSavingId(slideId);
+    const { error: saveError } = await supabase.from("home_hero_slides").update({ video_url: videoUrl }).eq("id", slideId);
+    setSavingId(null);
+    if (saveError) throw saveError;
+    const updateVideo = (slide: HeroSlide) => slide.id === slideId ? { ...slide, video_url: videoUrl } : slide;
+    setSlides((current) => current.map(updateVideo));
+    setStoredSlides((current) => current.map(updateVideo));
+    setOrderSnapshot((current) => JSON.stringify((JSON.parse(current) as HeroSlide[]).map(updateVideo)));
+    setNotice(videoUrl ? "히어로 영상을 저장했습니다." : "히어로 영상을 제거했습니다.");
+  };
 
   if (loading) return <AdminSkeleton variant="cards" className="min-h-[420px]" rows={4} />;
 
@@ -195,7 +207,7 @@ export default function HeroAdminPage() {
       {recovery && <div className="content-draft-recovery" role="status"><p><b>저장하지 않은 임시 작업이 있습니다.</b><span>{new Date(recovery.updatedAt).toLocaleString("ko-KR")} 자동 백업</span></p><button type="button" data-tour-id="draft-discard" onClick={discardBackup}>삭제</button><button type="button" data-tour-id="draft-restore" onClick={restoreBackup}>복구</button></div>}
 
       {error && <div className="hero-admin-alert is-error" role="alert"><b>!</b><span>{error}</span><button type="button" onClick={() => setError("")}>닫기</button></div>}
-      <AdminToast message={notice} />
+      <AdminToast message={videoStatus || notice} />
 
       <section className="hero-admin-panel hero-admin-queue">
         <div className="hero-admin-panel-heading">
@@ -208,13 +220,13 @@ export default function HeroAdminPage() {
               {slides.map((slide, index) => {
                 const album = albumById.get(slide.album_id);
                 const artist = album ? artistById.get(album.artist_id) : undefined;
-                 return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onMoveUp={() => moveSlide(index, -1)} onMoveDown={() => moveSlide(index, 1)} canMoveUp={index > 0} canMoveDown={index < slides.length - 1} onRemove={() => setDeleteSlideItem(slide)} />;
+                 return <SortableSlideCard key={slide.id} slide={slide} index={index} album={album} artist={artist} live={album ? isLiveAlbum(album) : false} accent={album?.color || artist?.color || BRAND_PINK_HEX} disabled={Boolean(savingId)} onMoveUp={() => moveSlide(index, -1)} onMoveDown={() => moveSlide(index, 1)} canMoveUp={index > 0} canMoveDown={index < slides.length - 1} onRemove={() => setDeleteSlideItem(slide)} onVideoChange={(videoUrl) => saveSlideVideo(slide.id, videoUrl)} onVideoStatus={setVideoStatus} />;
               })}
               {!slides.length && <div className="hero-admin-empty"><ImageIcon aria-hidden="true" /><b>메인에 등록된 앨범이 없습니다.</b><span>아래 앨범 라이브러리에서 노출할 앨범을 추가해 주세요.</span></div>}
             </div>
           </SortableContext>
           <DragOverlay adjustScale={false} dropAnimation={{ duration: 220, easing: "cubic-bezier(.18,.86,.28,1)" }}>
-            {activeSlide ? <SlideDragOverlay index={slides.findIndex((slide) => slide.id === activeSlide.id)} album={activeAlbum} artist={activeArtist} accent={activeAlbum?.color || activeArtist?.color || BRAND_PINK_HEX} /> : null}
+            {activeSlide ? <SlideDragOverlay index={slides.findIndex((slide) => slide.id === activeSlide.id)} album={activeAlbum} artist={activeArtist} accent={activeAlbum?.color || activeArtist?.color || BRAND_PINK_HEX} videoUrl={activeSlide.video_url} /> : null}
           </DragOverlay>
         </DndContext>
       </section>

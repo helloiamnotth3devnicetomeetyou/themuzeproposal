@@ -31,9 +31,9 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const isTransitioning = prevSlide !== null;
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
   const [isFirstImageLoaded, setIsFirstImageLoaded] = useState(!rawSlides[0]?.imageUrl);
+  const [readyVideoSlideIds, setReadyVideoSlideIds] = useState<Set<string>>(() => new Set());
 
   const [isPageVisible, setIsPageVisible] = useState(true);
-  const [isInteractionPaused, setIsInteractionPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const transitionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoplayElapsed = useRef(0);
@@ -41,6 +41,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const progressRef = useRef<HTMLElement>(null);
   const mobileProgressRef = useRef<HTMLElement>(null);
   const swipeStartX = useRef<number | null>(null);
+  const previousVideoSlide = useRef<number | null>(null);
 
   useEffect(() => () => {
     if (transitionTimeout.current) clearTimeout(transitionTimeout.current);
@@ -51,7 +52,11 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     const syncViewportPreferences = () => {
       setPrefersReducedMotion(motionQuery.matches);
     };
-    const syncVisibility = () => setIsPageVisible(document.visibilityState === "visible");
+    const syncVisibility = () => {
+      const visible = document.visibilityState === "visible";
+      setIsPageVisible(visible);
+      if (!visible) document.querySelectorAll<HTMLVideoElement>(".home-hero-video").forEach((video) => video.pause());
+    };
     const animationFrame = requestAnimationFrame(() => {
       syncViewportPreferences();
       syncVisibility();
@@ -89,7 +94,20 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   }, [currentSlide]);
 
   useEffect(() => {
-    if (slides.length <= 1 || isTransitioning || !isPageVisible || isInteractionPaused || prefersReducedMotion) return;
+    const videos = [...document.querySelectorAll<HTMLVideoElement>(".home-hero-video")];
+    videos.forEach((video) => {
+      if (Number(video.dataset.slideIndex) !== currentSlide || !isPageVisible || prefersReducedMotion) {
+        video.pause();
+        return;
+      }
+      if (previousVideoSlide.current !== currentSlide) video.currentTime = Number(video.dataset.startTime || 0);
+      void video.play().catch(() => undefined);
+    });
+    previousVideoSlide.current = currentSlide;
+  }, [currentSlide, isPageVisible, prefersReducedMotion, slides.length]);
+
+  useEffect(() => {
+    if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
 
     let previous = performance.now();
     const tick = (now: number) => {
@@ -110,7 +128,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     return () => {
       if (autoplayFrame.current !== null) cancelAnimationFrame(autoplayFrame.current);
     };
-  }, [currentSlide, goToSlide, isInteractionPaused, isPageVisible, isTransitioning, prefersReducedMotion, slides.length]);
+  }, [currentSlide, goToSlide, isPageVisible, prefersReducedMotion, slides.length]);
 
   if (slides.length === 0) {
     return (
@@ -125,26 +143,19 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       className="relative h-[100dvh] w-full overflow-hidden"
       style={{ backgroundColor: "var(--color-static-black)", touchAction: "pan-y", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
       aria-busy={!isFirstImageLoaded}
-      onFocusCapture={() => setIsInteractionPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setIsInteractionPaused(false);
-      }}
       onPointerDown={(event) => {
         if (event.pointerType !== "touch") return;
         swipeStartX.current = event.clientX;
         event.currentTarget.setPointerCapture(event.pointerId);
-        setIsInteractionPaused(true);
       }}
       onPointerUp={(event) => {
         if (swipeStartX.current === null) return;
         const offset = swipeSlideOffset(swipeStartX.current, event.clientX);
         swipeStartX.current = null;
         if (offset) goToSlide(currentSlide + offset);
-        setIsInteractionPaused(false);
       }}
       onPointerCancel={() => {
         swipeStartX.current = null;
-        setIsInteractionPaused(false);
       }}
     >
       <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
@@ -171,6 +182,19 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             } as CSSProperties}
           >
             <div className="home-hero-shade" aria-hidden="true" />
+
+            {slide.videoUrl && <video
+              className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
+              src={slide.videoUrl}
+              data-slide-index={index}
+              data-start-time={videoStartTime(slide.videoUrl)}
+              muted
+              playsInline
+              preload={index === currentSlide || index === (currentSlide + 1) % slides.length ? "auto" : "metadata"}
+              aria-hidden="true"
+              onCanPlay={() => setReadyVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
+              style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
+            />}
 
             {slide.imageUrl && (
               <Image
@@ -219,8 +243,6 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 )}
                 <div
                   className="home-release-actions"
-                  onMouseEnter={() => setIsInteractionPaused(true)}
-                  onMouseLeave={() => setIsInteractionPaused(false)}
                 >
                   <Link
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
@@ -298,7 +320,6 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
             <span className="home-mobile-progress" aria-hidden="true"><i ref={mobileProgressRef} /></span>
             <div
               className="home-slide-rail"
-              onFocusCapture={() => setIsInteractionPaused(false)}
             >
               <span
                 className="home-slide-highlight"
@@ -328,4 +349,10 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       )}
     </main>
   );
+}
+
+function videoStartTime(videoUrl: string) {
+  const match = new URL(videoUrl).hash.match(/^#t=([\d.]+)/);
+  const start = Number(match?.[1]);
+  return Number.isFinite(start) && start >= 0 ? start : 0;
 }

@@ -52,7 +52,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
   const [draftOutline, setDraftOutline] = useState<ScenePoint[]>([]);
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { load, loading, schemaMissing } = useArtistSceneLoader(artistId, onError, setScenes, setSnapshot, setMembers, setSelectedSceneId);
+  const { loading, schemaMissing } = useArtistSceneLoader(artistId, onError, setScenes, setSnapshot, setMembers, setSelectedSceneId);
 
   const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) ?? null;
   const selectedRegion = selectedScene?.artist_scene_members.find((region) => region.member_id === selectedMemberId) ?? null;

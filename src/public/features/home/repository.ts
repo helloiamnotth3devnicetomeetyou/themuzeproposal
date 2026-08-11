@@ -37,12 +37,13 @@ type HeroSlideRow = {
   id: string;
   album_id: string;
   sort_order: number;
+  video_url: string | null;
 };
 
 export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeSlideDTO[]> {
   const { data: heroSlideData, error: heroSlideError } = await client
     .from("home_hero_slides")
-    .select("id, album_id, sort_order")
+    .select("id, album_id, sort_order, video_url")
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .limit(HOME_SLIDE_LIMIT);
@@ -94,6 +95,7 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
       typoLogoUrl: album.typo_logo_url,
       spotifyId: album.spotify_id,
       youtubeUrl: safeHref(album.youtube_url) ?? null,
+      videoUrl: safeHref(heroSlide.video_url) ?? null,
       descriptions: {
         ko: album.description_ko ?? "",
         en: album.description_en ?? album.description_ko ?? "",

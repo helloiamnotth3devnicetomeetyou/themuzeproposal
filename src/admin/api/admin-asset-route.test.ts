@@ -122,4 +122,18 @@ describe("POST /api/uploads/admin-asset", () => {
     expect(await response.json()).toMatchObject({ asset: { path: "artist-1/album-1/track-1/audio.mp3" } });
     expect(mocks.upload).toHaveBeenCalledWith("artist-1/album-1/track-1/audio.mp3", expect.any(File), expect.objectContaining({ contentType: "audio/mpeg" }));
   });
+
+  it("accepts converted WebM clips only through the hero-video bucket", async () => {
+    const form = new FormData();
+    form.set("bucket", "hero-videos");
+    form.set("path", "clips/slide-1/clip.webm");
+    form.set("file", new File([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x77, 0x65, 0x62, 0x6d])], "clip.webm", { type: "video/webm" }));
+
+    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.upload).toHaveBeenCalledWith("clips/slide-1/clip.webm", expect.any(File), expect.objectContaining({ contentType: "video/webm" }));
+  });
 });

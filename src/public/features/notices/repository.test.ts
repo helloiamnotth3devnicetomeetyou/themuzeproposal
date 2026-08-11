@@ -88,7 +88,6 @@ describe("Notices Repository", () => {
     it("fetches single notice detail", async () => {
       // Single-row fetch: mock returns the single row object via maybeSingle
       const rowData = makeRow("10", "상세 공지", "공지");
-      const supabase = createMockSupabase([rowData]);
       // Override to return a single row not an array
       const mock = {
         from: vi.fn(() => makeChain({ data: rowData, error: null })),

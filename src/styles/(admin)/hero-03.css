@@ -230,6 +230,21 @@
   border-radius: 10px;
 }
 
+.hero-slide-card.is-overlay .hero-slide-footer > div > span {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  color: var(--text-muted);
+}
+
+.hero-slide-card.is-overlay .hero-slide-footer svg {
+  width: 11px;
+  height: 11px;
+}
+
 .hero-slide-card.is-overlay::after {
   display: none;
 }

@@ -4,7 +4,7 @@ import React from "react";
 
 // Mock all external dependencies
 vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+  default: () => null,
 }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (

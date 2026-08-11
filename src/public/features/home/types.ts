@@ -11,6 +11,7 @@ export type HomeSlideDTO = {
   typoLogoUrl: string | null;
   spotifyId: string | null;
   youtubeUrl: string | null;
+  videoUrl: string | null;
   descriptions: {
     ko: string;
     en: string;

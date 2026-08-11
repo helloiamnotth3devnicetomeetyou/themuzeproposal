@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
+import HeroVideoClipEditor from "./HeroVideoClipEditor";
 
 export type HeroArtist = {
   id: string;
@@ -31,6 +32,7 @@ export type HeroSlide = {
   album_id: string;
   sort_order: number;
   is_active: boolean;
+  video_url: string | null;
 };
 
 type SlideCardProps = {
@@ -42,6 +44,8 @@ type SlideCardProps = {
   accent: string;
   disabled: boolean;
   onRemove: () => void;
+  onVideoChange: (videoUrl: string | null) => Promise<void>;
+  onVideoStatus: (message: string | null) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   canMoveUp?: boolean;
@@ -57,6 +61,8 @@ export function SortableSlideCard({
   accent,
   disabled,
   onRemove,
+  onVideoChange,
+  onVideoStatus,
   onMoveUp,
   onMoveDown,
   canMoveUp,
@@ -92,6 +98,7 @@ export function SortableSlideCard({
         {!live && <span className="hero-slide-unavailable">앨범 비공개</span>}
         <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
       </div>
+      <HeroVideoClipEditor slideId={slide.id} videoUrl={slide.video_url} disabled={disabled} onChange={onVideoChange} onStatus={onVideoStatus} />
       <footer className="hero-slide-footer">
         <span>드래그해 노출 순서 변경</span>
         <div>
@@ -109,7 +116,8 @@ export function SlideDragOverlay({
   album,
   artist,
   accent,
-}: Pick<SlideCardProps, "index" | "album" | "artist" | "accent">) {
+  videoUrl,
+}: Pick<SlideCardProps, "index" | "album" | "artist" | "accent"> & { videoUrl: string | null }) {
   return (
     <article className="hero-slide-card is-overlay" style={{ "--album-color": accent } as CSSProperties}>
       <div className="hero-slide-frame">
@@ -119,6 +127,8 @@ export function SlideDragOverlay({
         <span className="hero-slide-grab is-overlay-handle"><GripVertical aria-hidden="true" /><span>이동 중</span></span>
         <div className="hero-slide-copy"><small>{artist?.name || "앨범 정보 없음"} · {album?.type || "-"}</small><b>{album?.title || "삭제된 앨범"}</b></div>
       </div>
+      <div className="hero-video-summary" aria-hidden="true"><div><b>히어로 영상</b><span>{videoUrl ? "12초 WebM 저장됨" : "등록된 영상 없음"}</span></div><span className="hero-video-open">영상 편집</span></div>
+      <footer className="hero-slide-footer" aria-hidden="true"><span>드래그해 노출 순서 변경</span><div><span><ChevronUp /></span><span><ChevronDown /></span><span><Trash2 /></span></div></footer>
     </article>
   );
 }

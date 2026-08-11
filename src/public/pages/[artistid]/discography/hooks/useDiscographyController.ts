@@ -101,7 +101,7 @@ export function useDiscographyController(
     if (index < 0) return;
     const timer = window.setTimeout(() => setAlbumIndex(index), 0);
     return () => window.clearTimeout(timer);
-  }, [previewAlbum, sortedAlbums]);
+  }, [previewAlbum, setAlbumIndex, sortedAlbums]);
 
   const savePlayback = useCallback(
     (albumId: string, trackIndex: number, currentTime: number) => {
@@ -135,7 +135,7 @@ export function useDiscographyController(
         requestAnimationFrame(() => setTransitioning(false));
       }, ALBUM_TRANSITION_MS);
     },
-    [albumIndex, savePlayback, sortedAlbums, transitioning, setShowDiscs, setIsPlaying, setCurrentTrackIndex, setProgress, setAudioDuration, restoreTimeRef],
+    [albumIndex, savePlayback, sortedAlbums, transitioning, setShowDiscs, setIsPlaying, setCurrentTrackIndex, setProgress, setAudioDuration, restoreTimeRef, setAlbumIndex],
   );
 
   // Scroll album rail to active album
