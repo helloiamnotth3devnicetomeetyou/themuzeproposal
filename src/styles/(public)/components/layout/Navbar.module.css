@@ -158,7 +158,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-default);
 }
+
+.navDivider { width: 1px; height: 1.25rem; background: color-mix(in srgb, var(--text-muted) 62%, transparent); }
 
 /* Unified Pill Base for Theme Toggle */
 .themeToggleBtn {
