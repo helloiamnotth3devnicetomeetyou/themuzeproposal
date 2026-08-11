@@ -67,7 +67,7 @@
 .artistIdentityFocused::before { opacity:1; }
 .artistWordmark { display:flex; min-width:0; align-items:flex-end; gap:clamp(14px,1.8vw,28px); padding:0; border:0; background:transparent; color:inherit; white-space:nowrap; cursor:pointer; pointer-events:auto; transition:opacity var(--duration-slow) ease; backface-visibility:hidden; }
 .artistWordmark img { display:block; width:auto; max-width:min(25vw,380px); height:clamp(44px,6.4vw,98px); flex:0 1 auto; object-fit:contain; object-position:left bottom; filter:brightness(0) invert(1); }
-.artistWordmark h1 { margin:0; font-family:var(--font-montserrat),'Montserrat',sans-serif; font-size:clamp(52px,7.3vw,114px); font-weight:700; line-height:.74; letter-spacing:-.075em; text-transform:uppercase; }
+.artistWordmark h1 { margin:0; font-family:var(--font-hero); font-size:clamp(52px,7.3vw,114px); font-weight:700; line-height:.74; letter-spacing:-.075em; text-transform:uppercase; }
 .artistProfileToggle { position:relative; display:grid; width:26px; height:26px; flex:0 0 26px; margin-bottom:4px; place-items:center; border:1px solid var(--alpha-ffffff-42); border-radius:50%; transition:background .22s ease,transform .35s cubic-bezier(.22,1,.36,1); }
 .artistProfileToggle::before,.artistProfileToggle::after { content:""; position:absolute; width:9px; height:1px; background:currentColor; }
 .artistProfileToggle::after { transform:rotate(90deg); }
@@ -87,7 +87,7 @@
 .profileIndex { display:flex; width:100%; align-items:center; gap:12px; padding-right:38px; color:var(--artist-accent); font-size:8px; font-weight:800; letter-spacing:.14em; }
 .panelRight .profileIndex { justify-content:flex-end; padding-right:38px; }
 .profileIndex b { color:var(--scene-paper); font-family:var(--font-display); font-size: var(--text-sm); }
-.profilePanel h1 { margin:clamp(25px,4vh,48px) 0 0; font-family:var(--font-montserrat),'Montserrat',sans-serif; font-size:clamp(58px,7.8vw,122px); font-weight:650; line-height:.72; letter-spacing:-.075em; overflow-wrap:anywhere; text-transform:uppercase; }
+.profilePanel h1 { margin:clamp(25px,4vh,48px) 0 0; font-family:var(--font-hero); font-size:clamp(58px,7.8vw,122px); font-weight:650; line-height:.72; letter-spacing:-.075em; overflow-wrap:anywhere; text-transform:uppercase; }
 .nativeName { margin:18px 0 0; color:var(--alpha-ffffff-74); font-size:clamp(13px,1.1vw,17px); font-weight:600; }
 .memberBio { max-width:560px; margin-top:clamp(24px,4vh,42px); }
 .memberBio span { color:var(--artist-accent); font-size:8px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }

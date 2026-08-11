@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Montserrat } from "next/font/google";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
@@ -10,8 +9,6 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "THE MUZE ENTERTAINMENT", template: `%s | ${SITE_NAME}` },
@@ -33,9 +30,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const initialTheme: Theme = "dark";
 
   return (
-    <html lang={initialLocale} data-theme={initialTheme} className={`${montserrat.variable} h-full antialiased`}>
+    <html lang={initialLocale} data-theme={initialTheme} className="h-full antialiased">
       <head>
         <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>

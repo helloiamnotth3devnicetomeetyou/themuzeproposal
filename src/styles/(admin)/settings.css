@@ -23,7 +23,7 @@
 .settings-identity-art svg { width: 20px; height: 20px; }
 .settings-editor-stack { max-width: 1040px; }
 .settings-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.settings-section-heading h3 { font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: var(--text-2xl); }
+.settings-section-heading h3 { font-family: var(--font-hero); font-size: var(--text-2xl); }
 .settings-section-heading p { max-width: 510px; margin: 8px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.65; }
 .settings-section-heading > svg { width: 42px; height: 42px; padding: 11px; border: 1px solid var(--border-default); border-radius: 50%; color: var(--text-faint); }
 .settings-panel { display: flex; flex-direction: column; gap: 20px; padding: 23px; border: 1px solid var(--border-default); border-radius: 11px; background: var(--bg-subtle); }
@@ -43,9 +43,9 @@
 .settings-history-item { min-height: 62px; padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast) ease; }
 .settings-history-item:last-of-type { border-bottom: 0; }
 .settings-history-item:focus-within { background: var(--bg-subtle); }
-.settings-history-order { color: var(--text-faint); font: 8px var(--font-montserrat),'Montserrat',sans-serif; }
+.settings-history-order { color: var(--text-faint); font: 8px var(--font-hero); }
 .settings-history-date,.settings-history-event { width: 100%; height: 38px; border: 1px solid transparent !important; outline: 0; background: transparent !important; color: var(--text-primary) !important; }
-.settings-history-date { padding: 0 8px; font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: 10px; font-weight: 750; }
+.settings-history-date { padding: 0 8px; font-family: var(--font-hero); font-size: 10px; font-weight: 750; }
 .settings-history-event { padding: 0 10px; font-size: 10px; }
 .settings-history-date:hover,.settings-history-event:hover { border-color: var(--border-subtle) !important; }
 .settings-history-date:focus,.settings-history-event:focus { border-color: var(--alpha-fc6fcf-45) !important; border-radius: 7px; background: var(--bg-card) !important; }
@@ -65,7 +65,7 @@
 .settings-footer-preview { position: relative; display: grid; grid-template-columns: minmax(160px,.7fr) minmax(260px,1.3fr) auto; min-height: 180px; align-items: end; gap: 30px; overflow: hidden; padding: 31px; border: 1px solid var(--palette-262626); border-radius: 11px; background: var(--palette-0b0b0b); color: var(--color-static-white); }
 .settings-footer-preview::before { content: ""; position: absolute; right: -90px; bottom: -120px; width: 300px; height: 300px; border: 1px solid var(--alpha-fc6fcf-12); border-radius: 50%; box-shadow: 0 0 0 46px var(--alpha-fc6fcf-025),0 0 0 92px var(--alpha-fc6fcf-018); pointer-events: none; }
 .settings-footer-preview > div,.settings-footer-preview > p { position: relative; z-index: 1; }
-.settings-footer-preview strong { font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: 19px; letter-spacing: -.04em; }
+.settings-footer-preview strong { font-family: var(--font-hero); font-size: 19px; letter-spacing: -.04em; }
 .settings-footer-preview > p { margin: 0; color: var(--alpha-ffffff-48); font-size: 8px; line-height: 1.55; }
 .settings-footer-socials { display: flex; align-items: center; justify-content: flex-end; gap: 13px; }
 .settings-footer-socials svg { width: 13px; height: 13px; color: var(--alpha-ffffff-62); }
@@ -119,7 +119,7 @@
 .avatar-manager-image { overflow: hidden; aspect-ratio: 1; background: var(--bg-subtle); }
 .avatar-manager-image img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-manager-card-meta { display: flex; min-height: 39px; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border-subtle); }
-.avatar-manager-card-meta b { color: var(--text-faint); font-family: var(--font-montserrat),'Montserrat',sans-serif; font-size: 8px; }
+.avatar-manager-card-meta b { color: var(--text-faint); font-family: var(--font-hero); font-size: 8px; }
 .avatar-manager-card-meta label { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 8px; cursor: pointer; }
 .avatar-manager-card-meta input { width: 13px; height: 13px; accent-color: var(--color-brand-pink); }
 .avatar-manager-card-actions { display: grid; grid-template-columns: repeat(3,1fr); min-height: 36px; }

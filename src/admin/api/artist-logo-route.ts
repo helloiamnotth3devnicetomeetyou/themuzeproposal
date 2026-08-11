@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
     .from("artist-assets")
     .upload(path, new Blob([sanitized], { type: "image/svg+xml" }), {
       contentType: "image/svg+xml",
+      cacheControl: "31536000",
       upsert: false,
     });
 
