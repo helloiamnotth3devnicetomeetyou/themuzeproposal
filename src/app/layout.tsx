@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>
           <LocaleProvider initialLocale={initialLocale}>
-            <DisclaimerBanner />
+            {false && <DisclaimerBanner />}
             {children}
             <Analytics />
             <SpeedInsights />
