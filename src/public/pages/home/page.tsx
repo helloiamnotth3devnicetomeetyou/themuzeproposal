@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
-import { SiSpotify, SiYoutube } from "react-icons/si";
+import { ChevronDown, ChevronLeft, ChevronRight, CirclePlay, Headphones } from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
@@ -28,6 +27,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const [transition, setTransition] = useState({ current: 0, previous: null as number | null });
   const currentSlide = transition.current;
   const prevSlide = transition.previous;
+  const nextSlide = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide;
   const isTransitioning = prevSlide !== null;
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
   const [isFirstImageLoaded, setIsFirstImageLoaded] = useState(!rawSlides[0]?.imageUrl);
@@ -166,6 +166,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
         const isActive = index === currentSlide;
         const isLeaving = index === prevSlide;
         const isVisible = isActive || isLeaving;
+        const shouldLoadMedia = isVisible || index === nextSlide;
 
         return (
           <div
@@ -186,28 +187,28 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
           >
             <div className="home-hero-shade" aria-hidden="true" />
 
-            {slide.videoUrl && <video
+            {shouldLoadMedia && slide.videoUrl && <video
               className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
               src={slide.videoUrl}
               data-slide-index={index}
               data-start-time={videoStartTime(slide.videoUrl)}
               muted
               playsInline
-              preload={index === currentSlide || index === (currentSlide + 1) % slides.length ? "auto" : "metadata"}
+              preload="auto"
               aria-hidden="true"
               onCanPlay={() => setReadyVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
               style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
             />}
 
-            {slide.imageUrl && (
+            {shouldLoadMedia && slide.imageUrl && (
               <Image
                 src={slide.imageUrl}
                 alt={`${slide.artistName} ${slide.title}`}
                 fill
                 sizes="(max-width: 768px) 768px, 100vw"
-                preload={index === 0}
-                fetchPriority={index === 0 ? "high" : undefined}
-                loading={index === 0 ? "eager" : "lazy"}
+                preload={isActive}
+                fetchPriority={isActive ? "high" : undefined}
+                loading="eager"
                 quality={80}
                 onLoad={() => { if (index === 0) setIsFirstImageLoaded(true); }}
                 className="object-cover object-center"
@@ -273,13 +274,13 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                       >
                         {slide.youtubeUrl && (
                           <a href={slide.youtubeUrl} target="_blank" rel="noreferrer" aria-label={`${slide.title} on YouTube`} className="is-youtube">
-                            <SiYoutube aria-hidden="true" />
+                            <CirclePlay aria-hidden="true" />
                             <span>YouTube</span>
                           </a>
                         )}
                         {spotifyAlbumHref(slide.spotifyId) && (
                           <a href={spotifyAlbumHref(slide.spotifyId)} target="_blank" rel="noreferrer" aria-label={`${slide.title} on Spotify`} className="is-spotify">
-                            <SiSpotify aria-hidden="true" />
+                            <CirclePlay aria-hidden="true" />
                             <span>Spotify</span>
                           </a>
                         )}

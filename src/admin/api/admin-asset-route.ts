@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
     contentType: validated.mimeType,
+    cacheControl: "31536000",
     upsert: false,
   });
   if (error) return errorResponse("UPLOAD_FAILED", 503);
