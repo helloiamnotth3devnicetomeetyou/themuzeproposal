@@ -10,7 +10,7 @@ import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { HomeSlideDTO } from "@/public/features/home/types";
 import { spotifyAlbumHref } from "@/core/http/spotify";
-import { startSlideTransition, swipeSlideOffset } from "./carousel-state";
+import { firstSlideMediaReady, startSlideTransition, swipeSlideOffset } from "./carousel-state";
 
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
@@ -33,6 +33,13 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
   const [isFirstImageLoaded, setIsFirstImageLoaded] = useState(!rawSlides[0]?.imageUrl);
   const [readyVideoSlideIds, setReadyVideoSlideIds] = useState<Set<string>>(() => new Set());
+  const [failedVideoSlideIds, setFailedVideoSlideIds] = useState<Set<string>>(() => new Set());
+  const firstSlideReady = firstSlideMediaReady(
+    Boolean(rawSlides[0]?.videoUrl),
+    Boolean(rawSlides[0] && readyVideoSlideIds.has(rawSlides[0].id)),
+    Boolean(rawSlides[0] && failedVideoSlideIds.has(rawSlides[0].id)),
+    isFirstImageLoaded,
+  );
 
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -100,7 +107,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       const slideIndex = Number(video.dataset.slideIndex);
       const isCurrent = slideIndex === currentSlide;
       const isLeaving = slideIndex === prevSlide;
-      if ((!isCurrent && !isLeaving) || !isPageVisible || prefersReducedMotion || !isFirstImageLoaded) {
+      if ((!isCurrent && !isLeaving) || !isPageVisible || prefersReducedMotion) {
         video.pause();
         return;
       }
@@ -108,7 +115,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       void video.play().catch(() => undefined);
     });
     previousVideoSlide.current = currentSlide;
-  }, [currentSlide, isFirstImageLoaded, isPageVisible, prefersReducedMotion, prevSlide]);
+  }, [currentSlide, isPageVisible, prefersReducedMotion, prevSlide]);
 
   useEffect(() => {
     if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
@@ -149,7 +156,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     <main
       className="relative h-[100dvh] w-full overflow-hidden"
       style={{ backgroundColor: "var(--color-static-black)", touchAction: "pan-y", "--slide-accent": slides[currentSlide]?.color || BRAND_PINK_HEX } as CSSProperties}
-      aria-busy={!isFirstImageLoaded}
+      aria-busy={!firstSlideReady}
       onPointerDown={(event) => {
         if (event.pointerType !== "touch") return;
         swipeStartX.current = event.clientX;
@@ -198,13 +205,15 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
               data-start-time={videoStartTime(slide.videoUrl)}
               muted
               playsInline
-              preload="metadata"
+              autoPlay={index === 0}
+              preload={index === 0 ? "auto" : "metadata"}
               aria-hidden="true"
               onCanPlay={() => setReadyVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
+              onError={() => setFailedVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
               style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
             />}
 
-            {shouldLoadMedia && slide.imageUrl && (
+            {shouldLoadMedia && slide.imageUrl && (index !== 0 || !slide.videoUrl || failedVideoSlideIds.has(slide.id)) && (
               <Image
                 src={slide.imageUrl}
                 alt={`${slide.artistName} ${slide.title}`}
@@ -219,7 +228,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
               />
             )}
-            {index === 0 && !isFirstImageLoaded && <div className="home-hero-loading"><LoadingIndicator label="Loading featured release" /></div>}
+            {index === 0 && !firstSlideReady && <div className="home-hero-loading"><LoadingIndicator label="Loading featured release" /></div>}
 
             <div className="home-hero-content">
               <div className="home-hero-copy">

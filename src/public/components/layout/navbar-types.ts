@@ -8,6 +8,15 @@ export type ArtistNavigationItem = {
   name_ja: string | null;
   logo_url: string | null;
 };
+
+export type NavigationAccount = {
+  isLoggedIn: boolean;
+  isAdmin: boolean;
+  avatarUrl: string | null;
+  initial: string;
+  name: string;
+};
+
 export type NavTranslations = {
   nav: { about: string; audition: string; notice: string };
   common: {

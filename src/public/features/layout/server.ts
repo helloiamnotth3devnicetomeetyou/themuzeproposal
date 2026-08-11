@@ -3,7 +3,8 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
-import type { ArtistNavigationItem } from "@/public/components/layout/navbar-types";
+import { createSupabaseServerClient } from "@/core/supabase/server";
+import type { ArtistNavigationItem, NavigationAccount } from "@/public/components/layout/navbar-types";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import { EMPTY_SETTINGS, normalizeSiteSettings } from "@/public/features/settings/data";
 
@@ -43,3 +44,30 @@ export const getCachedSiteSettings = unstable_cache(
   ["public-site-settings"],
   { revalidate: 300, tags: ["public-site-settings"] },
 );
+
+export async function getNavigationAccount(): Promise<NavigationAccount> {
+  const client = await createSupabaseServerClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };
+
+  const fallbackName = user.user_metadata?.name?.trim() || user.email?.split("@")[0] || "관리자";
+  const { data: profile } = await client
+    .from("profiles")
+    .select("role,name,avatar_asset_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  const name = profile?.name?.trim() || fallbackName;
+  const { data: avatar } = profile?.avatar_asset_id
+    ? await client.from("avatar_assets").select("image_path").eq("id", profile.avatar_asset_id).eq("is_active", true).maybeSingle()
+    : { data: null };
+
+  return {
+    isLoggedIn: true,
+    isAdmin: profile?.role === "super_admin" || profile?.role === "editor",
+    avatarUrl: avatar?.image_path
+      ? client.storage.from("artist-assets").getPublicUrl(avatar.image_path).data.publicUrl
+      : null,
+    initial: (name[0] || "A").toUpperCase(),
+    name,
+  };
+}

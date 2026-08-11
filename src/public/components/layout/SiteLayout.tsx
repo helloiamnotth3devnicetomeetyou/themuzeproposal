@@ -6,18 +6,20 @@ import { PreviewProvider } from "@/core/preview/PreviewProvider";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import type { ArtistNavigationItem } from "./navbar-types";
+import type { ArtistNavigationItem, NavigationAccount } from "./navbar-types";
 
 export default function MainLayout({
   children,
   draftModeEnabled = true,
   initialArtists,
   initialSettings,
+  initialAccount,
 }: {
   children: React.ReactNode;
   draftModeEnabled?: boolean;
   initialArtists: ArtistNavigationItem[];
   initialSettings: SiteSettingsPreviewPayload;
+  initialAccount: NavigationAccount;
 }) {
   const pathname = usePathname();
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
@@ -88,7 +90,7 @@ export default function MainLayout({
   const layoutKey = getLayoutKey(pathname);
   const content = (
     <>
-      <Navbar initialArtists={initialArtists} />
+      <Navbar initialArtists={initialArtists} initialAccount={initialAccount} />
       <div
         key={layoutKey}
         className={`flex flex-1 flex-col animate-page-fade ${

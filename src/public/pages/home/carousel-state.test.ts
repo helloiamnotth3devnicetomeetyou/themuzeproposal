@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { autoplayProgress, startSlideTransition, swipeSlideOffset } from "./carousel-state";
+import { autoplayProgress, firstSlideMediaReady, startSlideTransition, swipeSlideOffset } from "./carousel-state";
 
 describe("startSlideTransition", () => {
   it("wraps both directions and keeps the leaving slide", () => {
@@ -16,5 +16,13 @@ describe("startSlideTransition", () => {
     expect(swipeSlideOffset(200, 120)).toBe(1);
     expect(swipeSlideOffset(120, 200)).toBe(-1);
     expect(swipeSlideOffset(200, 170)).toBe(0);
+  });
+
+  it("waits for the first video and only falls back after its image is ready", () => {
+    expect(firstSlideMediaReady(true, false, false, true)).toBe(false);
+    expect(firstSlideMediaReady(true, true, false, false)).toBe(true);
+    expect(firstSlideMediaReady(true, false, true, false)).toBe(false);
+    expect(firstSlideMediaReady(true, false, true, true)).toBe(true);
+    expect(firstSlideMediaReady(false, false, false, true)).toBe(true);
   });
 });
