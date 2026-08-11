@@ -15,7 +15,7 @@ import { startSlideTransition, swipeSlideOffset } from "./carousel-state";
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
 const RAIL_GAP = 4;
-const highPriorityVideo = { fetchpriority: "high" } as unknown as VideoHTMLAttributes<HTMLVideoElement>;
+const highPriorityVideo = { fetchPriority: "high" } as unknown as VideoHTMLAttributes<HTMLVideoElement>;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
