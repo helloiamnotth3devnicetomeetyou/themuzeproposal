@@ -2,22 +2,21 @@ import MainLayout from "@/public/components/layout/SiteLayout";
 import {
   getCachedNavigationArtists,
   getCachedSiteSettings,
+  getNavigationAccount,
 } from "@/public/features/layout/server";
-import type { NavigationAccount } from "@/public/components/layout/navbar-types";
-
-const anonymousAccount: NavigationAccount = { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [initialArtists, initialSettings] = await Promise.all([
+  const [initialArtists, initialSettings, initialAccount] = await Promise.all([
     getCachedNavigationArtists(),
     getCachedSiteSettings(),
+    getNavigationAccount(),
   ]);
 
   return (
     <MainLayout
       initialArtists={initialArtists}
       initialSettings={initialSettings}
-      initialAccount={anonymousAccount}
+      initialAccount={initialAccount}
     >
       {children}
     </MainLayout>
