@@ -8,6 +8,5 @@ export const metadata = createPageMetadata("Home");
 export default async function HomePage() {
   const slides = await getPublicHomeSlidesForPage();
   if (slides[0]?.typoLogoUrl) preload(slides[0].typoLogoUrl, { as: "image", fetchPriority: "high" });
-  if (slides[0]?.videoUrl) preload(slides[0].videoUrl, { as: "video", fetchPriority: "high" });
   return <Home initialSlides={slides} />;
 }

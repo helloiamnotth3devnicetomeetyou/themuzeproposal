@@ -30,7 +30,7 @@ import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import { supabase } from "@/core/supabase/client";
-import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import {
   SlideDragOverlay,
   SortableSlideCard,
@@ -149,11 +149,7 @@ export default function HeroAdminPage() {
       });
       setOrderSnapshot(JSON.stringify(slides));
       discardBackup();
-      void guideSandboxFetch("/api/admin/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tag: "public-home-slides" }),
-      });
+      await revalidatePublicCache("public-home-slides");
       setNotice("메인 노출 변경사항을 저장했습니다.");
     }
     setSavingId(null);
@@ -190,11 +186,7 @@ export default function HeroAdminPage() {
     setSlides((current) => current.map(updateVideo));
     setStoredSlides((current) => current.map(updateVideo));
     setOrderSnapshot((current) => JSON.stringify((JSON.parse(current) as HeroSlide[]).map(updateVideo)));
-    void guideSandboxFetch("/api/admin/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag: "public-home-slides" }),
-    });
+    await revalidatePublicCache("public-home-slides");
     setNotice(videoUrl ? "히어로 영상을 저장했습니다." : "히어로 영상을 제거했습니다.");
   };
 

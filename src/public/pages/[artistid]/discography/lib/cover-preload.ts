@@ -20,10 +20,10 @@ export function discographyCoverCandidate(src: string): ImagePreloadCandidate {
 }
 
 export function coverPreloadQueue(candidates: ImagePreloadCandidate[], activeIndex: number) {
-  return candidates
-    .map((candidate, index) => ({ candidate, distance: Math.abs(index - activeIndex) }))
-    .filter((item) => item.distance > 0)
-    .sort((a, b) => a.distance - b.distance)
-    .map((item) => item.candidate);
+  if (candidates.length <= 1) return [];
+  return Array.from(new Set([
+    (activeIndex - 1 + candidates.length) % candidates.length,
+    (activeIndex + 1) % candidates.length,
+  ])).map((index) => candidates[index]);
 }
 

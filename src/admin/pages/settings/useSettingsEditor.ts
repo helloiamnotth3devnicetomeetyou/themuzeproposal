@@ -6,7 +6,7 @@ import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
-import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import { supabase } from "@/core/supabase/client";
 import { DEFAULT_HISTORY, sortHistoryNewestFirst, type HistoryEntry } from "@/core/content/site-content";
 import {
@@ -174,11 +174,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
     }
     setSnapshot(serializedDraft);
     discardBackup();
-    void guideSandboxFetch("/api/admin/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag: "public-site-settings" }),
-    });
+    await revalidatePublicCache("public-site-settings");
     showToast("사이트 설정을 저장했습니다.");
   };
 

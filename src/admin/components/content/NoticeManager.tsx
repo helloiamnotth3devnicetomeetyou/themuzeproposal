@@ -14,6 +14,7 @@ import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
 import NoticeCategoryInput from "@/admin/components/content/NoticeCategoryInput";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { hasRichTextContent, sanitizeRichText } from "@/core/utils/rich-text";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import { supabase } from "@/core/supabase/client";
 
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
@@ -257,6 +258,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     }
     setToast(draft.id ? "공지를 저장했습니다." : "새 공지를 작성했습니다.");
     discardBackup();
+    await revalidatePublicCache("public-notices", "public-notice-title");
     await loadNotices(result.data.id);
   };
 
@@ -279,6 +281,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
     }
     setDeleteOpen(false);
     setToast("공지를 삭제했습니다.");
+    await revalidatePublicCache("public-notices", "public-notice-title");
     await loadNotices();
   };
 

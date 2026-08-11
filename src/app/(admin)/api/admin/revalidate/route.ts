@@ -5,7 +5,17 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
-const revalidateSchema = z.object({ tag: z.enum(["public-notices", "public-navigation-artists", "public-site-settings", "public-home-slides", "artist-scene-data"]) });
+const cacheTag = z.enum([
+  "artist-scene-data",
+  "public-artist-title",
+  "public-home-slides",
+  "public-member-title",
+  "public-navigation-artists",
+  "public-notice-title",
+  "public-notices",
+  "public-site-settings",
+]);
+const revalidateSchema = z.object({ tags: z.array(cacheTag).min(1).max(8) });
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "invalid request" }, { status: 400 });
@@ -15,7 +25,6 @@ export async function POST(request: NextRequest) {
 
   const parsed = revalidateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid tag" }, { status: 400 });
-  const { tag } = parsed.data;
-  revalidateTag(tag, "max");
+  parsed.data.tags.forEach((tag) => revalidateTag(tag, { expire: 0 }));
   return Response.json({ revalidated: true });
 }

@@ -221,7 +221,7 @@ export default function About() {
               alt="THE MUZE New Building"
               fill
               className="object-cover"
-              sizes="(max-w-7xl) 100vw"
+              sizes="(max-width: 768px) 100vw, 58vw"
             />
           </div>
         </div>

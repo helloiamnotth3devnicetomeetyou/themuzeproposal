@@ -32,20 +32,21 @@ describe("POST /api/admin/revalidate", () => {
   });
 
   it("rejects cross-origin and non-admin requests", async () => {
-    expect((await POST(request({ tag: "public-notices" }, "https://attacker.example"))).status).toBe(400);
+    expect((await POST(request({ tags: ["public-notices"] }, "https://attacker.example"))).status).toBe(400);
     expect(mocks.createClient).not.toHaveBeenCalled();
 
     mocks.isAdmin.mockResolvedValueOnce(false);
-    expect((await POST(request({ tag: "public-notices" }))).status).toBe(403);
+    expect((await POST(request({ tags: ["public-notices"] }))).status).toBe(403);
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
   });
 
   it("only revalidates the explicit tag allowlist", async () => {
-    expect((await POST(request({ tag: "everything" }))).status).toBe(400);
+    expect((await POST(request({ tags: ["everything"] }))).status).toBe(400);
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
 
-    const response = await POST(request({ tag: "public-home-slides" }));
+    const response = await POST(request({ tags: ["public-home-slides", "public-artist-title"] }));
     expect(response.status).toBe(200);
-    expect(mocks.revalidateTag).toHaveBeenCalledWith("public-home-slides", "max");
+    expect(mocks.revalidateTag).toHaveBeenCalledWith("public-home-slides", { expire: 0 });
+    expect(mocks.revalidateTag).toHaveBeenCalledWith("public-artist-title", { expire: 0 });
   });
 });

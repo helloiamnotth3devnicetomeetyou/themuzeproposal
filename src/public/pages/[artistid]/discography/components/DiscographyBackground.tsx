@@ -26,7 +26,6 @@ export function DiscographyBackground({
           fill
           sizes={DISCOGRAPHY_COVER_SIZES}
           className="object-cover blur-[100px] scale-[1.4] brightness-[0.1] saturate-150 transition-all duration-1000"
-          priority
         />
       </div>
       <div

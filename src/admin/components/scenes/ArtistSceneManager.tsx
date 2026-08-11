@@ -217,7 +217,7 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     uploadedAssets.current = [];
     setSnapshot(scenes);
     discardBackup();
-    revalidateArtistSceneData();
+    await revalidateArtistSceneData();
     onToast("장면과 외곽선 변경사항을 저장했습니다.");
   }, [discardBackup, onError, onToast, scenes, snapshot]);
 

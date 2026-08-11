@@ -212,7 +212,7 @@ export default function ArtistProfileAdmin() {
     );
     uploadedAssets.current = [];
     setSaving(false);
-    notifyArtistsChanged();
+    await notifyArtistsChanged();
     setToast(isNew ? "아티스트를 만들었습니다." : "변경사항을 저장했습니다.");
     if (routeId !== result.data.id) router.replace(`/admin/artists/${result.data.id}/profile`);
     router.refresh();
@@ -229,7 +229,7 @@ export default function ArtistProfileAdmin() {
       setError(adminDbError(deleteError, "아티스트를 삭제하지 못했습니다."));
       return;
     }
-    notifyArtistsChanged();
+    await notifyArtistsChanged();
     router.replace("/admin");
     router.refresh();
   };

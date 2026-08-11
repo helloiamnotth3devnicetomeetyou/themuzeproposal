@@ -6,7 +6,7 @@ import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { localizeText } from "@/core/i18n/localized";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
-import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
+import { preloadImages } from "@/core/utils/image-preload";
 import { outlineCentroid } from "@/core/utils/artist-scenes";
 import { sanitizeRichText } from "@/core/utils/rich-text";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
@@ -33,7 +33,7 @@ function sceneImageCandidates(scene: ArtistScene) {
     height: scene.image_height || 900,
     sizes: "100vw",
   });
-  return [{ src: props.src, srcSet: props.srcSet, sizes: props.sizes }, { src: scene.image_url }];
+  return [{ src: props.src, srcSet: props.srcSet, sizes: props.sizes }];
 }
 
 export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, initialData = null }: { artistSlug: string; initialMemberSlug?: string; initialData?: ArtistSceneData | null }) {
@@ -61,15 +61,19 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
 
   const artistName = artist ? localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name) : artistSlug.toUpperCase();
   const scenePreloadCandidates = useMemo(() => {
-    const masks = scenes.flatMap((scene) => scene.artist_scene_members.map((region) => region.mask_url).filter(Boolean) as string[]);
-    return [...scenes.slice(1).flatMap(sceneImageCandidates), ...Array.from(new Set(masks)).map((src) => ({ src }))];
-  }, [scenes]);
+    if (!activeScene || scenes.length <= 1) return [];
+    const activeIndex = scenes.findIndex((scene) => scene.id === activeScene.id);
+    const adjacentIndexes = new Set([
+      (activeIndex - 1 + scenes.length) % scenes.length,
+      (activeIndex + 1) % scenes.length,
+    ]);
+    return Array.from(adjacentIndexes).flatMap((index) => sceneImageCandidates(scenes[index]));
+  }, [activeScene, scenes]);
 
   useEffect(() => { if (scenes.length) void Promise.resolve().then(() => setActiveSceneId((current) => scenes.some((scene) => scene.id === current) ? current : scenes[0].id)); }, [scenes]);
   useEffect(() => { if (activeScene) void loadSceneMembers(activeScene.id); }, [activeScene, loadSceneMembers]);
   useEffect(() => {
-    void preloadImages(scenePreloadCandidates.slice(0, 1));
-    return scheduleImagePreload(scenePreloadCandidates.slice(1), { concurrency: 2 });
+    void preloadImages(scenePreloadCandidates, { concurrency: 2 });
   }, [scenePreloadCandidates]);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
@@ -86,6 +90,7 @@ export default function ArtistSceneExperience({ artistSlug, initialMemberSlug, i
   const requestSceneChange = async (id: string) => {
     setHoveredMemberId(null);
     if (id === activeScene?.id) { pendingSceneId.current = null; return; }
+    if (pendingSceneId.current === id) return;
     const scene = scenes.find((item) => item.id === id);
     if (!scene) return;
     pendingSceneId.current = id;

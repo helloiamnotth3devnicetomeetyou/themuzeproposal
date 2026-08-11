@@ -20,6 +20,7 @@ import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
   EMPTY_MEMBER,
@@ -248,6 +249,7 @@ export default function ArtistMembersAdmin() {
       originalDraft ? [originalDraft.imageUrl] : [],
     );
     uploadedAssets.current = [];
+    await revalidatePublicCache("artist-scene-data", "public-member-title");
     setSaving(false);
   };
 
@@ -263,6 +265,7 @@ export default function ArtistMembersAdmin() {
     }
     setDeleteOpen(false);
     setToast("멤버를 삭제했습니다.");
+    await revalidatePublicCache("artist-scene-data", "public-member-title");
     await loadMembers();
   };
 
@@ -294,6 +297,7 @@ export default function ArtistMembersAdmin() {
     setSorting(false);
     setSortDirty(false);
     setToast("멤버 노출 순서를 저장했습니다.");
+    await revalidatePublicCache("artist-scene-data");
     await loadMembers(draft?.id || undefined);
   };
 

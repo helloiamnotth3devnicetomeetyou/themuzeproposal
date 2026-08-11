@@ -7,6 +7,7 @@ import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import { supabase } from "@/core/supabase/client";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import {
   type AlbumEditorDraft,
   type EditorTab,
@@ -232,6 +233,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
     setSaving(false);
     setToast("변경사항을 저장했습니다.");
     discardDraftBackup();
+    await revalidatePublicCache("public-home-slides");
     await loadAlbums(savedAlbumId);
   };
 
@@ -245,6 +247,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
     setDeleting(false);
     setDeleteOpen(false);
     setToast("앨범을 삭제했습니다.");
+    await revalidatePublicCache("public-home-slides");
     await loadAlbums();
   };
 
@@ -260,6 +263,7 @@ export function useDiscographyEditor({ routeArtistId, requestConfirm }: { routeA
     setSortDirty(false);
     setSorting(false);
     setToast("앨범 순서를 저장했습니다.");
+    await revalidatePublicCache("public-home-slides");
     await loadAlbums(draft?.id);
   };
   const reorderTrack = (targetId: string) => {

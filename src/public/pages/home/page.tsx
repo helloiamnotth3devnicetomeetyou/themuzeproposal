@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SVGProps, type VideoHTMLAttributes } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SVGProps } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight, Headphones } from "lucide-react";
@@ -15,7 +15,6 @@ import { startSlideTransition, swipeSlideOffset } from "./carousel-state";
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
 const RAIL_GAP = 4;
-const highPriorityVideo = { fetchPriority: "high" } as unknown as VideoHTMLAttributes<HTMLVideoElement>;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
@@ -29,6 +28,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const currentSlide = transition.current;
   const prevSlide = transition.previous;
   const nextSlide = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide;
+  const previousSlide = slides.length > 1 ? (currentSlide - 1 + slides.length) % slides.length : currentSlide;
   const isTransitioning = prevSlide !== null;
   const [openStreamingSlideId, setOpenStreamingSlideId] = useState<string | null>(null);
   const [isFirstImageLoaded, setIsFirstImageLoaded] = useState(!rawSlides[0]?.imageUrl);
@@ -100,7 +100,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       const slideIndex = Number(video.dataset.slideIndex);
       const isCurrent = slideIndex === currentSlide;
       const isLeaving = slideIndex === prevSlide;
-      if ((!isCurrent && !isLeaving) || !isPageVisible || prefersReducedMotion) {
+      if ((!isCurrent && !isLeaving) || !isPageVisible || prefersReducedMotion || !isFirstImageLoaded) {
         video.pause();
         return;
       }
@@ -108,7 +108,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       void video.play().catch(() => undefined);
     });
     previousVideoSlide.current = currentSlide;
-  }, [currentSlide, isPageVisible, prefersReducedMotion, prevSlide]);
+  }, [currentSlide, isFirstImageLoaded, isPageVisible, prefersReducedMotion, prevSlide]);
 
   useEffect(() => {
     if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
@@ -170,7 +170,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
         const isActive = index === currentSlide;
         const isLeaving = index === prevSlide;
         const isVisible = isActive || isLeaving;
-        const shouldLoadMedia = isVisible || index === nextSlide;
+        const shouldLoadMedia = isVisible || index === nextSlide || index === previousSlide;
 
         return (
           <div
@@ -191,15 +191,14 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
           >
             <div className="home-hero-shade" aria-hidden="true" />
 
-            {slide.videoUrl && <video
+            {shouldLoadMedia && slide.videoUrl && <video
               className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
               src={slide.videoUrl}
               data-slide-index={index}
               data-start-time={videoStartTime(slide.videoUrl)}
               muted
               playsInline
-              preload="auto"
-              {...(isActive ? highPriorityVideo : {})}
+              preload="metadata"
               aria-hidden="true"
               onCanPlay={() => setReadyVideoSlideIds((current) => current.has(slide.id) ? current : new Set(current).add(slide.id))}
               style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
@@ -210,7 +209,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 src={slide.imageUrl}
                 alt={`${slide.artistName} ${slide.title}`}
                 fill
-                sizes="(max-width: 768px) 768px, 100vw"
+                sizes="100vw"
                 preload={isActive}
                 fetchPriority={isActive ? "high" : undefined}
                 loading="eager"
@@ -255,6 +254,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
                 >
                   <Link
                     href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`}
+                    prefetch={isActive ? null : false}
                     className="home-primary-link"
                   >
                     {t.hero.exploreBtn}
