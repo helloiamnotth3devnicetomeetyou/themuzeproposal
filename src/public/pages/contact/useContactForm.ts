@@ -2,45 +2,59 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
-import { ALLOWED_EXTENSIONS, EMPTY_ERROR, MAX_FILE_SIZE, businessTypes, contactCopy, generalTypes, inquiryLabels, type ContactCategory, type FormValues } from "./contact-model";
+import {
+  ALLOWED_EXTENSIONS, EMPTY_ERROR, MAX_FILE_SIZE, businessTypes, contactCopy, emptyCategoryDraft, generalTypes, inquiryLabels,
+  type CategoryDraft, type ContactCategory, type FormValues,
+} from "./contact-model";
 
 export function useContactForm({ initialName, initialEmail, initialRemaining }: { initialName: string; initialEmail: string; initialRemaining: number }) {
   const { locale } = useLocale();
   const messages = contactCopy[locale];
   const [category, setCategory] = useState<ContactCategory>("general");
-  const [form, setForm] = useState<FormValues>({ inquiryType: "", companyName: "", name: initialName, phone: "", email: initialEmail, message: "" });
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [consented, setConsented] = useState(false);
+  const [shared, setShared] = useState({ name: initialName, phone: "", email: initialEmail });
+  const [drafts, setDrafts] = useState<Record<ContactCategory, CategoryDraft>>({ general: emptyCategoryDraft, business: emptyCategoryDraft });
+  const [attachments, setAttachments] = useState<Record<ContactCategory, File | null>>({ general: null, business: null });
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
   const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState(EMPTY_ERROR);
+  const [errorFieldId, setErrorFieldId] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const isBusiness = category === "business";
+  const draft = drafts[category];
+  const attachment = attachments[category];
+  const form: FormValues = { inquiryType: draft.inquiryType, companyName: draft.companyName, name: shared.name, phone: shared.phone, email: shared.email, message: draft.message };
+  const consented = draft.consented;
   const typeOptions = (isBusiness ? businessTypes : generalTypes).map((option) => ({
     ...option,
     label: locale === "ko" ? option.label : inquiryLabels[locale][option.value as keyof typeof inquiryLabels.en],
   }));
 
+  const clearFieldError = (_message?: string) => { void _message; setError(EMPTY_ERROR); setErrorFieldId(""); };
+  const updateDraft = (patch: Partial<CategoryDraft>) => setDrafts((current) => ({ ...current, [category]: { ...current[category], ...patch } }));
+  const setForm: (updater: (current: FormValues) => FormValues) => void = (updater) => {
+    const next = updater(form);
+    setShared({ name: next.name, phone: next.phone, email: next.email });
+    updateDraft({ inquiryType: next.inquiryType, companyName: next.companyName, message: next.message });
+  };
+  const setAttachment = (file: File | null) => setAttachments((current) => ({ ...current, [category]: file }));
+  const setConsented = (value: boolean) => updateDraft({ consented: value });
+
   const updateField = (field: keyof FormValues) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((current) => ({ ...current, [field]: event.target.value }));
-    setError(EMPTY_ERROR);
+    const value = event.target.value;
+    if (field === "name" || field === "phone" || field === "email") setShared((current) => ({ ...current, [field]: value }));
+    else updateDraft({ [field]: value } as Partial<CategoryDraft>);
+    clearFieldError();
   };
-  const changeCategory = (next: ContactCategory) => {
-    setCategory(next);
-    setForm((current) => ({ ...current, inquiryType: "", companyName: "", message: "" }));
-    setAttachment(null);
-    setConsented(false);
-    setError(EMPTY_ERROR);
-  };
+  const changeCategory = (next: ContactCategory) => { setCategory(next); clearFieldError(); };
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     event.target.value = "";
-    setError(EMPTY_ERROR);
+    clearFieldError();
     if (!file) return;
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
-    if (!ALLOWED_EXTENSIONS.has(extension)) { setError("PDF 형식의 파일만 첨부할 수 있습니다."); return; }
-    if (file.size > MAX_FILE_SIZE) { setError("첨부 파일은 최대 5MB까지 등록할 수 있습니다."); return; }
+    if (!ALLOWED_EXTENSIONS.has(extension)) { setError(messages.validation.fileType); return; }
+    if (file.size > MAX_FILE_SIZE) { setError(messages.validation.fileSize); return; }
     setAttachment(file);
   };
   const focusFirstInvalid = (id: string) => {
@@ -52,21 +66,21 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
   };
   const validate = () => {
     const required = [
-      { id: "contact-inquiry-type", missing: !form.inquiryType, message: "문의 유형을 선택해 주세요." },
-      { id: "contact-company", missing: isBusiness && !form.companyName.trim(), message: "회사명 또는 소속을 입력해 주세요." },
-      { id: "contact-name", missing: !form.name.trim(), message: isBusiness ? "담당자 이름을 입력해 주세요." : "이름을 입력해 주세요." },
-      { id: "contact-phone", missing: isBusiness && !form.phone.trim(), message: "연락처를 입력해 주세요." },
-      { id: "contact-email", missing: !form.email.trim(), message: "이메일 주소를 입력해 주세요." },
-      { id: "contact-message", missing: !form.message.trim(), message: isBusiness ? "제안 내용을 입력해 주세요." : "문의 내용을 입력해 주세요." },
-      { id: "contact-consent", missing: !consented, message: "개인정보 수집·이용에 동의해 주세요." },
+      { id: "contact-inquiry-type", missing: !form.inquiryType, message: messages.validation.inquiryType },
+      { id: "contact-company", missing: isBusiness && !form.companyName.trim(), message: messages.validation.company },
+      { id: "contact-name", missing: !form.name.trim(), message: isBusiness ? messages.validation.nameBusiness : messages.validation.nameGeneral },
+      { id: "contact-phone", missing: isBusiness && !form.phone.trim(), message: messages.validation.phone },
+      { id: "contact-email", missing: !form.email.trim(), message: messages.validation.email },
+      { id: "contact-message", missing: !form.message.trim(), message: isBusiness ? messages.validation.messageBusiness : messages.validation.messageGeneral },
+      { id: "contact-consent", missing: !consented, message: messages.validation.consent },
     ].find((field) => field.missing);
-    if (required) { setError(required.message); focusFirstInvalid(required.id); return false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setError("올바른 이메일 주소를 입력해 주세요."); focusFirstInvalid("contact-email"); return false; }
+    if (required) { setError(required.message); setErrorFieldId(required.id); focusFirstInvalid(required.id); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setError(messages.validation.emailInvalid); setErrorFieldId("contact-email"); focusFirstInvalid("contact-email"); return false; }
     return true;
   };
   const submitInquiry = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(EMPTY_ERROR);
+    clearFieldError();
     if (!validate()) return;
     setSubmitting(true);
     try {
@@ -87,22 +101,23 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
       setSubmittedId(result.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      const code = submitError instanceof Error ? submitError.message : "SUBMISSION_FAILED";
+      setError(messages.errors[code as keyof typeof messages.errors] || messages.errors.SUBMISSION_FAILED);
     } finally {
       setSubmitting(false);
     }
   };
   const resetForm = () => {
     setSubmittedId("");
-    setForm({ inquiryType: "", companyName: "", name: initialName, phone: "", email: initialEmail, message: "" });
-    setAttachment(null);
-    setConsented(false);
-    setError(EMPTY_ERROR);
+    setShared({ name: initialName, phone: "", email: initialEmail });
+    setDrafts({ general: emptyCategoryDraft, business: emptyCategoryDraft });
+    setAttachments({ general: null, business: null });
+    clearFieldError();
   };
 
   return {
     locale, messages, category, setCategory, form, setForm, attachment, setAttachment, consented, setConsented,
-    submitting, submittedId, remaining, error, setError, formRef, isBusiness, typeOptions, updateField, changeCategory,
+    submitting, submittedId, remaining, error, setError: clearFieldError, errorFieldId, formRef, isBusiness, typeOptions, updateField, changeCategory,
     handleFile, submitInquiry, resetForm,
   };
 }

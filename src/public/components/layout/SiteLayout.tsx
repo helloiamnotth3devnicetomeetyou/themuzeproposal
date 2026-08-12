@@ -24,6 +24,12 @@ export default function MainLayout({
   const pathname = usePathname();
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
   const isImmersiveArtist = /^\/[^/]+\/artist(?:\/[^/]+)?\/?$/.test(pathname);
+  const isEditorial = pathname !== "/" && !isImmersiveDiscography && !isImmersiveArtist;
+
+  useEffect(() => {
+    document.body.dataset.scrollbar = isEditorial ? "visible" : "";
+    return () => { delete document.body.dataset.scrollbar; };
+  }, [isEditorial]);
 
   useEffect(() => {
     if (isImmersiveDiscography || isImmersiveArtist) {
@@ -92,6 +98,7 @@ export default function MainLayout({
     <>
       <Navbar initialArtists={initialArtists} initialAccount={initialAccount} />
       <div
+        id="main-content"
         key={layoutKey}
         className={`flex flex-1 flex-col animate-page-fade ${
           isImmersiveDiscography || isImmersiveArtist ? "h-[100dvh] overflow-hidden" : ""

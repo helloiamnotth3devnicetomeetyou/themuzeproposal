@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CircleAlert, FileCheck2 } from "lucide-react";
 import AccountProfileLink from "@/public/components/AccountProfileLink";
 import { localizeText } from "@/core/i18n/localized";
@@ -51,6 +51,11 @@ export default function ProtectClient({
   const [error, setError] = useState(
     initialLoadFailed ? t.protect.loadError : "",
   );
+  const successTitleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (submittedId) successTitleRef.current?.focus();
+  }, [submittedId]);
 
   if (submittedId) {
     return (
@@ -58,7 +63,7 @@ export default function ProtectClient({
         <section className={styles.success} aria-labelledby="success-title">
           <FileCheck2 aria-hidden="true" />
           <p>{t.protect.receivedEyebrow}</p>
-          <h1 id="success-title">{t.protect.receivedTitle}</h1>
+          <h1 id="success-title" ref={successTitleRef} tabIndex={-1}>{t.protect.receivedTitle}</h1>
           <span>{t.protect.receivedDescription}</span>
           <dl>
             <div><dt>{t.protect.receiptNumber}</dt><dd>{submittedId.slice(0, 8).toUpperCase()}</dd></div>

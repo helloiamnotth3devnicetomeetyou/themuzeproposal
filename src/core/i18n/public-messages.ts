@@ -12,6 +12,7 @@ export interface PublicMessages {
     lightMode: string;
     darkMode: string;
     loading: string;
+    skipToContent: string;
   };
   about: {
     companyDescription: string;
@@ -94,6 +95,14 @@ export interface PublicMessages {
       evidenceRequired: string;
       confirmationRequired: string;
       submitFailed: string;
+      INVALID_REQUEST: string;
+      UNAUTHORIZED: string;
+      RATE_LIMITED: string;
+      FILE_TOO_LARGE: string;
+      INVALID_FILE_TYPE: string;
+      UPLOAD_FAILED: string;
+      SERVICE_UNAVAILABLE: string;
+      SUBMISSION_FAILED: string;
     };
   };
   schedule: {
@@ -160,7 +169,7 @@ export interface PublicMessages {
 
 export const publicMessages: Record<Locale, PublicMessages> = {
   ko: {
-    common: { language: "언어 선택", openMenu: "메뉴 열기", closeMenu: "메뉴 닫기", mainMenu: "주 메뉴", mobileMenu: "모바일 주 메뉴", lightMode: "라이트 모드로 전환", darkMode: "다크 모드로 전환", loading: "불러오는 중…" },
+    common: { language: "언어 선택", openMenu: "메뉴 열기", closeMenu: "메뉴 닫기", mainMenu: "주 메뉴", mobileMenu: "모바일 주 메뉴", lightMode: "라이트 모드로 전환", darkMode: "다크 모드로 전환", loading: "불러오는 중…", skipToContent: "본문으로 바로가기" },
     about: {
       companyDescription: "더뮤즈엔터테인먼트는 ‘YOU ARE MY MUZE’라는 슬로건 아래 대중에게 영감을 주는 독창적이고 가치 있는 대중문화를 선도하는 글로벌 엔터테인먼트 기업입니다. 음악의 깊이와 예술성, 세련된 비주얼을 결합해 전 세계 팬들의 마음을 움직이는 아티스트를 육성합니다.",
       vision: [
@@ -186,7 +195,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
       fields: { artist: "아티스트", reportType: "신고 유형", title: "제목", content: "신고 내용", platform: "게시 플랫폼", postUrl: "게시물 URL", postedAt: "게시 일자", authorName: "게시물 작성자", postIp: "게시물 IP 주소", evidence: "첨부 자료", confirmation: "사실 확인 동의" },
       placeholders: { artist: "아티스트를 선택해 주세요", reportType: "신고 유형을 선택해 주세요", title: "신고 주요 내용을 입력해 주세요", content: "침해 내용과 발생 경위를 자세히 입력해 주세요", platform: "게시물이 올라온 플랫폼을 선택해 주세요", postUrl: "신고할 게시물의 URL을 입력해 주세요", authorName: "작성자의 ID 또는 닉네임을 입력해 주세요", postIp: "확인된 IP 주소가 있다면 입력해 주세요 (선택)" },
       upload: "파일 올리기", uploadHint: "JPG, PNG, WEBP, GIF, PDF · 파일당 10MB 이하 · 최대 3개", evidenceGuide: "캡처 날짜, 게시물 내용, URL, 작성자 정보가 보이도록 저장해 주세요. 내용이 길다면 순서를 알 수 있도록 여러 장으로 첨부해 주세요.", confirmation: "본 신고 내용이 허위나 조작 없이 사실에 근거해 작성되었음을 확인합니다.", missingTitle: "입력하지 않은 항목", missingCount: (count) => `입력하지 않은 항목이 ${count}개 있습니다.`, holdHint: "내용을 확인한 뒤 등록 버튼을 1.5초 동안 길게 눌러주세요.", submit: "1.5초 길게 눌러 등록", keepHolding: "계속 누르세요…", submitting: "안전하게 전송하는 중…", removeFile: (name) => `${name} 삭제`,
-      errors: { maxFiles: "첨부 자료는 최대 3개까지 등록할 수 있습니다.", fileType: (name) => `${name}: JPG, PNG, WEBP, GIF 또는 PDF 파일만 첨부할 수 있습니다.`, fileSize: (name) => `${name}: 파일 크기는 10MB 이하여야 합니다.`, duplicate: (name) => `${name}: 이미 첨부한 파일입니다.`, evidenceRequired: "침해 내용을 확인할 수 있는 증거 자료를 1개 이상 첨부해 주세요.", confirmationRequired: "제보 내용이 사실에 근거해 작성되었음을 확인해 주세요.", submitFailed: "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요." },
+      errors: { maxFiles: "첨부 자료는 최대 3개까지 등록할 수 있습니다.", fileType: (name) => `${name}: JPG, PNG, WEBP, GIF 또는 PDF 파일만 첨부할 수 있습니다.`, fileSize: (name) => `${name}: 파일 크기는 10MB 이하여야 합니다.`, duplicate: (name) => `${name}: 이미 첨부한 파일입니다.`, evidenceRequired: "침해 내용을 확인할 수 있는 증거 자료를 1개 이상 첨부해 주세요.", confirmationRequired: "제보 내용이 사실에 근거해 작성되었음을 확인해 주세요.", submitFailed: "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.", INVALID_REQUEST: "입력 내용을 다시 확인해 주세요.", UNAUTHORIZED: "로그인이 필요합니다. 다시 로그인한 뒤 시도해 주세요.", RATE_LIMITED: "신고 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", FILE_TOO_LARGE: "첨부 파일은 최대 10MB까지 등록할 수 있습니다.", INVALID_FILE_TYPE: "JPG, PNG, WEBP, GIF 또는 PDF 파일만 첨부할 수 있습니다.", UPLOAD_FAILED: "파일 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.", SERVICE_UNAVAILABLE: "일시적으로 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.", SUBMISSION_FAILED: "신고를 접수하지 못했습니다. 잠시 후 다시 시도해 주세요." },
     },
     schedule: {
       categories: { show: "방송 / 공연", release: "발매", anniversary: "기념일", event: "이벤트", etc: "기타" },
@@ -196,7 +205,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
     discography: { loading: "디스코그래피를 불러오는 중입니다.", empty: "공개된 앨범이 없습니다.", loadError: "디스코그래피를 불러오지 못했습니다.", tabs: { concept: "콘셉트", intro: "트랙 소개", members: "멤버" }, noDescription: "등록된 앨범 소개가 없습니다.", noMembers: "등록된 멤버 정보가 없습니다.", allMembers: "전체 멤버", noPhotos: "등록된 콘셉트 포토가 없습니다.", photoCount: "장", nowPlaying: "재생 중", progress: "재생 위치", previousTrack: "이전 트랙", nextTrack: "다음 트랙", play: "재생", pause: "일시정지", noAudio: "등록된 음원이 없습니다.", musicVideo: "뮤직비디오 보기", newest: "최신순", oldest: "오래된순", sortAscending: "날짜 오름차순으로 정렬", sortDescending: "날짜 내림차순으로 정렬", previousAlbum: "이전 앨범", nextAlbum: "다음 앨범" },
   },
   en: {
-    common: { language: "Select language", openMenu: "Open menu", closeMenu: "Close menu", mainMenu: "Main menu", mobileMenu: "Mobile main menu", lightMode: "Switch to light mode", darkMode: "Switch to dark mode", loading: "Loading…" },
+    common: { language: "Select language", openMenu: "Open menu", closeMenu: "Close menu", mainMenu: "Main menu", mobileMenu: "Mobile main menu", lightMode: "Switch to light mode", darkMode: "Switch to dark mode", loading: "Loading…", skipToContent: "Skip to content" },
     about: {
       companyDescription: "Under the slogan “YOU ARE MY MUZE,” THE MUZE Entertainment leads distinctive, meaningful pop culture that inspires audiences. We combine musical depth, artistry, and refined visuals to develop global artists who move fans around the world.",
       vision: [{ title: "Artistic Depth", description: "We pursue authenticity and completeness beyond passing trends." }, { title: "Original Concept", description: "We create sensory, singular identities like RESCENE, where scent and visual storytelling meet." }, { title: "Global Vision", description: "We aim for stages worldwide through multinational talent and sophisticated pop sound." }],
@@ -212,7 +221,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
       fields: { artist: "Artist", reportType: "Report type", title: "Title", content: "Report details", platform: "Platform", postUrl: "Post URL", postedAt: "Date posted", authorName: "Post author", postIp: "Post IP address", evidence: "Evidence", confirmation: "Confirmation" },
       placeholders: { artist: "Select an artist", reportType: "Select a report type", title: "Summarize the issue", content: "Describe the infringement and how it occurred", platform: "Select the platform where the post appeared", postUrl: "Enter the URL of the post", authorName: "Enter the author's ID or nickname", postIp: "Enter the IP address if known (optional)" },
       upload: "Upload files", uploadHint: "JPG, PNG, WEBP, GIF, PDF · 10 MB per file · Up to 3 files", evidenceGuide: "Include the capture date, post content, URL, and author information. If the content is long, attach multiple images in order.", confirmation: "I confirm that this report is factual and has not been fabricated or altered.", missingTitle: "Missing fields", missingCount: (count) => `${count} required field${count === 1 ? " is" : "s are"} missing.`, holdHint: "Review the details, then press and hold the submit button for 1.5 seconds.", submit: "Hold 1.5 seconds to submit", keepHolding: "Keep holding…", submitting: "Sending securely…", removeFile: (name) => `Remove ${name}`,
-      errors: { maxFiles: "You can attach up to 3 files.", fileType: (name) => `${name}: Only JPG, PNG, WEBP, GIF, or PDF files are allowed.`, fileSize: (name) => `${name}: Files must be 10 MB or smaller.`, duplicate: (name) => `${name}: This file is already attached.`, evidenceRequired: "Attach at least one item of evidence.", confirmationRequired: "Confirm that the report is based on facts.", submitFailed: "We couldn't submit your report. Please try again shortly." },
+      errors: { maxFiles: "You can attach up to 3 files.", fileType: (name) => `${name}: Only JPG, PNG, WEBP, GIF, or PDF files are allowed.`, fileSize: (name) => `${name}: Files must be 10 MB or smaller.`, duplicate: (name) => `${name}: This file is already attached.`, evidenceRequired: "Attach at least one item of evidence.", confirmationRequired: "Confirm that the report is based on facts.", submitFailed: "We couldn't submit your report. Please try again shortly.", INVALID_REQUEST: "Please check your information and try again.", UNAUTHORIZED: "Please log in again and try again.", RATE_LIMITED: "Too many reports submitted. Please try again shortly.", FILE_TOO_LARGE: "Attachments must be 10MB or smaller.", INVALID_FILE_TYPE: "Only JPG, PNG, WEBP, GIF, or PDF files are allowed.", UPLOAD_FAILED: "The file could not be uploaded. Please try again shortly.", SERVICE_UNAVAILABLE: "The service is temporarily unavailable. Please try again shortly.", SUBMISSION_FAILED: "We couldn't submit your report. Please try again shortly." },
     },
     schedule: {
       categories: { show: "Show / Performance", release: "Release", anniversary: "Anniversary", event: "Event", etc: "Other" },
@@ -222,7 +231,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
     discography: { loading: "Loading discography…", empty: "No albums have been published.", loadError: "The discography could not be loaded.", tabs: { concept: "Concept", intro: "Track Intro", members: "Members" }, noDescription: "No album introduction is available.", noMembers: "No member information is available.", allMembers: "All Members", noPhotos: "No concept photos available.", photoCount: "photos", nowPlaying: "Now playing", progress: "Playback position", previousTrack: "Previous track", nextTrack: "Next track", play: "Play", pause: "Pause", noAudio: "No audio file is available.", musicVideo: "Watch music video", newest: "Newest", oldest: "Oldest", sortAscending: "Sort by oldest first", sortDescending: "Sort by newest first", previousAlbum: "Previous album", nextAlbum: "Next album" },
   },
   ja: {
-    common: { language: "言語を選択", openMenu: "メニューを開く", closeMenu: "メニューを閉じる", mainMenu: "メインメニュー", mobileMenu: "モバイルメニュー", lightMode: "ライトモードに切り替え", darkMode: "ダークモードに切り替え", loading: "読み込み中…" },
+    common: { language: "言語を選択", openMenu: "メニューを開く", closeMenu: "メニューを閉じる", mainMenu: "メインメニュー", mobileMenu: "モバイルメニュー", lightMode: "ライトモードに切り替え", darkMode: "ダークモードに切り替え", loading: "読み込み中…", skipToContent: "本文へスキップ" },
     about: {
       companyDescription: "THE MUZE Entertainmentは、「YOU ARE MY MUZE」というスローガンのもと、人々にインスピレーションを与える独創的で価値ある大衆文化をリードするグローバルエンターテインメント企業です。音楽の深みと芸術性、洗練されたビジュアルを融合し、世界中のファンの心を動かすアーティストを育成しています。",
       vision: [{ title: "芸術的な深み", description: "一過性のトレンドを超え、音楽本来の真実性と完成度を追求します。" }, { title: "独創的なコンセプト", description: "香りと視覚を融合したRESCENEのように、感覚的で唯一無二のアイデンティティを設計します。" }, { title: "グローバルビジョン", description: "多国籍メンバーと洗練されたポップサウンドを基盤に、世界のステージを目指します。" }],
@@ -238,7 +247,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
       fields: { artist: "アーティスト", reportType: "通報の種類", title: "タイトル", content: "通報内容", platform: "投稿プラットフォーム", postUrl: "投稿URL", postedAt: "投稿日", authorName: "投稿者", postIp: "投稿元IPアドレス", evidence: "添付資料", confirmation: "事実確認への同意" },
       placeholders: { artist: "アーティストを選択してください", reportType: "通報の種類を選択してください", title: "通報内容の要点を入力してください", content: "侵害内容と経緯を詳しく入力してください", platform: "投稿が掲載されたプラットフォームを選択してください", postUrl: "通報する投稿のURLを入力してください", authorName: "投稿者のIDまたはニックネームを入力してください", postIp: "確認できたIPアドレスがあれば入力してください（任意）" },
       upload: "ファイルをアップロード", uploadHint: "JPG、PNG、WEBP、GIF、PDF・1ファイル10MB以下・最大3件", evidenceGuide: "撮影日、投稿内容、URL、投稿者情報が確認できるように保存してください。内容が長い場合は、順序が分かるように複数添付してください。", confirmation: "本通報は虚偽や改ざんなく、事実に基づいて作成したものであることを確認します。", missingTitle: "未入力の項目", missingCount: (count) => `未入力の項目が${count}件あります。`, holdHint: "内容を確認し、登録ボタンを1.5秒間長押ししてください。", submit: "1.5秒長押しして登録", keepHolding: "そのまま押してください…", submitting: "安全に送信しています…", removeFile: (name) => `${name}を削除`,
-      errors: { maxFiles: "添付資料は最大3件まで登録できます。", fileType: (name) => `${name}：JPG、PNG、WEBP、GIF、PDFのみ添付できます。`, fileSize: (name) => `${name}：ファイルサイズは10MB以下にしてください。`, duplicate: (name) => `${name}：すでに添付されています。`, evidenceRequired: "侵害内容を確認できる証拠資料を1件以上添付してください。", confirmationRequired: "通報内容が事実に基づいていることを確認してください。", submitFailed: "通報を送信できませんでした。しばらくしてからもう一度お試しください。" },
+      errors: { maxFiles: "添付資料は最大3件まで登録できます。", fileType: (name) => `${name}：JPG、PNG、WEBP、GIF、PDFのみ添付できます。`, fileSize: (name) => `${name}：ファイルサイズは10MB以下にしてください。`, duplicate: (name) => `${name}：すでに添付されています。`, evidenceRequired: "侵害内容を確認できる証拠資料を1件以上添付してください。", confirmationRequired: "通報内容が事実に基づいていることを確認してください。", submitFailed: "通報を送信できませんでした。しばらくしてからもう一度お試しください。", INVALID_REQUEST: "入力内容をご確認のうえ、もう一度お試しください。", UNAUTHORIZED: "ログインが必要です。再度ログインしてお試しください。", RATE_LIMITED: "通報が多く送信されています。しばらくしてからもう一度お試しください。", FILE_TOO_LARGE: "添付ファイルは最大10MBまで登録できます。", INVALID_FILE_TYPE: "JPG、PNG、WEBP、GIF、PDFのみ添付できます。", UPLOAD_FAILED: "ファイルのアップロードに失敗しました。しばらくしてからもう一度お試しください。", SERVICE_UNAVAILABLE: "一時的にサービスをご利用いただけません。しばらくしてからもう一度お試しください。", SUBMISSION_FAILED: "通報を送信できませんでした。しばらくしてからもう一度お試しください。" },
     },
     schedule: {
       categories: { show: "放送・公演", release: "リリース", anniversary: "記念日", event: "イベント", etc: "その他" },

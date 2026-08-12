@@ -21,6 +21,10 @@ const pageCopy: Record<Locale, {
   error: string;
   count: string;
   category: string;
+  pagination: string;
+  previousPage: string;
+  nextPage: string;
+  resultCount: (count: number) => string;
 }> = {
   ko: {
     description: "더뮤즈의 새로운 소식과 안내를 확인하세요.",
@@ -32,6 +36,10 @@ const pageCopy: Record<Locale, {
     error: "공지를 불러오지 못했습니다.",
     count: "개의 공지",
     category: "카테고리",
+    pagination: "페이지 이동",
+    previousPage: "이전 페이지",
+    nextPage: "다음 페이지",
+    resultCount: (count) => `${count}건의 공지`,
   },
   en: {
     description: "Find the latest news and updates from THE MUZE.",
@@ -43,6 +51,10 @@ const pageCopy: Record<Locale, {
     error: "Notices could not be loaded.",
     count: " notices",
     category: "Category",
+    pagination: "Pagination",
+    previousPage: "Previous page",
+    nextPage: "Next page",
+    resultCount: (count) => `${count} notice${count === 1 ? "" : "s"}`,
   },
   ja: {
     description: "THE MUZEの最新ニュースとお知らせをご確認ください。",
@@ -54,6 +66,10 @@ const pageCopy: Record<Locale, {
     error: "お知らせを読み込めませんでした。",
     count: "件のお知らせ",
     category: "カテゴリー",
+    pagination: "ページ移動",
+    previousPage: "前のページ",
+    nextPage: "次のページ",
+    resultCount: (count) => `${count}件のお知らせ`,
   },
 };
 
@@ -142,7 +158,10 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
             </div>
           </div>
 
-          <div className={styles.list} aria-live="polite">
+          <p role="status" className="sr-only">
+            {!loading && !error ? copy.resultCount(visibleNotices.length) : ""}
+          </p>
+          <div className={styles.list}>
             {loading && <LoadingIndicator label={copy.loading} className="min-h-[360px]" />}
 
             {!loading && error && <div className={`${styles.state} ${styles.error}`} role="alert"><b>!</b><p>{error}</p></div>}
@@ -163,12 +182,12 @@ export default function NoticeBoard({ artistSlug, initialData, loadFailed = fals
           </div>
 
           {!loading && !error && visibleNotices.length > NOTICES_PER_PAGE && (
-            <nav className={styles.pagination} aria-label="Pagination">
-              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Previous page">
+            <nav className={styles.pagination} aria-label={copy.pagination}>
+              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label={copy.previousPage}>
                 <ArrowLeft aria-hidden="true" />
               </button>
               <span aria-live="polite">{currentPage} / {pageCount}</span>
-              <button type="button" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label="Next page">
+              <button type="button" onClick={() => setPage((value) => Math.min(pageCount, value + 1))} disabled={currentPage === pageCount} aria-label={copy.nextPage}>
                 <ArrowRight aria-hidden="true" />
               </button>
             </nav>

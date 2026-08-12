@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { cookies } from "next/headers";
 import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
@@ -7,6 +8,7 @@ import { getSiteUrl } from "@/core/config/public-env";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 
 import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
+import SkipLink from "@/core/components/a11y/SkipLink";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -26,8 +28,11 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await connection();
-  const initialLocale: Locale = "ko";
-  const initialTheme: Theme = "dark";
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("muze-locale")?.value;
+  const cookieTheme = cookieStore.get("muze-theme")?.value;
+  const initialLocale: Locale = cookieLocale === "ko" || cookieLocale === "en" || cookieLocale === "ja" ? cookieLocale : "ko";
+  const initialTheme: Theme = cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "dark";
 
   return (
     <html lang={initialLocale} data-theme={initialTheme} className="h-full antialiased">
@@ -39,6 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>
           <LocaleProvider initialLocale={initialLocale}>
+            <SkipLink />
             {false && <DisclaimerBanner />}
             {children}
             <Analytics />

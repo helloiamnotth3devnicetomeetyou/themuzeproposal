@@ -64,6 +64,7 @@ export default function ReportForm({
   const [holdingSubmit, setHoldingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [missingFieldIds, setMissingFieldIds] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const holdTimer = useRef<number | null>(null);
 
@@ -79,6 +80,7 @@ export default function ReportForm({
   const clearValidation = () => {
     if (error) setError("");
     if (missingFields.length) setMissingFields([]);
+    if (missingFieldIds.length) setMissingFieldIds([]);
   };
 
   const updateField =
@@ -108,6 +110,7 @@ export default function ReportForm({
     ].filter((field) => field.missing);
 
     setMissingFields(requiredFields.map((field) => field.label));
+    setMissingFieldIds(requiredFields.map((field) => field.id));
     if (!requiredFields.length) return true;
 
     setError(t.protect.missingCount(requiredFields.length));
@@ -234,9 +237,18 @@ export default function ReportForm({
       setConfirmed(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
-      setError(submitError instanceof Error
-        ? submitError.message
-        : t.protect.errors.submitFailed);
+      const code = submitError instanceof Error ? submitError.message : "SUBMISSION_FAILED";
+      const apiErrorMessages: Record<string, string> = {
+        INVALID_REQUEST: t.protect.errors.INVALID_REQUEST,
+        UNAUTHORIZED: t.protect.errors.UNAUTHORIZED,
+        RATE_LIMITED: t.protect.errors.RATE_LIMITED,
+        FILE_TOO_LARGE: t.protect.errors.FILE_TOO_LARGE,
+        INVALID_FILE_TYPE: t.protect.errors.INVALID_FILE_TYPE,
+        UPLOAD_FAILED: t.protect.errors.UPLOAD_FAILED,
+        SERVICE_UNAVAILABLE: t.protect.errors.SERVICE_UNAVAILABLE,
+        SUBMISSION_FAILED: t.protect.errors.SUBMISSION_FAILED,
+      };
+      setError(apiErrorMessages[code] || t.protect.errors.submitFailed);
     } finally {
       setSubmitting(false);
     }
@@ -251,6 +263,7 @@ export default function ReportForm({
         files={files}
         confirmed={confirmed}
         missingFields={missingFields}
+        missingFieldIds={missingFieldIds}
         holdingSubmit={holdingSubmit}
         submitting={submitting}
         updateField={updateField}

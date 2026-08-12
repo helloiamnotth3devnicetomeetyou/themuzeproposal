@@ -184,6 +184,26 @@ body::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Editorial pages (about, notice, contact, protect, account) keep the scrollbar
+   visible so long content stays discoverable; cinematic/immersive routes hide it. */
+body[data-scrollbar="visible"] {
+  -ms-overflow-style: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+body[data-scrollbar="visible"]::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+}
+
+body[data-scrollbar="visible"]::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
 ::selection {
   background-color: var(--selection-bg);
   color: var(--selection-text);
@@ -238,6 +258,28 @@ select option {
 }
 
 :where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--selection-bg);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  transform: translateY(-150%);
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform var(--duration-fast) ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
   outline: 2px solid var(--selection-bg);
   outline-offset: 3px;
 }
