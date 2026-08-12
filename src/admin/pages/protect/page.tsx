@@ -17,6 +17,7 @@ type ReportAttachment = { file_path: string; file_name: string };
 type ProtectReport = {
   id: string;
   user_id: string;
+  artist_id: string;
   reporter_email: string | null;
   report_type: string;
   title: string;
@@ -32,6 +33,7 @@ type ProtectReport = {
   created_at: string;
   artists: { name: string } | null;
 };
+type ProtectReportRow = Omit<ProtectReport, "artists" | "protect_report_attachments">;
 
 const statuses: Array<{ value: ReportStatus; label: string }> = [
   { value: "pending", label: "접수" },
@@ -88,21 +90,49 @@ export default function ProtectAdminPage() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     setError("");
-    let request = supabase
-      .from("protect_reports")
-      .select("*, artists(name), protect_report_attachments(file_path, file_name)", { count: "exact" })
-      .order("created_at", { ascending: false });
-    if (filter !== "all") request = request.eq("status", filter);
     const keyword = searchTerm(debouncedQuery);
-    if (keyword) request = request.or(`title.ilike.%${keyword}%,reporter_email.ilike.%${keyword}%,author_name.ilike.%${keyword}%,platform.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+    const request = supabase
+      .rpc("get_admin_protect_reports", {
+        p_status: filter === "all" ? null : filter,
+        p_search: keyword || null,
+      }, { count: "exact" })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
+      .overrideTypes<ProtectReportRow[], { merge: false }>();
     const [{ data, count, error: fetchError }, pending, reviewing] = await Promise.all([
-      request.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1).overrideTypes<ProtectReport[], { merge: false }>(),
+      request,
       supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("protect_reports").select("id", { count: "exact", head: true }).eq("status", "reviewing"),
     ]);
     if (fetchError) setError(fetchError.message);
     else {
-      const nextReports = data ?? [];
+      const reportRows = (data ?? []) as unknown as ProtectReportRow[];
+      const reportIds = reportRows.map((report) => report.id);
+      const artistIds = [...new Set(reportRows.map((report) => report.artist_id))];
+      const [attachmentResult, artistResult] = await Promise.all([
+        reportIds.length
+          ? supabase.from("protect_report_attachments").select("report_id,file_path,file_name").in("report_id", reportIds)
+          : Promise.resolve({ data: [], error: null }),
+        artistIds.length
+          ? supabase.from("artists").select("id,name").in("id", artistIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (attachmentResult.error || artistResult.error) {
+        setError(attachmentResult.error?.message || artistResult.error?.message || "신고 정보를 불러오지 못했습니다.");
+        setLoading(false);
+        return;
+      }
+      const attachmentsByReport = new Map<string, ReportAttachment[]>();
+      for (const attachment of attachmentResult.data ?? []) {
+        const current = attachmentsByReport.get(attachment.report_id) ?? [];
+        current.push({ file_path: attachment.file_path, file_name: attachment.file_name });
+        attachmentsByReport.set(attachment.report_id, current);
+      }
+      const artistsById = new Map((artistResult.data ?? []).map((artist) => [artist.id, { name: artist.name }]));
+      const nextReports = reportRows.map((report) => ({
+        ...report,
+        artists: artistsById.get(report.artist_id) ?? null,
+        protect_report_attachments: attachmentsByReport.get(report.id) ?? [],
+      }));
       setReports(nextReports);
       setTotal(count ?? 0);
       setStatusCounts({ pending: pending.count ?? 0, reviewing: reviewing.count ?? 0 });

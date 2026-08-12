@@ -29,6 +29,24 @@ begin
   if not has_table_privilege('service_role', 'public.admin_audit_logs', 'insert') then
     raise exception 'validated server uploads cannot append audit rows';
   end if;
+  if has_column_privilege('authenticated', 'public.protect_reports', 'admin_note', 'select')
+    or has_column_privilege('authenticated', 'public.protect_reports', 'post_ip', 'select') then
+    raise exception 'authenticated reporters can still read reviewer-only report fields';
+  end if;
+  if not has_column_privilege('authenticated', 'public.protect_reports', 'title', 'select')
+    or not has_function_privilege('authenticated', 'public.get_admin_protect_reports(text,text)', 'execute') then
+    raise exception 'report self-service projection or admin read path is unavailable';
+  end if;
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname in ('admins read contact attachments', 'admins read protect evidence')
+    group by schemaname, tablename
+    having count(*) = 2
+  ) then
+    raise exception 'private submission buckets lack administrator read policies';
+  end if;
   if exists (
     select 1 from pg_policies
     where schemaname = 'storage'
