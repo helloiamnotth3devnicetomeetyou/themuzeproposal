@@ -37,12 +37,13 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
   try {
     const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim();
-    if (projectRef && supabaseUrl.hostname.split(".")[0] !== projectRef) {
-      problems.push("Supabase URL and project ref do not match.");
+    const derivedRef = supabaseUrl.hostname.split(".")[0];
+    if (projectRef && derivedRef !== projectRef) {
+      problems.push(`Supabase URL and project ref do not match. (URL host ref: "${derivedRef}" [len ${derivedRef.length}], PROJECT_REF: "${projectRef}" [len ${projectRef.length}])`);
     }
     const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.trim();
     if (storageUrl && new URL(storageUrl).origin !== supabaseUrl.origin) {
-      problems.push("Supabase storage URL must use the configured Supabase origin.");
+      problems.push(`Supabase storage URL must use the configured Supabase origin. (expected origin: "${supabaseUrl.origin}", got: "${new URL(storageUrl).origin}")`);
     }
   } catch {
     problems.push("Supabase URL configuration is invalid.");
