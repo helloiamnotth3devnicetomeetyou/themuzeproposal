@@ -1,6 +1,6 @@
 # THE MUZE
 
-THE MUZE의 공개 웹사이트와 콘텐츠 관리 스튜디오를 하나의 Next.js 애플리케이션으로 제공한다. 데이터·인증·파일 저장은 Supabase를 사용하고, 공개 콘텐츠는 RLS와 Next 캐시를 통해 제공한다.
+Themuzeproposal
 
 ## 포함 기능
 
