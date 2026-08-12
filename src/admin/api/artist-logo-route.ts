@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
-import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
+import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
@@ -77,20 +78,19 @@ export async function POST(request: NextRequest) {
 
   const adminClient = createServiceRoleClient();
   if (!adminClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  const { storageUrl } = getPublicSupabaseConfig();
   const artistKey = safePathPart(formData.get("artistKey"), "draft");
   const entityKey = safePathPart(formData.get("entityKey"), "asset");
   const assetFolder = formData.get("assetKind") === "album-typography"
     ? "album-typography-sanitized"
     : "artist-logo-sanitized";
   const path = `${artistKey}/${assetFolder}/${entityKey}/${crypto.randomUUID()}.svg`;
-  const { error: uploadError } = await adminClient.storage
-    .from("artist-assets")
-    .upload(path, new Blob([sanitized], { type: "image/svg+xml" }), {
-      contentType: "image/svg+xml",
-      cacheControl: "31536000",
-      upsert: false,
-    });
+  const { error: uploadError } = await uploadObject({
+    bucket: "artist-assets",
+    path,
+    body: new Blob([sanitized], { type: "image/svg+xml" }),
+    contentType: "image/svg+xml",
+    cacheControl: "public, max-age=31536000, immutable",
+  });
 
   if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     after_values: { bucket: "artist-assets", path, mime_type: "image/svg+xml", size: sanitized.length },
   });
   if (auditError) {
-    await adminClient.storage.from("artist-assets").remove([path]);
+    await deleteObjects("artist-assets", [path]);
     return errorResponse("AUDIT_FAILED", 503);
   }
 
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     asset: {
       bucket: "artist-assets",
       path,
-      url: `${storageUrl}/artist-assets/${path}`,
+      url: getPublicAssetUrl("artist-assets", path),
     },
   });
   response.headers.set("Cache-Control", "no-store");

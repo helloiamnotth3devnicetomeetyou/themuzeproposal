@@ -2,6 +2,7 @@ import {
   normalizeOutline,
   type ArtistScene,
 } from "@/core/utils/artist-scenes";
+import { managedAssetFromUrl } from "@/core/storage/public-url";
 
 export type MemberLookup = {
   id: string;
@@ -22,10 +23,8 @@ export const sceneSelect =
   "id,artist_id,title,title_ko,title_en,title_ja,link_url,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(id,member_id,outline,mask_url,sort_order)";
 
 export function storagePathFromUrl(url: string) {
-  const match = url.match(
-    /\/storage\/v1\/object\/public\/artist-assets\/(.+)$/,
-  );
-  return match ? decodeURIComponent(match[1]) : null;
+  const asset = managedAssetFromUrl(url);
+  return asset && asset.bucket === "artist-assets" ? asset.path : null;
 }
 
 export async function imageDimensions(file: File) {

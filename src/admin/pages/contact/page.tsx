@@ -7,6 +7,7 @@ import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import { fetchSignedFileUrl } from "@/admin/utils/signed-file-url";
 import { supabase } from "@/core/supabase/client";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import styles from "@/styles/(admin)/pages/contact/contact-admin.module.css";
@@ -79,10 +80,8 @@ export default function ContactAdminPage() {
     if (!viewing?.attachment_path) return;
     let active = true;
     const signAttachment = async () => {
-      const { data } = await supabase.storage
-        .from("contact-attachments")
-        .createSignedUrl(viewing.attachment_path!, 900);
-      if (active) setAttachmentUrl(data?.signedUrl || "");
+      const url = await fetchSignedFileUrl("contact-attachments", viewing.attachment_path!);
+      if (active) setAttachmentUrl(url);
     };
     void signAttachment();
     return () => { active = false; };

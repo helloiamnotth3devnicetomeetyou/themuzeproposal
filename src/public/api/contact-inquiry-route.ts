@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
@@ -104,12 +105,12 @@ export async function POST(request: NextRequest) {
     : null;
 
   if (file && validated && attachmentPath) {
-    const { error: uploadError } = await serviceClient.storage
-      .from("contact-attachments")
-      .upload(attachmentPath, file, {
-        contentType: validated.mimeType,
-        upsert: false,
-      });
+    const { error: uploadError } = await uploadObject({
+      bucket: "contact-attachments",
+      path: attachmentPath,
+      body: file,
+      contentType: validated.mimeType,
+    });
     if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
   }
 
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
 
   if (insertError) {
     if (attachmentPath) {
-      await serviceClient.storage.from("contact-attachments").remove([attachmentPath]);
+      await deleteObjects("contact-attachments", [attachmentPath]);
     }
     return errorResponse("SUBMISSION_FAILED", 503);
   }

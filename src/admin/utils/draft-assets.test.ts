@@ -13,12 +13,13 @@ const client = {
 const asset = (path: string) => ({
   bucket: "artist-assets" as const,
   path,
-  url: `https://storage.example/storage/v1/object/public/artist-assets/${path}`,
+  url: `https://storage.example/artist-assets/${path}`,
 });
 
 describe("draft image asset lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_URL", "https://storage.example");
     localStorage.clear();
     deleteAdminAssets.mockResolvedValue(true);
   });
@@ -43,7 +44,7 @@ describe("draft image asset lifecycle", () => {
       client as never,
       [kept, unused],
       [kept.url],
-      ["https://storage.example/storage/v1/object/public/artist-assets/artist/old%20logo.jpg", "https://external.example/logo.jpg"],
+      ["https://storage.example/artist-assets/artist/old%20logo.jpg", "https://external.example/logo.jpg"],
     );
 
     expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", ["artist/unused.jpg", "artist/old logo.jpg"]);

@@ -9,6 +9,7 @@ import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
+import { fetchSignedFileUrl } from "@/admin/utils/signed-file-url";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 
@@ -162,8 +163,8 @@ export default function ProtectAdminPage() {
     let active = true;
     const signEvidence = async () => {
       const pairs = await Promise.all(viewing.protect_report_attachments.map(async ({ file_path }) => {
-        const { data } = await supabase.storage.from("protect-evidence").createSignedUrl(file_path, 900);
-        return [file_path, data?.signedUrl || ""] as const;
+        const url = await fetchSignedFileUrl("protect-evidence", file_path);
+        return [file_path, url] as const;
       }));
       if (active) setSignedUrls(Object.fromEntries(pairs));
     };

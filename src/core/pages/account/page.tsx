@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import AccountClient, { type AvatarArtistOption } from "./AccountClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createPrivatePageMetadata } from "@/core/seo/metadata";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 
 export const metadata = createPrivatePageMetadata("Account");
 
@@ -19,7 +20,7 @@ export default async function AccountPage() {
   const assets = (avatarAssets ?? []).map((asset) => ({
     id: asset.id,
     artistId: asset.artist_id,
-    imageUrl: supabase.storage.from("artist-assets").getPublicUrl(asset.image_path).data.publicUrl,
+    imageUrl: getPublicAssetUrl("artist-assets", asset.image_path),
   }));
   const avatarArtists: AvatarArtistOption[] = (artists ?? []).flatMap((artist) => {
     const artistAssets = assets.filter((asset) => asset.artistId === artist.id);

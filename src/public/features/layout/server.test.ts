@@ -12,6 +12,9 @@ vi.mock("@/core/config/public-env", () => ({
 vi.mock("@/core/supabase/server", () => ({
   createSupabaseServerClient: mocks.createSupabaseServerClient,
 }));
+vi.mock("@/core/storage/public-url", () => ({
+  getPublicAssetUrl: (bucket: string, path: string) => `https://cdn.example/${bucket}/${path}`,
+}));
 
 import { getNavigationAccount } from "./server";
 
@@ -47,13 +50,12 @@ describe("getNavigationAccount", () => {
     mocks.createSupabaseServerClient.mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1", email: "editor@example.com", user_metadata: {} } } }) },
       from: vi.fn((table: string) => table === "profiles" ? profile : avatar),
-      storage: { from: vi.fn(() => ({ getPublicUrl: vi.fn(() => ({ data: { publicUrl: "https://cdn.example/editor.webp" } })) })) },
     });
 
     await expect(getNavigationAccount()).resolves.toEqual({
       isLoggedIn: true,
       isAdmin: true,
-      avatarUrl: "https://cdn.example/editor.webp",
+      avatarUrl: "https://cdn.example/artist-assets/avatars/editor.webp",
       initial: "E",
       name: "Editor",
     });

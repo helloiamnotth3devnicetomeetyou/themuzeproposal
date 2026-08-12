@@ -16,6 +16,7 @@ import {
   finalizeDraftImageAssets,
   trackDraftImageAsset,
 } from "@/admin/utils/draft-assets";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
 import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
@@ -62,7 +63,7 @@ export default function AvatarAssetManager({ active, onDirtyChange, onError, onT
   const [cropY, setCropY] = useState(0);
 
   const dirty = serialize(items) !== serialize(snapshot);
-  const publicUrl = useCallback((path: string) => supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl, []);
+  const publicUrl = useCallback((path: string) => getPublicAssetUrl("artist-assets", path), []);
   const backupKey = `admin-draft:avatar-assets:${artistId || "none"}`;
   const restoreItems = useCallback((saved: AvatarAsset[]) => {
     const persistedPaths = new Set(snapshot.map((item) => item.image_path));

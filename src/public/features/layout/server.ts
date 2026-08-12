@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { cookies } from "next/headers";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import type { ArtistNavigationItem, NavigationAccount } from "@/public/components/layout/navbar-types";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
@@ -69,7 +70,7 @@ export async function getNavigationAccount(): Promise<NavigationAccount> {
     isLoggedIn: true,
     isAdmin: profile?.role === "super_admin" || profile?.role === "editor",
     avatarUrl: avatar?.image_path
-      ? client.storage.from("artist-assets").getPublicUrl(avatar.image_path).data.publicUrl
+      ? getPublicAssetUrl("artist-assets", avatar.image_path)
       : null,
     initial: (name[0] || "A").toUpperCase(),
     name,

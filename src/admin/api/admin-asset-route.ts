@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
-import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { parseFormDataWithinLimit, parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
+import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import {
   extensionMatches,
@@ -77,10 +78,12 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
-  const { error } = await serviceClient.storage.from(bucket).upload(path, file, {
+  const { error } = await uploadObject({
+    bucket,
+    path,
+    body: file,
     contentType: validated.mimeType,
-    cacheControl: "31536000",
-    upsert: false,
+    cacheControl: "public, max-age=31536000, immutable",
   });
   if (error) return errorResponse("UPLOAD_FAILED", 503);
 
@@ -95,16 +98,15 @@ export async function POST(request: NextRequest) {
     after_values: { bucket, path, mime_type: validated.mimeType, size: fileSize },
   });
   if (auditError) {
-    await serviceClient.storage.from(bucket).remove([path]);
+    await deleteObjects(bucket, [path]);
     return errorResponse("AUDIT_FAILED", 503);
   }
 
-  const { storageUrl } = getPublicSupabaseConfig();
   const response = NextResponse.json({
     asset: {
       bucket,
       path,
-      url: `${storageUrl}/${bucket}/${path}`,
+      url: getPublicAssetUrl(bucket, path),
     },
   });
   response.headers.set("Cache-Control", "no-store");
@@ -122,9 +124,7 @@ export async function DELETE(request: NextRequest) {
   const paths = Array.isArray(body?.paths) && body.paths.length <= 100 && body.paths.every((path): path is string => typeof path === "string" && isSafeStoragePath(path))
     ? [...new Set(body.paths)] : [];
   if (!(bucket in BUCKETS) || !paths.length) return errorResponse("INVALID_FILE", 400);
-  const serviceClient = createServiceRoleClient();
-  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  const { error } = await serviceClient.storage.from(bucket).remove(paths);
+  const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);
   return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }

@@ -53,7 +53,7 @@ assert.equal(importedSchedules.length, 10, "10 official schedules are required")
 assert(importedSchedules.every((item) => item.title_en && item.title_ja && item.location_en && item.location_ja && item.link_url), "official schedules need translations, location, and source link");
 for (const pair of expectedGalleryPairs) {
   const imageUrl = publishedGalleryPairs.get(pair).image_url;
-  const url = galleryAssetUrl(imageUrl, env.NEXT_PUBLIC_SUPABASE_URL);
+  const url = galleryAssetUrl(imageUrl, env.NEXT_PUBLIC_R2_PUBLIC_URL);
   const response = await fetch(url, { method: "HEAD", redirect: "error", signal: AbortSignal.timeout(10_000) });
   assert(response.ok && response.headers.get("content-type")?.startsWith("image/"), `unreachable image: ${imageUrl}`);
 }

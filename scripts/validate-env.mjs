@@ -9,11 +9,16 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SUPABASE_PROJECT_REF",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "NEXT_PUBLIC_SUPABASE_STORAGE_URL",
   "AUTH_RATE_LIMIT_SECRET",
   "SUBMISSION_RATE_LIMIT_SECRET",
   "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
   "TURNSTILE_SECRET_KEY",
+  "R2_ACCOUNT_ID",
+  "R2_ACCESS_KEY_ID",
+  "R2_SECRET_ACCESS_KEY",
+  "R2_PUBLIC_BUCKET",
+  "R2_PRIVATE_BUCKET",
+  "NEXT_PUBLIC_R2_PUBLIC_URL",
 ];
 
 const strict = process.env.VERCEL_ENV === "production"
@@ -41,12 +46,16 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
     if (projectRef && derivedRef !== projectRef) {
       problems.push(`Supabase URL and project ref do not match. (URL host ref: "${derivedRef}" [len ${derivedRef.length}], PROJECT_REF: "${projectRef}" [len ${projectRef.length}])`);
     }
-    const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.trim();
-    if (storageUrl && new URL(storageUrl).origin !== supabaseUrl.origin) {
-      problems.push(`Supabase storage URL must use the configured Supabase origin. (expected origin: "${supabaseUrl.origin}", got: "${new URL(storageUrl).origin}")`);
-    }
   } catch {
     problems.push("Supabase URL configuration is invalid.");
+  }
+}
+
+if (process.env.NEXT_PUBLIC_R2_PUBLIC_URL) {
+  try {
+    new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL);
+  } catch {
+    problems.push("NEXT_PUBLIC_R2_PUBLIC_URL must be an absolute URL.");
   }
 }
 

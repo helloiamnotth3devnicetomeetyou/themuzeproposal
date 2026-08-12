@@ -46,10 +46,10 @@ export function createGuideSandboxAsset<Bucket extends string>(file: Blob, bucke
 export function isGuideSandboxWrite(url: string, method: string) {
   if (!isGuideSandboxActive() || method === "GET" || method === "HEAD") return false;
   if (url.includes("/auth/v1/")) return false;
-  if (url.includes("/storage/v1/object/sign/")) return false;
   if (url.includes("/rest/v1/admin_onboarding_progress")) return false;
   if (url.includes("/rest/v1/rpc/get_admin_audition_submissions")) return false;
-  return url.includes("/rest/v1/") || url.includes("/storage/v1/") || url.includes("/api/admin/") || url.includes("/api/uploads/");
+  if (url.includes("/api/files/signed-url")) return false;
+  return url.includes("/rest/v1/") || url.includes("/api/admin/") || url.includes("/api/uploads/");
 }
 
 async function sandboxResponse(request: Request) {

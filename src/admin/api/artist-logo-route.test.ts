@@ -14,7 +14,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
-vi.mock("@/core/config/public-env", () => ({ getPublicSupabaseConfig: () => ({ storageUrl: "https://storage.example" }) }));
+vi.mock("@/core/storage/public-url", () => ({ getPublicAssetUrl: (bucket: string, path: string) => `https://storage.example/${bucket}/${path}` }));
+vi.mock("@/core/storage/r2", () => ({
+  uploadObject: (options: { bucket: string; path: string; body: unknown; contentType: string; cacheControl?: string }) =>
+    mocks.upload(options.path, options.body, { contentType: options.contentType, cacheControl: options.cacheControl, upsert: false }),
+  deleteObjects: (_bucket: string, paths: string[]) => mocks.remove(paths),
+}));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createSessionClient }));
 vi.mock("@/core/http/submission-rate-limit", () => ({ consumeAdminUploadAttemptRateLimit: mocks.consumeUploadAttempt }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: mocks.createServiceClient }));
@@ -28,11 +33,10 @@ describe("POST /api/uploads/artist-logo", () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.consumeUploadAttempt.mockResolvedValue({ error: false, allowed: true });
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
-    mocks.upload.mockResolvedValue({ error: null });
-    mocks.remove.mockResolvedValue({ error: null });
+    mocks.upload.mockResolvedValue({ error: false });
+    mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.createServiceClient.mockReturnValue({
-      storage: { from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })) },
       from: vi.fn(() => ({ insert: mocks.insert })),
     });
   });

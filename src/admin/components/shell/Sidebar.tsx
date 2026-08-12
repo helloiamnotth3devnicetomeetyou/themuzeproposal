@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
 import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
 import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
@@ -104,7 +105,7 @@ export default function Sidebar({
         .eq("is_active", true)
         .maybeSingle();
       if (active && data?.image_path) {
-        setAvatarUrl(supabase.storage.from("artist-assets").getPublicUrl(data.image_path).data.publicUrl);
+        setAvatarUrl(getPublicAssetUrl("artist-assets", data.image_path));
       }
     };
     void loadProfile();

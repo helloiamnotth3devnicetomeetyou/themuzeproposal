@@ -5,6 +5,11 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ consumeRateLimit: vi.fn(), consumeAttemptRateLimit: vi.fn(), getUser: vi.fn(), rpc: vi.fn(), upload: vi.fn(), remove: vi.fn(), existing: null as Record<string, unknown> | null }));
 vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit: mocks.consumeRateLimit, consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: () => service }));
+vi.mock("@/core/storage/r2", () => ({
+  uploadObject: (options: { bucket: string; path: string; body: unknown; contentType: string }) =>
+    mocks.upload(options.path, options.body, { contentType: options.contentType, upsert: false }),
+  deleteObjects: (_bucket: string, paths: string[]) => mocks.remove(paths),
+}));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser } }) }));
 
 const campaign = { id: "11111111-1111-4111-8111-111111111111", title: "Open", description: "", is_active: true, starts_at: null, ends_at: null };
@@ -29,7 +34,6 @@ const service = {
     return { select: vi.fn((columns: string) => columns.includes("answers") ? chain({ data: mocks.existing, error: null }) : chain({ count: 0, error: null })) };
   }),
   rpc: mocks.rpc,
-  storage: { from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })) },
 };
 
 import { POST } from "./audition-submission-route";

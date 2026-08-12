@@ -1,12 +1,10 @@
 import type { NextConfig } from "next";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
-const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.replace(/\/+$/, "")
-  || (supabaseUrl ? `${supabaseUrl}/storage/v1/object/public` : "");
-const imageRemotePatterns = [storageUrl, supabaseUrl ? `${supabaseUrl}/storage/v1/object` : ""]
+const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "");
+const imageRemotePatterns = [r2PublicUrl]
   .filter(Boolean)
   .map((value) => {
-    const url = new URL(value);
+    const url = new URL(value as string);
     return {
       protocol: url.protocol.slice(0, -1) as "http" | "https",
       hostname: url.hostname,
@@ -45,7 +43,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Keep the built-in optimizer active for both local and Supabase-hosted media.
+    // Keep the built-in optimizer active for R2-hosted media.
     unoptimized: false,
     minimumCacheTTL: 604800,
     formats: ["image/avif", "image/webp"],

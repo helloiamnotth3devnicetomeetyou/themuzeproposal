@@ -76,10 +76,15 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
       NEXT_PUBLIC_SUPABASE_PROJECT_REF: ci-placeholder
-      NEXT_PUBLIC_SUPABASE_STORAGE_URL: https://ci-placeholder.supabase.co/storage/v1/object/public
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
+      R2_ACCOUNT_ID: ci-placeholder-account-id
+      R2_ACCESS_KEY_ID: ci-placeholder-access-key-id
+      R2_SECRET_ACCESS_KEY: ci-placeholder-secret-access-key
+      R2_PUBLIC_BUCKET: ci-placeholder-public
+      R2_PRIVATE_BUCKET: ci-placeholder-private
+      NEXT_PUBLIC_R2_PUBLIC_URL: https://ci-placeholder.example.com
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -103,10 +108,15 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
       NEXT_PUBLIC_SUPABASE_PROJECT_REF: ci-placeholder
-      NEXT_PUBLIC_SUPABASE_STORAGE_URL: https://ci-placeholder.supabase.co/storage/v1/object/public
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
+      R2_ACCOUNT_ID: ci-placeholder-account-id
+      R2_ACCESS_KEY_ID: ci-placeholder-access-key-id
+      R2_SECRET_ACCESS_KEY: ci-placeholder-secret-access-key
+      R2_PUBLIC_BUCKET: ci-placeholder-public
+      R2_PRIVATE_BUCKET: ci-placeholder-private
+      NEXT_PUBLIC_R2_PUBLIC_URL: https://ci-placeholder.example.com
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 

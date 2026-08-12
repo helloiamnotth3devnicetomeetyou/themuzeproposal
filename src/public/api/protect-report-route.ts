@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
@@ -103,9 +104,11 @@ export async function POST(request: NextRequest) {
     for (const { file, validated } of validatedFiles) {
       if (!validated) return errorResponse("INVALID_FILE_TYPE", 400);
       const path = `${user.id}/${crypto.randomUUID()}.${validated.extension}`;
-      const { error: uploadError } = await serviceClient.storage.from("protect-evidence").upload(path, file, {
+      const { error: uploadError } = await uploadObject({
+        bucket: "protect-evidence",
+        path,
+        body: file,
         contentType: validated.mimeType,
-        upsert: false,
       });
       if (uploadError) throw new Error("UPLOAD_FAILED");
       paths.push(path);
@@ -124,7 +127,7 @@ export async function POST(request: NextRequest) {
     );
     if (attachmentError) throw new Error("SUBMISSION_FAILED");
   } catch {
-    if (paths.length) await serviceClient.storage.from("protect-evidence").remove(paths);
+    if (paths.length) await deleteObjects("protect-evidence", paths);
     if (reportCreated) await serviceClient.from("protect_reports").delete().eq("id", reportId);
     return errorResponse("SUBMISSION_FAILED", 503);
   }

@@ -1,3 +1,4 @@
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
 
 type ProfileAvatar = { id: string; avatar_asset_id: string | null };
@@ -20,6 +21,6 @@ export async function loadAccountAvatarUrls(userIds: Array<string | null>) {
   const { data: assets } = await supabase.from("avatar_assets").select("id,image_path").in("id", assetIds).eq("is_active", true);
   return Object.fromEntries(Object.entries(matchAccountAvatarPaths(profiles ?? [], assets ?? [])).map(([userId, path]) => [
     userId,
-    supabase.storage.from("artist-assets").getPublicUrl(path).data.publicUrl,
+    getPublicAssetUrl("artist-assets", path),
   ]));
 }

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 
-const galleryAssetPath = "/storage/v1/object/public/artist-assets/";
-
-export function galleryAssetUrl(imageUrl, storageUrl) {
+export function galleryAssetUrl(imageUrl, r2PublicUrl) {
   const url = new URL(imageUrl);
-  assert(url.origin === new URL(storageUrl).origin && url.pathname.startsWith(galleryAssetPath), `untrusted gallery image URL: ${imageUrl}`);
+  const base = new URL(r2PublicUrl);
+  const galleryAssetPath = `${base.pathname.replace(/\/+$/, "")}/artist-assets/`;
+  assert(url.origin === base.origin && url.pathname.startsWith(galleryAssetPath), `untrusted gallery image URL: ${imageUrl}`);
   return url;
 }

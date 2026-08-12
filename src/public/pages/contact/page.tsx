@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DAILY_SUBMISSION_LIMIT, getSubmissionRemaining } from "@/core/http/submission-rate-limit";
 import { safeHref } from "@/core/http/safe-href";
 import { createPageMetadata } from "@/core/seo/metadata";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import ContactClient from "./ContactClient";
 
@@ -27,7 +28,7 @@ export default async function ContactPage() {
   const { data: avatar } = profile?.avatar_asset_id
     ? await supabase.from("avatar_assets").select("image_path").eq("id", profile.avatar_asset_id).eq("is_active", true).maybeSingle()
     : { data: null };
-  const avatarUrl = avatar?.image_path ? supabase.storage.from("artist-assets").getPublicUrl(avatar.image_path).data.publicUrl : "";
+  const avatarUrl = avatar?.image_path ? getPublicAssetUrl("artist-assets", avatar.image_path) : "";
   if (businessRow?.value && typeof businessRow.value === "object") {
     const assets = businessRow.value as Partial<typeof businessAssets>;
     businessAssets = {

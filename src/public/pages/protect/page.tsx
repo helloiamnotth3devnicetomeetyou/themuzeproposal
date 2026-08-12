@@ -4,6 +4,7 @@ import ProtectClient, { type Artist, type MyReport } from "./ProtectClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createPrivatePageMetadata } from "@/core/seo/metadata";
 import { getSubmissionRemaining } from "@/core/http/submission-rate-limit";
+import { getPublicAssetUrl } from "@/core/storage/public-url";
 
 export const metadata: Metadata = createPrivatePageMetadata("Protect Reports");
 
@@ -25,7 +26,7 @@ export default async function ProtectPage() {
   const { data: avatar } = profileResult.data?.avatar_asset_id
     ? await supabase.from("avatar_assets").select("image_path").eq("id", profileResult.data.avatar_asset_id).eq("is_active", true).maybeSingle()
     : { data: null };
-  const avatarUrl = avatar?.image_path ? supabase.storage.from("artist-assets").getPublicUrl(avatar.image_path).data.publicUrl : "";
+  const avatarUrl = avatar?.image_path ? getPublicAssetUrl("artist-assets", avatar.image_path) : "";
 
   return (
     <ProtectClient

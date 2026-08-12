@@ -2,7 +2,6 @@ type PublicSupabaseConfig = {
   url: string;
   anonKey: string;
   projectRef: string;
-  storageUrl: string;
 };
 
 function required(value: string | undefined, name: string) {
@@ -26,15 +25,12 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig {
   const parsedUrl = parseUrl(url, "NEXT_PUBLIC_SUPABASE_URL");
   const derivedProjectRef = parsedUrl.hostname.split(".")[0];
   const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || derivedProjectRef;
-  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL?.trim()
-    || `${parsedUrl.origin}/storage/v1/object/public`;
 
   if (projectRef !== derivedProjectRef) {
     throw new Error("Supabase project configuration is inconsistent.");
   }
 
-  parseUrl(storageUrl, "NEXT_PUBLIC_SUPABASE_STORAGE_URL");
-  return { url: parsedUrl.origin, anonKey, projectRef, storageUrl: storageUrl.replace(/\/+$/, "") };
+  return { url: parsedUrl.origin, anonKey, projectRef };
 }
 
 export function getSiteUrl() {

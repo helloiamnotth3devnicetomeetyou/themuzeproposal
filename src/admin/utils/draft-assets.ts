@@ -1,19 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
-
-const PUBLIC_ASSET_MARKER = "/storage/v1/object/public/artist-assets/";
+import { managedAssetFromUrl } from "@/core/storage/public-url";
 
 function managedPathFromUrl(value: string): string | null {
   if (!value) return null;
-  try {
-    const url = new URL(value);
-    const markerIndex = url.pathname.indexOf(PUBLIC_ASSET_MARKER);
-    if (markerIndex < 0) return null;
-    return decodeURIComponent(url.pathname.slice(markerIndex + PUBLIC_ASSET_MARKER.length));
-  } catch {
-    return null;
-  }
+  const asset = managedAssetFromUrl(value);
+  return asset && asset.bucket === "artist-assets" ? asset.path : null;
 }
 
 async function removePaths(client: SupabaseClient, paths: string[]) {

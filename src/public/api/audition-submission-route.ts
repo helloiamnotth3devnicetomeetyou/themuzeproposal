@@ -6,6 +6,7 @@ import type { AuditionAnswer, AuditionCampaign, AuditionFormField } from "@/core
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
+import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
   try {
     for (const { field, file, extension, mimeType } of pendingFiles) {
       const path = `${campaignId}/${submissionId}/${field.id}/${crypto.randomUUID()}.${extension}`;
-      const { error } = await service.storage.from("audition-attachments").upload(path, file, { contentType: mimeType, upsert: false });
+      const { error } = await uploadObject({ bucket: "audition-attachments", path, body: file, contentType: mimeType });
       if (error) throw error;
       uploaded.push(path);
       answers[field.field_key] = { path, name: file.name.slice(0, 255), size: file.size, mimeType };
@@ -187,10 +188,10 @@ export async function POST(request: NextRequest) {
     if (existing) {
       const retained = new Set(Object.values(answers).filter(storedFile).map((file) => file.path));
       const replaced = Object.values(existing.answers as Record<string, AuditionAnswer>).filter(storedFile).map((file) => file.path).filter((path) => !retained.has(path));
-      if (replaced.length) await service.storage.from("audition-attachments").remove(replaced);
+      if (replaced.length) await deleteObjects("audition-attachments", replaced);
     }
   } catch (error) {
-    if (uploaded.length) await service.storage.from("audition-attachments").remove(uploaded);
+    if (uploaded.length) await deleteObjects("audition-attachments", uploaded);
     if (error instanceof SubmissionConflictError) return errorResponse("SUBMISSION_CONFLICT", 409);
     const dbError = databaseError(error);
     if (dbError.code === "P0001" && dbError.message === "CAMPAIGN_CLOSED") return errorResponse("CAMPAIGN_CLOSED", 404);

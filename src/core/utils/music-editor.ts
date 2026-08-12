@@ -90,7 +90,4 @@ export function validateAlbum(draft: AlbumEditorDraft): AlbumValidationResult {
   };
 }
 
-export function managedAssetFromUrl(url: string): { bucket: string; path: string } | null {
-  const match = url.match(/\/storage\/v1\/object\/public\/(album-covers|track-assets|artist-assets)\/(.+)$/);
-  return match ? { bucket: match[1], path: decodeURIComponent(match[2]) } : null;
-}
+export { managedAssetFromUrl } from "@/core/storage/public-url";
