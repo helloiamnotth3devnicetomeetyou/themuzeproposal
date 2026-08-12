@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { isSuperAdmin, type AdminRole } from "@/core/auth/admin-auth";
+import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/supabase/service";
@@ -18,6 +19,7 @@ const adminRoleSchema = z.enum(["super_admin", "editor"]);
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), role: adminRoleSchema });
 const roleChangeSchema = z.object({ id: z.string().uuid(), role: adminRoleSchema });
 const removeSchema = z.object({ id: z.string().uuid() });
+const MAX_BODY_BYTES = 4 * 1024;
 
 function response(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const parsed = inviteSchema.safeParse(await request.json().catch(() => null));
+  const parsed = inviteSchema.safeParse(await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null));
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
   const { email, role } = parsed.data;
 
@@ -99,7 +101,7 @@ export async function PATCH(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const parsed = roleChangeSchema.safeParse(await request.json().catch(() => null));
+  const parsed = roleChangeSchema.safeParse(await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null));
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
   const { id, role } = parsed.data;
 
@@ -113,7 +115,7 @@ export async function DELETE(request: NextRequest) {
   const auth = await requireSuperAdmin();
   if ("error" in auth) return auth.error;
 
-  const parsed = removeSchema.safeParse(await request.json().catch(() => null));
+  const parsed = removeSchema.safeParse(await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null));
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
   const { id } = parsed.data;
 

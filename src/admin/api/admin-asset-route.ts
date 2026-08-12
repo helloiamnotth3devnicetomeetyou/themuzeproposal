@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
-import { parseFormDataWithinLimit } from "@/core/http/request-body";
+import { parseFormDataWithinLimit, parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
 import { createSupabaseServerClient } from "@/core/supabase/server";
@@ -23,6 +23,7 @@ const BUCKETS = {
   "business-assets": { maxBytes: 100 * 1024 * 1024, profile: "business-asset" },
   "hero-videos": { maxBytes: 20 * 1024 * 1024, profile: "hero-video" },
 } as const satisfies Record<string, { maxBytes: number; profile: FileValidationProfile }>;
+const MAX_DELETE_BODY_BYTES = 64 * 1024;
 
 function errorResponse(code: string, status: number) {
   const response = NextResponse.json({ code }, { status });
@@ -116,7 +117,7 @@ export async function DELETE(request: NextRequest) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
   if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
-  const body = await request.json().catch(() => null) as { bucket?: unknown; paths?: unknown } | null;
+  const body = await parseJsonWithinLimit(request, MAX_DELETE_BODY_BYTES).catch(() => null) as { bucket?: unknown; paths?: unknown } | null;
   const bucket = typeof body?.bucket === "string" ? body.bucket : "";
   const paths = Array.isArray(body?.paths) && body.paths.length <= 100 && body.paths.every((path): path is string => typeof path === "string" && isSafeStoragePath(path))
     ? [...new Set(body.paths)] : [];
