@@ -38,6 +38,28 @@ const mobileNavItems = [
 
 const emptySubscribe = () => () => {};
 
+const SIDEBAR_COLLAPSED_KEY = "admin-sidebar-collapsed";
+const SIDEBAR_COLLAPSED_EVENT = "admin-sidebar-collapsed-change";
+
+function subscribeSidebarCollapsed(callback: () => void) {
+  window.addEventListener(SIDEBAR_COLLAPSED_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SIDEBAR_COLLAPSED_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+function getSidebarCollapsedSnapshot() {
+  return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+}
+function getSidebarCollapsedServerSnapshot() {
+  return false;
+}
+function setSidebarCollapsed(next: boolean) {
+  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+  window.dispatchEvent(new Event(SIDEBAR_COLLAPSED_EVENT));
+}
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
@@ -45,12 +67,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [inboxCount, setInboxCount] = useState(0);
   const [toast, setToast] = useState("");
   const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const isSidebarCollapsed = useSyncExternalStore(subscribeSidebarCollapsed, getSidebarCollapsedSnapshot, getSidebarCollapsedServerSnapshot);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
-  useEffect(() => {
-    setIsSidebarCollapsed(localStorage.getItem("admin-sidebar-collapsed") === "true");
-  }, []);
   const confirmNavigation = useCallback(() => {
     if (isGuideSandboxActive()) return true;
     if (!dirtyDrafts.current.size) return true;
@@ -59,11 +78,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem("admin-sidebar-collapsed", String(next));
-      return next;
-    });
+    setSidebarCollapsed(!getSidebarCollapsedSnapshot());
   };
 
   const isFullBleed = [
@@ -139,8 +154,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const openGuideNavigation = () => {
       setIsNavigationOpen(true);
-      setIsSidebarCollapsed(false);
-      localStorage.setItem("admin-sidebar-collapsed", "false");
+      setSidebarCollapsed(false);
     };
     window.addEventListener("admin-guide-open-navigation", openGuideNavigation);
     return () => window.removeEventListener("admin-guide-open-navigation", openGuideNavigation);

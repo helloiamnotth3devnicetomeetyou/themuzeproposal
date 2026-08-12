@@ -64,7 +64,7 @@ export function DiscographyExperience() {
     const candidate = coverCandidates[index];
     if (candidate) void preloadImages([candidate]);
   }, [coverCandidates]);
-  const toggleDiscs = useCallback(() => discography.setShowDiscs((showDiscs) => !showDiscs), [discography.setShowDiscs]);
+  const toggleDiscs = useCallback(() => discography.setShowDiscs((showDiscs) => !showDiscs), [discography]);
 
   const changeMobileView = useCallback((view: "album" | "tracks") => {
     setMobileView(view);
