@@ -33,7 +33,7 @@ describe("signIn", () => {
       },
     )));
 
-    await expect(signIn("user@example.com", "password")).rejects.toMatchObject({
+    await expect(signIn("user@example.com", "password", "captcha-token")).rejects.toMatchObject({
       name: "AuthUserError",
       code: "RATE_LIMITED",
       retryAfterSeconds: 125,
@@ -45,7 +45,7 @@ describe("signIn", () => {
       status: 503,
     })));
 
-    await expect(signIn("user@example.com", "password")).rejects.toMatchObject({
+    await expect(signIn("user@example.com", "password", "captcha-token")).rejects.toMatchObject({
       code: "SERVICE_UNAVAILABLE",
       retryAfterSeconds: undefined,
     });
@@ -62,7 +62,7 @@ describe("signUp", () => {
     vi.stubGlobal("fetch", fetch);
     mocks.signUp.mockResolvedValue({ data: { user: { identities: [] } }, error: null });
 
-    await expect(signUp("user@example.com", "ValidPass123!")).rejects.toMatchObject({
+    await expect(signUp("user@example.com", "ValidPass123!", "captcha-token")).rejects.toMatchObject({
       code: "SIGNUP_FAILED",
     });
     expect(fetch).not.toHaveBeenCalled();

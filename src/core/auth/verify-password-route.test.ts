@@ -21,11 +21,11 @@ vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }
 
 import { POST } from "./verify-password-route";
 
-const request = (body: unknown, headers: HeadersInit = {}) =>
+const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
   new NextRequest("http://localhost/api/auth/verify-password", {
     method: "POST",
     headers: { "content-type": "application/json", origin: "http://localhost", ...headers },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
   });
 
 describe("POST /api/auth/verify-password", () => {
@@ -126,7 +126,18 @@ describe("POST /api/auth/verify-password", () => {
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "user@example.com",
       password: "correctpassword",
+      options: { captchaToken: "test-turnstile-token" },
     });
+  });
+
+  it("returns CAPTCHA_FAILED without leaking it as an invalid-credentials error", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
+    mocks.signInWithPassword.mockResolvedValueOnce({
+      error: { code: "captcha_failed", status: 400 },
+    });
+    const response = await POST(request({ password: "correctpassword" }));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
   });
 
   it("fails closed when the server-only rate limiter client is unavailable", async () => {

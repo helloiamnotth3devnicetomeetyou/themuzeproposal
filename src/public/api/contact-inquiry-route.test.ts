@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   createServiceClient: vi.fn(),
   consumeRateLimit: vi.fn(),
   consumeAttemptRateLimit: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({
@@ -22,6 +23,9 @@ vi.mock("@/core/uploads/service-storage", () => ({
 vi.mock("@/core/http/submission-rate-limit", () => ({
   consumeSubmissionRateLimit: mocks.consumeRateLimit,
   consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
+}));
+vi.mock("@/core/http/turnstile", () => ({
+  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 
 import { POST } from "./contact-inquiry-route";
@@ -36,6 +40,7 @@ function validForm(attachment?: File) {
   formData.set("email", "contact@example.com");
   formData.set("message", "Partnership proposal");
   formData.set("privacyConsent", "true");
+  formData.set("turnstileToken", "test-turnstile-token");
   if (attachment) formData.set("attachment", attachment);
   return formData;
 }
@@ -58,6 +63,7 @@ describe("POST /api/contact-inquiries", () => {
     mocks.insert.mockResolvedValue({ error: null });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
+    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.createServiceClient.mockReturnValue({
       storage: {
         from: vi.fn(() => ({ upload: mocks.upload, remove: mocks.remove })),
@@ -118,5 +124,14 @@ describe("POST /api/contact-inquiries", () => {
     const response = await POST(request(validForm()));
     expect(response.status).toBe(429);
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("rejects a failed captcha before consuming the daily rate limit", async () => {
+    mocks.verifyTurnstileToken.mockResolvedValueOnce(false);
+    const response = await POST(request(validForm()));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
   });
 });

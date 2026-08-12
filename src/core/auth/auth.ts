@@ -6,7 +6,8 @@ export type AuthErrorCode =
   | 'RATE_LIMITED'
   | 'SERVICE_UNAVAILABLE'
   | 'SIGNUP_FAILED'
-  | 'UPDATE_FAILED';
+  | 'UPDATE_FAILED'
+  | 'CAPTCHA_FAILED';
 
 export class AuthUserError extends Error {
   constructor(
@@ -18,11 +19,11 @@ export class AuthUserError extends Error {
   }
 }
 
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string, turnstileToken: string) {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, turnstileToken }),
   });
   const payload = await response.json().catch(() => ({})) as { code?: AuthErrorCode };
   if (!response.ok) {
@@ -56,7 +57,7 @@ export async function signInWithGoogle(redirectTo = '/', loginHint?: string) {
   if (error) throw new AuthUserError('SERVICE_UNAVAILABLE');
 }
 
-export async function signUp(email: string, password: string, name?: string) {
+export async function signUp(email: string, password: string, turnstileToken: string, name?: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -64,6 +65,7 @@ export async function signUp(email: string, password: string, name?: string) {
       data: {
         name: name || '',
       },
+      captchaToken: turnstileToken,
     },
   });
   if (error) throw new AuthUserError('SIGNUP_FAILED');
@@ -134,15 +136,16 @@ export class CurrentPasswordError extends Error {
   }
 }
 
-export async function verifyCurrentPassword(password: string) {
+export async function verifyCurrentPassword(password: string, turnstileToken: string) {
   const response = await fetch('/api/auth/verify-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ password, turnstileToken }),
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({})) as { code?: string };
     if (payload.code === 'INVALID_CREDENTIALS') throw new CurrentPasswordError();
+    if (payload.code === 'CAPTCHA_FAILED') throw new AuthUserError('CAPTCHA_FAILED');
     throw new AuthUserError('SERVICE_UNAVAILABLE');
   }
 }

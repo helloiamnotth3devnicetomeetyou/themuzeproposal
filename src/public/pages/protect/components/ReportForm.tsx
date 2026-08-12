@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/core/providers/LocaleContext";
+import type { TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import type { Artist, MyReport } from "../ProtectClient";
 import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
 import styles from "@/styles/(public)/pages/protect.module.css";
@@ -65,8 +66,10 @@ export default function ReportForm({
   const [submitting, setSubmitting] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [missingFieldIds, setMissingFieldIds] = useState<string[]>([]);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const holdTimer = useRef<number | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   const files = useMemo(
     () => fileSlots.filter((file): file is File => file !== null),
@@ -107,6 +110,7 @@ export default function ReportForm({
       { label: t.protect.fields.authorName, id: "authorName", missing: !form.authorName.trim() },
       { label: t.protect.fields.evidence, id: "evidenceFiles", missing: files.length === 0 },
       { label: t.protect.fields.confirmation, id: "reportConfirmation", missing: !confirmed },
+      { label: t.protect.fields.captcha, id: "captcha", missing: !turnstileToken },
     ].filter((field) => field.missing);
 
     setMissingFields(requiredFields.map((field) => field.label));
@@ -210,6 +214,7 @@ export default function ReportForm({
       payload.set("authorName", form.authorName.trim());
       payload.set("postIp", form.postIp.trim());
       payload.set("confirmation", "true");
+      payload.set("turnstileToken", turnstileToken);
       files.forEach((file) => payload.append("evidence", file));
 
       const response = await fetch("/api/protect-reports", { method: "POST", body: payload });
@@ -235,6 +240,8 @@ export default function ReportForm({
       setForm(initialForm);
       setFileSlots([null, null, null]);
       setConfirmed(false);
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
       const code = submitError instanceof Error ? submitError.message : "SUBMISSION_FAILED";
@@ -247,8 +254,11 @@ export default function ReportForm({
         UPLOAD_FAILED: t.protect.errors.UPLOAD_FAILED,
         SERVICE_UNAVAILABLE: t.protect.errors.SERVICE_UNAVAILABLE,
         SUBMISSION_FAILED: t.protect.errors.SUBMISSION_FAILED,
+        CAPTCHA_FAILED: t.protect.errors.CAPTCHA_FAILED,
       };
       setError(apiErrorMessages[code] || t.protect.errors.submitFailed);
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -273,6 +283,8 @@ export default function ReportForm({
         onConfirmedChange={(next) => { setConfirmed(next); setError(""); }}
         startSubmitHold={startSubmitHold}
         cancelSubmitHold={cancelSubmitHold}
+        turnstileRef={turnstileRef}
+        onTurnstileToken={(token) => { setTurnstileToken(token ?? ""); clearValidation(); }}
       />
     </form>
   );

@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { consumeSubmissionAttemptRateLimit, consumeSubmissionRateLimit } from "@/core/http/submission-rate-limit";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
+import { verifyTurnstileToken } from "@/core/http/turnstile";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const GENERAL_TYPES = new Set(["account", "notice_event", "goods_md", "site_error", "other"]);
@@ -32,10 +34,10 @@ function textField(formData: FormData, name: string) {
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
   const sessionClient = await createSupabaseServerClient();
-  const { data: { user }, error: userError } = await sessionClient.auth.getUser();
-  if (userError || !user?.email) return errorResponse("UNAUTHORIZED", 401);
+  const { data: { user } } = await sessionClient.auth.getUser();
+  const rateLimitId = user ? user.id : `anon:${clientIp(request) ?? "unknown"}`;
 
-  const attempt = await consumeSubmissionAttemptRateLimit(request, "contact_inquiry", user.id);
+  const attempt = await consumeSubmissionAttemptRateLimit(request, "contact_inquiry", rateLimitId);
   if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
 
@@ -48,13 +50,17 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_REQUEST", 400);
   }
 
+  const turnstileToken = textField(formData, "turnstileToken");
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
+
   const category = textField(formData, "category");
   const inquiryType = textField(formData, "inquiryType");
   const companyName = textField(formData, "companyName");
   const contactName = textField(formData, "contactName");
   const phone = textField(formData, "phone");
   const email = textField(formData, "email").toLowerCase();
-  const accountEmail = user.email.trim().toLowerCase();
+  const accountEmail = user?.email?.trim().toLowerCase() ?? null;
   const message = textField(formData, "message");
   const consented = textField(formData, "privacyConsent") === "true";
   const validType = category === "general"
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
     || email.length < 3
     || email.length > 254
     || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    || email !== accountEmail
+    || (accountEmail && email !== accountEmail)
     || message.length < 1
     || message.length > 5000
     || (category === "business" && (companyName.length < 1 || companyName.length > 120 || phone.length < 1 || phone.length > 40))) {
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
 
-  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry", user.id);
+  const rate = await consumeSubmissionRateLimit(request, "contact_inquiry", rateLimitId);
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
 
@@ -109,13 +115,13 @@ export async function POST(request: NextRequest) {
 
   const { error: insertError } = await serviceClient.from("contact_inquiries").insert({
     id: inquiryId,
-    user_id: user.id,
+    user_id: user?.id ?? null,
     category,
     inquiry_type: inquiryType,
     company_name: category === "business" ? companyName : null,
     contact_name: contactName,
     phone: phone || null,
-    email: accountEmail,
+    email: accountEmail ?? email,
     message,
     attachment_path: attachmentPath,
     attachment_name: file ? boundedFileName(file.name) : null,

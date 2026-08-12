@@ -10,7 +10,10 @@ import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 4 * 1024;
-const verifyPasswordSchema = z.object({ password: z.string().min(1).max(1024) });
+const verifyPasswordSchema = z.object({
+  password: z.string().min(1).max(1024),
+  turnstileToken: z.string().min(1).max(4096),
+});
 
 function jsonError(code: string, status: number, retryAfter?: number) {
   const response = NextResponse.json({ code }, { status });
@@ -35,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = verifyPasswordSchema.safeParse(body);
   if (!parsed.success) return jsonError("INVALID_REQUEST", 400);
-  const { password } = parsed.data;
+  const { password, turnstileToken } = parsed.data;
 
   const { url, anonKey } = getPublicSupabaseConfig();
 
@@ -85,10 +88,15 @@ export async function POST(request: NextRequest) {
   const { error: authError } = await verifyClient.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken: turnstileToken },
   });
   const succeeded = !authError;
 
   if (!succeeded) {
+    // Captcha rejection is also surfaced as a generic 400 by GoTrue, so it must be
+    // checked before the invalid-credentials fallback below or it gets misreported
+    // as a wrong password.
+    if (authError?.code === "captcha_failed") return jsonError("CAPTCHA_FAILED", 400);
     const isInvalidCredentials =
       authError?.code === "invalid_credentials" ||
       authError?.status === 400;

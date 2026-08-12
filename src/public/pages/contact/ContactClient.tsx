@@ -3,29 +3,38 @@
 import { useEffect, useRef } from "react";
 import { ArrowRight, Check, CircleAlert, FileText, Paperclip, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import { safeHref } from "@/core/http/safe-href";
 import AccountProfileLink from "@/public/components/AccountProfileLink";
 import styles from "@/styles/(public)/pages/contact.module.css";
 import { useContactForm } from "./useContactForm";
 
 export default function ContactClient({
+  isAuthenticated,
   initialName,
   initialEmail,
   initialAvatarUrl,
   initialRemaining,
   businessAssets,
 }: {
+  isAuthenticated: boolean;
   initialName: string;
   initialEmail: string;
   initialAvatarUrl: string;
   initialRemaining: number;
   businessAssets: { pressKitUrl: string; profilePdfUrl: string };
 }) {
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const {
     messages, form, setForm, attachment, setAttachment, consented, setConsented, submitting, submittedId,
     remaining, error, setError, errorFieldId, formRef, isBusiness, typeOptions, updateField, changeCategory, handleFile, submitInquiry,
-    resetForm,
-  } = useContactForm({ initialName, initialEmail, initialRemaining });
+    resetForm, setTurnstileToken,
+  } = useContactForm({
+    initialName,
+    initialEmail,
+    initialRemaining,
+    resetTurnstile: () => turnstileRef.current?.reset(),
+  });
   const pressKitHref = safeHref(businessAssets.pressKitUrl);
   const profilePdfHref = safeHref(businessAssets.profilePdfUrl);
   const fieldError = (id: string) => (errorFieldId === id ? { "aria-invalid": true as const, "aria-describedby": "contact-error-message" } : {});
@@ -81,7 +90,9 @@ export default function ContactClient({
                 <span>{messages.business}</span>
               </button>
             </nav>
-            <AccountProfileLink name={initialName} email={initialEmail} avatarUrl={initialAvatarUrl} remaining={remaining} />
+            {isAuthenticated && (
+              <AccountProfileLink name={initialName} email={initialEmail} avatarUrl={initialAvatarUrl} remaining={remaining} />
+            )}
           </div>
         </header>
 
@@ -145,7 +156,17 @@ export default function ContactClient({
 
             <div className={styles.formRow}>
               <label htmlFor="contact-email">{messages.email} <i>*</i></label>
-              <input id="contact-email" value={form.email} readOnly maxLength={254} autoComplete="email" inputMode="email" {...fieldError("contact-email")} />
+              <input
+                id="contact-email"
+                value={form.email}
+                onChange={isAuthenticated ? undefined : updateField("email")}
+                readOnly={isAuthenticated}
+                maxLength={254}
+                autoComplete="email"
+                inputMode="email"
+                placeholder={isAuthenticated ? undefined : "you@example.com"}
+                {...fieldError("contact-email")}
+              />
             </div>
 
             {isBusiness && (
@@ -204,6 +225,10 @@ export default function ContactClient({
                   {messages.privacy.consentLabel}
                 </label>
               </div>
+            </div>
+
+            <div id="contact-turnstile" className={styles.formRow}>
+              <TurnstileWidget ref={turnstileRef} onToken={(token) => setTurnstileToken(token ?? "")} action="contact_inquiry" />
             </div>
 
             <div className={styles.submitArea}>

@@ -18,8 +18,8 @@ vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }
 
 import { POST } from "./password-login-route";
 
-const request = (body: unknown, headers: HeadersInit = {}) => new NextRequest("http://localhost/api/auth/login", {
-  method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "x-test-client-ip": "203.0.113.10", ...headers }, body: JSON.stringify(body),
+const request = (body: Record<string, unknown>, headers: HeadersInit = {}) => new NextRequest("http://localhost/api/auth/login", {
+  method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "x-test-client-ip": "203.0.113.10", ...headers }, body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
 });
 
 describe("POST /api/auth/login", () => {
@@ -94,7 +94,7 @@ describe("POST /api/auth/login", () => {
     const response = await POST(new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json", origin: "http://localhost" },
-      body: JSON.stringify({ email: "victim@example.com", password: "password" }),
+      body: JSON.stringify({ email: "victim@example.com", password: "password", turnstileToken: "test-turnstile-token" }),
     }));
 
     expect(response.status).toBe(503);

@@ -12,6 +12,8 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_STORAGE_URL",
   "AUTH_RATE_LIMIT_SECRET",
   "SUBMISSION_RATE_LIMIT_SECRET",
+  "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
 ];
 
 const strict = process.env.VERCEL_ENV === "production"
@@ -59,6 +61,12 @@ if (process.env.AUTH_RATE_LIMIT_SECRET && process.env.AUTH_RATE_LIMIT_SECRET.len
 
 if (process.env.SUBMISSION_RATE_LIMIT_SECRET && process.env.SUBMISSION_RATE_LIMIT_SECRET.length < 32) {
   problems.push("SUBMISSION_RATE_LIMIT_SECRET must contain at least 32 characters.");
+}
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY?.trim();
+if (Boolean(turnstileSiteKey) !== Boolean(turnstileSecretKey)) {
+  problems.push("NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY must be configured together.");
 }
 
 if (strict && (missing.length || problems.length)) {

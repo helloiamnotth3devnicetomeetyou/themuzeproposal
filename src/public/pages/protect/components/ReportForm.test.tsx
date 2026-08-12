@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const routerReplace = vi.fn();
@@ -17,6 +18,21 @@ vi.mock("@/core/components/form/CustomSelect", () => ({
       <option value="">Select</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
     </select>
   ),
+}));
+vi.mock("@/core/components/form/TurnstileWidget", () => ({
+  default: forwardRef(function TurnstileWidgetStub(
+    { onToken }: { onToken: (token: string | null) => void },
+    ref: React.Ref<{ execute: () => void; reset: () => void }>,
+  ) {
+    const onTokenRef = useRef(onToken);
+    onTokenRef.current = onToken;
+    useEffect(() => { onTokenRef.current("test-turnstile-token"); }, []);
+    useImperativeHandle(ref, () => ({
+      execute: () => onTokenRef.current("test-turnstile-token"),
+      reset: () => onTokenRef.current(null),
+    }));
+    return <div data-testid="turnstile-stub" />;
+  }),
 }));
 
 import ReportForm from "./ReportForm";

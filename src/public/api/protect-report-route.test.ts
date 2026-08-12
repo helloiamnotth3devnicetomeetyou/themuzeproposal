@@ -11,11 +11,13 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   remove: vi.fn(),
   insert: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createSessionClient }));
 vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: mocks.createServiceClient }));
 vi.mock("@/core/http/submission-rate-limit", () => ({ consumeSubmissionRateLimit: mocks.consumeRateLimit, consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit }));
+vi.mock("@/core/http/turnstile", () => ({ verifyTurnstileToken: mocks.verifyTurnstileToken }));
 
 import { POST } from "./protect-report-route";
 
@@ -30,6 +32,7 @@ function validRequest(postUrl = "https://example.com/post", fileName = "proof.pn
   form.set("postedAt", "2026-01-01");
   form.set("authorName", "Author");
   form.set("confirmation", "true");
+  form.set("turnstileToken", "test-turnstile-token");
   form.append("evidence", new File([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64")], fileName, { type: "image/png" }));
   return new NextRequest("http://localhost/api/protect-reports", {
     method: "POST", headers: { origin: "http://localhost" }, body: form,
@@ -43,6 +46,7 @@ describe("POST /api/protect-reports", () => {
     mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
     mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
+    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.insert.mockResolvedValue({ error: null });
@@ -82,6 +86,15 @@ describe("POST /api/protect-reports", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("75");
     expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a failed captcha before consuming the daily rate limit", async () => {
+    mocks.verifyTurnstileToken.mockResolvedValueOnce(false);
+    const response = await POST(validRequest());
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 });

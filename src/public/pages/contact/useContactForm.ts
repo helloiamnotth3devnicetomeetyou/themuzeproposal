@@ -7,7 +7,17 @@ import {
   type CategoryDraft, type ContactCategory, type FormValues,
 } from "./contact-model";
 
-export function useContactForm({ initialName, initialEmail, initialRemaining }: { initialName: string; initialEmail: string; initialRemaining: number }) {
+export function useContactForm({
+  initialName,
+  initialEmail,
+  initialRemaining,
+  resetTurnstile,
+}: {
+  initialName: string;
+  initialEmail: string;
+  initialRemaining: number;
+  resetTurnstile?: () => void;
+}) {
   const { locale } = useLocale();
   const messages = contactCopy[locale];
   const [category, setCategory] = useState<ContactCategory>("general");
@@ -19,6 +29,7 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
   const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState(EMPTY_ERROR);
   const [errorFieldId, setErrorFieldId] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const isBusiness = category === "business";
   const draft = drafts[category];
@@ -76,6 +87,7 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
     ].find((field) => field.missing);
     if (required) { setError(required.message); setErrorFieldId(required.id); focusFirstInvalid(required.id); return false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setError(messages.validation.emailInvalid); setErrorFieldId("contact-email"); focusFirstInvalid("contact-email"); return false; }
+    if (!turnstileToken) { setError(messages.validation.captcha); setErrorFieldId("contact-turnstile"); focusFirstInvalid("contact-turnstile"); return false; }
     return true;
   };
   const submitInquiry = async (event: FormEvent<HTMLFormElement>) => {
@@ -93,6 +105,7 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
       payload.set("email", form.email.trim().toLowerCase());
       payload.set("message", form.message.trim());
       payload.set("privacyConsent", "true");
+      payload.set("turnstileToken", turnstileToken);
       if (isBusiness && attachment) payload.set("attachment", attachment);
       const response = await fetch("/api/contact-inquiries", { method: "POST", body: payload });
       const result = await response.json().catch(() => ({})) as { id?: string; remaining?: number; code?: string };
@@ -103,6 +116,8 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
     } catch (submitError) {
       const code = submitError instanceof Error ? submitError.message : "SUBMISSION_FAILED";
       setError(messages.errors[code as keyof typeof messages.errors] || messages.errors.SUBMISSION_FAILED);
+      setTurnstileToken("");
+      resetTurnstile?.();
     } finally {
       setSubmitting(false);
     }
@@ -112,12 +127,14 @@ export function useContactForm({ initialName, initialEmail, initialRemaining }: 
     setShared({ name: initialName, phone: "", email: initialEmail });
     setDrafts({ general: emptyCategoryDraft, business: emptyCategoryDraft });
     setAttachments({ general: null, business: null });
+    setTurnstileToken("");
+    resetTurnstile?.();
     clearFieldError();
   };
 
   return {
     locale, messages, category, setCategory, form, setForm, attachment, setAttachment, consented, setConsented,
     submitting, submittedId, remaining, error, setError: clearFieldError, errorFieldId, formRef, isBusiness, typeOptions, updateField, changeCategory,
-    handleFile, submitInquiry, resetForm,
+    handleFile, submitInquiry, resetForm, turnstileToken, setTurnstileToken,
   };
 }

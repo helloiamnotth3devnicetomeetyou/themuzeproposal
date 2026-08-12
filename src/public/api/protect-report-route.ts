@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 import { boundedFileName, extensionMatches, validateFileSignature } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
+import { verifyTurnstileToken } from "@/core/http/turnstile";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 3;
@@ -56,6 +57,10 @@ export async function POST(request: NextRequest) {
   } catch {
     return errorResponse("INVALID_REQUEST", 400);
   }
+
+  const turnstileToken = textField(formData, "turnstileToken");
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
   const artistId = textField(formData, "artistId");
   const reportType = textField(formData, "reportType");

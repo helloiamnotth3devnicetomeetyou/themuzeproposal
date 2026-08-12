@@ -1,8 +1,9 @@
 "use client";
 
-import type { ChangeEventHandler } from "react";
+import type { ChangeEventHandler, RefObject } from "react";
 import { Check } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import { useLocale } from "@/core/providers/LocaleContext";
 import type { Artist } from "../ProtectClient";
 import ReportEvidenceUpload from "./ReportEvidenceUpload";
@@ -37,6 +38,8 @@ type Props = {
   onConfirmedChange: (confirmed: boolean) => void;
   startSubmitHold: () => void;
   cancelSubmitHold: () => void;
+  turnstileRef: RefObject<TurnstileWidgetHandle | null>;
+  onTurnstileToken: (token: string | null) => void;
 };
 
 export default function ReportFormFields({
@@ -56,6 +59,8 @@ export default function ReportFormFields({
   onConfirmedChange,
   startSubmitHold,
   cancelSubmitHold,
+  turnstileRef,
+  onTurnstileToken,
 }: Props) {
   const { t } = useLocale();
   const fields = t.protect.fields;
@@ -107,6 +112,9 @@ export default function ReportFormFields({
         <span><Check aria-hidden="true" /></span>
         {t.protect.confirmation}
       </label>
+      <div id="captcha" className={styles.formRow}>
+        <TurnstileWidget ref={turnstileRef} onToken={onTurnstileToken} action="protect_report" />
+      </div>
       {missingFields.length > 0 && <div id="report-validation-summary" className={styles.validationSummary} role="alert"><b>{t.protect.missingTitle}</b><p>{missingFields.join(" · ")}</p></div>}
       <p className={styles.submitHint}>{t.protect.holdHint}</p>
       <button

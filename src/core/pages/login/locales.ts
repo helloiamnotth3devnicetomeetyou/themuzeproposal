@@ -29,6 +29,7 @@ export const localT = {
     createAccount: "새 계정 등록",
     noAccount: "계정이 없으신가요?",
     hasAccount: "이미 계정이 있으신가요?",
+    captchaRequired: "보안 인증을 완료해 주세요.",
   },
   en: {
     signIn: "SIGN IN",
@@ -60,6 +61,7 @@ export const localT = {
     createAccount: "CREATE ACCOUNT",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
+    captchaRequired: "Please complete the security check.",
   },
   ja: {
     signIn: "ログイン",
@@ -91,6 +93,7 @@ export const localT = {
     createAccount: "新規アカウント作成",
     noAccount: "アカウントをお持ちでないですか？",
     hasAccount: "すでにアカウントをお持ちですか？",
+    captchaRequired: "セキュリティ認証を完了してください。",
   },
 } as const;
 

@@ -1,14 +1,17 @@
 "use client";
 
+import type { RefObject } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "@/core/providers/LocaleContext";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import { type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginFormPanelProps extends LoginFormState {
   isDark: boolean;
   showLoginRequired: boolean;
+  turnstileRef: RefObject<TurnstileWidgetHandle | null>;
 }
 
 function Input({ id, label, type = "text", value, onChange, placeholder, autoComplete }: { id: string; label: string; type?: string; value: string; onChange: (value: string) => void; placeholder: string; autoComplete?: string }) {
@@ -20,7 +23,7 @@ function Input({ id, label, type = "text", value, onChange, placeholder, autoCom
   );
 }
 
-export default function LoginFormPanel({ mode, signupStep, email, password, name, error, notice, loading, t, isDark, showLoginRequired, setEmail, setPassword, setName, switchMode, previousSignupStep, handleLogin, handleSignup, handleGoogleLogin }: LoginFormPanelProps) {
+export default function LoginFormPanel({ mode, signupStep, email, password, name, error, notice, loading, t, isDark, showLoginRequired, turnstileRef, setEmail, setPassword, setName, setTurnstileToken, switchMode, previousSignupStep, handleLogin, handleSignup, handleGoogleLogin }: LoginFormPanelProps) {
   const { locale, setLocale } = useLocale();
   const isSignup = mode === "signup";
   const nextLabel = locale === "ko" ? "다음" : locale === "ja" ? "次へ" : "NEXT";
@@ -59,6 +62,9 @@ export default function LoginFormPanel({ mode, signupStep, email, password, name
             {isSignup && <Input id="login-name" label={t.name} value={name} onChange={setName} placeholder={t.namePlaceholder} />}
           </>}
           {(!isSignup || signupStep === 2) && <Input id="login-password" label={t.password} type="password" value={password} onChange={setPassword} placeholder={t.passwordPlaceholder} autoComplete={isSignup ? "new-password" : "current-password"} />}
+          {(!isSignup || signupStep === 2) && (
+            <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} action={isSignup ? "signup" : "login"} />
+          )}
           <button type="submit" disabled={loading} className="w-full rounded-xl py-3.5 text-xs font-bold tracking-widest transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none" style={{ backgroundColor: "var(--text-primary)", color: "var(--bg-base)" }}>{loading ? t.processing : isSignup && signupStep === 1 ? nextLabel : isSignup ? t.register : t.signIn}</button>
         </form>
 

@@ -43,6 +43,7 @@ export const contactCopy = {
       phone: "연락처를 입력해 주세요.", email: "이메일 주소를 입력해 주세요.", emailInvalid: "올바른 이메일 주소를 입력해 주세요.",
       messageBusiness: "제안 내용을 입력해 주세요.", messageGeneral: "문의 내용을 입력해 주세요.", consent: "개인정보 수집·이용에 동의해 주세요.",
       fileType: "PDF 형식의 파일만 첨부할 수 있습니다.", fileSize: "첨부 파일은 최대 5MB까지 등록할 수 있습니다.",
+      captcha: "보안 인증을 완료해 주세요.",
     },
     errors: {
       INVALID_REQUEST: "입력 내용을 다시 확인해 주세요.", UNAUTHORIZED: "로그인이 필요합니다. 다시 로그인한 뒤 시도해 주세요.",
@@ -50,6 +51,7 @@ export const contactCopy = {
       INVALID_FILE: "이 문의 유형에는 파일을 첨부할 수 없습니다.", INVALID_FILE_TYPE: "PDF 형식의 파일만 첨부할 수 있습니다.",
       UPLOAD_FAILED: "파일 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.", SERVICE_UNAVAILABLE: "일시적으로 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
       SUBMISSION_FAILED: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+      CAPTCHA_FAILED: "보안 인증에 실패했습니다. 다시 시도해 주세요.",
     },
   },
   en: {
@@ -75,6 +77,7 @@ export const contactCopy = {
       phone: "Please enter your phone number.", email: "Please enter your email address.", emailInvalid: "Please enter a valid email address.",
       messageBusiness: "Please enter your proposal details.", messageGeneral: "Please enter your inquiry.", consent: "Please consent to the collection and use of personal information.",
       fileType: "Only PDF files can be attached.", fileSize: "Attachments must be 5MB or smaller.",
+      captcha: "Please complete the security check.",
     },
     errors: {
       INVALID_REQUEST: "Please check your information and try again.", UNAUTHORIZED: "Please log in again and try again.",
@@ -82,6 +85,7 @@ export const contactCopy = {
       INVALID_FILE: "This inquiry type does not accept attachments.", INVALID_FILE_TYPE: "Only PDF files can be attached.",
       UPLOAD_FAILED: "The file could not be uploaded. Please try again shortly.", SERVICE_UNAVAILABLE: "The service is temporarily unavailable. Please try again shortly.",
       SUBMISSION_FAILED: "We couldn't submit your inquiry. Please try again shortly.",
+      CAPTCHA_FAILED: "Security verification failed. Please try again.",
     },
   },
   ja: {
@@ -107,6 +111,7 @@ export const contactCopy = {
       phone: "電話番号を入力してください。", email: "メールアドレスを入力してください。", emailInvalid: "正しいメールアドレスを入力してください。",
       messageBusiness: "ご提案内容を入力してください。", messageGeneral: "お問い合わせ内容を入力してください。", consent: "個人情報の収集・利用に同意してください。",
       fileType: "PDF形式のファイルのみ添付できます。", fileSize: "添付ファイルは最大5MBまで登録できます。",
+      captcha: "セキュリティ認証を完了してください。",
     },
     errors: {
       INVALID_REQUEST: "入力内容をご確認のうえ、もう一度お試しください。", UNAUTHORIZED: "ログインが必要です。再度ログインしてお試しください。",
@@ -114,6 +119,7 @@ export const contactCopy = {
       INVALID_FILE: "このお問い合わせ種別にはファイルを添付できません。", INVALID_FILE_TYPE: "PDF形式のファイルのみ添付できます。",
       UPLOAD_FAILED: "ファイルのアップロードに失敗しました。しばらくしてからもう一度お試しください。", SERVICE_UNAVAILABLE: "一時的にサービスをご利用いただけません。しばらくしてからもう一度お試しください。",
       SUBMISSION_FAILED: "お問い合わせの送信中に問題が発生しました。しばらくしてからもう一度お試しください。",
+      CAPTCHA_FAILED: "セキュリティ認証に失敗しました。もう一度お試しください。",
     },
   },
 } as const;

@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, LogOut } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import {
+  AuthUserError,
   CurrentPasswordError,
   signOut,
   updateUserAvatar,
@@ -14,6 +15,7 @@ import {
   updateUserPassword,
   verifyCurrentPassword,
 } from "@/core/auth/auth";
+import TurnstileWidget, { type TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import styles from "@/styles/(core)/pages/account.module.css";
 import { accountCopy } from "./account-copy";
 
@@ -53,8 +55,11 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
   const [emailStatus, setEmailStatus] = useState<Status>(null);
   const [currentPasswordStatus, setCurrentPasswordStatus] = useState<Status>(null);
   const [passwordStatus, setPasswordStatus] = useState<Status>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const passwordVerificationRequest = useRef(0);
   const lastPasswordVerification = useRef("");
+  const pendingVerifyCandidate = useRef<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   const errorMessage = (error: unknown) => error instanceof Error ? error.message : t.genericError;
 
@@ -111,6 +116,7 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
   const handleCurrentPasswordChange = (value: string) => {
     passwordVerificationRequest.current += 1;
     lastPasswordVerification.current = "";
+    pendingVerifyCandidate.current = null;
     setCurrentPassword(value);
     setCurrentPasswordVerified(false);
     setCheckingCurrentPassword(false);
@@ -120,10 +126,7 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
     setPasswordStatus(null);
   };
 
-  const handleCurrentPasswordVerification = async () => {
-    const candidate = currentPassword;
-    if (!candidate || checkingCurrentPassword || lastPasswordVerification.current === candidate) return;
-
+  const runCurrentPasswordVerification = async (candidate: string, token: string) => {
     const requestId = passwordVerificationRequest.current + 1;
     passwordVerificationRequest.current = requestId;
     lastPasswordVerification.current = candidate;
@@ -131,18 +134,43 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
     setCurrentPasswordStatus(null);
 
     try {
-      await verifyCurrentPassword(candidate);
+      await verifyCurrentPassword(candidate, token);
       if (passwordVerificationRequest.current !== requestId) return;
       setCurrentPasswordVerified(true);
       setCurrentPasswordStatus({ type: "success", message: t.currentPasswordVerified });
     } catch (error) {
       if (passwordVerificationRequest.current !== requestId) return;
       setCurrentPasswordVerified(false);
-      setCurrentPasswordStatus({ type: "error", message: error instanceof CurrentPasswordError ? t.currentPasswordInvalid : errorMessage(error) });
+      const isCaptchaFailure = error instanceof AuthUserError && error.code === "CAPTCHA_FAILED";
+      setCurrentPasswordStatus({
+        type: "error",
+        message: isCaptchaFailure
+          ? t.captchaFailed
+          : error instanceof CurrentPasswordError ? t.currentPasswordInvalid : errorMessage(error),
+      });
     } finally {
       if (passwordVerificationRequest.current === requestId) setCheckingCurrentPassword(false);
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
     }
   };
+
+  const handleCurrentPasswordVerification = () => {
+    const candidate = currentPassword;
+    if (!candidate || checkingCurrentPassword || lastPasswordVerification.current === candidate) return;
+    pendingVerifyCandidate.current = candidate;
+    turnstileRef.current?.execute();
+  };
+
+  useEffect(() => {
+    if (!turnstileToken || !pendingVerifyCandidate.current) return;
+    const candidate = pendingVerifyCandidate.current;
+    pendingVerifyCandidate.current = null;
+    void runCurrentPasswordVerification(candidate, turnstileToken);
+    // runCurrentPasswordVerification is stable across renders in practice; re-running
+    // this effect only on token changes avoids re-triggering verification mid-flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnstileToken]);
 
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -269,7 +297,8 @@ export default function AccountClient({ initialName, initialEmail, initialAvatar
           </form>}
 
           {canChangePassword && activeSection === "password" && <form className={styles.form} onSubmit={handlePasswordSubmit}>
-            <div className={styles.formRow}><label htmlFor="account-current-password">{t.currentPassword}</label><input id="account-current-password" type="password" value={currentPassword} onChange={(event) => handleCurrentPasswordChange(event.target.value)} onBlur={() => void handleCurrentPasswordVerification()} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); } }} required autoComplete="current-password" aria-describedby="current-password-guide current-password-status" /></div>
+            <div className={styles.formRow}><label htmlFor="account-current-password">{t.currentPassword}</label><input id="account-current-password" type="password" value={currentPassword} onChange={(event) => handleCurrentPasswordChange(event.target.value)} onBlur={handleCurrentPasswordVerification} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); } }} required autoComplete="current-password" aria-describedby="current-password-guide current-password-status" /></div>
+            <TurnstileWidget ref={turnstileRef} onToken={(token) => setTurnstileToken(token ?? "")} action="verify_password" size="invisible" />
             <p id="current-password-guide" className={styles.guide}>{t.currentPasswordHint}</p>
             {checkingCurrentPassword && <span id="current-password-status" role="status" className={`${styles.status} ${styles.checking}`}>{t.currentPasswordChecking}</span>}
             {currentPasswordStatus && <span id="current-password-status" role="status" className={`${styles.status} ${currentPasswordStatus.type === "success" ? styles.success : styles.error}`}>{currentPasswordStatus.message}</span>}
