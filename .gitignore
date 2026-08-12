@@ -58,3 +58,6 @@ output/
 
 # temp files
 /tmp/*
+
+# obsidian vault
+/themuzeproposal/*

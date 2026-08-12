@@ -23,6 +23,7 @@ type Props = {
   readyVideoSlideIds: Set<string>;
   failedVideoSlideIds: Set<string>;
   firstSlideReady: boolean;
+  shouldPreload: boolean;
   onStreamingToggle: (id: string) => void;
   onStreamingClose: () => void;
   onVideoReady: (id: string) => void;
@@ -33,12 +34,12 @@ type Props = {
 export default function HomeSlide({
   slide, index, currentSlide, previousSlide, nextSlide, previousSlideIndex, direction, locale,
   exploreLabel, listenLabel, openStreamingSlideId, readyVideoSlideIds, failedVideoSlideIds,
-  firstSlideReady, onStreamingToggle, onStreamingClose, onVideoReady, onVideoFailure, onFirstImageLoaded,
+  firstSlideReady, shouldPreload, onStreamingToggle, onStreamingClose, onVideoReady, onVideoFailure, onFirstImageLoaded,
 }: Props) {
   const isActive = index === currentSlide;
   const isLeaving = index === previousSlide;
   const isVisible = isActive || isLeaving;
-  const shouldLoadMedia = isVisible || index === nextSlide || index === previousSlideIndex;
+  const shouldLoadMedia = isVisible || index === nextSlide || index === previousSlideIndex || shouldPreload;
   const isStreamingOpen = openStreamingSlideId === slide.id;
 
   return <div
@@ -60,7 +61,7 @@ export default function HomeSlide({
       src={slide.videoUrl}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "metadata"} aria-hidden="true"
+      muted playsInline autoPlay={index === 0} preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
       onCanPlay={() => onVideoReady(slide.id)}
       onError={() => onVideoFailure(slide.id)}
       style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}

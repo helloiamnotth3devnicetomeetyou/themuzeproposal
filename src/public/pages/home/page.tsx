@@ -39,6 +39,10 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const nextSlide = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide;
   const previousSlideIndex = slides.length > 1 ? (currentSlide - 1 + slides.length) % slides.length : currentSlide;
   const firstSlideReady = firstSlideMediaReady(Boolean(rawSlides[0]?.videoUrl), Boolean(rawSlides[0] && readyVideoSlideIds.has(rawSlides[0].id)), Boolean(rawSlides[0] && failedVideoSlideIds.has(rawSlides[0].id)), isFirstImageLoaded);
+  const nextVideoIndex = slides.findIndex((slide, index) => index > 0 && slide.videoUrl && !readyVideoSlideIds.has(slide.id) && !failedVideoSlideIds.has(slide.id));
+  const preloadIndex = !firstSlideReady
+    ? Math.min(1, Math.max(0, slides.length - 1))
+    : nextVideoIndex === -1 ? Math.max(0, slides.length - 1) : nextVideoIndex;
 
   useEffect(() => () => { if (transitionTimeout.current) clearTimeout(transitionTimeout.current); }, []);
   useEffect(() => {
@@ -110,7 +114,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     onPointerCancel={() => { swipeStartX.current = null; }}
   >
     <h1 className="sr-only">{slides[currentSlide]?.artistName} — {slides[currentSlide]?.title}</h1>
-    {slides.map((slide, index) => <HomeSlide key={slide.id} slide={slide} index={index} currentSlide={currentSlide} previousSlide={prevSlide} nextSlide={nextSlide} previousSlideIndex={previousSlideIndex} direction={transition.direction} locale={locale} exploreLabel={t.hero.exploreBtn} listenLabel={t.hero.listenBtn} openStreamingSlideId={openStreamingSlideId} readyVideoSlideIds={readyVideoSlideIds} failedVideoSlideIds={failedVideoSlideIds} firstSlideReady={firstSlideReady} onStreamingToggle={(id) => setOpenStreamingSlideId((current) => current === id ? null : id)} onStreamingClose={() => setOpenStreamingSlideId(null)} onVideoReady={updateVideoStatus(setReadyVideoSlideIds)} onVideoFailure={updateVideoStatus(setFailedVideoSlideIds)} onFirstImageLoaded={() => setIsFirstImageLoaded(true)} />)}
+    {slides.map((slide, index) => <HomeSlide key={slide.id} slide={slide} index={index} currentSlide={currentSlide} previousSlide={prevSlide} nextSlide={nextSlide} previousSlideIndex={previousSlideIndex} direction={transition.direction} locale={locale} exploreLabel={t.hero.exploreBtn} listenLabel={t.hero.listenBtn} openStreamingSlideId={openStreamingSlideId} readyVideoSlideIds={readyVideoSlideIds} failedVideoSlideIds={failedVideoSlideIds} firstSlideReady={firstSlideReady} shouldPreload={index <= preloadIndex} onStreamingToggle={(id) => setOpenStreamingSlideId((current) => current === id ? null : id)} onStreamingClose={() => setOpenStreamingSlideId(null)} onVideoReady={updateVideoStatus(setReadyVideoSlideIds)} onVideoFailure={updateVideoStatus(setFailedVideoSlideIds)} onFirstImageLoaded={() => setIsFirstImageLoaded(true)} />)}
     <HomeSlideControls slides={slides} currentSlide={currentSlide} autoplayElapsed={autoplayElapsed} progressStyle={progressStyle} onSelect={goToSlide} />
   </main>;
 }
