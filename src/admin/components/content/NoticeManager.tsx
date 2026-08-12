@@ -128,10 +128,18 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
   const loadNotices = useCallback(async (preferredId?: string) => {
     setLoading(true);
     setError("");
+    const artistLookup = scopeArtistId
+      ? supabase.from("artists").select("id,name,slug").eq("id", scopeArtistId).single()
+      : null;
+    const noticesQuery = (scopeArtistId
+      ? supabase.from("notices").select("id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published").eq("artist_id", scopeArtistId)
+      : supabase.from("notices").select("id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published").is("artist_id", null)
+    ).order("date", { ascending: false });
+    const [artistResult, noticeResult] = await Promise.all([artistLookup, noticesQuery]);
     let resolvedArtistId: string | null = null;
     if (scopeArtistId) {
-      const { data: artist, error: artistError } = await supabase.from("artists").select("id,name,slug").eq("id", scopeArtistId).single();
-      if (artistError || !artist) {
+      const artist = artistResult?.data;
+      if (artistResult?.error || !artist) {
         setError("아티스트 정보를 불러오지 못했습니다.");
         setLoading(false);
         return;
@@ -144,9 +152,7 @@ export default function NoticeManager({ artistId: scopeArtistId }: { artistId?: 
       setScopeSlug("");
     }
     setArtistId(resolvedArtistId);
-    let query = supabase.from("notices").select("id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published").order("date", { ascending: false });
-    query = resolvedArtistId ? query.eq("artist_id", resolvedArtistId) : query.is("artist_id", null);
-    const { data, error: noticeError } = await query;
+    const { data, error: noticeError } = noticeResult;
     if (noticeError) {
       setError(noticeError.message);
       setLoading(false);

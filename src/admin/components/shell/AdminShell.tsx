@@ -45,10 +45,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [inboxCount, setInboxCount] = useState(0);
   const [toast, setToast] = useState("");
   const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem("admin-sidebar-collapsed") === "true"
-  );
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+
+  useEffect(() => {
+    setIsSidebarCollapsed(localStorage.getItem("admin-sidebar-collapsed") === "true");
+  }, []);
   const confirmNavigation = useCallback(() => {
     if (isGuideSandboxActive()) return true;
     if (!dirtyDrafts.current.size) return true;

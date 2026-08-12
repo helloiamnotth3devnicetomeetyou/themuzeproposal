@@ -70,26 +70,37 @@ export default function ArtistSchedulePage() {
 
   useEffect(() => {
     let cancelled = false;
+    const scheduleColumns = "id,event_date,start_time,category,title_ko,title_en,title_ja,description_ko,description_en,description_ja,location,location_ko,location_en,location_ja,link_url";
     async function load() {
       setLoading(true);
-      const artistResult = previewArtistId
-        ? { data: { id: previewArtistId, color: previewArtistColor }, error: null }
-        : await supabase.from("artists").select("id,color").eq("slug", artistid).eq("is_active", true).maybeSingle();
-      if (cancelled) return;
-      if (artistResult.error || !artistResult.data) {
-        setError(t.schedule.artistNotFound);
+      if (previewArtistId) {
+        setArtistColor(previewArtistColor || BRAND_PINK_HEX);
         setLoading(false);
         return;
       }
-      setArtistColor(artistResult.data.color || BRAND_PINK_HEX);
-      let result = await supabase
-        .from("artist_schedules")
-        .select("id,event_date,start_time,category,title_ko,title_en,title_ja,description_ko,description_en,description_ja,location,location_ko,location_en,location_ja,link_url")
-        .eq("artist_id", artistResult.data.id)
-        .order("event_date", { ascending: true })
-        .order("start_time", { ascending: true, nullsFirst: true })
-        .order("sort_order", { ascending: true });
-      if (result.error?.message.includes("location_ko")) {
+      // Single round trip: fetch the artist with its schedules embedded,
+      // instead of resolving the artist id first and querying schedules after.
+      const joined = await supabase
+        .from("artists")
+        .select(`id,color,artist_schedules(${scheduleColumns})`)
+        .eq("slug", artistid)
+        .eq("is_active", true)
+        .order("event_date", { foreignTable: "artist_schedules", ascending: true })
+        .order("start_time", { foreignTable: "artist_schedules", ascending: true, nullsFirst: true })
+        .order("sort_order", { foreignTable: "artist_schedules", ascending: true })
+        .maybeSingle();
+      if (cancelled) return;
+      if (joined.error?.message.includes("location_ko")) {
+        // Legacy schema fallback: re-fetch without location_ko in the rare
+        // case a target environment hasn't run that migration yet.
+        const artistResult = await supabase.from("artists").select("id,color").eq("slug", artistid).eq("is_active", true).maybeSingle();
+        if (cancelled) return;
+        if (artistResult.error || !artistResult.data) {
+          setError(t.schedule.artistNotFound);
+          setLoading(false);
+          return;
+        }
+        setArtistColor(artistResult.data.color || BRAND_PINK_HEX);
         const legacy = await supabase
           .from("artist_schedules")
           .select("id,event_date,start_time,category,title_ko,title_en,title_ja,description_ko,description_en,description_ja,location,link_url")
@@ -97,14 +108,24 @@ export default function ArtistSchedulePage() {
           .order("event_date", { ascending: true })
           .order("start_time", { ascending: true, nullsFirst: true })
           .order("sort_order", { ascending: true });
-        result = {
-          ...legacy,
-          data: legacy.data?.map((row) => ({ ...row, location_ko: row.location, location_en: null, location_ja: null })) ?? null,
-        } as typeof result;
+        if (cancelled) return;
+        if (legacy.error) setError(legacy.error.message.includes("artist_schedules") ? t.schedule.tableMissing : t.schedule.loadError);
+        else setEvents((legacy.data?.map((row) => ({ ...row, location_ko: row.location, location_en: null, location_ja: null })) ?? []) as ScheduleRow[]);
+        setLoading(false);
+        return;
       }
-      if (cancelled) return;
-      if (result.error) setError(result.error.message.includes("artist_schedules") ? t.schedule.tableMissing : t.schedule.loadError);
-      else setEvents((result.data ?? []) as ScheduleRow[]);
+      if (joined.error) {
+        setError(joined.error.message.includes("artist_schedules") ? t.schedule.tableMissing : t.schedule.artistNotFound);
+        setLoading(false);
+        return;
+      }
+      if (!joined.data) {
+        setError(t.schedule.artistNotFound);
+        setLoading(false);
+        return;
+      }
+      setArtistColor(joined.data.color || BRAND_PINK_HEX);
+      setEvents((joined.data.artist_schedules ?? []) as unknown as ScheduleRow[]);
       setLoading(false);
     }
     void load();
