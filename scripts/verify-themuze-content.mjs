@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { galleryAssetUrl } from "./gallery-asset-url.mjs";
 
 const env = Object.fromEntries((await readFile(path.join(process.cwd(), ".env.local"), "utf8"))
   .split(/\r?\n/)
@@ -52,7 +53,8 @@ assert.equal(importedSchedules.length, 10, "10 official schedules are required")
 assert(importedSchedules.every((item) => item.title_en && item.title_ja && item.location_en && item.location_ja && item.link_url), "official schedules need translations, location, and source link");
 for (const pair of expectedGalleryPairs) {
   const imageUrl = publishedGalleryPairs.get(pair).image_url;
-  const response = await fetch(imageUrl, { method: "HEAD" });
+  const url = galleryAssetUrl(imageUrl, env.NEXT_PUBLIC_SUPABASE_URL);
+  const response = await fetch(url, { method: "HEAD", redirect: "error", signal: AbortSignal.timeout(10_000) });
   assert(response.ok && response.headers.get("content-type")?.startsWith("image/"), `unreachable image: ${imageUrl}`);
 }
 
