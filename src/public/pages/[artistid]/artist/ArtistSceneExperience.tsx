@@ -135,24 +135,28 @@ export default function ArtistSceneExperience({
     return () => media.removeEventListener("change", sync);
   }, []);
   useEffect(() => {
-    if (initialMemberSlug)
-      void Promise.resolve().then(() =>
-        setSelectedMemberId(
-          members.find((member) => member.slug === initialMemberSlug)?.id ??
-            null,
-        ),
-      );
+    void Promise.resolve().then(() =>
+      setSelectedMemberId(
+        initialMemberSlug
+          ? (members.find((member) => member.slug === initialMemberSlug)?.id ??
+            null)
+          : null,
+      ),
+    );
   }, [initialMemberSlug, members]);
   useEffect(() => {
     const sync = () => {
       const slug = window.location.pathname.match(
         /^\/[^/]+\/artist\/([^/]+)\/?$/,
       )?.[1];
+      let decodedSlug = "";
+      try {
+        decodedSlug = slug ? decodeURIComponent(slug) : "";
+      } catch {
+        // Malformed browser history must behave like an unknown member route.
+      }
       setSelectedMemberId(
-        slug
-          ? (members.find((member) => member.slug === decodeURIComponent(slug))
-              ?.id ?? null)
-          : null,
+        members.find((member) => member.slug === decodedSlug)?.id ?? null,
       );
       setGroupFocused(false);
       setHoveredMemberId(null);
