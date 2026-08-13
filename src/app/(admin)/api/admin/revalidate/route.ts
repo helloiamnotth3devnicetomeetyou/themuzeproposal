@@ -8,7 +8,9 @@ import { createSupabaseServerClient } from "@/core/supabase/server";
 
 const cacheTag = z.enum([
   "artist-scene-data",
+  "public-artist-schedule",
   "public-artist-title",
+  "public-discography",
   "public-home-slides",
   "public-member-title",
   "public-navigation-artists",

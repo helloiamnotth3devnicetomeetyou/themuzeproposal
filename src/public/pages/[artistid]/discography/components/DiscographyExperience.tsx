@@ -3,7 +3,6 @@
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import dynamic from "next/dynamic";
-import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useLocale } from "@/core/providers/LocaleContext";
@@ -17,6 +16,7 @@ import {
   discographyCoverCandidate,
   galleryPreloadQueue,
 } from "../lib/cover-preload";
+import type { DiscographyData } from "../lib/types";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";
@@ -28,9 +28,16 @@ const MobileDiscographyPlayer = dynamic(() =>
   ),
 );
 
-export function DiscographyExperience() {
+export function DiscographyExperience({
+  artistSlug,
+  initialData = null,
+  initialLoadError = null,
+}: {
+  artistSlug: string;
+  initialData?: DiscographyData | null;
+  initialLoadError?: string | null;
+}) {
   const { locale, t } = useLocale();
-  const { artistid } = useParams<{ artistid: string }>();
   const preview = usePreviewPayload("album");
   const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
@@ -40,10 +47,12 @@ export function DiscographyExperience() {
     null,
   );
   const discography = useDiscographyController(
-    artistid,
+    artistSlug,
     audioRef,
     albumRailRef,
     preview,
+    initialData,
+    initialLoadError,
   );
   const coverCandidates = useMemo(
     () =>

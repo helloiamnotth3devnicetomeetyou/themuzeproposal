@@ -388,7 +388,7 @@ export function useDiscographyEditor({
     setSaving(false);
     setToast("변경사항을 저장했습니다.");
     discardDraftBackup();
-    await revalidatePublicCache("public-home-slides");
+    await revalidatePublicCache("public-home-slides", "public-discography");
     await loadAlbums(savedAlbumId);
   };
 
@@ -414,7 +414,7 @@ export function useDiscographyEditor({
     setDeleting(false);
     setDeleteOpen(false);
     setToast("앨범을 삭제했습니다.");
-    await revalidatePublicCache("public-home-slides");
+    await revalidatePublicCache("public-home-slides", "public-discography");
     await loadAlbums();
   };
 
@@ -440,7 +440,7 @@ export function useDiscographyEditor({
     setSortDirty(false);
     setSorting(false);
     setToast("앨범 순서를 저장했습니다.");
-    await revalidatePublicCache("public-home-slides");
+    await revalidatePublicCache("public-home-slides", "public-discography");
     await loadAlbums(draft?.id);
   };
   const reorderTrack = (targetId: string) => {

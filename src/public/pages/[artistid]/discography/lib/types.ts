@@ -1,6 +1,14 @@
 import type { Locale } from "@/core/providers/LocaleContext";
 import type { LocalizedText } from "@/core/i18n/localized";
 
+export interface DiscographyData {
+  artistNames: LocalizedText;
+  artistName: string;
+  albums: DiscographyAlbum[];
+  members: DiscographyMember[];
+  gallery: DiscographyGalleryItem[];
+}
+
 export interface DiscographyTrack {
   title: string;
   titles: LocalizedText;

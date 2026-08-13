@@ -15,6 +15,7 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import { savePlaybackMemory, syncAlbumQuery } from "../lib/playback-memory";
 import type {
   AlbumSort,
+  DiscographyData,
   DiscographyTab,
   RailPhase,
   SlideDirection,
@@ -31,6 +32,8 @@ export function useDiscographyController(
   audioRef: RefObject<HTMLAudioElement | null>,
   albumRailRef: RefObject<HTMLDivElement | null>,
   preview: AlbumPreviewPayload | null,
+  initialData: DiscographyData | null,
+  initialLoadError: string | null,
 ) {
   const { locale } = useLocale();
   const [transitioning, setTransitioning] = useState(false);
@@ -71,7 +74,13 @@ export function useDiscographyController(
     loadError,
     members,
     setAlbumIndex,
-  } = useDiscographyData(artistSlug, setCurrentTrackIndex, restoreTimeRef);
+  } = useDiscographyData(
+    artistSlug,
+    setCurrentTrackIndex,
+    restoreTimeRef,
+    initialData,
+    initialLoadError,
+  );
 
   const previewAlbum = useMemo(() => previewToAlbum(preview), [preview]);
   const effectiveAlbums = useMemo(() => {

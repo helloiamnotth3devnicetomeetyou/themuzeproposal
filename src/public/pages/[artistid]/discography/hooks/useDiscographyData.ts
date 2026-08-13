@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type MutableRefObject } from "react";
-import { useLocale } from "@/core/providers/LocaleContext";
+import { useEffect, useState, type MutableRefObject } from "react";
 import type { LocalizedText } from "@/core/i18n/localized";
-import { fetchDiscography } from "../lib/discography-data";
 import {
   readPlaybackMemory,
   requestedAlbumId,
@@ -11,6 +9,7 @@ import {
 } from "../lib/playback-memory";
 import type {
   DiscographyAlbum,
+  DiscographyData,
   DiscographyGalleryItem,
   DiscographyMember,
 } from "../lib/types";
@@ -20,98 +19,94 @@ export function useDiscographyData(
   artistSlug: string,
   setCurrentTrackIndex: (index: number) => void,
   restoreTimeRef: MutableRefObject<number>,
+  initialData: DiscographyData | null,
+  initialLoadError: string | null,
 ) {
-  const { t } = useLocale();
-  const [albums, setAlbums] = useState<DiscographyAlbum[]>([]);
-  const [members, setMembers] = useState<DiscographyMember[]>([]);
-  const [gallery, setGallery] = useState<DiscographyGalleryItem[]>([]);
-  const [artistName, setArtistName] = useState("");
-  const [artistNames, setArtistNames] = useState<LocalizedText | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [albums, setAlbums] = useState<DiscographyAlbum[]>(() =>
+    newestAlbumsFirst(initialData?.albums ?? []),
+  );
+  const [members, setMembers] = useState<DiscographyMember[]>(
+    () => initialData?.members ?? [],
+  );
+  const [gallery, setGallery] = useState<DiscographyGalleryItem[]>(
+    () => initialData?.gallery ?? [],
+  );
+  const [artistName, setArtistName] = useState(
+    () => initialData?.artistName ?? "",
+  );
+  const [artistNames, setArtistNames] = useState<LocalizedText | null>(
+    () => initialData?.artistNames ?? null,
+  );
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(initialLoadError);
   const [albumIndex, setAlbumIndex] = useState(0);
-  const loadErrorMessageRef = useRef(t.discography.loadError);
-
-  useEffect(() => {
-    loadErrorMessageRef.current = t.discography.loadError;
-  }, [t.discography.loadError]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      setLoading(true);
-      setLoadError(null);
-      setAlbums([]);
-      setMembers([]);
-      setGallery([]);
-      setArtistName("");
-      setArtistNames(null);
+    function load() {
+      const result = initialData;
+      const orderedAlbums = newestAlbumsFirst(result?.albums ?? []);
+      setLoading(false);
+      setLoadError(initialLoadError);
+      setAlbums(orderedAlbums);
+      setMembers(result?.members ?? []);
+      setGallery(result?.gallery ?? []);
+      setArtistName(result?.artistName ?? "");
+      setArtistNames(result?.artistNames ?? null);
       setAlbumIndex(0);
+      setCurrentTrackIndex(0);
+      restoreTimeRef.current = 0;
 
-      try {
-        const result = await fetchDiscography(artistSlug);
-        if (cancelled) return;
+      if (!result) return;
 
-        const orderedAlbums = newestAlbumsFirst(result.albums);
-        const requestedId = requestedAlbumId();
-        const remembered = readPlaybackMemory(artistSlug);
-        const requestedIndex = requestedId
-          ? orderedAlbums.findIndex((item) => item.id === requestedId)
-          : -1;
-        const rememberedIndex = remembered
-          ? orderedAlbums.findIndex((item) => item.id === remembered.albumId)
-          : -1;
-        const nextAlbumIndex =
-          requestedIndex >= 0
-            ? requestedIndex
-            : rememberedIndex >= 0
-              ? rememberedIndex
-              : 0;
-        const rememberedAlbumMatches = Boolean(
-          remembered &&
-          orderedAlbums[nextAlbumIndex]?.id === remembered.albumId,
-        );
-        const trackCount = orderedAlbums[nextAlbumIndex]?.tracks.length ?? 0;
-        const rememberedTrackIndex = rememberedAlbumMatches
-          ? Math.max(
-              0,
-              Math.min(
-                remembered?.trackIndex ?? 0,
-                Math.max(0, trackCount - 1),
-              ),
-            )
-          : 0;
+      setLoadError(null);
+      const requestedId = requestedAlbumId();
+      const remembered = readPlaybackMemory(artistSlug);
+      const requestedIndex = requestedId
+        ? orderedAlbums.findIndex((item) => item.id === requestedId)
+        : -1;
+      const rememberedIndex = remembered
+        ? orderedAlbums.findIndex((item) => item.id === remembered.albumId)
+        : -1;
+      const nextAlbumIndex =
+        requestedIndex >= 0
+          ? requestedIndex
+          : rememberedIndex >= 0
+            ? rememberedIndex
+            : 0;
+      const rememberedAlbumMatches = Boolean(
+        remembered && orderedAlbums[nextAlbumIndex]?.id === remembered.albumId,
+      );
+      const trackCount = orderedAlbums[nextAlbumIndex]?.tracks.length ?? 0;
+      const rememberedTrackIndex = rememberedAlbumMatches
+        ? Math.max(
+            0,
+            Math.min(remembered?.trackIndex ?? 0, Math.max(0, trackCount - 1)),
+          )
+        : 0;
 
-        setArtistName(result.artistName);
-        setArtistNames(result.artistNames);
-        setAlbums(orderedAlbums);
-        setMembers(result.members);
-        setGallery(result.gallery);
-        setAlbumIndex(nextAlbumIndex);
-        setCurrentTrackIndex(rememberedTrackIndex);
-        restoreTimeRef.current = rememberedAlbumMatches
-          ? Math.max(0, remembered?.currentTime ?? 0)
-          : 0;
-        if (orderedAlbums[nextAlbumIndex])
-          syncAlbumQuery(orderedAlbums[nextAlbumIndex].id);
-      } catch (error) {
-        if (!cancelled)
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : loadErrorMessageRef.current,
-          );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      if (cancelled) return;
+      setAlbumIndex(nextAlbumIndex);
+      setCurrentTrackIndex(rememberedTrackIndex);
+      restoreTimeRef.current = rememberedAlbumMatches
+        ? Math.max(0, remembered?.currentTime ?? 0)
+        : 0;
+      if (orderedAlbums[nextAlbumIndex])
+        syncAlbumQuery(orderedAlbums[nextAlbumIndex].id);
     }
 
-    void load();
+    load();
     return () => {
       cancelled = true;
     };
-  }, [artistSlug, restoreTimeRef, setCurrentTrackIndex]);
+  }, [
+    artistSlug,
+    initialData,
+    initialLoadError,
+    restoreTimeRef,
+    setCurrentTrackIndex,
+  ]);
 
   return {
     albumIndex,

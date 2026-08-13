@@ -2,7 +2,9 @@ import { guideSandboxFetch } from "@/core/supabase/guide-sandbox";
 
 export type PublicCacheTag =
   | "artist-scene-data"
+  | "public-artist-schedule"
   | "public-artist-title"
+  | "public-discography"
   | "public-home-slides"
   | "public-member-title"
   | "public-navigation-artists"
