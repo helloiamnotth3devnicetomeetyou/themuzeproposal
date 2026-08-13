@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, CircleAlert, Send, Trash2, Upload } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import TurnstileWidget, {
@@ -15,15 +15,32 @@ import {
   type AuditionSubmission,
 } from "@/core/auditions/types";
 import { useLocale } from "@/core/providers/LocaleContext";
+import {
+  readSessionDraft,
+  removeSessionDraft,
+  writeSessionDraft,
+} from "@/core/browser/session-draft";
 import protectStyles from "@/styles/(public)/pages/protect.module.css";
 import styles from "@/styles/(public)/pages/audition.module.css";
 import { auditionMessages } from "./messages";
 
 type Values = Record<string, string | string[]>;
 type StoredFile = Extract<AuditionAnswer, { path: string }>;
+type SavedDraft = {
+  owner: string;
+  values: Values;
+  removedFiles: string[];
+};
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
 const ALL_FILE_TYPES =
   "image/jpeg,image/png,image/webp,image/gif,video/mp4,audio/mpeg,application/pdf";
+
+function isDraftValue(value: unknown): value is string | string[] {
+  return (
+    typeof value === "string" ||
+    (Array.isArray(value) && value.every((item) => typeof item === "string"))
+  );
+}
 
 function isStoredFile(value: AuditionAnswer | undefined): value is StoredFile {
   return (
@@ -57,10 +74,19 @@ export default function CampaignFormClient({
   const { locale } = useLocale();
   const m = auditionMessages[locale];
   const initialAnswers = initialSubmission?.answers ?? {};
+  const draftStorageKey = `themuze:audition-draft:${campaign.id}:${initialSubmission?.id || "new"}`;
+  const [savedDraft] = useState(() =>
+    readSessionDraft<SavedDraft>(draftStorageKey),
+  );
+  const restoredValues =
+    savedDraft?.owner === userEmail ? savedDraft.values : null;
   const [values, setValues] = useState<Values>(() =>
     Object.fromEntries(
       fields.map((field) => {
-        const answer = initialAnswers[field.field_key];
+        const savedValue = restoredValues?.[field.field_key];
+        const answer = isDraftValue(savedValue)
+          ? savedValue
+          : initialAnswers[field.field_key];
         return [
           field.field_key,
           typeof answer === "string" || Array.isArray(answer)
@@ -73,21 +99,40 @@ export default function CampaignFormClient({
     ),
   );
   const [files, setFiles] = useState<Record<string, File | null>>({});
-  const [removedFiles, setRemovedFiles] = useState<Set<string>>(new Set());
+  const [removedFiles, setRemovedFiles] = useState<Set<string>>(
+    () =>
+      new Set(
+        savedDraft?.owner === userEmail
+          ? savedDraft.removedFiles?.filter((key) => typeof key === "string")
+          : [],
+      ),
+  );
+  const [draftDirty, setDraftDirty] = useState(Boolean(restoredValues));
   const [reviewing, setReviewing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [savedId, setSavedId] = useState("");
   const [error, setError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
-  const setValue = (key: string, value: string | string[]) =>
+  const setValue = (key: string, value: string | string[]) => {
     setValues((current) => ({ ...current, [key]: value }));
+    setDraftDirty(true);
+  };
   const existingFile = (field: AuditionFormField) => {
     const answer = initialAnswers[field.field_key];
     return !removedFiles.has(field.field_key) && isStoredFile(answer)
       ? answer
       : null;
   };
+
+  useEffect(() => {
+    if (!draftDirty) return;
+    writeSessionDraft(draftStorageKey, {
+      owner: userEmail,
+      values,
+      removedFiles: [...removedFiles],
+    });
+  }, [draftDirty, draftStorageKey, removedFiles, userEmail, values]);
 
   const validate = () => {
     for (const field of fields) {
@@ -164,6 +209,7 @@ export default function CampaignFormClient({
         body.submission as AuditionSubmission,
         Number(body.remaining) || 0,
       );
+      removeSessionDraft(draftStorageKey);
       setSavedId(body.submission.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : m.submitFailed);
@@ -244,6 +290,7 @@ export default function CampaignFormClient({
   return (
     <>
       <section className={protectStyles.form}>
+        {restoredValues && <p role="status">{m.draftRestored}</p>}
         {error && (
           <div className={protectStyles.error} role="alert">
             <CircleAlert aria-hidden="true" />
@@ -390,6 +437,7 @@ export default function CampaignFormClient({
                           ...current,
                           [field.field_key]: file,
                         }));
+                        if (file) setDraftDirty(true);
                         if (file)
                           setRemovedFiles((current) => {
                             const next = new Set(current);
@@ -421,6 +469,7 @@ export default function CampaignFormClient({
                             setRemovedFiles((current) =>
                               new Set(current).add(field.field_key),
                             );
+                            setDraftDirty(true);
                           }}
                         >
                           <Trash2 aria-hidden="true" />

@@ -47,6 +47,7 @@ type AuditionMessages = {
   reviewChanges: string;
   reviewSubmission: string;
   captchaRequired: string;
+  draftRestored: string;
   errors: Record<string, string>;
 };
 
@@ -103,6 +104,8 @@ export const auditionMessages: Record<Locale, AuditionMessages> = {
     reviewChanges: "수정 내용 검토",
     reviewSubmission: "제출 내용 검토",
     captchaRequired: "보안 확인을 완료해 주세요.",
+    draftRestored:
+      "작성 중이던 내용을 복원했습니다. 첨부 파일은 보안을 위해 다시 선택해 주세요.",
     errors: {
       REQUIRED_FIELD_MISSING: "필수 항목을 모두 입력해 주세요.",
       CAPTCHA_FAILED: "보안 확인에 실패했습니다. 다시 시도해 주세요.",
@@ -177,6 +180,8 @@ export const auditionMessages: Record<Locale, AuditionMessages> = {
     reviewChanges: "Review changes",
     reviewSubmission: "Review application",
     captchaRequired: "Please complete the security check.",
+    draftRestored:
+      "Your draft was restored. For security, please select attachments again.",
     errors: {
       REQUIRED_FIELD_MISSING: "Complete all required fields.",
       CAPTCHA_FAILED: "Security check failed. Please try again.",
@@ -251,9 +256,12 @@ export const auditionMessages: Record<Locale, AuditionMessages> = {
     reviewChanges: "変更内容を確認",
     reviewSubmission: "応募内容を確認",
     captchaRequired: "セキュリティ確認を完了してください。",
+    draftRestored:
+      "入力途中の内容を復元しました。添付ファイルは安全のため、もう一度選択してください。",
     errors: {
       REQUIRED_FIELD_MISSING: "必須項目をすべて入力してください。",
-      CAPTCHA_FAILED: "セキュリティ確認に失敗しました。もう一度お試しください。",
+      CAPTCHA_FAILED:
+        "セキュリティ確認に失敗しました。もう一度お試しください。",
       VALID_EMAIL_REQUIRED: "正しいメールアドレスを入力してください。",
       EMAIL_ACCOUNT_MISMATCH:
         "ログイン中の認証済みメールアドレスを使用してください。",
