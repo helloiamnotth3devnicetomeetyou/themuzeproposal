@@ -162,15 +162,21 @@ export function useArtistSceneData({
   }, [artistSlug]);
   useEffect(() => {
     if (!profilePreview && !memberPreview && initialData) {
-      loadedSceneIds.current = new Set(
-        initialData.scenes
-          .filter((scene) => !scene.member_ids?.length)
-          .map((scene) => scene.id),
-      );
-      setData(initialData);
-      setLoading(false);
-      setError("");
-      return;
+      let cancelled = false;
+      void Promise.resolve().then(() => {
+        if (cancelled) return;
+        loadedSceneIds.current = new Set(
+          initialData.scenes
+            .filter((scene) => !scene.member_ids?.length)
+            .map((scene) => scene.id),
+        );
+        setData(initialData);
+        setLoading(false);
+        setError("");
+      });
+      return () => {
+        cancelled = true;
+      };
     }
     void Promise.resolve().then(load);
   }, [initialData, load, memberPreview, profilePreview]);

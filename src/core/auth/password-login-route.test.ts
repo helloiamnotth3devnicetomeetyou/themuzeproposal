@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({
@@ -18,6 +19,9 @@ vi.mock("@/core/supabase/service", () => ({
 }));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: mocks.createServerClient,
+}));
+vi.mock("@/core/http/turnstile", () => ({
+  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 
 import { POST } from "./password-login-route";
@@ -31,7 +35,7 @@ const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
       "x-test-client-ip": "203.0.113.10",
       ...headers,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
   });
 
 describe("POST /api/auth/login", () => {
@@ -39,6 +43,7 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
     process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
+    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.getConfig.mockReturnValue({
       url: "https://project.supabase.co",
       anonKey: "anon",
@@ -135,7 +140,7 @@ describe("POST /api/auth/login", () => {
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
-  it("applies the limiter before authentication without Turnstile", async () => {
+  it("passes the verified Turnstile token to Supabase", async () => {
     const order: string[] = [];
     mocks.rpc.mockImplementationOnce(async () => {
       order.push("rate-limit");
@@ -152,6 +157,7 @@ describe("POST /api/auth/login", () => {
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "user@example.com",
       password: "password",
+      options: { captchaToken: "test-turnstile-token" },
     });
   });
 
@@ -168,6 +174,7 @@ describe("POST /api/auth/login", () => {
         body: JSON.stringify({
           email: "victim@example.com",
           password: "password",
+          turnstileToken: "test-turnstile-token",
         }),
       }),
     );

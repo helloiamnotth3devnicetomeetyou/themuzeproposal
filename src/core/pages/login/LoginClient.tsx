@@ -2,6 +2,8 @@
 
 import { useTheme } from "@/core/providers/ThemeContext";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { useRef } from "react";
+import type { TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import { useLoginForm } from "./hooks";
 import LoginFormPanel from "./components/LoginFormPanel";
 import SlideshowPanel from "./components/SlideshowPanel";
@@ -17,10 +19,12 @@ export default function LoginClient({
 }: LoginClientProps) {
   const { theme } = useTheme();
   const { locale } = useLocale();
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const formState = useLoginForm({
     redirectTo,
     oauthFailed,
     locale,
+    resetTurnstile: () => turnstileRef.current?.reset(),
   });
 
   return (
@@ -32,6 +36,7 @@ export default function LoginClient({
         {...formState}
         isDark={theme === "dark"}
         showLoginRequired={redirectTo !== "/"}
+        turnstileRef={turnstileRef}
       />
       <SlideshowPanel currentSlide={formState.currentSlide} />
     </div>

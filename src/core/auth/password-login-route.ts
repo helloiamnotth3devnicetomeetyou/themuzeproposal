@@ -6,12 +6,14 @@ import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { verifyTurnstileToken } from "@/core/http/turnstile";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(1).max(1024),
+  turnstileToken: z.string().min(1).max(4096),
 });
 
 type PendingCookie = {
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return jsonError("INVALID_CREDENTIALS", 401);
   }
-  const { email, password } = parsed.data;
+  const { email, password, turnstileToken } = parsed.data;
 
   const { url, anonKey } = getPublicSupabaseConfig();
   const limiterSecret =
@@ -62,6 +64,11 @@ export async function POST(request: NextRequest) {
   const ipHash = hashIdentifier(`ip:${limiterIp}`, limiterSecret);
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
+
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
+    action: "login",
+  });
+  if (!captchaOk) return jsonError("CAPTCHA_FAILED", 400);
 
   const { data: rateData, error: rateError } = await limiterClient.rpc(
     "consume_login_rate_limit",
@@ -94,8 +101,11 @@ export async function POST(request: NextRequest) {
   const { error: authError } = await authClient.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken: turnstileToken },
   });
 
+  if (authError?.code === "captcha_failed")
+    return jsonError("CAPTCHA_FAILED", 400);
   if (authError) return jsonError("INVALID_CREDENTIALS", 401);
 
   const { error: resetError } = await limiterClient.rpc(

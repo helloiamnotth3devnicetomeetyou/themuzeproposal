@@ -46,7 +46,7 @@ describe("signIn", () => {
     );
 
     await expect(
-      signIn("user@example.com", "password"),
+      signIn("user@example.com", "password", "captcha-token"),
     ).rejects.toMatchObject({
       name: "AuthUserError",
       code: "RATE_LIMITED",
@@ -65,7 +65,7 @@ describe("signIn", () => {
     );
 
     await expect(
-      signIn("user@example.com", "password"),
+      signIn("user@example.com", "password", "captcha-token"),
     ).rejects.toMatchObject({
       code: "SERVICE_UNAVAILABLE",
       retryAfterSeconds: undefined,
@@ -87,7 +87,7 @@ describe("signUp", () => {
     });
 
     await expect(
-      signUp("user@example.com", "ValidPass123!"),
+      signUp("user@example.com", "ValidPass123!", "captcha-token"),
     ).rejects.toMatchObject({
       code: "SIGNUP_FAILED",
     });
@@ -101,7 +101,7 @@ describe("signUp", () => {
     });
 
     await expect(
-      signUp("user@example.com", "ValidPass123!"),
+      signUp("user@example.com", "ValidPass123!", "captcha-token"),
     ).rejects.toMatchObject({ code: "RATE_LIMITED" });
   });
 });
