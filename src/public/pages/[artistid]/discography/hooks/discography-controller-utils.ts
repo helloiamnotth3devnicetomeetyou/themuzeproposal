@@ -21,6 +21,7 @@ export function previewToAlbum(
     titleImage: preview.album.hero_image_url || undefined,
     color: preview.album.color,
     tracks: preview.album.tracks.map((track) => ({
+      id: track.id,
       title: track.title,
       titles: {
         ko: track.title_ko ?? track.title,
