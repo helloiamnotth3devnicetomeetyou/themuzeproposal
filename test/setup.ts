@@ -2,7 +2,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+});
 
 if (typeof window !== "undefined") {
   Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });

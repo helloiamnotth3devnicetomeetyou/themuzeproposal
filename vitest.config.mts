@@ -16,6 +16,7 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     pool: "threads",
+    maxWorkers: 2,
     include: ["src/**/*.test.{ts,tsx}", "test/**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", "e2e/**", ".next/**"],
     coverage: {
