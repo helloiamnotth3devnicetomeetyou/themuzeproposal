@@ -41,7 +41,15 @@ export function managedAssetFromUrl(url: string): { bucket: PublicAssetBucket; p
   if (target.origin !== base.origin) return null;
   const prefix = `${base.pathname.replace(/\/+$/, "")}/`;
   if (!target.pathname.startsWith(prefix)) return null;
-  const rest = decodeURIComponent(target.pathname.slice(prefix.length));
+  const encodedRest = target.pathname.slice(prefix.length);
+  if (/%2f|%5c/i.test(encodedRest)) return null;
+  let rest: string;
+  try {
+    rest = decodeURIComponent(encodedRest);
+  } catch {
+    return null;
+  }
+  if (/[\u0000-\u001F\u007F]/.test(rest)) return null;
   const slash = rest.indexOf("/");
   if (slash <= 0) return null;
   const bucket = rest.slice(0, slash);

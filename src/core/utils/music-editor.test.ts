@@ -32,5 +32,6 @@ describe("music editor utilities", () => {
     expect(managedAssetFromUrl("https://cdn.example.com/track-assets/a%20b/file.mp3"))
       .toEqual({ bucket: "track-assets", path: "a b/file.mp3" });
     expect(managedAssetFromUrl("https://example.com/file.mp3")).toBeNull();
+    expect(managedAssetFromUrl("https://cdn.example.com/track-assets/%E0%A4%A")).toBeNull();
   });
 });
