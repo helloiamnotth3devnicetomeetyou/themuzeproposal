@@ -29,3 +29,19 @@ it("accepts a localhost token in development", async () => {
     ),
   ).resolves.toBe(true);
 });
+
+it("rejects oversized tokens without calling Turnstile", async () => {
+  vi.stubEnv("NODE_ENV", "development");
+  vi.stubEnv("TURNSTILE_SECRET_KEY", "test-secret");
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+
+  await expect(
+    verifyTurnstileToken(
+      "x".repeat(4097),
+      new NextRequest("http://localhost:3000/api/contact-inquiries"),
+      { action: "contact_inquiry" },
+    ),
+  ).resolves.toBe(false);
+  expect(fetchMock).not.toHaveBeenCalled();
+});

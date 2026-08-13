@@ -5,6 +5,7 @@ import { clientIp } from "@/core/http/client-ip";
 
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const VERIFY_TIMEOUT_MS = 5_000;
+const MAX_TOKEN_LENGTH = 4_096;
 
 type TurnstileExpectation = {
   action: string;
@@ -42,7 +43,13 @@ export async function verifyTurnstileToken(
   expectation: TurnstileExpectation,
 ): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  if (!secret || !token || !expectation.action) return false;
+  if (
+    !secret ||
+    !token ||
+    token.length > MAX_TOKEN_LENGTH ||
+    !expectation.action
+  )
+    return false;
 
   const body = new URLSearchParams({ secret, response: token });
   const ip = clientIp(request);
