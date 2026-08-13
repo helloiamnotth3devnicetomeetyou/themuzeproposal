@@ -16,7 +16,10 @@ export async function createSupabaseServerClient() {
       setAll: (cookiesToSet) => {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            cookieStore.set(name, value, {
+              ...options,
+              secure: process.env.NODE_ENV === "production",
+            });
           });
         } catch {
           // Server Components cannot always write cookies. proxy.ts refreshes

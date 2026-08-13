@@ -110,7 +110,10 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({ ok: true });
   pendingCookies.forEach(({ name, value, options }) =>
-    response.cookies.set(name, value, options),
+    response.cookies.set(name, value, {
+      ...options,
+      secure: process.env.NODE_ENV === "production",
+    }),
   );
   response.headers.set("Cache-Control", "no-store");
   return response;

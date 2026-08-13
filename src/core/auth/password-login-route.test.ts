@@ -229,6 +229,19 @@ describe("POST /api/auth/login", () => {
     expect(response.cookies.get("sb-session")?.value).toBe("token");
   });
 
+  it("marks session cookies secure in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null })
+      .mockResolvedValueOnce({ data: null, error: null });
+
+    const response = await POST(
+      request({ email: "user@example.com", password: "password" }),
+    );
+
+    expect(response.headers.get("set-cookie")).toContain("Secure");
+  });
+
   it("fails closed when the server-only rate limiter client is unavailable", async () => {
     mocks.createServiceClient.mockReturnValueOnce(null);
     const response = await POST(
