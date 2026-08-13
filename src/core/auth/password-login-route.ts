@@ -6,7 +6,6 @@ import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { verifyTurnstileToken } from "@/core/http/turnstile";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -64,11 +63,6 @@ export async function POST(request: NextRequest) {
   const ipHash = hashIdentifier(`ip:${limiterIp}`, limiterSecret);
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
-
-  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
-    action: "login",
-  });
-  if (!captchaOk) return jsonError("CAPTCHA_FAILED", 400);
 
   const { data: rateData, error: rateError } = await limiterClient.rpc(
     "consume_login_rate_limit",

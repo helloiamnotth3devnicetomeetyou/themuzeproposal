@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
-  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({
@@ -20,10 +19,6 @@ vi.mock("@/core/supabase/service", () => ({
 vi.mock("@supabase/ssr", () => ({
   createServerClient: mocks.createServerClient,
 }));
-vi.mock("@/core/http/turnstile", () => ({
-  verifyTurnstileToken: mocks.verifyTurnstileToken,
-}));
-
 import { POST } from "./password-login-route";
 
 const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
@@ -43,7 +38,6 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
     process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
-    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.getConfig.mockReturnValue({
       url: "https://project.supabase.co",
       anonKey: "anon",
@@ -140,7 +134,7 @@ describe("POST /api/auth/login", () => {
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
-  it("passes the verified Turnstile token to Supabase", async () => {
+  it("passes the single-use Turnstile token only to Supabase", async () => {
     const order: string[] = [];
     mocks.rpc.mockImplementationOnce(async () => {
       order.push("rate-limit");
