@@ -549,10 +549,12 @@ export async function DELETE(request: NextRequest) {
     "complete_r2_asset_deletions",
     reservationArgs,
   );
-  if (completionError)
+  if (completionError) {
+    await releaseReservation();
     return errorResponse("SERVICE_UNAVAILABLE", 503, {
       reason: "asset_reservation_finalize_failed",
     });
+  }
   const { error: auditError } = await service.from("admin_audit_logs").insert(
     paths.map((path) => ({
       actor_id: user.id,
