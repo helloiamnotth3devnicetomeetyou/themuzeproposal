@@ -39,6 +39,13 @@ function canonicalHttpUrl(value: string) {
   }
 }
 
+function validDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && !Number.isNaN(parsed.valueOf())
+    && parsed.toISOString().slice(0, 10) === value;
+}
+
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
 
@@ -77,8 +84,7 @@ export async function POST(request: NextRequest) {
 
   if (!artistId || !REPORT_TYPES.has(reportType) || title.length < 1 || title.length > 120
     || content.length < 1 || content.length > 5000 || !PLATFORMS.has(platform)
-    || !postUrl || !/^\d{4}-\d{2}-\d{2}$/.test(postedAt)
-    || Number.isNaN(Date.parse(`${postedAt}T00:00:00Z`)) || postedAt > new Date().toISOString().slice(0, 10)
+    || !postUrl || !validDate(postedAt) || postedAt > new Date().toISOString().slice(0, 10)
     || authorName.length < 1 || authorName.length > 120 || postIp.length > 64
     || !confirmed || files.length < 1 || files.length > MAX_FILES) {
     return errorResponse("INVALID_REQUEST", 400);

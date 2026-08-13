@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
     || (accountEmail && email !== accountEmail)
     || message.length < 1
     || message.length > 5000
-    || (category === "business" && (companyName.length < 1 || companyName.length > 120 || phone.length < 1 || phone.length > 40))) {
+    || phone.length > 40
+    || (category === "business" && (companyName.length < 1 || companyName.length > 120 || phone.length < 1))) {
     return errorResponse("INVALID_REQUEST", 400);
   }
 

@@ -3,6 +3,8 @@ import { isAdmin } from "@/core/auth/admin-auth";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { createSignedDownloadUrl } from "@/core/storage/r2";
+import { boundedFileName } from "@/core/uploads/file-signature";
+import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { isSafeStoragePath } from "@/core/uploads/service-storage";
 
@@ -33,10 +35,19 @@ async function isReferencedAttachment(
     const { data } = await supabase.from("protect_report_attachments").select("id").eq("file_path", path).maybeSingle();
     return Boolean(data);
   }
-  // audition-attachments: paths live inside audition_submissions.answers (jsonb), not a
-  // flat column, so we fall back to the same admin-only gate get_admin_audition_submissions
-  // already enforces for anyone who can see these paths in the first place.
-  return true;
+  const service = createServiceRoleClient();
+  if (!service) return false;
+  const { data, error } = await service.from("audition_submissions").select("answers");
+  if (error) return false;
+  // ponytail: O(n) answer scan; move this to a JSONB path RPC if submission volume makes it measurable.
+  return (data ?? []).some((row) => {
+    const answers = row.answers;
+    if (!answers || typeof answers !== "object" || Array.isArray(answers)) return false;
+    return Object.values(answers as Record<string, unknown>).some((answer) => (
+      answer && typeof answer === "object" && !Array.isArray(answer)
+      && (answer as { path?: unknown }).path === path
+    ));
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +61,7 @@ export async function POST(request: NextRequest) {
   const body = await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null) as { bucket?: unknown; path?: unknown; downloadName?: unknown } | null;
   const bucket = typeof body?.bucket === "string" ? body.bucket : "";
   const path = typeof body?.path === "string" ? body.path : "";
-  const downloadName = typeof body?.downloadName === "string" ? body.downloadName.slice(0, 255) : undefined;
+  const downloadName = typeof body?.downloadName === "string" ? boundedFileName(body.downloadName) : undefined;
   if (!PRIVATE_BUCKETS.includes(bucket as PrivateBucket) || !isSafeStoragePath(path)) {
     return errorResponse("INVALID_REQUEST", 400);
   }

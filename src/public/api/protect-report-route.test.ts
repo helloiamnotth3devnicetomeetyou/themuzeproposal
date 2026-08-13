@@ -26,7 +26,7 @@ vi.mock("@/core/http/turnstile", () => ({ verifyTurnstileToken: mocks.verifyTurn
 
 import { POST } from "./protect-report-route";
 
-function validRequest(postUrl = "https://example.com/post", fileName = "proof.png") {
+function validRequest(postUrl = "https://example.com/post", fileName = "proof.png", postedAt = "2026-01-01") {
   const form = new FormData();
   form.set("artistId", "artist-1");
   form.set("reportType", "defamation");
@@ -34,7 +34,7 @@ function validRequest(postUrl = "https://example.com/post", fileName = "proof.pn
   form.set("content", "Report details");
   form.set("platform", "instagram");
   form.set("postUrl", postUrl);
-  form.set("postedAt", "2026-01-01");
+  form.set("postedAt", postedAt);
   form.set("authorName", "Author");
   form.set("confirmation", "true");
   form.set("turnstileToken", "test-turnstile-token");
@@ -70,6 +70,13 @@ describe("POST /api/protect-reports", () => {
 
   it("rejects an oversized post URL", async () => {
     const response = await POST(validRequest(`https://example.com/${"a".repeat(2048)}`));
+
+    expect(response.status).toBe(400);
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects an impossible calendar date", async () => {
+    const response = await POST(validRequest("https://example.com/post", "proof.png", "2026-02-31"));
 
     expect(response.status).toBe(400);
     expect(mocks.upload).not.toHaveBeenCalled();

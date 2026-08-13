@@ -110,6 +110,18 @@ describe("POST /api/contact-inquiries", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
+  it("rejects an overlong phone number for general inquiries", async () => {
+    const form = validForm();
+    form.set("category", "general");
+    form.set("inquiryType", "account");
+    form.set("phone", "1".repeat(41));
+    const response = await POST(request(form));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "INVALID_REQUEST" });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
   it("stops rate-limited submissions before uploading or inserting", async () => {
     mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, remaining: 0, retryAfter: 90 });
     const nextRequest = request(validForm());
