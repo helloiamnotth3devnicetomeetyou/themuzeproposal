@@ -166,34 +166,26 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       is_active: true,
       is_primary_label: field.is_primary_label,
     }));
-    const results = await Promise.all([
-      supabase
-        .from("audition_campaigns")
-        .update({
-          title: campaign.title.trim(),
-          description:
-            campaign.description_i18n?.ko?.trim() || campaign.description,
-          description_i18n: campaign.description_i18n ?? {
-            ko: campaign.description,
-          },
-          is_active: campaign.is_active,
-          starts_at: campaign.starts_at
-            ? new Date(campaign.starts_at).toISOString()
-            : null,
-          ends_at: campaign.ends_at
-            ? new Date(campaign.ends_at).toISOString()
-            : null,
-        })
-        .eq("id", campaignId),
-      supabase.from("audition_form_fields").upsert(normalized),
-      removed.length
-        ? supabase
-            .from("audition_form_fields")
-            .update({ is_active: false })
-            .in("id", removed)
-        : Promise.resolve({ error: null }),
-    ]);
-    const error = results.find((result) => result.error)?.error;
+    const { error } = await supabase.rpc("save_audition_campaign", {
+      p_campaign: {
+        id: campaignId,
+        title: campaign.title.trim(),
+        description:
+          campaign.description_i18n?.ko?.trim() || campaign.description,
+        description_i18n: campaign.description_i18n ?? {
+          ko: campaign.description,
+        },
+        is_active: campaign.is_active,
+        starts_at: campaign.starts_at
+          ? new Date(campaign.starts_at).toISOString()
+          : null,
+        ends_at: campaign.ends_at
+          ? new Date(campaign.ends_at).toISOString()
+          : null,
+      },
+      p_fields: normalized,
+      p_removed_ids: removed,
+    });
     setMessage(error?.message || "저장했습니다.");
     if (!error) {
       setFields(normalized);
