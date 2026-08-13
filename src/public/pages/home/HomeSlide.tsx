@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, Headphones } from "lucide-react";
-import { type CSSProperties, type ComponentType, type ReactNode, type SVGProps } from "react";
+import { useState, type CSSProperties, type ComponentType, type ReactNode, type SVGProps } from "react";
 import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText, type Locale } from "@/core/i18n/localized";
 import { spotifyAlbumHref } from "@/core/http/spotify";
@@ -35,6 +35,7 @@ export default function HomeSlide({
   exploreLabel, listenLabel, openStreamingSlideId, readyVideoSlideIds, failedVideoSlideIds,
   shouldPreload, onStreamingToggle, onStreamingClose, onVideoReady, onVideoFailure, onFirstImageLoaded,
 }: Props) {
+  const [isVideoFrameReady, setIsVideoFrameReady] = useState(false);
   const isActive = index === currentSlide;
   const isLeaving = index === previousSlide;
   const isVisible = isActive || isLeaving;
@@ -58,11 +59,11 @@ export default function HomeSlide({
     {shouldLoadMedia && slide.videoUrl && !failedVideoSlideIds.has(slide.id) && <video
       className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
       src={slide.videoUrl}
-      poster={slide.imageUrl || undefined}
+      poster={isVideoFrameReady ? undefined : slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
       muted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
-      onLoadedData={(event) => { onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
+      onLoadedData={(event) => { setIsVideoFrameReady(true); onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
       onCanPlay={(event) => { if (isActive && event.currentTarget.paused) void event.currentTarget.play().catch(() => undefined); }}
       onError={() => onVideoFailure(slide.id)}
       style={slide.imageUrl ? undefined : { opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
