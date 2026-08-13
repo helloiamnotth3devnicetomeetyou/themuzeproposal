@@ -8,12 +8,14 @@ import {
 } from "@aws-sdk/client-s3";
 import type { NodeJsRuntimeStreamingBlobPayloadOutputTypes } from "@smithy/types";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PUBLIC_BUCKETS } from "./public-url";
 
 const PRIVATE_BUCKETS = new Set([
   "contact-attachments",
   "protect-evidence",
   "audition-attachments",
 ]);
+const KNOWN_BUCKETS = new Set([...PUBLIC_BUCKETS, ...PRIVATE_BUCKETS]);
 const DELETE_CHUNK_SIZE = 1000;
 
 let client: S3Client | null = null;
@@ -37,6 +39,7 @@ function getClient() {
  * physical R2 bucket + object key. Logical bucket names are kept as a key prefix so the
  * rest of the app can keep treating them as independent buckets. */
 function resolveLocation(bucket: string, path: string) {
+  if (!KNOWN_BUCKETS.has(bucket)) return null;
   const r2Bucket = PRIVATE_BUCKETS.has(bucket)
     ? process.env.R2_PRIVATE_BUCKET?.trim()
     : process.env.R2_PUBLIC_BUCKET?.trim();
@@ -146,17 +149,16 @@ export async function deleteObjects(
   paths: string[],
 ): Promise<{ error: true } | { error: false }> {
   const s3 = getClient();
-  const r2Bucket = PRIVATE_BUCKETS.has(bucket)
-    ? process.env.R2_PRIVATE_BUCKET?.trim()
-    : process.env.R2_PUBLIC_BUCKET?.trim();
-  if (!s3 || !r2Bucket || !paths.length) return { error: !s3 || !r2Bucket };
+  const location = s3 && resolveLocation(bucket, "");
+  if (!s3 || !location || !paths.length)
+    return { error: !s3 || !location };
   const keys = paths.map((path) => `${bucket}/${path.replace(/^\/+/, "")}`);
   try {
     for (let i = 0; i < keys.length; i += DELETE_CHUNK_SIZE) {
       const chunk = keys.slice(i, i + DELETE_CHUNK_SIZE);
       const response = await s3.send(
         new DeleteObjectsCommand({
-          Bucket: r2Bucket,
+          Bucket: location.r2Bucket,
           Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
         }),
       );

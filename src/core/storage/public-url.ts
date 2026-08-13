@@ -1,4 +1,4 @@
-const PUBLIC_BUCKETS = [
+export const PUBLIC_BUCKETS = [
   "artist-assets",
   "album-covers",
   "track-assets",

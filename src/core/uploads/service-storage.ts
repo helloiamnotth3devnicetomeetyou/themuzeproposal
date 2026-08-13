@@ -14,6 +14,7 @@ export function isSafeStoragePath(path: string) {
     path.length >= 3 &&
     path.length <= 500 &&
     !path.includes("..") &&
+    !path.split("/").some((segment) => segment === "." || segment === "..") &&
     /^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$/.test(path)
   );
 }

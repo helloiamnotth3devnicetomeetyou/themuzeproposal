@@ -45,4 +45,11 @@ describe("deleteObjects", () => {
       error: true,
     });
   });
+
+  it("rejects unknown buckets before issuing an S3 request", async () => {
+    await expect(deleteObjects("unknown", ["asset.png"])).resolves.toEqual({
+      error: true,
+    });
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
 });

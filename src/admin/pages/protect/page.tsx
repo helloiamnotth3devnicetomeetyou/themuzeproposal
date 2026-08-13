@@ -20,6 +20,7 @@ import CustomSelect from "@/core/components/form/CustomSelect";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
 import { fetchSignedFileUrl } from "@/admin/utils/signed-file-url";
+import { safeHref } from "@/core/http/safe-href";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 
@@ -420,9 +421,9 @@ export default function ProtectAdminPage() {
               <a
                 className={styles.sourceLink}
                 data-tour-id="protect-source"
-                href={viewing.post_url}
+                href={safeHref(viewing.post_url)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 <Link aria-hidden="true" />
                 <span>
