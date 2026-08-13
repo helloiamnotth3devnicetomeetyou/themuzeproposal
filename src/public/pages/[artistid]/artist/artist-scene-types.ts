@@ -27,8 +27,6 @@ export type Member = {
   role_ko: string | null;
   role_en: string | null;
   role_ja: string | null;
-  birth: string | null;
-  mbti: string | null;
   image_url: string | null;
   color: string | null;
   bio_ko: string | null;

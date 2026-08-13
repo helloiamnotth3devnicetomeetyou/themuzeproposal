@@ -6,7 +6,7 @@ import { normalizeOutline, type ArtistScene } from "@/core/utils/artist-scenes";
 import type { Artist, ArtistSceneData, Member } from "./artist-scene-types";
 
 const memberSelect =
-  "id,slug,name,eng_name,name_ko,name_en,name_ja,role_ko,role_en,role_ja,birth,mbti,image_url,color,bio_ko,bio_en,bio_ja,sort_order";
+  "id,slug,name,eng_name,name_ko,name_en,name_ja,role_ko,role_en,role_ja,image_url,color,bio_ko,bio_en,bio_ja,sort_order";
 const sceneSelect =
   "id,artist_id,title,title_ko,title_en,title_ja,link_url,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(member_id)";
 const regionSelect = "id,member_id,outline,mask_url,sort_order";

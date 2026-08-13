@@ -47,8 +47,7 @@ export async function getPublicHomeSlides(
     .from("home_hero_slides")
     .select("id, album_id, sort_order, video_url")
     .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .limit(HOME_SLIDE_LIMIT);
+    .order("sort_order", { ascending: true });
 
   if (heroSlideError) throw heroSlideError;
 
@@ -125,5 +124,5 @@ export async function getPublicHomeSlides(
         },
       },
     ];
-  });
+  }).slice(0, HOME_SLIDE_LIMIT);
 }

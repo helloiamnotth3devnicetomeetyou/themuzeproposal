@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/core/supabase/client";
 
 export type ContactCategory = "general" | "business";
@@ -42,11 +42,14 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     Record<ContactCategory, number>
   >({ general: 0, business: 0 });
   const [error, setError] = useState("");
+  const requestRef = useRef<AbortController | null>(null);
 
   const fetchInquiries = useCallback(async () => {
+    requestRef.current?.abort();
     setLoading(true);
     setError("");
     const controller = new AbortController();
+    requestRef.current = controller;
     const timeout = window.setTimeout(() => controller.abort(), 10_000);
     let request = supabase
       .from("contact_inquiries")
@@ -76,9 +79,10 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
             .select("id", { count: "exact", head: true })
             .eq("category", "business")
             .abortSignal(controller.signal),
-        ]);
+      ]);
       const queryError = fetchError || general.error || business.error;
       if (queryError) throw queryError;
+      if (requestRef.current !== controller) return;
       setInquiries(data ?? []);
       setTotal(count ?? 0);
       setCategoryCounts({
@@ -86,6 +90,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
         business: business.count ?? 0,
       });
     } catch (fetchError) {
+      if (requestRef.current !== controller) return;
       setError(
         fetchError instanceof Error && fetchError.name === "AbortError"
           ? "문의 목록을 불러오는 데 시간이 너무 오래 걸립니다."
@@ -95,7 +100,10 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
       );
     } finally {
       window.clearTimeout(timeout);
-      setLoading(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
   }, [category, debouncedQuery, filter, page]);
 
@@ -110,7 +118,10 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     const timer = window.setTimeout(() => {
       void fetchInquiries();
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestRef.current?.abort();
+    };
   }, [fetchInquiries]);
 
   return {

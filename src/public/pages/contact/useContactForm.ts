@@ -1,6 +1,11 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import {
   ALLOWED_EXTENSIONS,
@@ -48,6 +53,7 @@ export function useContactForm({
   const [error, setError] = useState(EMPTY_ERROR);
   const [errorFieldId, setErrorFieldId] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const submissionId = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const isBusiness = category === "business";
   const draft = drafts[category];
@@ -201,8 +207,10 @@ export function useContactForm({
   };
   const submitInquiry = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     clearFieldError();
     if (!validate()) return;
+    const requestId = ++submissionId.current;
     setSubmitting(true);
     try {
       const payload = new FormData();
@@ -225,12 +233,14 @@ export function useContactForm({
         remaining?: number;
         code?: string;
       };
+      if (requestId !== submissionId.current) return;
       if (!response.ok || !result.id)
         throw new Error(result.code || "SUBMISSION_FAILED");
       if (typeof result.remaining === "number") setRemaining(result.remaining);
       setSubmittedId(result.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
+      if (requestId !== submissionId.current) return;
       const code =
         submitError instanceof Error
           ? submitError.message
@@ -242,7 +252,7 @@ export function useContactForm({
       setTurnstileToken("");
       resetTurnstile?.();
     } finally {
-      setSubmitting(false);
+      if (requestId === submissionId.current) setSubmitting(false);
     }
   };
   const resetForm = () => {
