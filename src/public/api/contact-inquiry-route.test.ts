@@ -171,14 +171,16 @@ describe("POST /api/contact-inquiries", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
-  it("rejects exhausted attempt budgets before parsing the body", async () => {
+  it("rejects exhausted attempt budgets before validating captcha", async () => {
     mocks.consumeAttemptRateLimit.mockResolvedValueOnce({
       error: false,
       allowed: false,
       remaining: 0,
       retryAfter: 30,
     });
-    const response = await POST(request(new URLSearchParams({ invalid: "body" })));
+    const response = await POST(
+      request(new URLSearchParams({ turnstileToken: "test-turnstile-token" })),
+    );
     expect(response.status).toBe(429);
     expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();

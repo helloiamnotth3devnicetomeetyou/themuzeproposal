@@ -49,6 +49,21 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
+  let formData: FormData;
+  try {
+    const parsed = await parseFormDataWithinLimit(
+      request,
+      MAX_FILE_BYTES + 64 * 1024,
+    );
+    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
+    formData = parsed;
+  } catch {
+    return errorResponse("INVALID_REQUEST", 400);
+  }
+
+  const turnstileToken = textField(formData, "turnstileToken");
+  if (!turnstileToken) return errorResponse("CAPTCHA_FAILED", 400);
+
   const sessionClient = await createSupabaseServerClient();
   const {
     data: { user },
@@ -63,19 +78,6 @@ export async function POST(request: NextRequest) {
   if (!attempt.allowed)
     return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
 
-  let formData: FormData;
-  try {
-    const parsed = await parseFormDataWithinLimit(
-      request,
-      MAX_FILE_BYTES + 64 * 1024,
-    );
-    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
-    formData = parsed;
-  } catch {
-    return errorResponse("INVALID_REQUEST", 400);
-  }
-
-  const turnstileToken = textField(formData, "turnstileToken");
   const captchaOk = await verifyTurnstileToken(turnstileToken, request);
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
