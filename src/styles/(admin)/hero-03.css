@@ -229,7 +229,6 @@
     0 28px 70px var(--alpha-000000-34),
     0 0 0 5px var(--alpha-fc6fcf-11);
   cursor: grabbing;
-  transform: rotate(1.2deg) scale(1.025);
 }
 
 .hero-slide-card.is-overlay .hero-slide-frame {
