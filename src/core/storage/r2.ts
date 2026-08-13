@@ -9,7 +9,11 @@ import {
 import type { NodeJsRuntimeStreamingBlobPayloadOutputTypes } from "@smithy/types";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const PRIVATE_BUCKETS = new Set(["contact-attachments", "protect-evidence", "audition-attachments"]);
+const PRIVATE_BUCKETS = new Set([
+  "contact-attachments",
+  "protect-evidence",
+  "audition-attachments",
+]);
 const DELETE_CHUNK_SIZE = 1000;
 
 let client: S3Client | null = null;
@@ -51,16 +55,19 @@ export async function uploadObject(options: {
   const location = s3 && resolveLocation(options.bucket, options.path);
   if (!s3 || !location) return { error: true };
   try {
-    const body = options.body instanceof Blob
-      ? new Uint8Array(await options.body.arrayBuffer())
-      : options.body;
-    await s3.send(new PutObjectCommand({
-      Bucket: location.r2Bucket,
-      Key: location.key,
-      Body: body,
-      ContentType: options.contentType,
-      CacheControl: options.cacheControl,
-    }));
+    const body =
+      options.body instanceof Blob
+        ? new Uint8Array(await options.body.arrayBuffer())
+        : options.body;
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: location.r2Bucket,
+        Key: location.key,
+        Body: body,
+        ContentType: options.contentType,
+        CacheControl: options.cacheControl,
+      }),
+    );
     return { error: false };
   } catch {
     return { error: true };
@@ -78,44 +85,66 @@ export async function createSignedUploadUrl(
   const location = s3 && resolveLocation(bucket, path);
   if (!s3 || !location) return null;
   try {
-    return await getSignedUrl(s3, new PutObjectCommand({
-      Bucket: location.r2Bucket,
-      Key: location.key,
-      ContentType: contentType,
-      ContentLength: contentLength,
-    }), { expiresIn });
+    return await getSignedUrl(
+      s3,
+      new PutObjectCommand({
+        Bucket: location.r2Bucket,
+        Key: location.key,
+        ContentType: contentType,
+        ContentLength: contentLength,
+      }),
+      { expiresIn },
+    );
   } catch {
     return null;
   }
 }
 
-export async function getObjectForValidation(bucket: string, path: string, maxBytes: number): Promise<{
-  body: Uint8Array;
-  contentType: string;
-} | { tooLarge: true } | null> {
+export async function getObjectForValidation(
+  bucket: string,
+  path: string,
+  maxBytes: number,
+): Promise<
+  | {
+      body: Uint8Array;
+      contentType: string;
+    }
+  | { tooLarge: true }
+  | null
+> {
   const s3 = getClient();
   const location = s3 && resolveLocation(bucket, path);
   if (!s3 || !location) return null;
   try {
-    const head = await s3.send(new HeadObjectCommand({ Bucket: location.r2Bucket, Key: location.key }));
+    const head = await s3.send(
+      new HeadObjectCommand({ Bucket: location.r2Bucket, Key: location.key }),
+    );
     if (!head.ContentLength || !head.ETag) return null;
     if (head.ContentLength > maxBytes) return { tooLarge: true };
-    const object = await s3.send(new GetObjectCommand({
-      Bucket: location.r2Bucket,
-      Key: location.key,
-      IfMatch: head.ETag,
-    }));
-    const body = object.Body as NodeJsRuntimeStreamingBlobPayloadOutputTypes | undefined;
-    return body ? {
-      body: await body.transformToByteArray(),
-      contentType: object.ContentType || head.ContentType || "",
-    } : null;
+    const object = await s3.send(
+      new GetObjectCommand({
+        Bucket: location.r2Bucket,
+        Key: location.key,
+        IfMatch: head.ETag,
+      }),
+    );
+    const body = object.Body as
+      NodeJsRuntimeStreamingBlobPayloadOutputTypes | undefined;
+    return body
+      ? {
+          body: await body.transformToByteArray(),
+          contentType: object.ContentType || head.ContentType || "",
+        }
+      : null;
   } catch {
     return null;
   }
 }
 
-export async function deleteObjects(bucket: string, paths: string[]): Promise<{ error: true } | { error: false }> {
+export async function deleteObjects(
+  bucket: string,
+  paths: string[],
+): Promise<{ error: true } | { error: false }> {
   const s3 = getClient();
   const r2Bucket = PRIVATE_BUCKETS.has(bucket)
     ? process.env.R2_PRIVATE_BUCKET?.trim()
@@ -125,10 +154,12 @@ export async function deleteObjects(bucket: string, paths: string[]): Promise<{ 
   try {
     for (let i = 0; i < keys.length; i += DELETE_CHUNK_SIZE) {
       const chunk = keys.slice(i, i + DELETE_CHUNK_SIZE);
-      await s3.send(new DeleteObjectsCommand({
-        Bucket: r2Bucket,
-        Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
-      }));
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: r2Bucket,
+          Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
+        }),
+      );
     }
     return { error: false };
   } catch {
@@ -159,12 +190,17 @@ export async function createSignedDownloadUrl(
   }
 }
 
-export async function objectExists(bucket: string, path: string): Promise<boolean> {
+export async function objectExists(
+  bucket: string,
+  path: string,
+): Promise<boolean> {
   const s3 = getClient();
   const location = s3 && resolveLocation(bucket, path);
   if (!s3 || !location) return false;
   try {
-    await s3.send(new HeadObjectCommand({ Bucket: location.r2Bucket, Key: location.key }));
+    await s3.send(
+      new HeadObjectCommand({ Bucket: location.r2Bucket, Key: location.key }),
+    );
     return true;
   } catch {
     return false;

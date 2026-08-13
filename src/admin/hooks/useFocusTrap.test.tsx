@@ -4,7 +4,12 @@ import { useFocusTrap } from "./useFocusTrap";
 
 function Modal() {
   const ref = useFocusTrap<HTMLElement>(true);
-  return <section ref={ref}><button>처음</button><button>마지막</button></section>;
+  return (
+    <section ref={ref}>
+      <button>처음</button>
+      <button>마지막</button>
+    </section>
+  );
 }
 
 describe("useFocusTrap", () => {

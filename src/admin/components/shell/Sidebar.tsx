@@ -4,7 +4,23 @@ import NextImage from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, FileText, History, Image, Inbox, LayoutDashboard, LogOut, Mail, Plus, Settings, ShieldCheck, X } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  History,
+  Image,
+  Inbox,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  Plus,
+  Settings,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
@@ -15,7 +31,12 @@ import ArtistNavGroup from "./ArtistNavGroup";
 import AdminOnboarding from "@/admin/onboarding/AdminOnboarding";
 
 type Artist = { id: string; name: string; logo_url: string | null };
-const emptySearchContent: SidebarSearchContent = { albums: [], members: [], schedules: [], notices: [] };
+const emptySearchContent: SidebarSearchContent = {
+  albums: [],
+  members: [],
+  schedules: [],
+  notices: [],
+};
 
 const overviewLinks = [
   { label: "대시보드", href: "/admin", icon: LayoutDashboard },
@@ -28,9 +49,24 @@ const contentLinks = [
 ];
 
 const inboxLinks = [
-  { label: "오디션", href: "/admin/auditions/campaigns", icon: Inbox, countKey: "auditions" },
-  { label: "문의 관리", href: "/admin/contact", icon: Mail, countKey: "contacts" },
-  { label: "권익 보호", href: "/admin/protect", icon: ShieldCheck, countKey: "reports" },
+  {
+    label: "오디션",
+    href: "/admin/auditions/campaigns",
+    icon: Inbox,
+    countKey: "auditions",
+  },
+  {
+    label: "문의 관리",
+    href: "/admin/contact",
+    icon: Mail,
+    countKey: "contacts",
+  },
+  {
+    label: "권익 보호",
+    href: "/admin/protect",
+    icon: ShieldCheck,
+    countKey: "reports",
+  },
 ] as const;
 
 const systemLinks = [
@@ -60,15 +96,27 @@ export default function Sidebar({
   canNavigate: () => boolean;
 }) {
   const pathname = usePathname();
-  const [profile, setProfile] = useState<{ id?: string; email?: string; avatar_asset_id?: string | null; role?: "super_admin" | "editor" | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    id?: string;
+    email?: string;
+    avatar_asset_id?: string | null;
+    role?: "super_admin" | "editor" | null;
+  } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [searchContent, setSearchContent] = useState<SidebarSearchContent>(emptySearchContent);
+  const [searchContent, setSearchContent] =
+    useState<SidebarSearchContent>(emptySearchContent);
   const [profileLoading, setProfileLoading] = useState(true);
   const [artistsLoading, setArtistsLoading] = useState(true);
-  const [unreadCounts, setUnreadCounts] = useState({ auditions: 0, contacts: 0, reports: 0 });
+  const [unreadCounts, setUnreadCounts] = useState({
+    auditions: 0,
+    contacts: 0,
+    reports: 0,
+  });
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("admin-sidebar-collapsed-groups");
@@ -83,7 +131,10 @@ export default function Sidebar({
   const toggleGroup = (groupKey: string) => {
     setCollapsedGroups((prev) => {
       const next = { ...prev, [groupKey]: !prev[groupKey] };
-      localStorage.setItem("admin-sidebar-collapsed-groups", JSON.stringify(next));
+      localStorage.setItem(
+        "admin-sidebar-collapsed-groups",
+        JSON.stringify(next),
+      );
       return next;
     });
   };
@@ -110,21 +161,63 @@ export default function Sidebar({
     };
     void loadProfile();
     const loadArtists = async () => {
-      const [artistResult, albumResult, memberResult, scheduleResult, noticeResult] = await Promise.all([
+      const [
+        artistResult,
+        albumResult,
+        memberResult,
+        scheduleResult,
+        noticeResult,
+      ] = await Promise.all([
         supabase.from("artists").select("id,name,logo_url").order("name"),
-        supabase.from("albums").select("id,artist_id,title,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
-        supabase.from("artist_members").select("id,artist_id,name,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
-        supabase.from("artist_schedules").select("id,artist_id,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
-        supabase.from("notices").select("id,artist_id,title_ko,artist:artists(name)").order("updated_at", { ascending: false }).limit(200),
+        supabase
+          .from("albums")
+          .select("id,artist_id,title,title_ko,artist:artists(name)")
+          .order("updated_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("artist_members")
+          .select("id,artist_id,name,artist:artists(name)")
+          .order("updated_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("artist_schedules")
+          .select("id,artist_id,title_ko,artist:artists(name)")
+          .order("updated_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("notices")
+          .select("id,artist_id,title_ko,artist:artists(name)")
+          .order("updated_at", { ascending: false })
+          .limit(200),
       ]);
       if (!active) return;
       setArtists((artistResult.data ?? []) as Artist[]);
       setArtistsLoading(false);
       setSearchContent({
-        albums: (albumResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", title: item.title_ko || item.title || "제목 없는 앨범" })),
-        members: (memberResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", name: item.name || "이름 없는 멤버" })),
-        schedules: (scheduleResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? "", title: item.title_ko || "제목 없는 일정" })),
-        notices: (noticeResult.data ?? []).map((item) => ({ id: item.id, artistId: item.artist_id, artistName: item.artist?.[0]?.name ?? null, title: item.title_ko || "제목 없는 공지" })),
+        albums: (albumResult.data ?? []).map((item) => ({
+          id: item.id,
+          artistId: item.artist_id,
+          artistName: item.artist?.[0]?.name ?? "",
+          title: item.title_ko || item.title || "제목 없는 앨범",
+        })),
+        members: (memberResult.data ?? []).map((item) => ({
+          id: item.id,
+          artistId: item.artist_id,
+          artistName: item.artist?.[0]?.name ?? "",
+          name: item.name || "이름 없는 멤버",
+        })),
+        schedules: (scheduleResult.data ?? []).map((item) => ({
+          id: item.id,
+          artistId: item.artist_id,
+          artistName: item.artist?.[0]?.name ?? "",
+          title: item.title_ko || "제목 없는 일정",
+        })),
+        notices: (noticeResult.data ?? []).map((item) => ({
+          id: item.id,
+          artistId: item.artist_id,
+          artistName: item.artist?.[0]?.name ?? null,
+          title: item.title_ko || "제목 없는 공지",
+        })),
       });
     };
     void loadArtists();
@@ -140,24 +233,45 @@ export default function Sidebar({
 
   useEffect(() => {
     let active = true;
-    const loadUnreadCounts = () => void getAdminInboxCounts(supabase)
-      .then((counts) => { if (active) setUnreadCounts(counts); })
-      .catch(() => { if (active) setUnreadCounts({ auditions: 0, contacts: 0, reports: 0 }); });
+    const loadUnreadCounts = () =>
+      void getAdminInboxCounts(supabase)
+        .then((counts) => {
+          if (active) setUnreadCounts(counts);
+        })
+        .catch(() => {
+          if (active)
+            setUnreadCounts({ auditions: 0, contacts: 0, reports: 0 });
+        });
     loadUnreadCounts();
     window.addEventListener("admin-inbox-changed", loadUnreadCounts);
-    return () => { active = false; window.removeEventListener("admin-inbox-changed", loadUnreadCounts); };
+    return () => {
+      active = false;
+      window.removeEventListener("admin-inbox-changed", loadUnreadCounts);
+    };
   }, [pathname]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "f" || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (
+        event.key.toLowerCase() !== "f" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      )
+        return;
       const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+      if (
+        target?.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")
+      )
+        return;
       if (!isCollapsed) return;
       event.preventDefault();
       onToggleCollapse?.();
       setTimeout(() => {
-        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
+        const searchInput = document.querySelector(
+          'input[type="search"]',
+        ) as HTMLInputElement | null;
         if (searchInput) searchInput.focus();
       }, 120);
     };
@@ -165,8 +279,12 @@ export default function Sidebar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isCollapsed, onToggleCollapse]);
 
-  const isActive = (href: string) => href === "/admin" ? pathname === href : pathname.startsWith(href);
-  const leave = async () => { await signOut(); window.location.assign("/login"); };
+  const isActive = (href: string) =>
+    href === "/admin" ? pathname === href : pathname.startsWith(href);
+  const leave = async () => {
+    await signOut();
+    window.location.assign("/login");
+  };
 
   return (
     <aside
@@ -177,10 +295,19 @@ export default function Sidebar({
       <div className="cms-sidebar-heading">
         {!isCollapsed && (
           <div className="cms-sidebar-search-container">
-            <SidebarSearch artists={artists} content={searchContent} canNavigate={canNavigate} />
+            <SidebarSearch
+              artists={artists}
+              content={searchContent}
+              canNavigate={canNavigate}
+            />
           </div>
         )}
-        <button type="button" className="cms-sidebar-mobile-close" onClick={onClose} aria-label="관리 메뉴 닫기">
+        <button
+          type="button"
+          className="cms-sidebar-mobile-close"
+          onClick={onClose}
+          aria-label="관리 메뉴 닫기"
+        >
           <X aria-hidden="true" />
         </button>
         {onToggleCollapse && (
@@ -190,16 +317,30 @@ export default function Sidebar({
             onClick={onToggleCollapse}
             aria-label={isCollapsed ? "관리 메뉴 펼치기" : "관리 메뉴 접기"}
           >
-            {isCollapsed ? <ChevronRight aria-hidden="true" /> : <ChevronLeft aria-hidden="true" />}
+            {isCollapsed ? (
+              <ChevronRight aria-hidden="true" />
+            ) : (
+              <ChevronLeft aria-hidden="true" />
+            )}
           </button>
         )}
       </div>
       <nav className="cms-nav" aria-label="관리자 메뉴">
         {/* Overview Group */}
-        <div className={`cms-nav-section ${collapsedGroups.analytics ? "is-collapsed-group" : ""}`}>
-          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("analytics")} aria-expanded={!collapsedGroups.analytics}>
+        <div
+          className={`cms-nav-section ${collapsedGroups.analytics ? "is-collapsed-group" : ""}`}
+        >
+          <button
+            type="button"
+            className="cms-nav-label-row"
+            onClick={() => toggleGroup("analytics")}
+            aria-expanded={!collapsedGroups.analytics}
+          >
             <p className="cms-nav-label">운영 현황</p>
-            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            <ChevronDown
+              className="cms-group-toggle-arrow"
+              aria-hidden="true"
+            />
           </button>
           <div className="cms-nav-group-items">
             {overviewLinks.map((item) => {
@@ -221,20 +362,44 @@ export default function Sidebar({
           </div>
         </div>
 
-        <div className={`cms-nav-section ${collapsedGroups.inbox ? "is-collapsed-group" : ""}`}>
-          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("inbox")} aria-expanded={!collapsedGroups.inbox}>
+        <div
+          className={`cms-nav-section ${collapsedGroups.inbox ? "is-collapsed-group" : ""}`}
+        >
+          <button
+            type="button"
+            className="cms-nav-label-row"
+            onClick={() => toggleGroup("inbox")}
+            aria-expanded={!collapsedGroups.inbox}
+          >
             <p className="cms-nav-label">접수함</p>
-            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            <ChevronDown
+              className="cms-group-toggle-arrow"
+              aria-hidden="true"
+            />
           </button>
           <div className="cms-nav-group-items">
             {inboxLinks.map((item) => {
               const Icon = item.icon;
               const count = unreadCounts[item.countKey];
               return (
-                <Link key={item.href} href={item.href} title={item.label} className={`cms-nav-item ${isActive(item.href) ? "is-active" : ""}`}>
-                  <span className="cms-nav-icon"><Icon aria-hidden="true" /></span>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  className={`cms-nav-item ${isActive(item.href) ? "is-active" : ""}`}
+                >
+                  <span className="cms-nav-icon">
+                    <Icon aria-hidden="true" />
+                  </span>
                   <span>{item.label}</span>
-                  {count > 0 && <span className="cms-nav-count" aria-label={`미확인 ${count}건`}>{count > 99 ? "99+" : count}</span>}
+                  {count > 0 && (
+                    <span
+                      className="cms-nav-count"
+                      aria-label={`미확인 ${count}건`}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -242,10 +407,20 @@ export default function Sidebar({
         </div>
 
         {/* Content Group */}
-        <div className={`cms-nav-section ${collapsedGroups.service ? "is-collapsed-group" : ""}`}>
-          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("service")} aria-expanded={!collapsedGroups.service}>
+        <div
+          className={`cms-nav-section ${collapsedGroups.service ? "is-collapsed-group" : ""}`}
+        >
+          <button
+            type="button"
+            className="cms-nav-label-row"
+            onClick={() => toggleGroup("service")}
+            aria-expanded={!collapsedGroups.service}
+          >
             <p className="cms-nav-label">서비스 관리</p>
-            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            <ChevronDown
+              className="cms-group-toggle-arrow"
+              aria-hidden="true"
+            />
           </button>
           <div className="cms-nav-group-items">
             {contentLinks.map((item) => {
@@ -268,10 +443,20 @@ export default function Sidebar({
         </div>
 
         {/* System Group */}
-        <div className={`cms-nav-section ${collapsedGroups.system ? "is-collapsed-group" : ""}`}>
-          <button type="button" className="cms-nav-label-row" onClick={() => toggleGroup("system")} aria-expanded={!collapsedGroups.system}>
+        <div
+          className={`cms-nav-section ${collapsedGroups.system ? "is-collapsed-group" : ""}`}
+        >
+          <button
+            type="button"
+            className="cms-nav-label-row"
+            onClick={() => toggleGroup("system")}
+            aria-expanded={!collapsedGroups.system}
+          >
             <p className="cms-nav-label">시스템</p>
-            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            <ChevronDown
+              className="cms-group-toggle-arrow"
+              aria-hidden="true"
+            />
           </button>
           <div className="cms-nav-group-items">
             {systemLinks.map((item) => {
@@ -294,11 +479,21 @@ export default function Sidebar({
         </div>
 
         {/* Artist Group */}
-        <div className={`cms-nav-section cms-artist-section ${collapsedGroups.artist ? "is-collapsed-group" : ""}`}>
+        <div
+          className={`cms-nav-section cms-artist-section ${collapsedGroups.artist ? "is-collapsed-group" : ""}`}
+        >
           <div className="cms-nav-label-row">
-            <button type="button" className="cms-nav-label-left" onClick={() => toggleGroup("artist")} aria-expanded={!collapsedGroups.artist}>
+            <button
+              type="button"
+              className="cms-nav-label-left"
+              onClick={() => toggleGroup("artist")}
+              aria-expanded={!collapsedGroups.artist}
+            >
               <p className="cms-nav-label">아티스트</p>
-              <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+              <ChevronDown
+                className="cms-group-toggle-arrow"
+                aria-hidden="true"
+              />
             </button>
             {!isCollapsed && !collapsedGroups.artist && (
               <Link
@@ -312,15 +507,20 @@ export default function Sidebar({
           </div>
           <div className="cms-nav-group-items">
             {artists.map((artist) => {
-              const isCurrentArtist = pathname.includes(`/artists/${artist.id}/`);
+              const isCurrentArtist = pathname.includes(
+                `/artists/${artist.id}/`,
+              );
               const isExpanded =
-                expandedArtist === artist.id || (expandedArtist === null && isCurrentArtist);
+                expandedArtist === artist.id ||
+                (expandedArtist === null && isCurrentArtist);
               return (
                 <ArtistNavGroup
                   key={artist.id}
                   artist={artist}
                   isExpanded={isExpanded}
-                  onToggle={() => setExpandedArtist(isExpanded ? "" : artist.id)}
+                  onToggle={() =>
+                    setExpandedArtist(isExpanded ? "" : artist.id)
+                  }
                   pathname={pathname}
                   artistLinks={artistLinks}
                   isCollapsed={isCollapsed}
@@ -328,7 +528,10 @@ export default function Sidebar({
               );
             })}
             {!artistsLoading && !artists.length && (
-              <Link href="/admin/artists/new/profile" className="cms-empty-artist">
+              <Link
+                href="/admin/artists/new/profile"
+                className="cms-empty-artist"
+              >
                 첫 아티스트 추가하기
               </Link>
             )}
@@ -337,7 +540,11 @@ export default function Sidebar({
       </nav>
       <AdminOnboarding
         userId={profile?.id}
-        role={profile?.role === "super_admin" || profile?.role === "editor" ? profile.role : undefined}
+        role={
+          profile?.role === "super_admin" || profile?.role === "editor"
+            ? profile.role
+            : undefined
+        }
         artists={artists}
         isCollapsed={isCollapsed}
         canNavigate={canNavigate}
@@ -346,16 +553,29 @@ export default function Sidebar({
         <div className="cms-account">
           <span className={`cms-avatar ${profileLoading ? "is-loading" : ""}`}>
             {avatarUrl ? (
-              <NextImage src={avatarUrl} alt="" width={30} height={30} sizes="30px" />
+              <NextImage
+                src={avatarUrl}
+                alt=""
+                width={30}
+                height={30}
+                sizes="30px"
+              />
             ) : (
               (profile?.email?.[0] || "A").toUpperCase()
             )}
           </span>
-          <span className={`cms-account-copy ${profileLoading ? "is-loading" : ""}`}>
+          <span
+            className={`cms-account-copy ${profileLoading ? "is-loading" : ""}`}
+          >
             <b>{profile?.email?.split("@")[0] || "관리자"}</b>
             <small>관리자 계정</small>
           </span>
-          <button type="button" onClick={leave} aria-label="로그아웃" title="로그아웃">
+          <button
+            type="button"
+            onClick={leave}
+            aria-label="로그아웃"
+            title="로그아웃"
+          >
             <LogOut aria-hidden="true" />
           </button>
         </div>

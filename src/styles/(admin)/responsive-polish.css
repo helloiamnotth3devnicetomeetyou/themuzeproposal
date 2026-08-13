@@ -1,127 +1,136 @@
 /* Admin restraint layer. This file loads last so shared behavior stays intact. */
-.admin-root-shell :where(
-  .content-visual-editor,
-  .content-choice,
-  .content-publish-summary > div,
-  .music-publish-summary,
-  .music-publish-check,
-  .music-publish-toggle,
-  .settings-panel,
-  .admin-accounts-invite,
-  .admin-accounts-list,
-  .gallery-card,
-  .gallery-dropzone,
-  .gallery-inspector,
-  .hero-admin-panel,
-  .hero-slide-card,
-  .content-asset-dropzone,
-  .content-asset-preview,
-  .track-asset-field,
-  .music-track-wrap,
-  .notice-preview-card
-) {
+.admin-root-shell
+  :where(
+    .content-visual-editor,
+    .content-choice,
+    .content-publish-summary > div,
+    .music-publish-summary,
+    .music-publish-check,
+    .music-publish-toggle,
+    .settings-panel,
+    .admin-accounts-invite,
+    .admin-accounts-list,
+    .gallery-card,
+    .gallery-dropzone,
+    .gallery-inspector,
+    .hero-admin-panel,
+    .hero-slide-card,
+    .content-asset-dropzone,
+    .content-asset-preview,
+    .track-asset-field,
+    .music-track-wrap,
+    .notice-preview-card
+  ) {
   border-radius: 2px;
   box-shadow: none;
 }
 
-.admin-root-shell :where(
-  .content-rail-heading > button,
-  .content-rail-tools > input,
-  .content-filter-row,
-  .content-filter-row button,
-  .content-library-item,
-  .content-library-thumb,
-  .content-rail-quiet-action,
-  .content-color-row input,
-  .music-library-tools button,
-  .music-album-item,
-  .music-header-actions button,
-  .music-upload-button,
-  .music-image-dropzone,
-  .music-track-row,
-  .track-asset-icon,
-  .gallery-filterbar button,
-  .gallery-card-actions button,
-  .hero-admin-refresh,
-  .hero-admin-row-actions button,
-  .settings-rail-nav button,
-  .settings-rail-nav button > span
-) {
+.admin-root-shell
+  :where(
+    .content-rail-heading > button,
+    .content-rail-tools > input,
+    .content-filter-row,
+    .content-filter-row button,
+    .content-library-item,
+    .content-library-thumb,
+    .content-rail-quiet-action,
+    .content-color-row input,
+    .music-library-tools button,
+    .music-album-item,
+    .music-header-actions button,
+    .music-upload-button,
+    .music-image-dropzone,
+    .music-track-row,
+    .track-asset-icon,
+    .gallery-filterbar button,
+    .gallery-card-actions button,
+    .hero-admin-refresh,
+    .hero-admin-row-actions button,
+    .settings-rail-nav button,
+    .settings-rail-nav button > span
+  ) {
   border-radius: 6px;
   box-shadow: none;
 }
 
-.admin-root-shell :where(
-  .content-workbench-header,
-  .music-editor-header,
-  .content-workbench-rail,
-  .music-library
-) {
+.admin-root-shell
+  :where(
+    .content-workbench-header,
+    .music-editor-header,
+    .content-workbench-rail,
+    .music-library
+  ) {
   backdrop-filter: none;
 }
 
-.admin-root-shell :where(
-  .content-library-item.is-selected,
-  .music-album-item.is-selected,
-  .gallery-tile.is-selected,
-  .hero-slide-card.is-selected
-) {
+.admin-root-shell
+  :where(
+    .content-library-item.is-selected,
+    .music-album-item.is-selected,
+    .gallery-tile.is-selected,
+    .hero-slide-card.is-selected
+  ) {
   background: var(--bg-subtle);
   box-shadow: inset 2px 0 var(--color-brand-pink);
   transform: none;
 }
 
-.admin-root-shell :where(
-  .admin-btn,
-  .content-choice,
-  .content-library-item,
-  .music-album-item,
-  .gallery-tile,
-  .hero-slide-card
-):hover {
+.admin-root-shell
+  :where(
+    .admin-btn,
+    .content-choice,
+    .content-library-item,
+    .music-album-item,
+    .gallery-tile,
+    .hero-slide-card
+  ):hover {
   box-shadow: none;
   transform: none;
 }
 
-.admin-root-shell :where(
-  .content-workbench-actions button,
-  .music-header-actions button,
-  .content-rail-tools > input,
-  .content-library-copy b,
-  .content-library-copy small,
-  .content-section-heading h2,
-  .content-section-heading p,
-  .music-field > label,
-  .music-section-title h2,
-  .music-section-title p,
-  .track-asset-copy b,
-  .track-asset-copy small,
-  .content-asset-copy b,
-  .content-asset-copy small,
-  .gallery-card-body b,
-  .gallery-card-body small,
-  .hero-admin-panel-heading h2,
-  .hero-admin-panel-heading p
-) {
+.admin-root-shell
+  :where(
+    .content-workbench-actions button,
+    .music-header-actions button,
+    .content-rail-tools > input,
+    .content-library-copy b,
+    .content-library-copy small,
+    .content-section-heading h2,
+    .content-section-heading p,
+    .music-field > label,
+    .music-section-title h2,
+    .music-section-title p,
+    .track-asset-copy b,
+    .track-asset-copy small,
+    .content-asset-copy b,
+    .content-asset-copy small,
+    .gallery-card-body b,
+    .gallery-card-body small,
+    .hero-admin-panel-heading h2,
+    .hero-admin-panel-heading p
+  ) {
   font-size: 12px;
 }
 
-.admin-root-shell :where(.settings-footer-preview)::before { display: none; }
+.admin-root-shell :where(.settings-footer-preview)::before {
+  display: none;
+}
 
 /* Final control system: page CSS may arrange controls, but not reinvent them. */
-.admin-root-shell :is(
-  .content-asset-actions label,
-  .content-asset-actions button,
-  .music-upload-button,
-  .gallery-dropzone > button,
-  .gallery-filterbar > div > button,
-  .gallery-card-actions button:not(.admin-btn),
-  .gallery-inspector-actions button:not(.admin-btn),
-  .social-link-toolbar > button,
-  .audition-campaign-list nav a,
-  .audition-campaign-list nav button,
-  .audition-type-picker button
-) {
+.admin-root-shell
+  :is(
+    .content-asset-actions label,
+    .content-asset-actions button,
+    .music-upload-button,
+    .gallery-dropzone > button,
+    .gallery-filterbar > div > button,
+    .gallery-card-actions button:not(.admin-btn),
+    .gallery-inspector-actions button:not(.admin-btn),
+    .social-link-toolbar > button,
+    .audition-campaign-list nav a,
+    .audition-campaign-list nav button,
+    .audition-type-picker button
+  ) {
   min-height: var(--admin-control-height);
   padding: 0 14px;
   border: 1px solid var(--border-default);
@@ -129,23 +138,28 @@
   background: var(--bg-card);
   color: var(--text-secondary);
   font: 700 12px/1 var(--font-sans);
-  letter-spacing: .01em;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  letter-spacing: 0.01em;
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease;
 }
 
-.admin-root-shell :is(
-  .content-asset-actions label,
-  .content-asset-actions button,
-  .music-upload-button,
-  .gallery-dropzone > button,
-  .gallery-filterbar > div > button,
-  .gallery-card-actions button:not(.admin-btn),
-  .gallery-inspector-actions button:not(.admin-btn),
-  .social-link-toolbar > button,
-  .audition-campaign-list nav a,
-  .audition-campaign-list nav button,
-  .audition-type-picker button
-):hover:not(:disabled) {
+.admin-root-shell
+  :is(
+    .content-asset-actions label,
+    .content-asset-actions button,
+    .music-upload-button,
+    .gallery-dropzone > button,
+    .gallery-filterbar > div > button,
+    .gallery-card-actions button:not(.admin-btn),
+    .gallery-inspector-actions button:not(.admin-btn),
+    .social-link-toolbar > button,
+    .audition-campaign-list nav a,
+    .audition-campaign-list nav button,
+    .audition-type-picker button
+  ):hover:not(:disabled) {
   border-color: var(--border-strong);
   background: var(--bg-subtle);
   color: var(--text-primary);
@@ -153,22 +167,25 @@
 
 .admin-root-shell .audition-type-picker button.is-active {
   border-color: var(--color-brand-pink);
-  background: color-mix(in srgb,var(--color-brand-pink) 8%,var(--bg-card));
+  background: color-mix(in srgb, var(--color-brand-pink) 8%, var(--bg-card));
   color: var(--color-brand-pink);
 }
 
-.admin-root-shell .gallery-delete-button { color: var(--color-status-danger); }
+.admin-root-shell .gallery-delete-button {
+  color: var(--color-status-danger);
+}
 
-.admin-root-shell :is(
-  .content-rail-heading > button,
-  .music-library-heading button,
-  .hero-admin-row-actions button,
-  .hero-slide-footer button,
-  .settings-history-actions button,
-  .gallery-inspector-heading > button,
-  .admin-accounts-list-head button,
-  .admin-account-remove
-) {
+.admin-root-shell
+  :is(
+    .content-rail-heading > button,
+    .music-library-heading button,
+    .hero-admin-row-actions button,
+    .hero-slide-footer button,
+    .settings-history-actions button,
+    .gallery-inspector-heading > button,
+    .admin-accounts-list-head button,
+    .admin-account-remove
+  ) {
   display: inline-grid;
   width: var(--admin-control-height);
   min-width: var(--admin-control-height);
@@ -182,22 +199,24 @@
   color: var(--text-muted);
 }
 
-.admin-root-shell :is(
-  .content-rail-heading > button,
-  .music-library-heading button,
-  .hero-admin-row-actions button,
-  .hero-slide-footer button,
-  .settings-history-actions button,
-  .gallery-inspector-heading > button,
-  .admin-accounts-list-head button,
-  .admin-account-remove
-) svg {
+.admin-root-shell
+  :is(
+    .content-rail-heading > button,
+    .music-library-heading button,
+    .hero-admin-row-actions button,
+    .hero-slide-footer button,
+    .settings-history-actions button,
+    .gallery-inspector-heading > button,
+    .admin-accounts-list-head button,
+    .admin-account-remove
+  )
+  svg {
   width: var(--admin-control-icon-size);
   height: var(--admin-control-icon-size);
   stroke-width: 2;
 }
 
-.admin-root-shell :is(.rich-text-toolbar button,.canvasControls button) {
+.admin-root-shell :is(.rich-text-toolbar button, .canvasControls button) {
   width: 36px;
   min-width: 36px;
   height: 36px;
@@ -205,12 +224,16 @@
   border-radius: var(--admin-control-radius);
 }
 
-.admin-root-shell :is(.gallery-dropzone,.music-image-dropzone,.content-asset-dropzone) {
+.admin-root-shell
+  :is(.gallery-dropzone, .music-image-dropzone, .content-asset-dropzone) {
   background: var(--bg-subtle);
   box-shadow: none;
 }
 
-.admin-root-shell :is(.desk-inbox-panel,.desk-release-panel,.desk-status-card) { border-radius: 8px; }
+.admin-root-shell
+  :is(.desk-inbox-panel, .desk-release-panel, .desk-status-card) {
+  border-radius: 8px;
+}
 
 /* Form language and field hierarchy */
 .admin-root-shell .admin-input {
@@ -219,32 +242,36 @@
   font-size: 14px;
 }
 
-.admin-root-shell :is(
-  .music-field > span,
-  .desk-translatable-heading > label,
-  .rich-text-label > span,
-  .audition-control-label,
-  .settings-panel label > span
-) {
+.admin-root-shell
+  :is(
+    .music-field > span,
+    .desk-translatable-heading > label,
+    .rich-text-label > span,
+    .audition-control-label,
+    .settings-panel label > span
+  ) {
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 650;
   letter-spacing: 0;
 }
 
-.admin-root-shell :is(
-  .music-field > small,
-  .content-section-heading > p,
-  .rich-text-label > small,
-  .content-asset-copy small
-) {
+.admin-root-shell
+  :is(
+    .music-field > small,
+    .content-section-heading > p,
+    .rich-text-label > small,
+    .content-asset-copy small
+  ) {
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.55;
 }
 
 .admin-root-shell input[type="checkbox"],
-.admin-root-shell input[type="radio"] { accent-color: var(--color-brand-pink); }
+.admin-root-shell input[type="radio"] {
+  accent-color: var(--color-brand-pink);
+}
 
 .admin-root-shell input[type="color"] {
   width: var(--admin-field-height);
@@ -266,33 +293,88 @@
     padding-bottom: calc(16px + var(--admin-mobile-nav-clearance));
   }
 
-  .cms-page-header { gap: 8px; padding-block: 14px; }
-  .cms-page-header h1 { font-size: 21px; }
-  .cms-page-header > div > p:last-child { margin-top: 4px; font-size: 12px; }
+  .cms-page-header {
+    gap: 8px;
+    padding-block: 14px;
+  }
+  .cms-page-header h1 {
+    font-size: 21px;
+  }
+  .cms-page-header > div > p:last-child {
+    margin-top: 4px;
+    font-size: 12px;
+  }
 
-  .admin-root-shell :is(.admin-card, .notice-preview-card, .gallery-empty, .gallery-save-first) { padding: 16px; }
-  .admin-root-shell :is(.content-section-heading h2, .music-section-title h2, .settings-section-heading h3, .hero-admin-panel-heading h2) { font-size: 16px; }
-  .admin-root-shell :is(.content-section-heading p, .music-section-title p, .settings-section-heading p) { font-size: 11px; line-height: 1.5; }
+  .admin-root-shell
+    :is(
+      .admin-card,
+      .notice-preview-card,
+      .gallery-empty,
+      .gallery-save-first
+    ) {
+    padding: 16px;
+  }
+  .admin-root-shell
+    :is(
+      .content-section-heading h2,
+      .music-section-title h2,
+      .settings-section-heading h3,
+      .hero-admin-panel-heading h2
+    ) {
+    font-size: 16px;
+  }
+  .admin-root-shell
+    :is(
+      .content-section-heading p,
+      .music-section-title p,
+      .settings-section-heading p
+    ) {
+    font-size: 11px;
+    line-height: 1.5;
+  }
 
-  .rich-text-editor { min-height: 180px; padding: 16px; font-size: 14px; line-height: 1.7; }
-  .notice-preview-card { padding: 18px; }
-  .notice-preview-card h3 { font-size: 18px; }
-  .notice-preview-content { margin-top: 16px; padding-top: 14px; }
+  .rich-text-editor {
+    min-height: 180px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .notice-preview-card {
+    padding: 18px;
+  }
+  .notice-preview-card h3 {
+    font-size: 18px;
+  }
+  .notice-preview-content {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
 
-  .admin-root-shell :is(
-    .content-workbench-actions,
-    .music-header-actions,
-    .audition-status-bar,
-    .audition-review-detail footer,
-    .fullPage article > footer
-  ) {
+  .admin-root-shell
+    :is(
+      .content-workbench-actions,
+      .music-header-actions,
+      .audition-status-bar,
+      .audition-review-detail footer,
+      .fullPage article > footer
+    ) {
     bottom: var(--admin-mobile-nav-clearance);
   }
 
-  .admin-root-shell :is(.content-workbench-body, .music-editor-body, .settings-workbench .content-workbench-body, .profile-workbench .content-workbench-body) {
+  .admin-root-shell
+    :is(
+      .content-workbench-body,
+      .music-editor-body,
+      .settings-workbench .content-workbench-body,
+      .profile-workbench .content-workbench-body
+    ) {
     padding-bottom: calc(24px + var(--admin-mobile-nav-clearance));
   }
 
-  .content-asset-preview { min-height: 128px; }
-  .social-link-empty { min-height: 144px; }
+  .content-asset-preview {
+    min-height: 128px;
+  }
+  .social-link-empty {
+    min-height: 144px;
+  }
 }

@@ -45,37 +45,52 @@ export type AlbumValidationResult = {
 };
 
 export type UploadedAsset = {
-  bucket: "album-covers" | "track-assets" | "artist-assets" | "business-assets" | "hero-videos";
+  bucket:
+    | "album-covers"
+    | "track-assets"
+    | "artist-assets"
+    | "business-assets"
+    | "hero-videos";
   path: string;
   url: string;
 };
 
-export const ALBUM_TYPES = ["Single", "Digital Single", "Mini Album", "Full Album", "OST"];
-
+export const ALBUM_TYPES = [
+  "Single",
+  "Digital Single",
+  "Mini Album",
+  "Full Album",
+  "OST",
+];
 
 export function parseBulkTracks(value: string): TrackDraft[] {
-  return value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
-    const stripped = line.replace(/^\s*\d+\s*[.)-]\s*/, "");
-    return {
-      id: crypto.randomUUID(),
-      title: stripped,
-      title_ko: stripped,
-      title_en: "",
-      title_ja: "",
-      is_title: false,
-      spotify_url: "",
-      youtube_url: "",
-      audio_url: "",
-      music_video_url: "",
-    };
-  });
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const stripped = line.replace(/^\s*\d+\s*[.)-]\s*/, "");
+      return {
+        id: crypto.randomUUID(),
+        title: stripped,
+        title_ko: stripped,
+        title_en: "",
+        title_ja: "",
+        is_title: false,
+        spotify_url: "",
+        youtube_url: "",
+        audio_url: "",
+        music_video_url: "",
+      };
+    });
 }
 
 export function validateAlbum(draft: AlbumEditorDraft): AlbumValidationResult {
   const saveIssues: string[] = [];
   if (!draft.title.trim()) saveIssues.push("앨범 제목");
   if (!draft.type.trim()) saveIssues.push("앨범 종류");
-  if (draft.tracks.some((track) => !track.title.trim())) saveIssues.push("모든 트랙의 곡명");
+  if (draft.tracks.some((track) => !track.title.trim()))
+    saveIssues.push("모든 트랙의 곡명");
 
   const publishIssues = [...saveIssues];
   if (!draft.release_date) publishIssues.push("발매일");

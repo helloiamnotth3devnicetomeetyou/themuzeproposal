@@ -2,8 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ExternalLink, FileText, Inbox, LayoutDashboard, Menu, Moon, Sun } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import {
+  ExternalLink,
+  FileText,
+  Inbox,
+  LayoutDashboard,
+  Menu,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import AdminDialogProvider from "@/admin/components/shell/AdminDialogProvider";
 import Sidebar from "@/admin/components/shell/Sidebar";
@@ -25,15 +39,46 @@ function getPageLabel(pathname: string) {
   if (pathname.includes("/settings")) return "사이트 설정";
   if (pathname.includes("/profile")) return "아티스트 프로필";
   if (pathname.includes("/members")) return "멤버";
-  if (pathname.includes("/discography") || pathname.includes("/tracks")) return "디스코그래피";
+  if (pathname.includes("/discography") || pathname.includes("/tracks"))
+    return "디스코그래피";
   if (pathname.includes("/schedule")) return "일정";
   return "관리";
 }
 
 const mobileNavItems = [
-  { label: "대시보드", href: "/admin", tourId: "admin-mobile-dashboard", icon: LayoutDashboard, matches: (pathname: string) => pathname === "/admin" },
-  { label: "받은 작업", href: "/admin/inbox", tourId: "admin-mobile-inbox", icon: Inbox, matches: (pathname: string) => ["/admin/inbox", "/admin/auditions", "/admin/contact", "/admin/protect"].some((path) => pathname.startsWith(path)) },
-  { label: "콘텐츠", href: "/admin/content", tourId: "admin-mobile-content", icon: FileText, matches: (pathname: string) => ["/admin/content", "/admin/hero", "/admin/notices", "/admin/artists"].some((path) => pathname.startsWith(path)) },
+  {
+    label: "대시보드",
+    href: "/admin",
+    tourId: "admin-mobile-dashboard",
+    icon: LayoutDashboard,
+    matches: (pathname: string) => pathname === "/admin",
+  },
+  {
+    label: "받은 작업",
+    href: "/admin/inbox",
+    tourId: "admin-mobile-inbox",
+    icon: Inbox,
+    matches: (pathname: string) =>
+      [
+        "/admin/inbox",
+        "/admin/auditions",
+        "/admin/contact",
+        "/admin/protect",
+      ].some((path) => pathname.startsWith(path)),
+  },
+  {
+    label: "콘텐츠",
+    href: "/admin/content",
+    tourId: "admin-mobile-content",
+    icon: FileText,
+    matches: (pathname: string) =>
+      [
+        "/admin/content",
+        "/admin/hero",
+        "/admin/notices",
+        "/admin/artists",
+      ].some((path) => pathname.startsWith(path)),
+  },
 ] as const;
 
 const emptySubscribe = () => () => {};
@@ -60,21 +105,35 @@ function setSidebarCollapsed(next: boolean) {
   window.dispatchEvent(new Event(SIDEBAR_COLLAPSED_EVENT));
 }
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [inboxCount, setInboxCount] = useState(0);
   const [toast, setToast] = useState("");
   const dirtyDrafts = useRef(new Map<string, DraftDiffItem[]>());
-  const isSidebarCollapsed = useSyncExternalStore(subscribeSidebarCollapsed, getSidebarCollapsedSnapshot, getSidebarCollapsedServerSnapshot);
-  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const isSidebarCollapsed = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    getSidebarCollapsedServerSnapshot,
+  );
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   const confirmNavigation = useCallback(() => {
     if (isGuideSandboxActive()) return true;
     if (!dirtyDrafts.current.size) return true;
     const peek = formatDraftPeek([...dirtyDrafts.current.values()].flat());
-    return window.confirm(`저장하지 않은 변경사항이 있습니다.\n\n${peek}\n\n이동해도 임시 작업은 브라우저에 백업됩니다.`);
+    return window.confirm(
+      `저장하지 않은 변경사항이 있습니다.\n\n${peek}\n\n이동해도 임시 작업은 브라우저에 백업됩니다.`,
+    );
   }, []);
 
   const toggleSidebar = () => {
@@ -104,10 +163,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     let active = true;
-    void getAdminInboxCounts(supabase).then(({ auditions, contacts, reports }) => {
-      if (active) setInboxCount(auditions + contacts + reports);
-    }).catch(() => {});
-    return () => { active = false; };
+    void getAdminInboxCounts(supabase)
+      .then(({ auditions, contacts, reports }) => {
+        if (active) setInboxCount(auditions + contacts + reports);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
   useEffect(() => {
@@ -115,7 +178,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const sidebar = document.getElementById("admin-navigation");
-    const focusable = Array.from(sidebar?.querySelectorAll<HTMLElement>("a[href],button:not([disabled]),input") ?? []);
+    const focusable = Array.from(
+      sidebar?.querySelectorAll<HTMLElement>(
+        "a[href],button:not([disabled]),input",
+      ) ?? [],
+    );
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -148,7 +215,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       timer = window.setTimeout(() => setToast(""), 2600);
     };
     window.addEventListener("admin-toast", onToast);
-    return () => { window.clearTimeout(timer); window.removeEventListener("admin-toast", onToast); };
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("admin-toast", onToast);
+    };
   }, []);
 
   useEffect(() => {
@@ -157,20 +227,46 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       setSidebarCollapsed(false);
     };
     window.addEventListener("admin-guide-open-navigation", openGuideNavigation);
-    return () => window.removeEventListener("admin-guide-open-navigation", openGuideNavigation);
+    return () =>
+      window.removeEventListener(
+        "admin-guide-open-navigation",
+        openGuideNavigation,
+      );
   }, []);
 
   useEffect(() => {
     const onDirty = (event: Event) => {
-      const { key, dirty, diff = [] } = (event as CustomEvent<{ key: string; dirty: boolean; diff?: DraftDiffItem[] }>).detail;
-      if (dirty) dirtyDrafts.current.set(key, diff); else dirtyDrafts.current.delete(key);
+      const {
+        key,
+        dirty,
+        diff = [],
+      } = (
+        event as CustomEvent<{
+          key: string;
+          dirty: boolean;
+          diff?: DraftDiffItem[];
+        }>
+      ).detail;
+      if (dirty) dirtyDrafts.current.set(key, diff);
+      else dirtyDrafts.current.delete(key);
     };
     const onClick = (event: MouseEvent) => {
-      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>("a[href]");
-      if (!link || link.target || link.origin !== window.location.origin || !link.pathname.startsWith("/admin") || link.href === window.location.href) return;
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+        "a[href]",
+      );
+      if (
+        !link ||
+        link.target ||
+        link.origin !== window.location.origin ||
+        !link.pathname.startsWith("/admin") ||
+        link.href === window.location.href
+      )
+        return;
       if (!confirmNavigation()) event.preventDefault();
     };
-    const onPopState = () => { if (!confirmNavigation()) window.history.forward(); };
+    const onPopState = () => {
+      if (!confirmNavigation()) window.history.forward();
+    };
     window.addEventListener("admin-draft-dirty", onDirty);
     document.addEventListener("click", onClick, true);
     window.addEventListener("popstate", onPopState);
@@ -186,21 +282,43 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <div className="admin-root-shell">
         <AdminToast message={toast} />
         <header className="admin-mobile-topbar">
-          <button type="button" className="admin-mobile-menu-button" onClick={() => setIsNavigationOpen(true)} aria-label="관리 메뉴 열기" aria-expanded={isNavigationOpen} aria-controls="admin-navigation">
+          <button
+            type="button"
+            className="admin-mobile-menu-button"
+            onClick={() => setIsNavigationOpen(true)}
+            aria-label="관리 메뉴 열기"
+            aria-expanded={isNavigationOpen}
+            aria-controls="admin-navigation"
+          >
             <Menu aria-hidden="true" />
           </button>
           <div className="admin-mobile-title">
             <strong>{getPageLabel(pathname)}</strong>
           </div>
-          <button type="button" className="admin-theme-button admin-mobile-theme-button" onClick={toggleTheme} aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}>
-            {theme === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+          <button
+            type="button"
+            className="admin-theme-button admin-mobile-theme-button"
+            onClick={toggleTheme}
+            aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}
+          >
+            {theme === "dark" ? (
+              <Sun aria-hidden="true" />
+            ) : (
+              <Moon aria-hidden="true" />
+            )}
           </button>
-          <Link href="/" className="admin-mobile-site-link" aria-label="공개 사이트 열기">
+          <Link
+            href="/"
+            className="admin-mobile-site-link"
+            aria-label="공개 사이트 열기"
+          >
             <ExternalLink aria-hidden="true" />
           </Link>
         </header>
         <div className="admin-app-frame">
-          <div className={`admin-layout cms-shell ${isMounted && isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
+          <div
+            className={`admin-layout cms-shell ${isMounted && isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}
+          >
             <Sidebar
               isOpen={isNavigationOpen}
               onClose={() => setIsNavigationOpen(false)}
@@ -218,33 +336,61 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             )}
             <div className="cms-workspace">
               <header className="admin-desktop-topbar">
-                <div><strong>{getPageLabel(pathname)}</strong></div>
-                <button type="button" className="admin-theme-button" onClick={toggleTheme} aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}>
-                  {theme === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+                <div>
+                  <strong>{getPageLabel(pathname)}</strong>
+                </div>
+                <button
+                  type="button"
+                  className="admin-theme-button"
+                  onClick={toggleTheme}
+                  aria-label={`${theme === "dark" ? "라이트" : "다크"} 테마로 전환`}
+                >
+                  {theme === "dark" ? (
+                    <Sun aria-hidden="true" />
+                  ) : (
+                    <Moon aria-hidden="true" />
+                  )}
                 </button>
-                <Link href="/" className="admin-desktop-site-link"><ExternalLink aria-hidden="true" /> 사이트 보기</Link>
+                <Link href="/" className="admin-desktop-site-link">
+                  <ExternalLink aria-hidden="true" /> 사이트 보기
+                </Link>
               </header>
-              <main key={pathname} data-tour-id="admin-page" className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""} ${pathname.includes("/analytics") ? "is-analytics" : ""}`}>
+              <main
+                key={pathname}
+                data-tour-id="admin-page"
+                className={`cms-content animate-page-fade ${isFullBleed ? "is-full-bleed" : ""} ${pathname.includes("/analytics") ? "is-analytics" : ""}`}
+              >
                 <div className="cms-content-inner">{children}</div>
               </main>
             </div>
           </div>
         </div>
         <nav className="admin-mobile-bottom-nav" aria-label="주요 관리자 메뉴">
-          {mobileNavItems.map(({ label, href, tourId, icon: Icon, matches }) => {
-            const count = href === "/admin/inbox" ? inboxCount : 0;
-            return <Link
-              key={href}
-              href={href}
-              data-tour-id={tourId}
-              className={`admin-mobile-bottom-nav-item ${matches(pathname) ? "is-active" : ""}`}
-              aria-current={matches(pathname) ? "page" : undefined}
-            >
-              <Icon aria-hidden="true" />
-              <span>{label}</span>
-              {count > 0 && <b className="admin-mobile-bottom-nav-badge" aria-label={`미처리 작업 ${count}건`}>{count > 99 ? "99+" : count}</b>}
-            </Link>;
-          })}
+          {mobileNavItems.map(
+            ({ label, href, tourId, icon: Icon, matches }) => {
+              const count = href === "/admin/inbox" ? inboxCount : 0;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  data-tour-id={tourId}
+                  className={`admin-mobile-bottom-nav-item ${matches(pathname) ? "is-active" : ""}`}
+                  aria-current={matches(pathname) ? "page" : undefined}
+                >
+                  <Icon aria-hidden="true" />
+                  <span>{label}</span>
+                  {count > 0 && (
+                    <b
+                      className="admin-mobile-bottom-nav-badge"
+                      aria-label={`미처리 작업 ${count}건`}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </b>
+                  )}
+                </Link>
+              );
+            },
+          )}
           <button
             type="button"
             className="admin-mobile-bottom-nav-item"

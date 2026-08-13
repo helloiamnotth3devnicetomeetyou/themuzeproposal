@@ -2,7 +2,8 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
 import type { SocialLink } from "@/admin/components/content/SocialLinksField";
 
-export type ProfileTab = "basic" | "visual" | "content" | "social" | "scenes" | "gallery" | "publish";
+export type ProfileTab =
+  "basic" | "visual" | "content" | "social" | "scenes" | "gallery" | "publish";
 
 export type ProfileDraft = {
   name: string;
@@ -47,4 +48,8 @@ export const profileTabs: WorkbenchTab<ProfileTab>[] = [
 ];
 
 export const toArtistSlug = (value: string) =>
-  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");

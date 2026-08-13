@@ -16,7 +16,9 @@ describe("normalizeSceneLink", () => {
   });
 
   it("accepts relative paths starting with /", () => {
-    expect(normalizeSceneLink("/rescene/discography")).toBe("/rescene/discography");
+    expect(normalizeSceneLink("/rescene/discography")).toBe(
+      "/rescene/discography",
+    );
     expect(normalizeSceneLink("/")).toBe("/");
   });
 
@@ -43,11 +45,15 @@ describe("normalizeOutline", () => {
   });
 
   it("filters out non-object items", () => {
-    expect(normalizeOutline([null, "bad", 1, { x: 10, y: 20 }])).toEqual([{ x: 10, y: 20 }]);
+    expect(normalizeOutline([null, "bad", 1, { x: 10, y: 20 }])).toEqual([
+      { x: 10, y: 20 },
+    ]);
   });
 
   it("filters items missing x or y", () => {
-    expect(normalizeOutline([{ x: 10 }, { y: 20 }, { x: 30, y: 40 }])).toEqual([{ x: 30, y: 40 }]);
+    expect(normalizeOutline([{ x: 10 }, { y: 20 }, { x: 30, y: 40 }])).toEqual([
+      { x: 30, y: 40 },
+    ]);
   });
 
   it("clamps x and y to 0-100", () => {
@@ -86,7 +92,12 @@ describe("outlineToPath", () => {
   it("returns empty string for fewer than 3 points", () => {
     expect(outlineToPath([])).toBe("");
     expect(outlineToPath([{ x: 10, y: 10 }])).toBe("");
-    expect(outlineToPath([{ x: 10, y: 10 }, { x: 20, y: 20 }])).toBe("");
+    expect(
+      outlineToPath([
+        { x: 10, y: 10 },
+        { x: 20, y: 20 },
+      ]),
+    ).toBe("");
   });
 
   it("produces a path string starting with M and ending with Z", () => {
@@ -114,7 +125,11 @@ describe("outlineToPath", () => {
 
 describe("simplifyOutline", () => {
   it("returns input unchanged for < 4 points", () => {
-    const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 100 }];
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 50, y: 100 },
+    ];
     expect(simplifyOutline(pts)).toEqual(pts);
   });
 
@@ -122,7 +137,7 @@ describe("simplifyOutline", () => {
     // A rectangle where extra midpoints on each edge should be removable
     const points = [
       { x: 0, y: 0 },
-      { x: 50, y: 0 },  // midpoint – collinear, should be simplified away
+      { x: 50, y: 0 }, // midpoint – collinear, should be simplified away
       { x: 100, y: 0 },
       { x: 100, y: 100 },
       { x: 0, y: 100 },

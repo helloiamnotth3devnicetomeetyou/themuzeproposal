@@ -10,7 +10,12 @@ type Props = {
   label?: string;
 };
 
-export default function OverflowDeleteMenu({ onDelete, disabled = false, deleteLabel = "삭제", label = "더보기" }: Props) {
+export default function OverflowDeleteMenu({
+  onDelete,
+  disabled = false,
+  deleteLabel = "삭제",
+  label = "더보기",
+}: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -37,5 +42,43 @@ export default function OverflowDeleteMenu({ onDelete, disabled = false, deleteL
     };
   }, [open]);
 
-  return <div ref={rootRef} className="admin-overflow-menu"><button ref={triggerRef} type="button" data-tour-id="editor-more-actions" className="admin-btn admin-btn-secondary admin-overflow-trigger" aria-label={label} aria-haspopup="menu" aria-expanded={open} disabled={disabled} onClick={() => setOpen((value) => !value)}><MoreHorizontal aria-hidden="true" /></button>{open && <div className="admin-overflow-menu-list" role="menu" aria-label={label}><button ref={deleteRef} type="button" data-tour-id="entity-delete" role="menuitem" className="admin-overflow-delete" onClick={() => { close(); onDelete(); }}><Trash2 aria-hidden="true" />{deleteLabel}</button></div>}</div>;
+  return (
+    <div ref={rootRef} className="admin-overflow-menu">
+      <button
+        ref={triggerRef}
+        type="button"
+        data-tour-id="editor-more-actions"
+        className="admin-btn admin-btn-secondary admin-overflow-trigger"
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <MoreHorizontal aria-hidden="true" />
+      </button>
+      {open && (
+        <div
+          className="admin-overflow-menu-list"
+          role="menu"
+          aria-label={label}
+        >
+          <button
+            ref={deleteRef}
+            type="button"
+            data-tour-id="entity-delete"
+            role="menuitem"
+            className="admin-overflow-delete"
+            onClick={() => {
+              close();
+              onDelete();
+            }}
+          >
+            <Trash2 aria-hidden="true" />
+            {deleteLabel}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

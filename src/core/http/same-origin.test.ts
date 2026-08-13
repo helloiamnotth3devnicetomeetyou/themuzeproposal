@@ -12,13 +12,23 @@ describe("isSameOriginRequest", () => {
   });
 
   it("rejects missing, malformed, and cross-site origins", () => {
-    expect(isSameOriginRequest(new NextRequest("https://themuze.kr/api/auth/login"))).toBe(false);
-    expect(isSameOriginRequest(new NextRequest("https://themuze.kr/api/auth/login", {
-      headers: { origin: "not a url" },
-    }))).toBe(false);
-    expect(isSameOriginRequest(new NextRequest("https://themuze.kr/api/auth/login", {
-      headers: { origin: "https://attacker.example" },
-    }))).toBe(false);
+    expect(
+      isSameOriginRequest(new NextRequest("https://themuze.kr/api/auth/login")),
+    ).toBe(false);
+    expect(
+      isSameOriginRequest(
+        new NextRequest("https://themuze.kr/api/auth/login", {
+          headers: { origin: "not a url" },
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isSameOriginRequest(
+        new NextRequest("https://themuze.kr/api/auth/login", {
+          headers: { origin: "https://attacker.example" },
+        }),
+      ),
+    ).toBe(false);
   });
 
   it("accepts an origin with a path because only the origin matters", () => {

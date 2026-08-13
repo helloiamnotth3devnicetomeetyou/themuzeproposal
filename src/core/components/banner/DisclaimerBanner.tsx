@@ -25,7 +25,11 @@ function getServerSnapshot(): boolean {
 }
 
 export default function DisclaimerBanner() {
-  const isDismissed = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const isDismissed = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   useEffect(() => {
     if (!isDismissed) {
@@ -60,7 +64,9 @@ export default function DisclaimerBanner() {
         </span>
         <p className="truncate font-sans text-xs font-semibold tracking-tight text-[#78350f]">
           <span>본 사이트는 공식 웹사이트가 아닙니다.</span>
-          <span className="ml-1.5 opacity-80 font-normal hidden sm:inline">(This is not an official website)</span>
+          <span className="ml-1.5 opacity-80 font-normal hidden sm:inline">
+            (This is not an official website)
+          </span>
         </p>
       </div>
 
@@ -76,4 +82,3 @@ export default function DisclaimerBanner() {
     </aside>
   );
 }
-

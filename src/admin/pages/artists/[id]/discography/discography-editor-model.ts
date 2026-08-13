@@ -39,12 +39,23 @@ export type RawAlbum = {
   tracks: RawTrack[] | null;
 };
 
-export const albumSelect = "id,artist_id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,title_ko,title_en,title_ja,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
-export const legacyAlbumSelect = "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
+export const albumSelect =
+  "id,artist_id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,title_ko,title_en,title_ja,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
+export const legacyAlbumSelect =
+  "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
 
-export function filterAlbums(albums: AlbumEditorDraft[], search: string, filter: "all" | "published" | "draft") {
+export function filterAlbums(
+  albums: AlbumEditorDraft[],
+  search: string,
+  filter: "all" | "published" | "draft",
+) {
   const query = search.toLowerCase();
-  return albums.filter((album) => `${album.title} ${album.type}`.toLowerCase().includes(query) && (filter === "all" || (filter === "published" ? album.is_published : !album.is_published)));
+  return albums.filter(
+    (album) =>
+      `${album.title} ${album.type}`.toLowerCase().includes(query) &&
+      (filter === "all" ||
+        (filter === "published" ? album.is_published : !album.is_published)),
+  );
 }
 
 export function albumToDraft(album: RawAlbum): AlbumEditorDraft {

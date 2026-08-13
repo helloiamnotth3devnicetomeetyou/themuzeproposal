@@ -3,12 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/core/auth/admin-auth";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
-const { url: supabaseUrl, anonKey: supabaseAnonKey } = getPublicSupabaseConfig();
+const { url: supabaseUrl, anonKey: supabaseAnonKey } =
+  getPublicSupabaseConfig();
 
 function copyResponseState(source: NextResponse, target: NextResponse) {
   source.cookies.getAll().forEach((cookie) => target.cookies.set(cookie));
   for (const [key, value] of source.headers) {
-    if (key.toLowerCase() !== "location" && key.toLowerCase() !== "set-cookie") {
+    if (
+      key.toLowerCase() !== "location" &&
+      key.toLowerCase() !== "set-cookie"
+    ) {
       target.headers.set(key, value);
     }
   }
@@ -22,7 +26,9 @@ export async function updateSession(request: NextRequest) {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookiesToSet, headers) => {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
         response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
@@ -45,7 +51,10 @@ export async function updateSession(request: NextRequest) {
     return copyResponseState(response, NextResponse.redirect(loginUrl));
   }
 
-  if (request.nextUrl.pathname.startsWith("/admin") && !(await isAdmin(supabase, userId))) {
+  if (
+    request.nextUrl.pathname.startsWith("/admin") &&
+    !(await isAdmin(supabase, userId))
+  ) {
     const publicUrl = request.nextUrl.clone();
     publicUrl.pathname = "/";
     publicUrl.search = "";

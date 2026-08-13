@@ -1,7 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bold, Heading2, Heading3, Italic, Link, List, ListOrdered, Quote, Redo2, RemoveFormatting, Strikethrough, Underline, Undo2 } from "lucide-react";
+import {
+  Bold,
+  Heading2,
+  Heading3,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  Quote,
+  Redo2,
+  RemoveFormatting,
+  Strikethrough,
+  Underline,
+  Undo2,
+} from "lucide-react";
 import { escapeHtml, sanitizeRichText } from "@/core/utils/rich-text";
 
 type RichTextEditorProps = {
@@ -15,7 +29,14 @@ type RichTextEditorProps = {
   invalid?: boolean;
 };
 
-type FormatName = "bold" | "italic" | "underline" | "strikeThrough" | "h2" | "h3" | "blockquote";
+type FormatName =
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strikeThrough"
+  | "h2"
+  | "h3"
+  | "blockquote";
 
 const toolLabel: Record<FormatName, string> = {
   bold: "굵게",
@@ -48,7 +69,12 @@ export default function RichTextEditor({
   const updateActiveFormats = useCallback(() => {
     const editor = editorRef.current;
     const selection = document.getSelection();
-    if (!editor || !selection?.anchorNode || !editor.contains(selection.anchorNode)) return;
+    if (
+      !editor ||
+      !selection?.anchorNode ||
+      !editor.contains(selection.anchorNode)
+    )
+      return;
 
     const next = new Set<FormatName>();
     if (document.queryCommandState("bold")) next.add("bold");
@@ -56,7 +82,9 @@ export default function RichTextEditor({
     if (document.queryCommandState("underline")) next.add("underline");
     if (document.queryCommandState("strikeThrough")) next.add("strikeThrough");
 
-    const block = String(document.queryCommandValue("formatBlock")).toLowerCase().replace(/[<>]/g, "");
+    const block = String(document.queryCommandValue("formatBlock"))
+      .toLowerCase()
+      .replace(/[<>]/g, "");
     if (block === "h2") next.add("h2");
     if (block === "h3") next.add("h3");
     if (block === "blockquote") next.add("blockquote");
@@ -72,7 +100,8 @@ export default function RichTextEditor({
 
   useEffect(() => {
     document.addEventListener("selectionchange", updateActiveFormats);
-    return () => document.removeEventListener("selectionchange", updateActiveFormats);
+    return () =>
+      document.removeEventListener("selectionchange", updateActiveFormats);
   }, [updateActiveFormats]);
 
   const runCommand = (command: string, commandValue?: string) => {
@@ -97,7 +126,9 @@ export default function RichTextEditor({
     event.preventDefault();
     const html = event.clipboardData.getData("text/html");
     const text = event.clipboardData.getData("text/plain");
-    const safeContent = html ? sanitizeRichText(html) : escapeHtml(text).replace(/\r?\n/g, "<br>");
+    const safeContent = html
+      ? sanitizeRichText(html)
+      : escapeHtml(text).replace(/\r?\n/g, "<br>");
     document.execCommand("insertHTML", false, safeContent);
     emitChange();
   };
@@ -110,10 +141,7 @@ export default function RichTextEditor({
     onChange(sanitized);
   };
 
-  const formatButton = (
-    format: FormatName,
-    icon: React.ReactNode,
-  ) => (
+  const formatButton = (format: FormatName, icon: React.ReactNode) => (
     <button
       type="button"
       className={active.has(format) ? "is-active" : ""}
@@ -136,11 +164,23 @@ export default function RichTextEditor({
   return (
     <div className="rich-text-field">
       <div className="rich-text-label">
-        <span>{label}{required && <> <b>*</b></>}</span>
+        <span>
+          {label}
+          {required && (
+            <>
+              {" "}
+              <b>*</b>
+            </>
+          )}
+        </span>
         <small>텍스트를 선택한 뒤 서식을 적용하세요.</small>
       </div>
       <div className="rich-text-shell">
-        <div className="rich-text-toolbar" role="toolbar" aria-label="본문 서식">
+        <div
+          className="rich-text-toolbar"
+          role="toolbar"
+          aria-label="본문 서식"
+        >
           <div className="rich-text-tool-group">
             {formatButton("h2", <Heading2 aria-hidden="true" />)}
             {formatButton("h3", <Heading3 aria-hidden="true" />)}
@@ -149,18 +189,69 @@ export default function RichTextEditor({
             {formatButton("bold", <Bold aria-hidden="true" />)}
             {formatButton("italic", <Italic aria-hidden="true" />)}
             {formatButton("underline", <Underline aria-hidden="true" />)}
-            {formatButton("strikeThrough", <Strikethrough aria-hidden="true" />)}
+            {formatButton(
+              "strikeThrough",
+              <Strikethrough aria-hidden="true" />,
+            )}
           </div>
           <div className="rich-text-tool-group">
-            <button type="button" aria-label="글머리 목록" title="글머리 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertUnorderedList")}><List aria-hidden="true" /></button>
-            <button type="button" aria-label="번호 목록" title="번호 목록" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("insertOrderedList")}><ListOrdered aria-hidden="true" /></button>
+            <button
+              type="button"
+              aria-label="글머리 목록"
+              title="글머리 목록"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => runCommand("insertUnorderedList")}
+            >
+              <List aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="번호 목록"
+              title="번호 목록"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => runCommand("insertOrderedList")}
+            >
+              <ListOrdered aria-hidden="true" />
+            </button>
             {formatButton("blockquote", <Quote aria-hidden="true" />)}
-            <button type="button" aria-label="링크" title="링크" onMouseDown={(event) => event.preventDefault()} onClick={addLink}><Link aria-hidden="true" /></button>
+            <button
+              type="button"
+              aria-label="링크"
+              title="링크"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={addLink}
+            >
+              <Link aria-hidden="true" />
+            </button>
           </div>
           <div className="rich-text-tool-group rich-text-history-tools">
-            <button type="button" aria-label="실행 취소" title="실행 취소" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("undo")}><Undo2 aria-hidden="true" /></button>
-            <button type="button" aria-label="다시 실행" title="다시 실행" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("redo")}><Redo2 aria-hidden="true" /></button>
-            <button type="button" aria-label="서식 지우기" title="서식 지우기" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand("removeFormat")}><RemoveFormatting aria-hidden="true" /></button>
+            <button
+              type="button"
+              aria-label="실행 취소"
+              title="실행 취소"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => runCommand("undo")}
+            >
+              <Undo2 aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="다시 실행"
+              title="다시 실행"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => runCommand("redo")}
+            >
+              <Redo2 aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="서식 지우기"
+              title="서식 지우기"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => runCommand("removeFormat")}
+            >
+              <RemoveFormatting aria-hidden="true" />
+            </button>
           </div>
         </div>
         <div

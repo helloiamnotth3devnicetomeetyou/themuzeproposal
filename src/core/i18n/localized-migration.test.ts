@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20260726160000_add_localized_content_fields.sql"),
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260726160000_add_localized_content_fields.sql",
+  ),
   "utf8",
 ).toLowerCase();
 
@@ -19,9 +22,16 @@ describe("localized content migration", () => {
       "name_en = coalesce",
       "set title_ko = title",
       "set location_ko = location",
-    ]) expect(migration).toContain(statement);
+    ])
+      expect(migration).toContain(statement);
 
-    for (const legacyColumn of ["artists.name", "artists.eng_name", "albums.title", "tracks.title", "artist_schedules.location"]) {
+    for (const legacyColumn of [
+      "artists.name",
+      "artists.eng_name",
+      "albums.title",
+      "tracks.title",
+      "artist_schedules.location",
+    ]) {
       expect(migration).toContain(legacyColumn);
     }
   });

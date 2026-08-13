@@ -4,12 +4,12 @@
 
 ## client 선택
 
-| 함수/객체 | 자격 | 사용처 |
-| --- | --- | --- |
-| `supabase` (`core/supabase/client.ts`) | anon + browser session | Client Component, 일반 사용자·관리자 RLS 작업 |
-| `createSupabaseServerClient()` | anon + request cookie | Server Component/Route Handler의 사용자 세션·RLS 작업 |
-| 공개 server/repository client | anon, session 비저장 | 공개 캐시 가능한 조회 |
-| `createServiceRoleClient()` | service role, RLS 우회 | 검증된 서버 route의 제한된 DB 관리·제출 작업 |
+| 함수/객체                              | 자격                   | 사용처                                                |
+| -------------------------------------- | ---------------------- | ----------------------------------------------------- |
+| `supabase` (`core/supabase/client.ts`) | anon + browser session | Client Component, 일반 사용자·관리자 RLS 작업         |
+| `createSupabaseServerClient()`         | anon + request cookie  | Server Component/Route Handler의 사용자 세션·RLS 작업 |
+| 공개 server/repository client          | anon, session 비저장   | 공개 캐시 가능한 조회                                 |
+| `createServiceRoleClient()`            | service role, RLS 우회 | 검증된 서버 route의 제한된 DB 관리·제출 작업          |
 
 Service role client가 `null`일 수 있으므로 route는 `503 SERVICE_UNAVAILABLE`로 실패해야 한다. 클라이언트 bundle에 service key가 들어가는 import 구조는 금지한다.
 
@@ -79,32 +79,32 @@ private.submission_rate_limits
 
 ### 실제 FK와 삭제 동작
 
-| 자식 | FK | 삭제 동작 | 구현상 주의 |
-| --- | --- | --- | --- |
-| `albums` | `artist_id → artists.id` | CASCADE | 아티스트 삭제 시 앨범·곡·홈 슬라이드까지 연쇄 삭제 |
-| `artist_members`, `artist_scenes`, `artist_schedules`, `avatar_assets` | `artist_id → artists.id` | CASCADE | 운영에서는 삭제보다 `is_active`/공개 상태 변경 우선 |
-| `artist_gallery` | `artist_id` CASCADE, `member_id`/`album_id` SET NULL | 혼합 | gallery row 자체는 아티스트에 종속 |
-| `artist_scene_members` | `scene_id`, `member_id` | CASCADE | scene 또는 멤버 삭제 시 배치 row 제거 |
-| `tracks`, `home_hero_slides` | `album_id → albums.id` | CASCADE | 앨범 저장 RPC와 정렬 index를 함께 고려 |
-| `notices` | `artist_id → artists.id` | CASCADE | null이면 전역 공지 |
-| `profiles` | `id → auth.users.id` | CASCADE | auth user 삭제가 profile을 제거 |
-| `profiles` | `avatar_asset_id → avatar_assets.id` | SET NULL | avatar 비활성화 trigger도 profile 참조를 정리 |
-| `audition_form_fields` | `campaign_id → audition_campaigns.id` | CASCADE | 캠페인 삭제 시 동적 질문 제거 |
-| `audition_submissions` | `campaign_id` RESTRICT, `audition_id`/user/reviewer SET NULL | 혼합 | 제출 이력이 있으므로 campaign 삭제 제한 |
-| `protect_report_attachments` | `report_id → protect_reports.id` | CASCADE | 신고 삭제 시 metadata도 제거 |
-| `protect_reports` | `artist_id` RESTRICT, `user_id` CASCADE | 혼합 | 신고 대상 아티스트 삭제를 DB가 차단 |
-| `contact_inquiries` | user/answered_by SET NULL | SET NULL | 비로그인 문의와 담당자 삭제를 허용 |
+| 자식                                                                   | FK                                                           | 삭제 동작 | 구현상 주의                                         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------ | --------- | --------------------------------------------------- |
+| `albums`                                                               | `artist_id → artists.id`                                     | CASCADE   | 아티스트 삭제 시 앨범·곡·홈 슬라이드까지 연쇄 삭제  |
+| `artist_members`, `artist_scenes`, `artist_schedules`, `avatar_assets` | `artist_id → artists.id`                                     | CASCADE   | 운영에서는 삭제보다 `is_active`/공개 상태 변경 우선 |
+| `artist_gallery`                                                       | `artist_id` CASCADE, `member_id`/`album_id` SET NULL         | 혼합      | gallery row 자체는 아티스트에 종속                  |
+| `artist_scene_members`                                                 | `scene_id`, `member_id`                                      | CASCADE   | scene 또는 멤버 삭제 시 배치 row 제거               |
+| `tracks`, `home_hero_slides`                                           | `album_id → albums.id`                                       | CASCADE   | 앨범 저장 RPC와 정렬 index를 함께 고려              |
+| `notices`                                                              | `artist_id → artists.id`                                     | CASCADE   | null이면 전역 공지                                  |
+| `profiles`                                                             | `id → auth.users.id`                                         | CASCADE   | auth user 삭제가 profile을 제거                     |
+| `profiles`                                                             | `avatar_asset_id → avatar_assets.id`                         | SET NULL  | avatar 비활성화 trigger도 profile 참조를 정리       |
+| `audition_form_fields`                                                 | `campaign_id → audition_campaigns.id`                        | CASCADE   | 캠페인 삭제 시 동적 질문 제거                       |
+| `audition_submissions`                                                 | `campaign_id` RESTRICT, `audition_id`/user/reviewer SET NULL | 혼합      | 제출 이력이 있으므로 campaign 삭제 제한             |
+| `protect_report_attachments`                                           | `report_id → protect_reports.id`                             | CASCADE   | 신고 삭제 시 metadata도 제거                        |
+| `protect_reports`                                                      | `artist_id` RESTRICT, `user_id` CASCADE                      | 혼합      | 신고 대상 아티스트 삭제를 DB가 차단                 |
+| `contact_inquiries`                                                    | user/answered_by SET NULL                                    | SET NULL  | 비로그인 문의와 담당자 삭제를 허용                  |
 
 ### 테이블 핵심 column 계약
 
-| 영역 | 필수 계약 |
-| --- | --- |
-| 공개 entity | `id uuid`, `created_at`, `updated_at`, 활성/발행 상태와 정렬 값 |
-| 다국어 콘텐츠 | 기존 canonical `name`/`title`을 호환 유지하고 `*_ko`, `*_en`, `*_ja` fallback 사용 |
-| URL | 외부 URL은 HTTP(S) check를 통과해야 하며, 내부 이동은 별도 relative path 규칙을 사용 |
-| JSONB | `social_links`/options/form schema/answers는 `jsonb_typeof` check로 배열·객체 shape 고정 |
-| 파일 metadata | path·name·size가 모두 있거나 모두 없어야 하며 route의 signature 검증 결과와 일치해야 함 |
-| 상태값 | DB check constraint의 enum을 먼저 확인하고 UI에 임의 상태를 추가하지 않음 |
+| 영역          | 필수 계약                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| 공개 entity   | `id uuid`, `created_at`, `updated_at`, 활성/발행 상태와 정렬 값                          |
+| 다국어 콘텐츠 | 기존 canonical `name`/`title`을 호환 유지하고 `*_ko`, `*_en`, `*_ja` fallback 사용       |
+| URL           | 외부 URL은 HTTP(S) check를 통과해야 하며, 내부 이동은 별도 relative path 규칙을 사용     |
+| JSONB         | `social_links`/options/form schema/answers는 `jsonb_typeof` check로 배열·객체 shape 고정 |
+| 파일 metadata | path·name·size가 모두 있거나 모두 없어야 하며 route의 signature 검증 결과와 일치해야 함  |
+| 상태값        | DB check constraint의 enum을 먼저 확인하고 UI에 임의 상태를 추가하지 않음                |
 
 주요 상태값은 다음과 같다.
 
@@ -118,25 +118,25 @@ private.submission_rate_limits
 
 `private.login_rate_limits`와 `private.submission_rate_limits`는 PostgREST 공개 대상이 아니다. `public` 함수가 HMAC으로 만든 identifier를 받아 원자적으로 window/count를 갱신한다.
 
-| 테이블 | key | 용도 | 노출 규칙 |
-| --- | --- | --- | --- |
-| `private.login_rate_limits` | identifier hash, IP hash | 비밀번호 로그인 실패 제한 | public/anon/authenticated 직접 grant 금지 |
-| `private.submission_rate_limits` | scope, key hash | 문의·Protect·오디션 제출 제한 | public/anon/authenticated 직접 grant 금지 |
+| 테이블                           | key                      | 용도                          | 노출 규칙                                 |
+| -------------------------------- | ------------------------ | ----------------------------- | ----------------------------------------- |
+| `private.login_rate_limits`      | identifier hash, IP hash | 비밀번호 로그인 실패 제한     | public/anon/authenticated 직접 grant 금지 |
+| `private.submission_rate_limits` | scope, key hash          | 문의·Protect·오디션 제출 제한 | public/anon/authenticated 직접 grant 금지 |
 
 비밀값이나 원문 이메일·IP를 저장하지 않는다. rate-limit table, RPC, secret 중 하나라도 없으면 route는 fail-open하지 않고 `503`을 반환한다.
 
 ### 서버가 호출하는 주요 RPC
 
-| 함수 | 호출 경계 | 목적 |
-| --- | --- | --- |
-| `is_admin()`, `is_super_admin()`, `has_admin_role()` | RLS/policy와 서버 | 현재 auth user role 판정 |
-| `consume_login_rate_limit()`, `reset_login_rate_limit()` | auth route | 로그인 실패 window 소비·성공 reset |
-| `consume_submission_rate_limit()` | 공개 제출 route | scope별 제출 quota 원자 처리 |
-| `get_my_audition_submissions()` | authenticated 사용자 | 관리자 전용 column을 제외한 본인 조회 |
-| `get_admin_audition_submissions()` | admin | 캠페인 지원자 심사 projection |
-| `save_album_with_tracks()` | admin editor | 앨범과 곡을 한 DB 작업으로 저장 |
-| `save_avatar_assets()` | admin editor | avatar asset 정렬·삭제 저장 |
-| `reorder_albums()` | admin editor | 아티스트 앨범 순서 변경 |
+| 함수                                                     | 호출 경계            | 목적                                  |
+| -------------------------------------------------------- | -------------------- | ------------------------------------- |
+| `is_admin()`, `is_super_admin()`, `has_admin_role()`     | RLS/policy와 서버    | 현재 auth user role 판정              |
+| `consume_login_rate_limit()`, `reset_login_rate_limit()` | auth route           | 로그인 실패 window 소비·성공 reset    |
+| `consume_submission_rate_limit()`                        | 공개 제출 route      | scope별 제출 quota 원자 처리          |
+| `get_my_audition_submissions()`                          | authenticated 사용자 | 관리자 전용 column을 제외한 본인 조회 |
+| `get_admin_audition_submissions()`                       | admin                | 캠페인 지원자 심사 projection         |
+| `save_album_with_tracks()`                               | admin editor         | 앨범과 곡을 한 DB 작업으로 저장       |
+| `save_avatar_assets()`                                   | admin editor         | avatar asset 정렬·삭제 저장           |
+| `reorder_albums()`                                       | admin editor         | 아티스트 앨범 순서 변경               |
 
 ## Cloudflare R2 객체 저장소
 
@@ -144,15 +144,15 @@ private.submission_rate_limits
 
 코드에서 확인되는 논리 bucket 책임:
 
-| bucket | 공개 여부/용도 | route 제한 |
-| --- | --- | --- |
-| `artist-assets` | 공개 아티스트 이미지·로고 | 관리자, 이미지 magic bytes |
-| `album-covers` | 공개 앨범 이미지 | 관리자, 이미지 magic bytes |
-| `track-assets` | 공개 커버/MP3 | 관리자, 서버 검증 업로드 |
-| `business-assets` | 공개 press-kit.zip, profile.pdf만 | 관리자, 고정 path allowlist |
-| `contact-attachments` | 비공개 문의 첨부 | PDF/PPT/PPTX |
-| `protect-evidence` | 비공개 제보 증빙 | 이미지/GIF/PDF |
-| `audition-attachments` | 비공개 지원 첨부 | 로그인 제출 API, 관리자 읽기 |
+| bucket                 | 공개 여부/용도                    | route 제한                   |
+| ---------------------- | --------------------------------- | ---------------------------- |
+| `artist-assets`        | 공개 아티스트 이미지·로고         | 관리자, 이미지 magic bytes   |
+| `album-covers`         | 공개 앨범 이미지                  | 관리자, 이미지 magic bytes   |
+| `track-assets`         | 공개 커버/MP3                     | 관리자, 서버 검증 업로드     |
+| `business-assets`      | 공개 press-kit.zip, profile.pdf만 | 관리자, 고정 path allowlist  |
+| `contact-attachments`  | 비공개 문의 첨부                  | PDF/PPT/PPTX                 |
+| `protect-evidence`     | 비공개 제보 증빙                  | 이미지/GIF/PDF               |
+| `audition-attachments` | 비공개 지원 첨부                  | 로그인 제출 API, 관리자 읽기 |
 
 Supabase Storage policy는 R2 객체 접근에 적용되지 않는다. browser에서 임의 path로 직접 업로드하지 않고 서버 route가 bucket, path, 크기, signature, extension을 검증한다. 저장 파일명은 사용자 입력 대신 UUID와 검증된 extension을 사용하고 원래 이름은 metadata/DB에만 제한 길이로 저장한다. 예외인 hero video는 서버가 발급한 60초 서명 PUT URL로만 직접 업로드하며, 완료 후 서버가 크기·MIME·파일 시그니처를 다시 검증하고 `pending/` 객체를 공개 `clips/` 경로로 복사한다.
 

@@ -1,7 +1,16 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Clock3, Filter, History, Search, ShieldCheck, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Filter,
+  History,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { supabase } from "@/core/supabase/client";
 import styles from "@/styles/(admin)/pages/audit-logs/audit-logs.module.css";
@@ -58,7 +67,8 @@ function operationClass(operation: AuditOperation) {
 
 export default function AuditLogsAdminPage() {
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
-  const [draftFilters, setDraftFilters] = useState<AuditLogFilters>(EMPTY_AUDIT_FILTERS);
+  const [draftFilters, setDraftFilters] =
+    useState<AuditLogFilters>(EMPTY_AUDIT_FILTERS);
   const [filters, setFilters] = useState<AuditLogFilters>(EMPTY_AUDIT_FILTERS);
   const [selected, setSelected] = useState<AuditLogRow | null>(null);
   const [page, setPage] = useState(1);
@@ -69,7 +79,15 @@ export default function AuditLogsAdminPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
   const groupedLogs = useMemo(() => groupAuditLogs(logs), [logs]);
-  const selectedGroup = useMemo(() => selected ? groupedLogs.find((group) => group.entries.some((entry) => entry.id === selected.id)) : null, [groupedLogs, selected]);
+  const selectedGroup = useMemo(
+    () =>
+      selected
+        ? groupedLogs.find((group) =>
+            group.entries.some((entry) => entry.id === selected.id),
+          )
+        : null,
+    [groupedLogs, selected],
+  );
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -82,23 +100,33 @@ export default function AuditLogsAdminPage() {
       .order("id", { ascending: false })
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-    if (filters.fromDate) query = query.gte("occurred_at", localDateBoundary(filters.fromDate));
-    if (filters.toDate) query = query.lt("occurred_at", localDateBoundary(filters.toDate, 1));
-    if (filters.actor.trim()) query = query.ilike("actor_email", `%${filters.actor.trim()}%`);
+    if (filters.fromDate)
+      query = query.gte("occurred_at", localDateBoundary(filters.fromDate));
+    if (filters.toDate)
+      query = query.lt("occurred_at", localDateBoundary(filters.toDate, 1));
+    if (filters.actor.trim())
+      query = query.ilike("actor_email", `%${filters.actor.trim()}%`);
     if (filters.tableName) query = query.eq("table_name", filters.tableName);
     if (filters.operation) query = query.eq("operation", filters.operation);
-    if (filters.recordId.trim()) query = query.ilike("record_id", `%${filters.recordId.trim()}%`);
+    if (filters.recordId.trim())
+      query = query.ilike("record_id", `%${filters.recordId.trim()}%`);
 
     const { data, count, error: fetchError } = await query;
     if (fetchError) {
-      setError("변경 이력을 불러오지 못했습니다. 관리자 권한과 데이터베이스 마이그레이션 상태를 확인해 주세요.");
+      setError(
+        "변경 이력을 불러오지 못했습니다. 관리자 권한과 데이터베이스 마이그레이션 상태를 확인해 주세요.",
+      );
       setLogs([]);
       setTotal(0);
     } else {
       const nextLogs = (data ?? []) as unknown as AuditLogRow[];
       setLogs(nextLogs);
       setTotal(count ?? 0);
-      setSelected((current) => current && nextLogs.some((log) => log.id === current.id) ? current : null);
+      setSelected((current) =>
+        current && nextLogs.some((log) => log.id === current.id)
+          ? current
+          : null,
+      );
     }
     setLoading(false);
   }, [filters, page]);
@@ -107,7 +135,10 @@ export default function AuditLogsAdminPage() {
     void Promise.resolve().then(loadLogs);
   }, [loadLogs]);
 
-  const detailFields = useMemo(() => selected ? auditFields(selected) : [], [selected]);
+  const detailFields = useMemo(
+    () => (selected ? auditFields(selected) : []),
+    [selected],
+  );
 
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -123,7 +154,10 @@ export default function AuditLogsAdminPage() {
     setSelected(null);
   };
 
-  const patchFilter = <K extends keyof AuditLogFilters>(key: K, value: AuditLogFilters[K]) => {
+  const patchFilter = <K extends keyof AuditLogFilters>(
+    key: K,
+    value: AuditLogFilters[K],
+  ) => {
     setDraftFilters((current) => ({ ...current, [key]: value }));
   };
 
@@ -141,34 +175,68 @@ export default function AuditLogsAdminPage() {
         </div>
       </header>
 
-      <form className={styles.filters} data-tour-id="audit-filters" onSubmit={applyFilters}>
+      <form
+        className={styles.filters}
+        data-tour-id="audit-filters"
+        onSubmit={applyFilters}
+      >
         <div className={styles.filterHeading}>
-          <span><Filter aria-hidden="true" /> 조회 조건</span>
+          <span>
+            <Filter aria-hidden="true" /> 조회 조건
+          </span>
           {activeFilterCount > 0 && <b>{activeFilterCount}개 적용 중</b>}
         </div>
         <div className={styles.filterGrid} data-tour-id="audit-filter-fields">
           <label>
             <span>시작일</span>
-            <input type="date" value={draftFilters.fromDate} onChange={(event) => patchFilter("fromDate", event.target.value)} />
+            <input
+              type="date"
+              value={draftFilters.fromDate}
+              onChange={(event) => patchFilter("fromDate", event.target.value)}
+            />
           </label>
           <label>
             <span>종료일</span>
-            <input type="date" value={draftFilters.toDate} onChange={(event) => patchFilter("toDate", event.target.value)} />
+            <input
+              type="date"
+              value={draftFilters.toDate}
+              onChange={(event) => patchFilter("toDate", event.target.value)}
+            />
           </label>
           <label>
             <span>관리자 이메일</span>
-            <input type="search" value={draftFilters.actor} onChange={(event) => patchFilter("actor", event.target.value)} placeholder="admin@themuze.kr" />
+            <input
+              type="search"
+              value={draftFilters.actor}
+              onChange={(event) => patchFilter("actor", event.target.value)}
+              placeholder="admin@themuze.kr"
+            />
           </label>
           <label>
             <span>대상 종류</span>
-            <select value={draftFilters.tableName} onChange={(event) => patchFilter("tableName", event.target.value)}>
+            <select
+              value={draftFilters.tableName}
+              onChange={(event) => patchFilter("tableName", event.target.value)}
+            >
               <option value="">전체 대상</option>
-              {AUDIT_TABLES.map((table) => <option key={table} value={table}>{tableLabel(table)}</option>)}
+              {AUDIT_TABLES.map((table) => (
+                <option key={table} value={table}>
+                  {tableLabel(table)}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             <span>작업</span>
-            <select value={draftFilters.operation} onChange={(event) => patchFilter("operation", event.target.value as AuditLogFilters["operation"])}>
+            <select
+              value={draftFilters.operation}
+              onChange={(event) =>
+                patchFilter(
+                  "operation",
+                  event.target.value as AuditLogFilters["operation"],
+                )
+              }
+            >
               <option value="">전체 작업</option>
               <option value="INSERT">생성</option>
               <option value="UPDATE">수정</option>
@@ -177,20 +245,38 @@ export default function AuditLogsAdminPage() {
           </label>
           <label>
             <span>대상 ID</span>
-            <input type="search" value={draftFilters.recordId} onChange={(event) => patchFilter("recordId", event.target.value)} placeholder="UUID 또는 설정 키" />
+            <input
+              type="search"
+              value={draftFilters.recordId}
+              onChange={(event) => patchFilter("recordId", event.target.value)}
+              placeholder="UUID 또는 설정 키"
+            />
           </label>
         </div>
         <div className={styles.filterActions}>
-          <button type="button" data-tour-id="audit-reset" onClick={clearFilters} disabled={!activeFilterCount && !Object.values(draftFilters).some(Boolean)}>
+          <button
+            type="button"
+            data-tour-id="audit-reset"
+            onClick={clearFilters}
+            disabled={
+              !activeFilterCount && !Object.values(draftFilters).some(Boolean)
+            }
+          >
             <X aria-hidden="true" /> 초기화
           </button>
-          <button type="submit" data-tour-id="audit-search"><Search aria-hidden="true" /> 이력 조회</button>
+          <button type="submit" data-tour-id="audit-search">
+            <Search aria-hidden="true" /> 이력 조회
+          </button>
         </div>
       </form>
 
       {error && (
         <div className={styles.error} role="alert">
-          <b>!</b><span>{error}</span><button type="button" onClick={() => void loadLogs()}>다시 시도</button>
+          <b>!</b>
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadLogs()}>
+            다시 시도
+          </button>
         </div>
       )}
 
@@ -199,13 +285,22 @@ export default function AuditLogsAdminPage() {
           <div className={styles.panelHeading}>
             <div>
               <History aria-hidden="true" />
-              <span><b>변경 기록</b><small>최신 작업부터 표시</small></span>
+              <span>
+                <b>변경 기록</b>
+                <small>최신 작업부터 표시</small>
+              </span>
             </div>
-            <span>{page} / {totalPages}</span>
+            <span>
+              {page} / {totalPages}
+            </span>
           </div>
 
           {loading ? (
-            <AdminSkeleton variant="table" className={styles.loading} rows={5} />
+            <AdminSkeleton
+              variant="table"
+              className={styles.loading}
+              rows={5}
+            />
           ) : logs.length ? (
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -215,20 +310,72 @@ export default function AuditLogsAdminPage() {
                     <th>관리자</th>
                     <th>작업</th>
                     <th>대상</th>
-                    <th><span className="sr-only">상세</span></th>
+                    <th>
+                      <span className="sr-only">상세</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {groupedLogs.map(({ primary: log, entries }) => (
-                    <tr key={log.id} className={selected?.id === log.id ? styles.selectedRow : undefined}>
+                    <tr
+                      key={log.id}
+                      className={
+                        selected?.id === log.id ? styles.selectedRow : undefined
+                      }
+                    >
                       <td>
-                        <span className={styles.time}><Clock3 aria-hidden="true" />{dateTimeFormatter.format(new Date(log.occurred_at))}</span>
+                        <span className={styles.time}>
+                          <Clock3 aria-hidden="true" />
+                          {dateTimeFormatter.format(new Date(log.occurred_at))}
+                        </span>
                         <small>LOG #{String(log.id).padStart(6, "0")}</small>
                       </td>
-                      <td><b>{log.actor_email || "시스템 작업"}</b><small>{log.actor_id ? log.actor_id.slice(0, 8).toUpperCase() : "SERVICE"}</small></td>
-                      <td><span className={`${styles.operation} ${operationClass(log.operation)}`}>{operationLabel(log.operation)}</span></td>
-                      <td><b>{log.record_label}{entries.length > 1 ? ` 외 ${entries.length - 1}건` : ""}</b><small>{tableLabel(log.table_name)} · {log.record_id.slice(0, 8)} <button type="button" className={styles.copyId} onClick={() => void navigator.clipboard.writeText(log.record_id)}>ID 복사</button></small></td>
-                      <td><button type="button" data-tour-id="audit-open" onClick={() => setSelected(log)} aria-label={`${log.record_label} 변경 상세 보기`}><ChevronRight aria-hidden="true" /></button></td>
+                      <td>
+                        <b>{log.actor_email || "시스템 작업"}</b>
+                        <small>
+                          {log.actor_id
+                            ? log.actor_id.slice(0, 8).toUpperCase()
+                            : "SERVICE"}
+                        </small>
+                      </td>
+                      <td>
+                        <span
+                          className={`${styles.operation} ${operationClass(log.operation)}`}
+                        >
+                          {operationLabel(log.operation)}
+                        </span>
+                      </td>
+                      <td>
+                        <b>
+                          {log.record_label}
+                          {entries.length > 1
+                            ? ` 외 ${entries.length - 1}건`
+                            : ""}
+                        </b>
+                        <small>
+                          {tableLabel(log.table_name)} ·{" "}
+                          {log.record_id.slice(0, 8)}{" "}
+                          <button
+                            type="button"
+                            className={styles.copyId}
+                            onClick={() =>
+                              void navigator.clipboard.writeText(log.record_id)
+                            }
+                          >
+                            ID 복사
+                          </button>
+                        </small>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          data-tour-id="audit-open"
+                          onClick={() => setSelected(log)}
+                          aria-label={`${log.record_label} 변경 상세 보기`}
+                        >
+                          <ChevronRight aria-hidden="true" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -238,15 +385,41 @@ export default function AuditLogsAdminPage() {
             <div className={styles.empty}>
               <History aria-hidden="true" />
               <b>조건에 맞는 변경 이력이 없습니다.</b>
-              <span>필터를 조정하거나 감사 로그가 기록된 뒤 다시 확인해 주세요.</span>
+              <span>
+                필터를 조정하거나 감사 로그가 기록된 뒤 다시 확인해 주세요.
+              </span>
             </div>
           )}
 
           <footer className={styles.pagination}>
-            <span>{total ? `${((page - 1) * PAGE_SIZE + 1).toLocaleString("ko-KR")}–${Math.min(page * PAGE_SIZE, total).toLocaleString("ko-KR")} / ${total.toLocaleString("ko-KR")}` : "0건"}</span>
+            <span>
+              {total
+                ? `${((page - 1) * PAGE_SIZE + 1).toLocaleString("ko-KR")}–${Math.min(page * PAGE_SIZE, total).toLocaleString("ko-KR")} / ${total.toLocaleString("ko-KR")}`
+                : "0건"}
+            </span>
             <div>
-              <button type="button" disabled={page <= 1 || loading} onClick={() => { setPage((current) => current - 1); setSelected(null); }} aria-label="이전 페이지"><ChevronLeft aria-hidden="true" /></button>
-              <button type="button" disabled={page >= totalPages || loading} onClick={() => { setPage((current) => current + 1); setSelected(null); }} aria-label="다음 페이지"><ChevronRight aria-hidden="true" /></button>
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => {
+                  setPage((current) => current - 1);
+                  setSelected(null);
+                }}
+                aria-label="이전 페이지"
+              >
+                <ChevronLeft aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages || loading}
+                onClick={() => {
+                  setPage((current) => current + 1);
+                  setSelected(null);
+                }}
+                aria-label="다음 페이지"
+              >
+                <ChevronRight aria-hidden="true" />
+              </button>
             </div>
           </footer>
         </section>
@@ -254,40 +427,121 @@ export default function AuditLogsAdminPage() {
         <aside className={styles.detailPanel} aria-label="변경 상세">
           {selected ? (
             <>
-              <header className={styles.detailHeading} data-tour-id="audit-detail">
+              <header
+                className={styles.detailHeading}
+                data-tour-id="audit-detail"
+              >
                 <div>
-                  <span className={`${styles.operation} ${operationClass(selected.operation)}`}>{operationLabel(selected.operation)}</span>
+                  <span
+                    className={`${styles.operation} ${operationClass(selected.operation)}`}
+                  >
+                    {operationLabel(selected.operation)}
+                  </span>
                   <h2>{selected.record_label}</h2>
-                  <p>{tableLabel(selected.table_name)} · {selected.record_id}</p>
+                  <p>
+                    {tableLabel(selected.table_name)} · {selected.record_id}
+                  </p>
                 </div>
-                <button type="button" onClick={() => setSelected(null)} aria-label="변경 상세 닫기"><X aria-hidden="true" /></button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  aria-label="변경 상세 닫기"
+                >
+                  <X aria-hidden="true" />
+                </button>
               </header>
 
               <dl className={styles.detailMeta}>
-                <div><dt>발생 시각</dt><dd>{dateTimeFormatter.format(new Date(selected.occurred_at))}</dd></div>
-                <div><dt>관리자</dt><dd>{selected.actor_email || "시스템 작업"}</dd></div>
-                <div><dt>트랜잭션</dt><dd>{selected.transaction_id}</dd></div>
+                <div>
+                  <dt>발생 시각</dt>
+                  <dd>
+                    {dateTimeFormatter.format(new Date(selected.occurred_at))}
+                  </dd>
+                </div>
+                <div>
+                  <dt>관리자</dt>
+                  <dd>{selected.actor_email || "시스템 작업"}</dd>
+                </div>
+                <div>
+                  <dt>트랜잭션</dt>
+                  <dd>{selected.transaction_id}</dd>
+                </div>
               </dl>
-              {selectedGroup && selectedGroup.entries.length > 1 && <section className={styles.transactionRecords}><h3>같은 작업의 변경 {selectedGroup.entries.length}건</h3>{selectedGroup.entries.map((entry) => <button type="button" key={entry.id} onClick={() => setSelected(entry)} className={entry.id === selected.id ? styles.activeTransactionRecord : undefined}><span>{tableLabel(entry.table_name)}</span><b>{entry.record_label}</b><small>{operationLabel(entry.operation)}</small></button>)}</section>}
+              {selectedGroup && selectedGroup.entries.length > 1 && (
+                <section className={styles.transactionRecords}>
+                  <h3>같은 작업의 변경 {selectedGroup.entries.length}건</h3>
+                  {selectedGroup.entries.map((entry) => (
+                    <button
+                      type="button"
+                      key={entry.id}
+                      onClick={() => setSelected(entry)}
+                      className={
+                        entry.id === selected.id
+                          ? styles.activeTransactionRecord
+                          : undefined
+                      }
+                    >
+                      <span>{tableLabel(entry.table_name)}</span>
+                      <b>{entry.record_label}</b>
+                      <small>{operationLabel(entry.operation)}</small>
+                    </button>
+                  ))}
+                </section>
+              )}
 
               <section className={styles.changes}>
-                <div className={styles.changeColumns} aria-hidden="true"><span>필드</span><span>이전</span><span>이후</span></div>
+                <div className={styles.changeColumns} aria-hidden="true">
+                  <span>필드</span>
+                  <span>이전</span>
+                  <span>이후</span>
+                </div>
                 {detailFields.map(({ field, before, after }) => (
                   <article key={field} className={styles.changeRow}>
-                    <h3>{fieldLabel(field)}<small>{field}</small></h3>
-                    <pre className={selected.operation === "INSERT" ? styles.notApplicable : undefined}>{selected.operation === "INSERT" ? "—" : formatAuditValue(before)}</pre>
-                    <pre className={selected.operation === "DELETE" ? styles.notApplicable : undefined}>{selected.operation === "DELETE" ? "—" : formatAuditValue(after)}</pre>
+                    <h3>
+                      {fieldLabel(field)}
+                      <small>{field}</small>
+                    </h3>
+                    <pre
+                      className={
+                        selected.operation === "INSERT"
+                          ? styles.notApplicable
+                          : undefined
+                      }
+                    >
+                      {selected.operation === "INSERT"
+                        ? "—"
+                        : formatAuditValue(before)}
+                    </pre>
+                    <pre
+                      className={
+                        selected.operation === "DELETE"
+                          ? styles.notApplicable
+                          : undefined
+                      }
+                    >
+                      {selected.operation === "DELETE"
+                        ? "—"
+                        : formatAuditValue(after)}
+                    </pre>
                   </article>
                 ))}
-                {!detailFields.length && <p className={styles.noChanges}>값은 보안 정책에 따라 저장되지 않았습니다.</p>}
+                {!detailFields.length && (
+                  <p className={styles.noChanges}>
+                    값은 보안 정책에 따라 저장되지 않았습니다.
+                  </p>
+                )}
               </section>
             </>
           ) : (
             <div className={styles.detailEmpty}>
-              <span><ShieldCheck aria-hidden="true" /></span>
+              <span>
+                <ShieldCheck aria-hidden="true" />
+              </span>
               <b>변경 기록을 선택하세요.</b>
               <p>누가 어떤 값을 바꿨는지 필드 단위로 비교할 수 있습니다.</p>
-              <small>감사 기록은 이 화면에서 수정하거나 삭제할 수 없습니다.</small>
+              <small>
+                감사 기록은 이 화면에서 수정하거나 삭제할 수 없습니다.
+              </small>
             </div>
           )}
         </aside>

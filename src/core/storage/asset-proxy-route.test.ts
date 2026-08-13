@@ -11,7 +11,11 @@ describe("GET /api/asset-proxy", () => {
     vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_URL", "https://cdn.example.com");
     const url = "https://cdn.example.com/track-assets/%";
 
-    const response = await GET(new NextRequest(`https://themuze.kr/api/asset-proxy?url=${encodeURIComponent(url)}`));
+    const response = await GET(
+      new NextRequest(
+        `https://themuze.kr/api/asset-proxy?url=${encodeURIComponent(url)}`,
+      ),
+    );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "INVALID_REQUEST" });
@@ -20,7 +24,15 @@ describe("GET /api/asset-proxy", () => {
   it("rejects encoded separators and control characters", () => {
     vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_URL", "https://cdn.example.com");
 
-    expect(managedAssetFromUrl("https://cdn.example.com/track-assets%2Fpath/file.jpg")).toBeNull();
-    expect(managedAssetFromUrl("https://cdn.example.com/track-assets/path%00file.jpg")).toBeNull();
+    expect(
+      managedAssetFromUrl(
+        "https://cdn.example.com/track-assets%2Fpath/file.jpg",
+      ),
+    ).toBeNull();
+    expect(
+      managedAssetFromUrl(
+        "https://cdn.example.com/track-assets/path%00file.jpg",
+      ),
+    ).toBeNull();
   });
 });

@@ -21,12 +21,21 @@
 }
 
 @keyframes slideInItem {
-  from { transform: translateY(7px); opacity: 0; }
-  to   { transform: translateY(0);   opacity: 1; }
+  from {
+    transform: translateY(7px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes publicFeedbackIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 @keyframes vinylSpin {
@@ -47,18 +56,36 @@
 }
 
 @keyframes slideOutLeft {
-  from { opacity: 1; transform: translateX(0) scale(1); }
-  to { opacity: 0; transform: translateX(-30px) scale(0.98); }
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.98);
+  }
 }
 
 @keyframes slideOutRight {
-  from { opacity: 1; transform: translateX(0) scale(1); }
-  to { opacity: 0; transform: translateX(30px) scale(0.98); }
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+  }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px) scale(0.99); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 .animate-slideOutLeft {
@@ -78,11 +105,14 @@
 }
 
 @keyframes mobileAlbumInfoEnter {
-  from { opacity: .78; transform: translate3d(0, 5px, 0); }
+  from {
+    opacity: 0.78;
+    transform: translate3d(0, 5px, 0);
+  }
 }
 
 .mobile-album-info-enter {
-  animation: mobileAlbumInfoEnter .26s cubic-bezier(.22, 1, .36, 1);
+  animation: mobileAlbumInfoEnter 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scrollbar-none::-webkit-scrollbar {
@@ -110,43 +140,94 @@
 }
 
 @keyframes slideReveal {
-  0% { clip-path: inset(0 100% 0 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { clip-path: inset(0 0% 0 0); opacity: 1; }
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0% 0 0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideExit {
-  0% { clip-path: inset(0 0% 0 0); opacity: 1; }
-  85% { opacity: 1; }
-  100% { clip-path: inset(0 0 0 100%); opacity: 0; }
+  0% {
+    clip-path: inset(0 0% 0 0);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
+    opacity: 0;
+  }
 }
 
 @keyframes kenBurnsIn {
-  from { transform: scale(1.08) translateX(8px); }
-  to { transform: scale(1) translateX(0); }
+  from {
+    transform: scale(1.08) translateX(8px);
+  }
+  to {
+    transform: scale(1) translateX(0);
+  }
 }
 
 @keyframes slideRevealReverse {
-  0% { clip-path: inset(0 0 0 100%); opacity: 0; }
-  15% { opacity: 1; }
-  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+  0% {
+    clip-path: inset(0 0 0 100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideExitReverse {
-  0% { clip-path: inset(0 0 0 0); opacity: 1; }
-  85% { opacity: 1; }
-  100% { clip-path: inset(0 100% 0 0); opacity: 0; }
+  0% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
 }
 
 @keyframes homeSlideProgress {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @keyframes textShimmer {
-  0% { opacity: 0; letter-spacing: 0.5em; filter: blur(6px); }
-  60% { opacity: 0.9; filter: blur(0); }
-  100% { opacity: 1; letter-spacing: inherit; filter: blur(0); }
+  0% {
+    opacity: 0;
+    letter-spacing: 0.5em;
+    filter: blur(6px);
+  }
+  60% {
+    opacity: 0.9;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: inherit;
+    filter: blur(0);
+  }
 }
 
 .animate-textShimmer {
@@ -154,30 +235,53 @@
 }
 
 @keyframes discographyAmbientPrimary {
-  0%, 100% { transform: translate3d(-8%, -5%, 0) scale(1); }
-  38% { transform: translate3d(24%, 12%, 0) scale(1.16); }
-  72% { transform: translate3d(5%, 30%, 0) scale(.92); }
+  0%,
+  100% {
+    transform: translate3d(-8%, -5%, 0) scale(1);
+  }
+  38% {
+    transform: translate3d(24%, 12%, 0) scale(1.16);
+  }
+  72% {
+    transform: translate3d(5%, 30%, 0) scale(0.92);
+  }
 }
 
 @keyframes discographyAmbientSecondary {
-  0%, 100% { transform: translate3d(18%, 22%, 0) scale(1.06); }
-  45% { transform: translate3d(-22%, -10%, 0) scale(.9); }
-  78% { transform: translate3d(-5%, 10%, 0) scale(1.2); }
+  0%,
+  100% {
+    transform: translate3d(18%, 22%, 0) scale(1.06);
+  }
+  45% {
+    transform: translate3d(-22%, -10%, 0) scale(0.9);
+  }
+  78% {
+    transform: translate3d(-5%, 10%, 0) scale(1.2);
+  }
 }
 
 @keyframes discographyAmbientGlow {
-  0%, 100% { transform: translate3d(-5%, 8%, 0) scale(.85); opacity: .2; }
-  50% { transform: translate3d(16%, -18%, 0) scale(1.15); opacity: .48; }
+  0%,
+  100% {
+    transform: translate3d(-5%, 8%, 0) scale(0.85);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate3d(16%, -18%, 0) scale(1.15);
+    opacity: 0.48;
+  }
 }
 
 .discography-ambient-layer {
   position: absolute;
   inset: -22%;
   overflow: hidden;
-  opacity: .56;
+  opacity: 0.56;
   filter: blur(54px) saturate(1.25);
   mix-blend-mode: screen;
-  transition: opacity 1.2s ease, filter 1.2s ease;
+  transition:
+    opacity 1.2s ease,
+    filter 1.2s ease;
 }
 
 .discography-ambient-orb {
@@ -192,8 +296,15 @@
   left: 4%;
   width: 62%;
   height: 68%;
-  background: radial-gradient(circle at 42% 46%, color-mix(in srgb, var(--album-accent) 88%, var(--color-static-white) 12%) 0%, color-mix(in srgb, var(--album-accent) 42%, transparent) 42%, transparent 72%);
-  animation: discographyAmbientPrimary 24s cubic-bezier(.45, 0, .55, 1) infinite;
+  background: radial-gradient(
+    circle at 42% 46%,
+    color-mix(in srgb, var(--album-accent) 88%, var(--color-static-white) 12%)
+      0%,
+    color-mix(in srgb, var(--album-accent) 42%, transparent) 42%,
+    transparent 72%
+  );
+  animation: discographyAmbientPrimary 24s cubic-bezier(0.45, 0, 0.55, 1)
+    infinite;
 }
 
 .discography-ambient-orb.is-secondary {
@@ -201,8 +312,14 @@
   bottom: 0;
   width: 68%;
   height: 72%;
-  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--album-accent) 58%, var(--palette-725cff) 42%) 0%, color-mix(in srgb, var(--album-accent) 34%, transparent) 48%, transparent 74%);
-  animation: discographyAmbientSecondary 30s cubic-bezier(.45, 0, .55, 1) infinite;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--album-accent) 58%, var(--palette-725cff) 42%) 0%,
+    color-mix(in srgb, var(--album-accent) 34%, transparent) 48%,
+    transparent 74%
+  );
+  animation: discographyAmbientSecondary 30s cubic-bezier(0.45, 0, 0.55, 1)
+    infinite;
 }
 
 .discography-ambient-orb.is-glow {
@@ -210,18 +327,29 @@
   left: 34%;
   width: 42%;
   height: 42%;
-  background: radial-gradient(circle, var(--alpha-ffffff-38) 0%, color-mix(in srgb, var(--album-accent) 24%, transparent) 38%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    var(--alpha-ffffff-38) 0%,
+    color-mix(in srgb, var(--album-accent) 24%, transparent) 38%,
+    transparent 70%
+  );
   animation: discographyAmbientGlow 18s ease-in-out infinite;
 }
 
 .discography-ambient-layer.is-playing {
-  opacity: .78;
+  opacity: 0.78;
   filter: blur(48px) saturate(1.48);
 }
 
-.discography-ambient-layer.is-playing .discography-ambient-orb.is-primary { animation-duration: 16s; }
-.discography-ambient-layer.is-playing .discography-ambient-orb.is-secondary { animation-duration: 20s; }
-.discography-ambient-layer.is-playing .discography-ambient-orb.is-glow { animation-duration: 12s; }
+.discography-ambient-layer.is-playing .discography-ambient-orb.is-primary {
+  animation-duration: 16s;
+}
+.discography-ambient-layer.is-playing .discography-ambient-orb.is-secondary {
+  animation-duration: 20s;
+}
+.discography-ambient-layer.is-playing .discography-ambient-orb.is-glow {
+  animation-duration: 12s;
+}
 
 .discography-youtube-button {
   display: inline-flex;
@@ -235,10 +363,14 @@
   color: var(--palette-737373);
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: border-color var(--duration-base) ease, background-color var(--duration-base) ease, color var(--duration-base) ease, transform var(--duration-base) ease;
+  transition:
+    border-color var(--duration-base) ease,
+    background-color var(--duration-base) ease,
+    color var(--duration-base) ease,
+    transform var(--duration-base) ease;
 }
 
 .discography-youtube-button svg {
@@ -263,11 +395,25 @@
   scroll-behavior: smooth;
   scroll-padding-inline: 18px;
   scroll-snap-type: x proximity;
-  mask-image: linear-gradient(to right, transparent 0, var(--color-static-black) 18px, var(--color-static-black) calc(100% - 18px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0, var(--color-static-black) 18px, var(--color-static-black) calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    var(--color-static-black) 18px,
+    var(--color-static-black) calc(100% - 18px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    var(--color-static-black) 18px,
+    var(--color-static-black) calc(100% - 18px),
+    transparent 100%
+  );
 }
 
-.discography-album-rail > button { scroll-snap-align: center; }
+.discography-album-rail > button {
+  scroll-snap-align: center;
+}
 
 @media (max-width: 480px) {
   .discography-youtube-button {
@@ -276,13 +422,19 @@
     padding: 0;
   }
 
-  .discography-youtube-button span { display: none; }
+  .discography-youtube-button span {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .discography-ambient-orb { animation: none !important; }
+  .discography-ambient-orb {
+    animation: none !important;
+  }
   .discography-youtube-button,
-  .discography-album-rail { scroll-behavior: auto; }
+  .discography-album-rail {
+    scroll-behavior: auto;
+  }
 }
 
 /* Scroll Reveal - Scent Diffusion Effect (은은한 향기 컨셉 - 8px 블러 & 12px의 아주 미세한 움직임으로 거슬리지 않고 부드럽게) */
@@ -290,7 +442,7 @@
   opacity: 0;
   filter: blur(8px);
   transform: translateY(12px);
-  transition: 
+  transition:
     opacity 1.1s cubic-bezier(0.22, 1, 0.36, 1),
     filter 1.1s cubic-bezier(0.22, 1, 0.36, 1),
     transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
@@ -303,13 +455,27 @@
   transform: translateY(0);
 }
 
-.reveal-delay-100 { transition-delay: 80ms; }
-.reveal-delay-200 { transition-delay: 160ms; }
-.reveal-delay-300 { transition-delay: 240ms; }
-.reveal-delay-400 { transition-delay: 320ms; }
-.reveal-delay-500 { transition-delay: 400ms; }
-.reveal-delay-600 { transition-delay: 480ms; }
-.reveal-delay-800 { transition-delay: 640ms; }
+.reveal-delay-100 {
+  transition-delay: 80ms;
+}
+.reveal-delay-200 {
+  transition-delay: 160ms;
+}
+.reveal-delay-300 {
+  transition-delay: 240ms;
+}
+.reveal-delay-400 {
+  transition-delay: 320ms;
+}
+.reveal-delay-500 {
+  transition-delay: 400ms;
+}
+.reveal-delay-600 {
+  transition-delay: 480ms;
+}
+.reveal-delay-800 {
+  transition-delay: 640ms;
+}
 
 .reveal-duration-slow {
   transition-duration: 1.8s;
@@ -330,7 +496,10 @@
 }
 
 @media (max-width: 767px) {
-  .discography-ambient-orb { animation: none; will-change: auto; }
+  .discography-ambient-orb {
+    animation: none;
+    will-change: auto;
+  }
 }
 
 .animate-page-fade {
@@ -344,7 +513,9 @@
   .animate-slideOutRight {
     animation: none !important;
   }
-  .mobile-album-info-enter { animation: none !important; }
+  .mobile-album-info-enter {
+    animation: none !important;
+  }
   .reveal {
     transition: none !important;
     opacity: 1 !important;
@@ -355,5 +526,3 @@
     animation: none !important;
   }
 }
-
-

@@ -9,7 +9,14 @@ import styles from "@/styles/(public)/pages/protect.module.css";
 import ReportList from "./components/ReportList";
 import ReportForm from "./components/ReportForm";
 
-export type Artist = { id: string; name: string; eng_name?: string | null; name_ko?: string | null; name_en?: string | null; name_ja?: string | null };
+export type Artist = {
+  id: string;
+  name: string;
+  eng_name?: string | null;
+  name_ko?: string | null;
+  name_en?: string | null;
+  name_ja?: string | null;
+};
 type ProtectTab = "mine" | "report";
 export type MyReport = {
   id: string;
@@ -43,7 +50,15 @@ export default function ProtectClient({
   const userEmail = initialUserEmail;
   const artists = initialArtists.map((artist) => ({
     ...artist,
-    name: localizeText({ ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja }, locale, artist.name),
+    name: localizeText(
+      {
+        ko: artist.name_ko ?? artist.name,
+        en: artist.name_en ?? artist.eng_name,
+        ja: artist.name_ja,
+      },
+      locale,
+      artist.name,
+    ),
   }));
   const [myReports, setMyReports] = useState<MyReport[]>(initialReports);
   const [submittedId, setSubmittedId] = useState("");
@@ -63,15 +78,26 @@ export default function ProtectClient({
         <section className={styles.success} aria-labelledby="success-title">
           <FileCheck2 aria-hidden="true" />
           <p>{t.protect.receivedEyebrow}</p>
-          <h1 id="success-title" ref={successTitleRef} tabIndex={-1}>{t.protect.receivedTitle}</h1>
+          <h1 id="success-title" ref={successTitleRef} tabIndex={-1}>
+            {t.protect.receivedTitle}
+          </h1>
           <span>{t.protect.receivedDescription}</span>
           <dl>
-            <div><dt>{t.protect.receiptNumber}</dt><dd>{submittedId.slice(0, 8).toUpperCase()}</dd></div>
-            <div><dt>{t.protect.processingStatus}</dt><dd>{t.protect.receivedStatus}</dd></div>
+            <div>
+              <dt>{t.protect.receiptNumber}</dt>
+              <dd>{submittedId.slice(0, 8).toUpperCase()}</dd>
+            </div>
+            <div>
+              <dt>{t.protect.processingStatus}</dt>
+              <dd>{t.protect.receivedStatus}</dd>
+            </div>
           </dl>
           <button
             type="button"
-            onClick={() => { setSubmittedId(""); setActiveTab("mine"); }}
+            onClick={() => {
+              setSubmittedId("");
+              setActiveTab("mine");
+            }}
           >
             {t.protect.viewReports} <ArrowRight aria-hidden="true" />
           </button>
@@ -91,19 +117,30 @@ export default function ProtectClient({
               <button
                 type="button"
                 className={activeTab === "mine" ? styles.activeTab : ""}
-                onClick={() => { setActiveTab("mine"); setError(""); }}
+                onClick={() => {
+                  setActiveTab("mine");
+                  setError("");
+                }}
               >
                 {t.protect.myReports}
               </button>
               <button
                 type="button"
                 className={activeTab === "report" ? styles.activeTab : ""}
-                onClick={() => { setActiveTab("report"); setError(""); }}
+                onClick={() => {
+                  setActiveTab("report");
+                  setError("");
+                }}
               >
                 {t.protect.report}
               </button>
             </nav>
-            <AccountProfileLink name={initialUserName} email={userEmail} avatarUrl={initialAvatarUrl} remaining={remaining} />
+            <AccountProfileLink
+              name={initialUserName}
+              email={userEmail}
+              avatarUrl={initialAvatarUrl}
+              remaining={remaining}
+            />
           </div>
         </header>
 
@@ -112,7 +149,13 @@ export default function ProtectClient({
             <div className={styles.error} role="alert">
               <CircleAlert aria-hidden="true" />
               <span>{error}</span>
-              <button type="button" onClick={() => setError("")} aria-label={t.protect.closeError}>×</button>
+              <button
+                type="button"
+                onClick={() => setError("")}
+                aria-label={t.protect.closeError}
+              >
+                ×
+              </button>
             </div>
           )}
 

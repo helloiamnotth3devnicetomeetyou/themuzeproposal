@@ -18,13 +18,24 @@ function persistTheme(theme: Theme) {
   localStorage.setItem("theme", theme);
 }
 
-export function ThemeProvider({ children, initialTheme }: { children: React.ReactNode; initialTheme: Theme }) {
+export function ThemeProvider({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme: Theme;
+}) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => {
-    const cookieTheme = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=(dark|light)(?:;|$)`))?.[1];
+    const cookieTheme = document.cookie.match(
+      new RegExp(`(?:^|; )${THEME_COOKIE}=(dark|light)(?:;|$)`),
+    )?.[1];
     const savedTheme = cookieTheme ?? localStorage.getItem("theme");
-    const nextTheme: Theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : initialTheme;
+    const nextTheme: Theme =
+      savedTheme === "dark" || savedTheme === "light"
+        ? savedTheme
+        : initialTheme;
     queueMicrotask(() => {
       persistTheme(nextTheme);
       setTheme(nextTheme);
@@ -37,7 +48,11 @@ export function ThemeProvider({ children, initialTheme }: { children: React.Reac
     persistTheme(next);
   };
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

@@ -52,7 +52,7 @@
   color: var(--color-brand-pink);
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .15em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -60,7 +60,7 @@
   display: grid;
   max-width: 1320px;
   min-height: 118px;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(240px, .8fr);
+  grid-template-columns: minmax(220px, 1fr) auto minmax(240px, 0.8fr);
   align-items: center;
   margin: 0 auto 14px;
   overflow: hidden;
@@ -104,7 +104,7 @@
   font-family: var(--font-display);
   font-size: 30px;
   line-height: 1;
-  letter-spacing: -.07em;
+  letter-spacing: -0.07em;
 }
 
 .audition-inbox-summary dl {
@@ -133,7 +133,7 @@
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: -.05em;
+  letter-spacing: -0.05em;
 }
 
 .audition-inbox-summary > p {
@@ -167,7 +167,7 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 17px;
-  letter-spacing: -.03em;
+  letter-spacing: -0.03em;
 }
 
 .audition-inbox-toolbar p {
@@ -236,7 +236,7 @@
   color: var(--text-faint);
   font-size: 7px;
   font-weight: 800;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-align: left;
   text-transform: uppercase;
 }

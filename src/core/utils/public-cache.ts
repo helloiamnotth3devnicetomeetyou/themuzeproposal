@@ -21,7 +21,12 @@ export async function revalidatePublicCache(...tags: PublicCacheTag[]) {
     return true;
   } catch {
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("admin-toast", { detail: "저장은 완료됐지만 공개 페이지 갱신에 실패했습니다. 새로고침 후 다시 시도해 주세요." }));
+      window.dispatchEvent(
+        new CustomEvent("admin-toast", {
+          detail:
+            "저장은 완료됐지만 공개 페이지 갱신에 실패했습니다. 새로고침 후 다시 시도해 주세요.",
+        }),
+      );
     }
     return false;
   }

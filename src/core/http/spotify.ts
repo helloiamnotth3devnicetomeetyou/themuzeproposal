@@ -17,4 +17,3 @@ export function spotifyAlbumHref(value: string | null | undefined) {
   const id = spotifyAlbumId(value);
   return id ? `${SPOTIFY_ALBUM_PREFIX}${id}` : undefined;
 }
-

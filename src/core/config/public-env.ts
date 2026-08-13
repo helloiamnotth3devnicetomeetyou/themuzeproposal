@@ -20,11 +20,18 @@ function parseUrl(value: string, name: string) {
 }
 
 export function getPublicSupabaseConfig(): PublicSupabaseConfig {
-  const url = required(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL");
-  const anonKey = required(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const url = required(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    "NEXT_PUBLIC_SUPABASE_URL",
+  );
+  const anonKey = required(
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  );
   const parsedUrl = parseUrl(url, "NEXT_PUBLIC_SUPABASE_URL");
   const derivedProjectRef = parsedUrl.hostname.split(".")[0];
-  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || derivedProjectRef;
+  const projectRef =
+    process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || derivedProjectRef;
 
   if (projectRef !== derivedProjectRef) {
     throw new Error("Supabase project configuration is inconsistent.");
@@ -40,5 +47,8 @@ export function getSiteUrl() {
 }
 
 export function getTurnstileSiteKey() {
-  return required(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY, "NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  return required(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+  );
 }

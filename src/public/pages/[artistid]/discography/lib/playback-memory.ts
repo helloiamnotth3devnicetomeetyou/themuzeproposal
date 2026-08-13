@@ -13,10 +13,7 @@ export function readPlaybackMemory(artistSlug: string): PlaybackMemory | null {
   }
 }
 
-export function savePlaybackMemory(
-  artistSlug: string,
-  memory: PlaybackMemory,
-) {
+export function savePlaybackMemory(artistSlug: string, memory: PlaybackMemory) {
   try {
     localStorage.setItem(storageKey(artistSlug), JSON.stringify(memory));
   } catch {

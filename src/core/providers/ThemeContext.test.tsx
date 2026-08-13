@@ -8,7 +8,9 @@ function TestConsumer() {
   return (
     <div>
       <span data-testid="current-theme">{theme}</span>
-      <button type="button" onClick={toggleTheme}>Toggle</button>
+      <button type="button" onClick={toggleTheme}>
+        Toggle
+      </button>
     </div>
   );
 }
@@ -18,7 +20,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider initialTheme="dark">
         <TestConsumer />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     expect(screen.getByTestId("current-theme")).toHaveTextContent("dark");
   });
@@ -27,15 +29,19 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider initialTheme="dark">
         <TestConsumer />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByText("Toggle"));
     expect(screen.getByTestId("current-theme")).toHaveTextContent("light");
   });
 
   it("throws error when useTheme is used outside provider", () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => render(<TestConsumer />)).toThrow("useTheme must be used within a ThemeProvider");
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    expect(() => render(<TestConsumer />)).toThrow(
+      "useTheme must be used within a ThemeProvider",
+    );
     consoleError.mockRestore();
   });
 });

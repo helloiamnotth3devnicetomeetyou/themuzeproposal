@@ -6,7 +6,7 @@ export { expect };
 // Minimal file generators for signature validation tests
 export function createMockFile(
   type: "pdf" | "jpg" | "png" | "zip" | "mp3" | "invalid_png",
-  sizeInBytes: number = 1024
+  sizeInBytes: number = 1024,
 ): Buffer {
   const buffer = Buffer.alloc(sizeInBytes);
 

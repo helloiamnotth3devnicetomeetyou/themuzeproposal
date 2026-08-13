@@ -13,7 +13,10 @@ interface LoginClientProps {
   oauthFailed: boolean;
 }
 
-export default function LoginClient({ redirectTo, oauthFailed }: LoginClientProps) {
+export default function LoginClient({
+  redirectTo,
+  oauthFailed,
+}: LoginClientProps) {
   const { theme } = useTheme();
   const { locale } = useLocale();
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
@@ -26,8 +29,16 @@ export default function LoginClient({ redirectTo, oauthFailed }: LoginClientProp
   });
 
   return (
-    <div className="min-h-screen flex w-full" style={{ backgroundColor: "var(--bg-base)" }}>
-      <LoginFormPanel {...formState} isDark={theme === "dark"} showLoginRequired={redirectTo !== "/"} turnstileRef={turnstileRef} />
+    <div
+      className="min-h-screen flex w-full"
+      style={{ backgroundColor: "var(--bg-base)" }}
+    >
+      <LoginFormPanel
+        {...formState}
+        isDark={theme === "dark"}
+        showLoginRequired={redirectTo !== "/"}
+        turnstileRef={turnstileRef}
+      />
       <SlideshowPanel currentSlide={formState.currentSlide} />
     </div>
   );

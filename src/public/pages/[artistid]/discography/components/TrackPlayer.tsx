@@ -67,18 +67,28 @@ export function TrackPlayer({
             onClick={onTogglePlay}
             disabled={!audioHref}
             aria-label={isPlaying ? t.discography.pause : t.discography.play}
-            title={audioHref ? (isPlaying ? t.discography.pause : t.discography.play) : t.discography.noAudio}
+            title={
+              audioHref
+                ? isPlaying
+                  ? t.discography.pause
+                  : t.discography.play
+                : t.discography.noAudio
+            }
             className="w-14 h-14 sm:w-10 sm:h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
             style={{
               backgroundColor: albumColor,
               color: "var(--color-static-black)",
-              transition: "background-color 0.5s, transform var(--duration-base)",
+              transition:
+                "background-color 0.5s, transform var(--duration-base)",
             }}
           >
             {isPlaying ? (
               <Pause className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
             ) : (
-              <Play className="w-6 h-6 sm:w-5 sm:h-5 pl-0.5" aria-hidden="true" />
+              <Play
+                className="w-6 h-6 sm:w-5 sm:h-5 pl-0.5"
+                aria-hidden="true"
+              />
             )}
           </button>
           <button
@@ -86,7 +96,10 @@ export function TrackPlayer({
             className="w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-[var(--color-static-white)] hover:bg-[var(--alpha-ffffff-06)] active:scale-95 transition-all duration-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
             aria-label={t.discography.nextTrack}
           >
-            <ChevronRight className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
+            <ChevronRight
+              className="w-6 h-6 sm:w-5 sm:h-5"
+              aria-hidden="true"
+            />
           </button>
         </div>
         {youtubeHref ? (

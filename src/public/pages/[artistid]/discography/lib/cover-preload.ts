@@ -22,21 +22,33 @@ export function discographyCoverCandidate(src: string): ImagePreloadCandidate {
   };
 }
 
-export function coverPreloadQueue(candidates: ImagePreloadCandidate[], activeIndex: number) {
+export function coverPreloadQueue(
+  candidates: ImagePreloadCandidate[],
+  activeIndex: number,
+) {
   if (candidates.length <= 1) return [];
-  return Array.from(new Set([
-    (activeIndex - 1 + candidates.length) % candidates.length,
-    (activeIndex + 1) % candidates.length,
-  ])).map((index) => candidates[index]);
+  return Array.from(
+    new Set([
+      (activeIndex - 1 + candidates.length) % candidates.length,
+      (activeIndex + 1) % candidates.length,
+    ]),
+  ).map((index) => candidates[index]);
 }
 
-export function galleryPreloadQueue(gallery: DiscographyGalleryItem[], albumId?: string) {
+export function galleryPreloadQueue(
+  gallery: DiscographyGalleryItem[],
+  albumId?: string,
+) {
   if (!albumId) return [];
   return gallery
     .filter((item) => !item.albumId || item.albumId === albumId)
     .map((item) => {
-      const { props } = getImageProps({ src: item.imageUrl, alt: "", fill: true, sizes: DISCOGRAPHY_GALLERY_SIZES });
+      const { props } = getImageProps({
+        src: item.imageUrl,
+        alt: "",
+        fill: true,
+        sizes: DISCOGRAPHY_GALLERY_SIZES,
+      });
       return { src: props.src, srcSet: props.srcSet, sizes: props.sizes };
     });
 }
-

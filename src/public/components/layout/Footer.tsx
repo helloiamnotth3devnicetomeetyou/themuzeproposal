@@ -4,7 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { useTheme } from "@/core/providers/ThemeContext";
-import { detectSocialPlatform, SOCIAL_LABELS } from "@/core/content/social-icons";
+import {
+  detectSocialPlatform,
+  SOCIAL_LABELS,
+} from "@/core/content/social-icons";
 import { SocialIcon } from "@/core/content/SocialIcon";
 import { useSiteSettings } from "@/public/features/settings/useSiteSettings";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
@@ -18,15 +21,29 @@ const isSafeExternalUrl = (value: string) => {
   }
 };
 
-export default function Footer({ initialSettings }: { initialSettings: SiteSettingsPreviewPayload }) {
+export default function Footer({
+  initialSettings,
+}: {
+  initialSettings: SiteSettingsPreviewPayload;
+}) {
   const { t, locale } = useLocale();
   const { theme } = useTheme();
   const { settings } = useSiteSettings(initialSettings);
   const isDark = theme === "dark";
-  const companyName = settings.company[`name_${locale}`] || settings.company.name_en || settings.company.name_ko || t.footer.companyName;
-  const address = settings.company[`address_${locale}`] || settings.company.address_en || settings.company.address_ko || t.footer.address;
+  const companyName =
+    settings.company[`name_${locale}`] ||
+    settings.company.name_en ||
+    settings.company.name_ko ||
+    t.footer.companyName;
+  const address =
+    settings.company[`address_${locale}`] ||
+    settings.company.address_en ||
+    settings.company.address_ko ||
+    t.footer.address;
   const copyright = settings.footer.copyright || t.footer.copyright;
-  const socialLinks = settings.social.filter((item) => isSafeExternalUrl(item.url));
+  const socialLinks = settings.social.filter((item) =>
+    isSafeExternalUrl(item.url),
+  );
 
   return (
     <footer
@@ -50,10 +67,17 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
               style={isDark ? { filter: "invert(1)" } : {}}
             />
           </Link>
-          <div className="text-xs leading-relaxed font-light mt-2" style={{ color: "var(--text-faint)" }}>
-            <p className="font-semibold" style={{ color: "var(--text-muted)" }}>{companyName}</p>
+          <div
+            className="text-xs leading-relaxed font-light mt-2"
+            style={{ color: "var(--text-faint)" }}
+          >
+            <p className="font-semibold" style={{ color: "var(--text-muted)" }}>
+              {companyName}
+            </p>
             <p className="mt-1">{address}</p>
-            {!copyright.includes("데모 사이트") && <p className="mt-2">{copyright}</p>}
+            {!copyright.includes("데모 사이트") && (
+              <p className="mt-2">{copyright}</p>
+            )}
           </div>
         </div>
 
@@ -62,8 +86,12 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
           {socialLinks.length > 0 && (
             <div className="flex flex-wrap justify-center gap-4 md:justify-end">
               {socialLinks.map((item) => {
-                const platform = detectSocialPlatform(item.url) !== "other" ? detectSocialPlatform(item.url) : item.platform;
-                const accessibleLabel = item.label || SOCIAL_LABELS[platform] || "Official link";
+                const platform =
+                  detectSocialPlatform(item.url) !== "other"
+                    ? detectSocialPlatform(item.url)
+                    : item.platform;
+                const accessibleLabel =
+                  item.label || SOCIAL_LABELS[platform] || "Official link";
                 return (
                   <a
                     key={item.id}
@@ -79,13 +107,16 @@ export default function Footer({ initialSettings }: { initialSettings: SiteSetti
                       color: "var(--text-muted)",
                     }}
                   >
-                    <SocialIcon platform={platform} className="h-4 w-4" aria-hidden="true" />
+                    <SocialIcon
+                      platform={platform}
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    />
                   </a>
                 );
               })}
             </div>
           )}
-
         </div>
       </div>
     </footer>

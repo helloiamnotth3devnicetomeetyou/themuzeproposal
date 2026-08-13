@@ -31,11 +31,18 @@ describe("preloadImages", () => {
 
     vi.stubGlobal("Image", MockImage);
 
-    await preloadImages([
-      { src: "/cover-a.jpg", srcSet: "/cover-a-640.jpg 640w", sizes: "440px" },
-      { src: "/cover-b.jpg" },
-      { src: "/cover-c.jpg" },
-    ], { concurrency: 2 });
+    await preloadImages(
+      [
+        {
+          src: "/cover-a.jpg",
+          srcSet: "/cover-a-640.jpg 640w",
+          sizes: "440px",
+        },
+        { src: "/cover-b.jpg" },
+        { src: "/cover-c.jpg" },
+      ],
+      { concurrency: 2 },
+    );
 
     expect(maximumActive).toBe(2);
     expect(requested).toHaveLength(3);
@@ -65,12 +72,8 @@ describe("preloadImages", () => {
     vi.stubGlobal("Image", MockImage);
     const candidate = { src: "/dedupe-cover.jpg", sizes: "440px" };
 
-    await Promise.all([
-      preloadImages([candidate]),
-      preloadImages([candidate]),
-    ]);
+    await Promise.all([preloadImages([candidate]), preloadImages([candidate])]);
 
     expect(requests).toBe(1);
   });
 });
-

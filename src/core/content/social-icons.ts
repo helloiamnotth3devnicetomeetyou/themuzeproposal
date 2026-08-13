@@ -31,7 +31,11 @@ export function detectSocialPlatform(value: string): string {
     const { hostname, protocol } = new URL(value.trim());
     if (protocol !== "http:" && protocol !== "https:") return "other";
     const host = hostname.toLowerCase().replace(/^www\./, "");
-    return SOCIAL_HOSTS.find(([, hosts]) => hosts.some((known) => host === known || host.endsWith(`.${known}`)))?.[0] || "other";
+    return (
+      SOCIAL_HOSTS.find(([, hosts]) =>
+        hosts.some((known) => host === known || host.endsWith(`.${known}`)),
+      )?.[0] || "other"
+    );
   } catch {
     return "other";
   }

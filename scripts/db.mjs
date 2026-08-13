@@ -6,7 +6,9 @@ loadEnvConfig(process.cwd());
 
 const dbUrl = process.env.SUPABASE_DB_URL?.trim();
 if (!dbUrl) {
-  console.error("Missing SUPABASE_DB_URL in .env.local. Copy it from the Supabase dashboard (Connect -> Session pooler).");
+  console.error(
+    "Missing SUPABASE_DB_URL in .env.local. Copy it from the Supabase dashboard (Connect -> Session pooler).",
+  );
   process.exit(1);
 }
 

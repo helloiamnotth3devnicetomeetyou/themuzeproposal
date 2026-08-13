@@ -24,11 +24,14 @@ export default function MainLayout({
   const pathname = usePathname();
   const isImmersiveDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
   const isImmersiveArtist = /^\/[^/]+\/artist(?:\/[^/]+)?\/?$/.test(pathname);
-  const isEditorial = pathname !== "/" && !isImmersiveDiscography && !isImmersiveArtist;
+  const isEditorial =
+    pathname !== "/" && !isImmersiveDiscography && !isImmersiveArtist;
 
   useEffect(() => {
     document.body.dataset.scrollbar = isEditorial ? "visible" : "";
-    return () => { delete document.body.dataset.scrollbar; };
+    return () => {
+      delete document.body.dataset.scrollbar;
+    };
   }, [isEditorial]);
 
   useEffect(() => {
@@ -101,7 +104,9 @@ export default function MainLayout({
         id="main-content"
         key={layoutKey}
         className={`flex flex-1 flex-col animate-page-fade ${
-          isImmersiveDiscography || isImmersiveArtist ? "h-[100dvh] overflow-hidden" : ""
+          isImmersiveDiscography || isImmersiveArtist
+            ? "h-[100dvh] overflow-hidden"
+            : ""
         }`}
       >
         {children}
@@ -112,5 +117,9 @@ export default function MainLayout({
     </>
   );
 
-  return <PreviewProvider draftModeEnabled={draftModeEnabled}>{content}</PreviewProvider>;
+  return (
+    <PreviewProvider draftModeEnabled={draftModeEnabled}>
+      {content}
+    </PreviewProvider>
+  );
 }

@@ -6,9 +6,15 @@ import { cookies } from "next/headers";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-import type { ArtistNavigationItem, NavigationAccount } from "@/public/components/layout/navbar-types";
+import type {
+  ArtistNavigationItem,
+  NavigationAccount,
+} from "@/public/components/layout/navbar-types";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
-import { EMPTY_SETTINGS, normalizeSiteSettings } from "@/public/features/settings/data";
+import {
+  EMPTY_SETTINGS,
+  normalizeSiteSettings,
+} from "@/public/features/settings/data";
 
 const { url, anonKey, projectRef } = getPublicSupabaseConfig();
 
@@ -48,14 +54,33 @@ export const getCachedSiteSettings = unstable_cache(
 );
 
 export async function getNavigationAccount(): Promise<NavigationAccount> {
-  const hasAuthCookie = (await cookies()).getAll().some(({ name }) => name.startsWith(`sb-${projectRef}-auth-token`));
-  if (!hasAuthCookie) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };
+  const hasAuthCookie = (await cookies())
+    .getAll()
+    .some(({ name }) => name.startsWith(`sb-${projectRef}-auth-token`));
+  if (!hasAuthCookie)
+    return {
+      isLoggedIn: false,
+      isAdmin: false,
+      avatarUrl: null,
+      initial: "A",
+      name: "관리자",
+    };
 
   const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return { isLoggedIn: false, isAdmin: false, avatarUrl: null, initial: "A", name: "관리자" };
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user)
+    return {
+      isLoggedIn: false,
+      isAdmin: false,
+      avatarUrl: null,
+      initial: "A",
+      name: "관리자",
+    };
 
-  const fallbackName = user.user_metadata?.name?.trim() || user.email?.split("@")[0] || "관리자";
+  const fallbackName =
+    user.user_metadata?.name?.trim() || user.email?.split("@")[0] || "관리자";
   const { data: profile } = await client
     .from("profiles")
     .select("role,name,avatar_asset_id")
@@ -63,7 +88,12 @@ export async function getNavigationAccount(): Promise<NavigationAccount> {
     .maybeSingle();
   const name = profile?.name?.trim() || fallbackName;
   const { data: avatar } = profile?.avatar_asset_id
-    ? await client.from("avatar_assets").select("image_path").eq("id", profile.avatar_asset_id).eq("is_active", true).maybeSingle()
+    ? await client
+        .from("avatar_assets")
+        .select("image_path")
+        .eq("id", profile.avatar_asset_id)
+        .eq("is_active", true)
+        .maybeSingle()
     : { data: null };
 
   return {

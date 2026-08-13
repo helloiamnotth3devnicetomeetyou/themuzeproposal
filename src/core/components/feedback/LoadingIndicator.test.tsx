@@ -16,19 +16,25 @@ describe("LoadingIndicator", () => {
 
   it("applies custom size style", () => {
     const { container } = render(<LoadingIndicator size={80} />);
-    const logoContainer = container.querySelector(".muze-loading-logo-container");
+    const logoContainer = container.querySelector(
+      ".muze-loading-logo-container",
+    );
     expect(logoContainer).toHaveStyle({ width: "80px" });
   });
 
   it("accepts string size", () => {
     const { container } = render(<LoadingIndicator size="4rem" />);
-    const logoContainer = container.querySelector(".muze-loading-logo-container");
+    const logoContainer = container.querySelector(
+      ".muze-loading-logo-container",
+    );
     expect(logoContainer).toHaveStyle({ width: "4rem" });
   });
 
   it("uses the animated brand logo", () => {
     const { container } = render(<LoadingIndicator />);
-    expect(container.querySelector('img[src="/images/logo.svg"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('img[src="/images/logo.svg"]'),
+    ).toBeInTheDocument();
   });
 
   it("applies extra className", () => {

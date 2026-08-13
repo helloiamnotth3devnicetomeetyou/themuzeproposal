@@ -2,7 +2,10 @@
 
 import Image, { type ImageProps } from "next/image";
 
-type AdminAssetImageProps = Omit<ImageProps, "src" | "alt" | "width" | "height"> & {
+type AdminAssetImageProps = Omit<
+  ImageProps,
+  "src" | "alt" | "width" | "height"
+> & {
   src: string;
   alt?: string;
   width?: number;
@@ -10,7 +13,9 @@ type AdminAssetImageProps = Omit<ImageProps, "src" | "alt" | "width" | "height">
 };
 
 const shouldSkipOptimization = (src: string) =>
-  /^(?:blob:|data:)/i.test(src) || /\.svg(?:$|\?)/i.test(src) || /\/storage\/v1\/object\/sign\//i.test(src);
+  /^(?:blob:|data:)/i.test(src) ||
+  /\.svg(?:$|\?)/i.test(src) ||
+  /\/storage\/v1\/object\/sign\//i.test(src);
 
 const normalizeImageSource = (src: string) =>
   /^(?:[a-z]+:|\/)/i.test(src) ? src : `/${src}`;

@@ -110,8 +110,12 @@ export default function MemberLibraryRail({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 140, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 140, tolerance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -161,7 +165,10 @@ export default function MemberLibraryRail({
         >
           <div className="content-library-list member-library-list">
             {draft && !draft.id && (
-              <button type="button" className="content-library-item is-selected">
+              <button
+                type="button"
+                className="content-library-item is-selected"
+              >
                 <span className="content-library-index">NEW</span>
                 <span className="content-library-thumb">
                   <i style={{ background: draft.color }} />
@@ -195,19 +202,32 @@ export default function MemberLibraryRail({
 
         <DragOverlay>
           {draggingMember ? (
-            <div className="content-library-item is-selected is-dragging-overlay" style={{ cursor: "grabbing" }}>
+            <div
+              className="content-library-item is-selected is-dragging-overlay"
+              style={{ cursor: "grabbing" }}
+            >
               <span className="content-library-index">↕</span>
               <span className="content-library-thumb">
                 {draggingMember.image_url ? (
-                  <AdminAssetImage src={draggingMember.image_url} alt="" sizes="48px" />
+                  <AdminAssetImage
+                    src={draggingMember.image_url}
+                    alt=""
+                    sizes="48px"
+                  />
                 ) : (
-                  <i style={{ background: draggingMember.color || BRAND_PINK_HEX }} />
+                  <i
+                    style={{
+                      background: draggingMember.color || BRAND_PINK_HEX,
+                    }}
+                  />
                 )}
               </span>
               <span className="content-library-copy">
                 <b>{draggingMember.name}</b>
                 <small>
-                  {draggingMember.role_ko || draggingMember.eng_name || "역할 미설정"}
+                  {draggingMember.role_ko ||
+                    draggingMember.eng_name ||
+                    "역할 미설정"}
                 </small>
               </span>
             </div>
@@ -215,7 +235,11 @@ export default function MemberLibraryRail({
         </DragOverlay>
       </DndContext>
 
-      {sorting && sortDirty && <p className="content-rail-draft-note">변경한 순서는 상단 저장 버튼으로 반영됩니다.</p>}
+      {sorting && sortDirty && (
+        <p className="content-rail-draft-note">
+          변경한 순서는 상단 저장 버튼으로 반영됩니다.
+        </p>
+      )}
     </>
   );
 }

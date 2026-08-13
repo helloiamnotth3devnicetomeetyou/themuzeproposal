@@ -10,7 +10,11 @@ import {
   type SyntheticEvent,
 } from "react";
 
-type SavePlayback = (albumId: string, trackIndex: number, currentTime: number) => void;
+type SavePlayback = (
+  albumId: string,
+  trackIndex: number,
+  currentTime: number,
+) => void;
 
 interface AudioPlaybackState {
   isPlaying: boolean;
@@ -104,7 +108,11 @@ export function useAudioPlayback(
         lastRenderedSecondRef.current = second;
         setProgress(duration ? (audio.currentTime / duration) * 100 : 0);
       }
-      if (albumId && second !== lastSavedSecondRef.current && second % 2 === 0) {
+      if (
+        albumId &&
+        second !== lastSavedSecondRef.current &&
+        second % 2 === 0
+      ) {
         lastSavedSecondRef.current = second;
         savePlayback(albumId, trackIndex, audio.currentTime);
       }

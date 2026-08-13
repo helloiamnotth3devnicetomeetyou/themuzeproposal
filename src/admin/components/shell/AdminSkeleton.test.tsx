@@ -8,8 +8,14 @@ it("renders the requested number of skeleton rows", () => {
 });
 
 it("renders a structured, accessible variant", () => {
-  const { getByRole, container } = render(<AdminSkeleton variant="workbench" rows={3} />);
+  const { getByRole, container } = render(
+    <AdminSkeleton variant="workbench" rows={3} />,
+  );
   expect(getByRole("status")).toHaveAttribute("aria-busy", "true");
-  expect(container.querySelector('[data-skeleton-variant="workbench"]')).toBeTruthy();
-  expect(container.querySelectorAll(".admin-skeleton-form > div")).toHaveLength(3);
+  expect(
+    container.querySelector('[data-skeleton-variant="workbench"]'),
+  ).toBeTruthy();
+  expect(container.querySelectorAll(".admin-skeleton-form > div")).toHaveLength(
+    3,
+  );
 });

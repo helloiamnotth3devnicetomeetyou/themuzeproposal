@@ -16,10 +16,16 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const redirectTo = safeRedirect(params.redirect);
-  const authError = Array.isArray(params.error) ? params.error[0] : params.error;
+  const authError = Array.isArray(params.error)
+    ? params.error[0]
+    : params.error;
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (user) redirect(redirectTo);
 
-  return <LoginClient redirectTo={redirectTo} oauthFailed={authError === "oauth"} />;
+  return (
+    <LoginClient redirectTo={redirectTo} oauthFailed={authError === "oauth"} />
+  );
 }

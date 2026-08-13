@@ -17,7 +17,12 @@ export async function deleteAdminAssetUrls(urls: string[]) {
   for (const url of urls) {
     const asset = managedAssetFromUrl(url);
     if (!asset) continue;
-    grouped.set(asset.bucket, [...(grouped.get(asset.bucket) ?? []), asset.path]);
+    grouped.set(asset.bucket, [
+      ...(grouped.get(asset.bucket) ?? []),
+      asset.path,
+    ]);
   }
-  await Promise.all([...grouped].map(([bucket, paths]) => deleteAdminAssets(bucket, paths)));
+  await Promise.all(
+    [...grouped].map(([bucket, paths]) => deleteAdminAssets(bucket, paths)),
+  );
 }

@@ -26,7 +26,11 @@ export type AuditLogFilters = {
   recordId: string;
 };
 
-export type AuditLogGroup = { transactionId: AuditLogRow["transaction_id"]; primary: AuditLogRow; entries: AuditLogRow[] };
+export type AuditLogGroup = {
+  transactionId: AuditLogRow["transaction_id"];
+  primary: AuditLogRow;
+  entries: AuditLogRow[];
+};
 
 export function groupAuditLogs(rows: AuditLogRow[]): AuditLogGroup[] {
   const groups = new Map<string, AuditLogGroup>();
@@ -34,7 +38,12 @@ export function groupAuditLogs(rows: AuditLogRow[]): AuditLogGroup[] {
     const key = String(row.transaction_id);
     const group = groups.get(key);
     if (group) group.entries.push(row);
-    else groups.set(key, { transactionId: row.transaction_id, primary: row, entries: [row] });
+    else
+      groups.set(key, {
+        transactionId: row.transaction_id,
+        primary: row,
+        entries: [row],
+      });
   }
   return [...groups.values()];
 }
@@ -161,10 +170,12 @@ export function formatAuditValue(value: unknown): string {
 export function auditFields(row: AuditLogRow) {
   const keys = row.changed_fields.length
     ? row.changed_fields
-    : Array.from(new Set([
-      ...Object.keys(row.before_values ?? {}),
-      ...Object.keys(row.after_values ?? {}),
-    ])).sort();
+    : Array.from(
+        new Set([
+          ...Object.keys(row.before_values ?? {}),
+          ...Object.keys(row.after_values ?? {}),
+        ]),
+      ).sort();
 
   return keys.map((field) => ({
     field,

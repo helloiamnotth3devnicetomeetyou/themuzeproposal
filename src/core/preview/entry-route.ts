@@ -36,27 +36,52 @@ export async function POST(request: NextRequest) {
       request,
       MAX_PREVIEW_BODY_BYTES,
       MAX_PREVIEW_BODY_TIMEOUT_MS,
-      { maxParts: MAX_PREVIEW_PARTS, maxMetadataBytes: MAX_PREVIEW_METADATA_BYTES },
+      {
+        maxParts: MAX_PREVIEW_PARTS,
+        maxMetadataBytes: MAX_PREVIEW_METADATA_BYTES,
+      },
     );
     if (!parsed || Array.from(parsed.keys()).length > MAX_PREVIEW_PARTS) {
-      return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 413 });
+      return NextResponse.json(
+        { code: "INVALID_PREVIEW_REQUEST" },
+        { status: 413 },
+      );
     }
     formData = parsed;
   } catch {
-    return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });
+    return NextResponse.json(
+      { code: "INVALID_PREVIEW_REQUEST" },
+      { status: 400 },
+    );
   }
 
   const requestUrl = new URL(request.url);
-  const token = typeof formData.get("token") === "string" ? String(formData.get("token")) : "";
-  const rawPath = typeof formData.get("path") === "string" ? String(formData.get("path")) : "";
+  const token =
+    typeof formData.get("token") === "string"
+      ? String(formData.get("token"))
+      : "";
+  const rawPath =
+    typeof formData.get("path") === "string"
+      ? String(formData.get("path"))
+      : "";
 
-  if (token.length > MAX_PREVIEW_TOKEN_LENGTH || rawPath.length > MAX_PREVIEW_PATH_LENGTH
-    || !isPreviewToken(token) || !rawPath.startsWith("/")) {
-    return NextResponse.json({ code: "INVALID_PREVIEW_REQUEST" }, { status: 400 });
+  if (
+    token.length > MAX_PREVIEW_TOKEN_LENGTH ||
+    rawPath.length > MAX_PREVIEW_PATH_LENGTH ||
+    !isPreviewToken(token) ||
+    !rawPath.startsWith("/")
+  ) {
+    return NextResponse.json(
+      { code: "INVALID_PREVIEW_REQUEST" },
+      { status: 400 },
+    );
   }
 
   const target = new URL(rawPath, requestUrl.origin);
-  if (target.origin !== requestUrl.origin || !isAllowedPreviewPath(target.pathname)) {
+  if (
+    target.origin !== requestUrl.origin ||
+    !isAllowedPreviewPath(target.pathname)
+  ) {
     return NextResponse.json({ code: "INVALID_PREVIEW_PATH" }, { status: 400 });
   }
 
@@ -74,6 +99,12 @@ export async function POST(request: NextRequest) {
   draft.enable();
   target.searchParams.set("preview", token);
   const response = NextResponse.redirect(target, { status: 307 });
-  (await cookies()).set(PREVIEW_SESSION_COOKIE, `${userId}:${token}`, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 60, secure: process.env.NODE_ENV === "production" });
+  (await cookies()).set(PREVIEW_SESSION_COOKIE, `${userId}:${token}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 30 * 60,
+    secure: process.env.NODE_ENV === "production",
+  });
   return response;
 }

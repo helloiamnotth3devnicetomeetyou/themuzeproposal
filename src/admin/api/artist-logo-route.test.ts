@@ -14,25 +14,52 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
-vi.mock("@/core/storage/public-url", () => ({ getPublicAssetUrl: (bucket: string, path: string) => `https://storage.example/${bucket}/${path}` }));
+vi.mock("@/core/storage/public-url", () => ({
+  getPublicAssetUrl: (bucket: string, path: string) =>
+    `https://storage.example/${bucket}/${path}`,
+}));
 vi.mock("@/core/storage/r2", () => ({
-  uploadObject: (options: { bucket: string; path: string; body: unknown; contentType: string; cacheControl?: string }) =>
-    mocks.upload(options.path, options.body, { contentType: options.contentType, cacheControl: options.cacheControl, upsert: false }),
+  uploadObject: (options: {
+    bucket: string;
+    path: string;
+    body: unknown;
+    contentType: string;
+    cacheControl?: string;
+  }) =>
+    mocks.upload(options.path, options.body, {
+      contentType: options.contentType,
+      cacheControl: options.cacheControl,
+      upsert: false,
+    }),
   deleteObjects: (_bucket: string, paths: string[]) => mocks.remove(paths),
 }));
-vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createSessionClient }));
-vi.mock("@/core/http/submission-rate-limit", () => ({ consumeAdminUploadAttemptRateLimit: mocks.consumeUploadAttempt }));
-vi.mock("@/core/uploads/service-storage", () => ({ createServiceRoleClient: mocks.createServiceClient }));
+vi.mock("@/core/supabase/server", () => ({
+  createSupabaseServerClient: mocks.createSessionClient,
+}));
+vi.mock("@/core/http/submission-rate-limit", () => ({
+  consumeAdminUploadAttemptRateLimit: mocks.consumeUploadAttempt,
+}));
+vi.mock("@/core/uploads/service-storage", () => ({
+  createServiceRoleClient: mocks.createServiceClient,
+}));
 
 import { POST } from "./artist-logo-route";
 
 describe("POST /api/uploads/artist-logo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "admin-1", email: "admin@example.com" } }, error: null });
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1", email: "admin@example.com" } },
+      error: null,
+    });
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.consumeUploadAttempt.mockResolvedValue({ error: false, allowed: true });
-    mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
+    mocks.consumeUploadAttempt.mockResolvedValue({
+      error: false,
+      allowed: true,
+    });
+    mocks.createSessionClient.mockResolvedValue({
+      auth: { getUser: mocks.getUser },
+    });
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
@@ -42,35 +69,64 @@ describe("POST /api/uploads/artist-logo", () => {
   });
 
   it("rejects an oversized chunked body by bytes read", async () => {
-    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/artist-logo", {
-      method: "POST",
-      headers: { origin: "https://themuze.kr", "content-type": "multipart/form-data; boundary=x" },
-      body: new ReadableStream({
-        start(controller) {
-          controller.enqueue(new Uint8Array(10 * 1024 * 1024 + 64 * 1024 + 1));
-          controller.close();
+    const response = await POST(
+      new NextRequest("https://themuze.kr/api/uploads/artist-logo", {
+        method: "POST",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "multipart/form-data; boundary=x",
         },
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new Uint8Array(10 * 1024 * 1024 + 64 * 1024 + 1),
+            );
+            controller.close();
+          },
+        }),
+        duplex: "half",
       }),
-      duplex: "half",
-    }));
+    );
 
     expect(response.status).toBe(413);
     expect(mocks.createServiceClient).not.toHaveBeenCalled();
   });
 
   it("removes the uploaded logo when audit persistence fails", async () => {
-    mocks.insert.mockResolvedValueOnce({ error: new Error("audit unavailable") });
+    mocks.insert.mockResolvedValueOnce({
+      error: new Error("audit unavailable"),
+    });
     const form = new FormData();
     form.set("artistKey", "artist-1");
     form.set("entityKey", "logo");
-    form.set("file", new File(["<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1 1\"><path d=\"M0 0h1v1z\"/></svg>"], "logo.svg", { type: "image/svg+xml" }));
+    form.set(
+      "file",
+      new File(
+        [
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>',
+        ],
+        "logo.svg",
+        { type: "image/svg+xml" },
+      ),
+    );
 
-    const response = await POST(new NextRequest("https://themuze.kr/api/uploads/artist-logo", {
-      method: "POST", headers: { origin: "https://themuze.kr" }, body: form,
-    }));
+    const response = await POST(
+      new NextRequest("https://themuze.kr/api/uploads/artist-logo", {
+        method: "POST",
+        headers: { origin: "https://themuze.kr" },
+        body: form,
+      }),
+    );
 
     expect(response.status).toBe(503);
-    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ actor_id: "admin-1", table_name: "storage.objects" }));
-    expect(mocks.remove).toHaveBeenCalledWith([expect.stringMatching(/^artist-1\/artist-logo-sanitized\/logo\/.+\.svg$/)]);
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actor_id: "admin-1",
+        table_name: "storage.objects",
+      }),
+    );
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^artist-1\/artist-logo-sanitized\/logo\/.+\.svg$/),
+    ]);
   });
 });

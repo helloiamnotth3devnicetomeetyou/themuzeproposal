@@ -21,8 +21,16 @@ export async function trimSvgToContent(source: string) {
   const viewBoxValue = openingTag?.match(/\sviewBox="([^"]+)"/)?.[1];
   if (!openingTag || !viewBoxValue) return source;
 
-  const viewBox = viewBoxValue.trim().split(/[\s,]+/).map(Number);
-  if (viewBox.length !== 4 || viewBox.some((value) => !Number.isFinite(value)) || viewBox[2] <= 0 || viewBox[3] <= 0) {
+  const viewBox = viewBoxValue
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
+  if (
+    viewBox.length !== 4 ||
+    viewBox.some((value) => !Number.isFinite(value)) ||
+    viewBox[2] <= 0 ||
+    viewBox[3] <= 0
+  ) {
     return source;
   }
 
@@ -43,7 +51,8 @@ export async function trimSvgToContent(source: string) {
 
   for (let y = 0; y < info.height; y += 1) {
     for (let x = 0; x < info.width; x += 1) {
-      if (data[(y * info.width + x) * info.channels + alphaChannel] <= 2) continue;
+      if (data[(y * info.width + x) * info.channels + alphaChannel] <= 2)
+        continue;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x);
@@ -55,8 +64,14 @@ export async function trimSvgToContent(source: string) {
 
   const contentWidth = maxX - minX + 1;
   const contentHeight = maxY - minY + 1;
-  const paddingX = Math.max(2, Math.round(contentWidth * SVG_TRIM_PADDING_RATIO));
-  const paddingY = Math.max(2, Math.round(contentHeight * SVG_TRIM_PADDING_RATIO));
+  const paddingX = Math.max(
+    2,
+    Math.round(contentWidth * SVG_TRIM_PADDING_RATIO),
+  );
+  const paddingY = Math.max(
+    2,
+    Math.round(contentHeight * SVG_TRIM_PADDING_RATIO),
+  );
   minX = Math.max(0, minX - paddingX);
   minY = Math.max(0, minY - paddingY);
   maxX = Math.min(info.width - 1, maxX + paddingX);
@@ -68,7 +83,9 @@ export async function trimSvgToContent(source: string) {
     sourceY + (minY / info.height) * sourceHeight,
     ((maxX - minX + 1) / info.width) * sourceWidth,
     ((maxY - minY + 1) / info.height) * sourceHeight,
-  ].map(formatViewBoxNumber).join(" ");
+  ]
+    .map(formatViewBoxNumber)
+    .join(" ");
 
   const nextOpeningTag = openingTag
     .replace(/\sviewBox="[^"]+"/, ` viewBox="${nextViewBox}"`)
@@ -78,7 +95,11 @@ export async function trimSvgToContent(source: string) {
 
 export function sanitizeSvg(source: string): string {
   const input = source.replace(/^\uFEFF/, "").trim();
-  if (!input || input.length > 10 * 1024 * 1024 || /<!DOCTYPE|<!ENTITY/i.test(input)) {
+  if (
+    !input ||
+    input.length > 10 * 1024 * 1024 ||
+    /<!DOCTYPE|<!ENTITY/i.test(input)
+  ) {
     throw new UnsafeSvgError();
   }
 
@@ -91,7 +112,11 @@ export function sanitizeSvg(source: string): string {
     RETURN_TRUSTED_TYPE: false,
   });
 
-  if (!sanitized || sanitized.trim() === "" || /<script|\b(?:href|xlink:href)\s*=|url\s*\(/i.test(sanitized)) {
+  if (
+    !sanitized ||
+    sanitized.trim() === "" ||
+    /<script|\b(?:href|xlink:href)\s*=|url\s*\(/i.test(sanitized)
+  ) {
     throw new UnsafeSvgError();
   }
 

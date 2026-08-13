@@ -25,7 +25,11 @@ import "@/styles/(admin)/responsive-polish.css";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = error ? undefined : data?.claims?.sub;

@@ -49,8 +49,9 @@ export async function POST(request: NextRequest) {
   const { email, password, turnstileToken } = parsed.data;
 
   const { url, anonKey } = getPublicSupabaseConfig();
-  const limiterSecret = process.env.AUTH_RATE_LIMIT_SECRET?.trim()
-    || (process.env.NODE_ENV === "development" ? anonKey : "");
+  const limiterSecret =
+    process.env.AUTH_RATE_LIMIT_SECRET?.trim() ||
+    (process.env.NODE_ENV === "development" ? anonKey : "");
   if (!limiterSecret) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const requestIp = clientIp(request);
@@ -63,15 +64,22 @@ export async function POST(request: NextRequest) {
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
-  const { data: rateData, error: rateError } = await limiterClient.rpc("consume_login_rate_limit", {
-    p_identifier_hash: identifierHash,
-    p_ip_hash: ipHash,
-  });
+  const { data: rateData, error: rateError } = await limiterClient.rpc(
+    "consume_login_rate_limit",
+    {
+      p_identifier_hash: identifierHash,
+      p_ip_hash: ipHash,
+    },
+  );
   if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const rate = Array.isArray(rateData) ? rateData[0] : rateData;
   if (!rate?.is_allowed) {
-    return jsonError("RATE_LIMITED", 429, Math.max(1, Number(rate?.retry_after_seconds) || 900));
+    return jsonError(
+      "RATE_LIMITED",
+      429,
+      Math.max(1, Number(rate?.retry_after_seconds) || 900),
+    );
   }
 
   const pendingCookies: PendingCookie[] = [];
@@ -92,13 +100,18 @@ export async function POST(request: NextRequest) {
   const succeeded = !authError;
   if (!succeeded) return jsonError("INVALID_CREDENTIALS", 401);
 
-  const { error: resetError } = await limiterClient.rpc("reset_login_rate_limit", {
-    p_identifier_hash: identifierHash,
-  });
+  const { error: resetError } = await limiterClient.rpc(
+    "reset_login_rate_limit",
+    {
+      p_identifier_hash: identifierHash,
+    },
+  );
   if (resetError) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const response = NextResponse.json({ ok: true });
-  pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+  pendingCookies.forEach(({ name, value, options }) =>
+    response.cookies.set(name, value, options),
+  );
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

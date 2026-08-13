@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { readPlaybackMemory, savePlaybackMemory, requestedAlbumId, syncAlbumQuery } from "./playback-memory";
+import {
+  readPlaybackMemory,
+  savePlaybackMemory,
+  requestedAlbumId,
+  syncAlbumQuery,
+} from "./playback-memory";
 
 describe("playback-memory", () => {
   beforeEach(() => {
@@ -18,8 +23,16 @@ describe("playback-memory", () => {
   });
 
   it("isolates memory by artist slug", () => {
-    savePlaybackMemory("rescene", { albumId: "a1", trackIndex: 0, currentTime: 0 });
-    savePlaybackMemory("other-artist", { albumId: "b1", trackIndex: 3, currentTime: 120 });
+    savePlaybackMemory("rescene", {
+      albumId: "a1",
+      trackIndex: 0,
+      currentTime: 0,
+    });
+    savePlaybackMemory("other-artist", {
+      albumId: "b1",
+      trackIndex: 3,
+      currentTime: 120,
+    });
 
     const resceneMemory = readPlaybackMemory("rescene");
     const otherMemory = readPlaybackMemory("other-artist");
@@ -37,7 +50,13 @@ describe("playback-memory", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
       throw new Error("QuotaExceededError");
     });
-    expect(() => savePlaybackMemory("rescene", { albumId: "a", trackIndex: 0, currentTime: 0 })).not.toThrow();
+    expect(() =>
+      savePlaybackMemory("rescene", {
+        albumId: "a",
+        trackIndex: 0,
+        currentTime: 0,
+      }),
+    ).not.toThrow();
   });
 
   it("requestedAlbumId returns album param from URL", () => {

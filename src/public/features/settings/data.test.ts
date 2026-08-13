@@ -30,8 +30,18 @@ describe("normalizeSiteSettings", () => {
       {
         key: "social",
         value: [
-          { id: "s1", url: "https://instagram.com/themuze", platform: "instagram", label: "Instagram" },
-          { id: "s2", url: "https://youtube.com/themuze", platform: "youtube", label: "" },
+          {
+            id: "s1",
+            url: "https://instagram.com/themuze",
+            platform: "instagram",
+            label: "Instagram",
+          },
+          {
+            id: "s2",
+            url: "https://youtube.com/themuze",
+            platform: "youtube",
+            label: "",
+          },
         ],
       },
     ]);
@@ -45,7 +55,12 @@ describe("normalizeSiteSettings", () => {
         key: "social",
         value: [
           { id: "s1", url: "", platform: "instagram", label: "" },
-          { id: "s2", url: "https://youtube.com/themuze", platform: "youtube", label: "" },
+          {
+            id: "s2",
+            url: "https://youtube.com/themuze",
+            platform: "youtube",
+            label: "",
+          },
         ],
       },
     ]);
@@ -57,14 +72,19 @@ describe("normalizeSiteSettings", () => {
     const result = normalizeSiteSettings([
       {
         key: "social",
-        value: { instagram: "https://instagram.com/themuze", youtube: "https://youtube.com/themuze" },
+        value: {
+          instagram: "https://instagram.com/themuze",
+          youtube: "https://youtube.com/themuze",
+        },
       },
     ]);
     expect(result.social.length).toBe(2);
   });
 
   it("ignores unknown keys", () => {
-    const result = normalizeSiteSettings([{ key: "unknown_key", value: { foo: "bar" } }]);
+    const result = normalizeSiteSettings([
+      { key: "unknown_key", value: { foo: "bar" } },
+    ]);
     expect(result).toEqual(expect.objectContaining({ social: [] }));
   });
 });

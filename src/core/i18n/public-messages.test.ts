@@ -4,7 +4,9 @@ import { publicMessages } from "./public-messages";
 function shape(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(shape);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, shape(child)]));
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, shape(child)]),
+    );
   }
   return typeof value;
 }
@@ -12,7 +14,8 @@ function shape(value: unknown): unknown {
 function stringLeaves(value: unknown): string[] {
   if (typeof value === "string") return [value];
   if (Array.isArray(value)) return value.flatMap(stringLeaves);
-  if (value && typeof value === "object") return Object.values(value).flatMap(stringLeaves);
+  if (value && typeof value === "object")
+    return Object.values(value).flatMap(stringLeaves);
   return [];
 }
 
@@ -23,6 +26,10 @@ describe("public messages", () => {
   });
 
   it("does not mix Hangul into Japanese messages", () => {
-    expect(stringLeaves(publicMessages.ja).filter((message) => /[가-힣]/u.test(message))).toEqual([]);
+    expect(
+      stringLeaves(publicMessages.ja).filter((message) =>
+        /[가-힣]/u.test(message),
+      ),
+    ).toEqual([]);
   });
 });

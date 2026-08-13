@@ -60,7 +60,11 @@ export default function ReportForm({
   const { t } = useLocale();
   const router = useRouter();
   const [form, setForm] = useState<ReportFormValues>(initialForm);
-  const [fileSlots, setFileSlots] = useState<Array<File | null>>([null, null, null]);
+  const [fileSlots, setFileSlots] = useState<Array<File | null>>([
+    null,
+    null,
+    null,
+  ]);
   const [confirmed, setConfirmed] = useState(false);
   const [holdingSubmit, setHoldingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -76,9 +80,12 @@ export default function ReportForm({
     [fileSlots],
   );
 
-  useEffect(() => () => {
-    if (holdTimer.current) window.clearTimeout(holdTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    },
+    [],
+  );
 
   const clearValidation = () => {
     if (error) setError("");
@@ -88,7 +95,11 @@ export default function ReportForm({
 
   const updateField =
     (field: keyof ReportFormValues) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    (
+      event: ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
       setForm((current) => ({ ...current, [field]: event.target.value }));
       clearValidation();
     };
@@ -101,16 +112,56 @@ export default function ReportForm({
   const validateReport = () => {
     const requiredFields = [
       { label: t.protect.fields.artist, id: "artist", missing: !form.artistId },
-      { label: t.protect.fields.reportType, id: "reportType", missing: !form.reportType },
-      { label: t.protect.fields.title, id: "title", missing: !form.title.trim() },
-      { label: t.protect.fields.content, id: "content", missing: !form.content.trim() },
-      { label: t.protect.fields.platform, id: "platform", missing: !form.platform },
-      { label: t.protect.fields.postUrl, id: "postUrl", missing: !form.postUrl.trim() },
-      { label: t.protect.fields.postedAt, id: "postedAt", missing: !form.postedAt },
-      { label: t.protect.fields.authorName, id: "authorName", missing: !form.authorName.trim() },
-      { label: t.protect.fields.evidence, id: "evidenceFiles", missing: files.length === 0 },
-      { label: t.protect.fields.confirmation, id: "reportConfirmation", missing: !confirmed },
-      { label: t.protect.fields.captcha, id: "captcha", missing: !turnstileToken },
+      {
+        label: t.protect.fields.reportType,
+        id: "reportType",
+        missing: !form.reportType,
+      },
+      {
+        label: t.protect.fields.title,
+        id: "title",
+        missing: !form.title.trim(),
+      },
+      {
+        label: t.protect.fields.content,
+        id: "content",
+        missing: !form.content.trim(),
+      },
+      {
+        label: t.protect.fields.platform,
+        id: "platform",
+        missing: !form.platform,
+      },
+      {
+        label: t.protect.fields.postUrl,
+        id: "postUrl",
+        missing: !form.postUrl.trim(),
+      },
+      {
+        label: t.protect.fields.postedAt,
+        id: "postedAt",
+        missing: !form.postedAt,
+      },
+      {
+        label: t.protect.fields.authorName,
+        id: "authorName",
+        missing: !form.authorName.trim(),
+      },
+      {
+        label: t.protect.fields.evidence,
+        id: "evidenceFiles",
+        missing: files.length === 0,
+      },
+      {
+        label: t.protect.fields.confirmation,
+        id: "reportConfirmation",
+        missing: !confirmed,
+      },
+      {
+        label: t.protect.fields.captcha,
+        id: "captcha",
+        missing: !turnstileToken,
+      },
     ].filter((field) => field.missing);
 
     setMissingFields(requiredFields.map((field) => field.label));
@@ -123,7 +174,9 @@ export default function ReportForm({
       firstField?.scrollIntoView({ behavior: "smooth", block: "center" });
       const focusTarget = firstField?.matches("button, input, textarea, select")
         ? firstField
-        : firstField?.querySelector<HTMLElement>("button, input, textarea, select");
+        : firstField?.querySelector<HTMLElement>(
+            "button, input, textarea, select",
+          );
       (focusTarget as HTMLElement | null)?.focus({ preventScroll: true });
     });
     return false;
@@ -158,7 +211,9 @@ export default function ReportForm({
       return;
     }
 
-    const invalidType = incoming.find((file) => !ACCEPTED_FILE_TYPES.has(file.type));
+    const invalidType = incoming.find(
+      (file) => !ACCEPTED_FILE_TYPES.has(file.type),
+    );
     if (invalidType) {
       setError(t.protect.errors.fileType(invalidType.name));
       return;
@@ -195,9 +250,11 @@ export default function ReportForm({
     event.preventDefault();
     setError("");
     if (!files.length || !confirmed) {
-      setError(!files.length
-        ? t.protect.errors.evidenceRequired
-        : t.protect.errors.confirmationRequired);
+      setError(
+        !files.length
+          ? t.protect.errors.evidenceRequired
+          : t.protect.errors.confirmationRequired,
+      );
       return;
     }
 
@@ -217,25 +274,37 @@ export default function ReportForm({
       payload.set("turnstileToken", turnstileToken);
       files.forEach((file) => payload.append("evidence", file));
 
-      const response = await fetch("/api/protect-reports", { method: "POST", body: payload });
-      const result = await response.json().catch(() => ({})) as { id?: string; createdAt?: string; remaining?: number; code?: string };
+      const response = await fetch("/api/protect-reports", {
+        method: "POST",
+        body: payload,
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        id?: string;
+        createdAt?: string;
+        remaining?: number;
+        code?: string;
+      };
       if (response.status === 401) {
         router.replace("/login?redirect=/protect");
         return;
       }
       const reportId = result.id;
-      if (!response.ok || !reportId) throw new Error(result.code || "SUBMISSION_FAILED");
+      if (!response.ok || !reportId)
+        throw new Error(result.code || "SUBMISSION_FAILED");
       if (typeof result.remaining === "number") setRemaining(result.remaining);
 
-      setMyReports((current) => [{
-        id: reportId,
-        artist_id: form.artistId,
-        report_type: form.reportType,
-        title: form.title.trim(),
-        platform: form.platform,
-        status: "pending",
-        created_at: result.createdAt || new Date().toISOString(),
-      }, ...current]);
+      setMyReports((current) => [
+        {
+          id: reportId,
+          artist_id: form.artistId,
+          report_type: form.reportType,
+          title: form.title.trim(),
+          platform: form.platform,
+          status: "pending",
+          created_at: result.createdAt || new Date().toISOString(),
+        },
+        ...current,
+      ]);
       setSubmittedId(reportId);
       setForm(initialForm);
       setFileSlots([null, null, null]);
@@ -244,7 +313,10 @@ export default function ReportForm({
       turnstileRef.current?.reset();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
-      const code = submitError instanceof Error ? submitError.message : "SUBMISSION_FAILED";
+      const code =
+        submitError instanceof Error
+          ? submitError.message
+          : "SUBMISSION_FAILED";
       const apiErrorMessages: Record<string, string> = {
         INVALID_REQUEST: t.protect.errors.INVALID_REQUEST,
         UNAUTHORIZED: t.protect.errors.UNAUTHORIZED,
@@ -279,12 +351,23 @@ export default function ReportForm({
         updateField={updateField}
         updateSelect={updateSelect}
         addFiles={addFiles}
-        removeFile={(slot) => { setFileSlots((current) => current.map((item, index) => index === slot ? null : item)); clearValidation(); }}
-        onConfirmedChange={(next) => { setConfirmed(next); setError(""); }}
+        removeFile={(slot) => {
+          setFileSlots((current) =>
+            current.map((item, index) => (index === slot ? null : item)),
+          );
+          clearValidation();
+        }}
+        onConfirmedChange={(next) => {
+          setConfirmed(next);
+          setError("");
+        }}
         startSubmitHold={startSubmitHold}
         cancelSubmitHold={cancelSubmitHold}
         turnstileRef={turnstileRef}
-        onTurnstileToken={(token) => { setTurnstileToken(token ?? ""); clearValidation(); }}
+        onTurnstileToken={(token) => {
+          setTurnstileToken(token ?? "");
+          clearValidation();
+        }}
       />
     </form>
   );

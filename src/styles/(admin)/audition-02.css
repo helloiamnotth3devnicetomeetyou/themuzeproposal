@@ -44,7 +44,7 @@
   color: var(--color-brand-pink);
   font-size: 8px;
   font-weight: 750;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -52,7 +52,7 @@
   margin: 6px 0 0;
   color: var(--text-primary);
   font-size: var(--text-lg);
-  letter-spacing: -.035em;
+  letter-spacing: -0.035em;
 }
 
 .audition-detail-header small {
@@ -112,7 +112,7 @@
   font-size: 9px;
 }
 
-.audition-contact-strip a[aria-disabled=true] {
+.audition-contact-strip a[aria-disabled="true"] {
   pointer-events: none;
 }
 
@@ -248,7 +248,7 @@
   color: var(--color-brand-pink);
   font-size: 7px;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
 }
 
 .audition-status-bar > div:first-child b {
@@ -288,7 +288,7 @@
 
 .audition-status-bar button:disabled {
   cursor: not-allowed;
-  opacity: .45;
+  opacity: 0.45;
 }
 
 @import "./audition-02-responsive.css";

@@ -11,11 +11,15 @@ describe("revalidatePublicCache", () => {
   it("waits for immediate public cache invalidation", async () => {
     guideSandboxFetch.mockResolvedValue(new Response(null, { status: 200 }));
     await revalidatePublicCache("public-notices", "public-notice-title");
-    expect(JSON.parse(guideSandboxFetch.mock.calls[0][1].body)).toEqual({ tags: ["public-notices", "public-notice-title"] });
+    expect(JSON.parse(guideSandboxFetch.mock.calls[0][1].body)).toEqual({
+      tags: ["public-notices", "public-notice-title"],
+    });
   });
 
   it("fails when invalidation fails", async () => {
     guideSandboxFetch.mockResolvedValue(new Response(null, { status: 500 }));
-    await expect(revalidatePublicCache("public-home-slides")).resolves.toBe(false);
+    await expect(revalidatePublicCache("public-home-slides")).resolves.toBe(
+      false,
+    );
   });
 });

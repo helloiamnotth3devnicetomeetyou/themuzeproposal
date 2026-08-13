@@ -1,15 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeRichText, richTextToPlainText, plainTextToRichText } from "./rich-text";
+import {
+  sanitizeRichText,
+  richTextToPlainText,
+  plainTextToRichText,
+} from "./rich-text";
 
 describe("Rich Text Utilities", () => {
   describe("sanitizeRichText", () => {
     it("should allow safe HTML tags", () => {
       const input = "<p>Hello <strong>World</strong></p>";
-      expect(sanitizeRichText(input)).toBe("<p>Hello <strong>World</strong></p>");
+      expect(sanitizeRichText(input)).toBe(
+        "<p>Hello <strong>World</strong></p>",
+      );
     });
 
     it("should strip unsafe tags and attributes", () => {
-      const input = "<p>Hello <script>alert(1)</script><img src=x onerror=alert(2)></p>";
+      const input =
+        "<p>Hello <script>alert(1)</script><img src=x onerror=alert(2)></p>";
       const sanitized = sanitizeRichText(input);
       expect(sanitized).not.toContain("script");
       expect(sanitized).not.toContain("img");

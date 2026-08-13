@@ -14,11 +14,11 @@
 
 다음 값은 Vercel Analytics 조회에만 쓰는 서버 전용 환경 변수다. 앱의 필수 build 검증 항목은 아니므로, 값이 없다고 공개 사이트나 관리자 콘텐츠 기능이 실패하지 않는다.
 
-| 변수 | 필수 여부 | 역할 |
-| --- | --- | --- |
-| `VERCEL_TOKEN` | 통계 조회 시 필수 | Vercel API bearer token |
-| `VERCEL_PROJECT_ID` | 통계 조회 시 필수 | 대상 프로젝트 ID (`prj_…`) |
-| `VERCEL_TEAM_ID` | 선택 | 팀 소속 프로젝트의 team ID (`team_…`) |
+| 변수                | 필수 여부         | 역할                                  |
+| ------------------- | ----------------- | ------------------------------------- |
+| `VERCEL_TOKEN`      | 통계 조회 시 필수 | Vercel API bearer token               |
+| `VERCEL_PROJECT_ID` | 통계 조회 시 필수 | 대상 프로젝트 ID (`prj_…`)            |
+| `VERCEL_TEAM_ID`    | 선택              | 팀 소속 프로젝트의 team ID (`team_…`) |
 
 설정 절차:
 
@@ -52,19 +52,19 @@ endpoint는 공개 API가 아니다. 요청마다 Supabase server client로 현�
 
 `GET /api/admin/page-stats`는 선택적인 query parameter를 받는다.
 
-| parameter | 값 | 기본값 | 설명 |
-| --- | --- | --- | --- |
-| `range` | `7d`, `30d`, `12w`, `12m` | `7d` | 조회 기간과 추이 granularity를 결정 |
-| `summary` | `1` | 없음 | dashboard용 요약; 차원별 추가 조회를 생략 |
+| parameter | 값                        | 기본값 | 설명                                      |
+| --------- | ------------------------- | ------ | ----------------------------------------- |
+| `range`   | `7d`, `30d`, `12w`, `12m` | `7d`   | 조회 기간과 추이 granularity를 결정       |
+| `summary` | `1`                       | 없음   | dashboard용 요약; 차원별 추가 조회를 생략 |
 
 다른 `range` 값은 `400 { error: "invalid range" }`으로 거부한다.
 
-| range | 기간 | 추이 단위 |
-| --- | --- | --- |
-| `7d` | 최근 7일 | 일 |
-| `30d` | 최근 30일 | 일 |
-| `12w` | 최근 84일 | 주 |
-| `12m` | 최근 365일 | 월 |
+| range | 기간       | 추이 단위 |
+| ----- | ---------- | --------- |
+| `7d`  | 최근 7일   | 일        |
+| `30d` | 최근 30일  | 일        |
+| `12w` | 최근 84일  | 주        |
+| `12m` | 최근 365일 | 월        |
 
 기간의 기준일은 한국 표준시(UTC+09:00) 날짜다. endpoint는 서울 날짜 키를 만든 뒤 시작일과 종료일을 Vercel query parameter로 보낸다.
 
@@ -72,16 +72,16 @@ endpoint는 공개 API가 아니다. 요청마다 Supabase server client로 현�
 
 성공 시 응답은 다음 필드를 포함한다.
 
-| 필드 | 의미 |
-| --- | --- |
-| `configured` | Vercel 조회 환경 변수가 준비됐는지 여부 |
-| `range`, `granularity` | 실제 적용된 기간과 차트 단위 |
-| `pageviews`, `visitors`, `peakPageviews` | 해당 기간의 합계와 단위별 최대 페이지뷰 |
-| `points` | `{ timestamp, pageviews, visitors }` 형식의 추이 |
-| `routes`, `countries`, `devices` | 경로·국가·기기별 집계 |
-| `operatingSystems`, `browsers`, `environments`, `referrers` | 나머지 분석 차원 |
-| `rangeUnavailable` | 요금제 또는 provider 기간 제한으로 조회할 수 없는지 여부 |
-| `error` | 사용자에게 표시 가능한 한국어 오류/제한 설명 |
+| 필드                                                        | 의미                                                     |
+| ----------------------------------------------------------- | -------------------------------------------------------- |
+| `configured`                                                | Vercel 조회 환경 변수가 준비됐는지 여부                  |
+| `range`, `granularity`                                      | 실제 적용된 기간과 차트 단위                             |
+| `pageviews`, `visitors`, `peakPageviews`                    | 해당 기간의 합계와 단위별 최대 페이지뷰                  |
+| `points`                                                    | `{ timestamp, pageviews, visitors }` 형식의 추이         |
+| `routes`, `countries`, `devices`                            | 경로·국가·기기별 집계                                    |
+| `operatingSystems`, `browsers`, `environments`, `referrers` | 나머지 분석 차원                                         |
+| `rangeUnavailable`                                          | 요금제 또는 provider 기간 제한으로 조회할 수 없는지 여부 |
+| `error`                                                     | 사용자에게 표시 가능한 한국어 오류/제한 설명             |
 
 `summary=1`에서는 추이와 합계만 필요하므로 차원별 provider query를 생략하고 각 분석 배열은 비어 있다.
 
@@ -95,13 +95,13 @@ endpoint는 공개 API가 아니다. 요청마다 Supabase server client로 현�
 
 ## 실패와 운영 대응
 
-| 증상 | endpoint 결과 | 확인 순서 |
-| --- | --- | --- |
-| 설정 안내 빈 상태 | `200`, `configured: false` | `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` 존재 여부 |
-| 일반 사용자가 호출 | `403` | 세션과 `profiles.role` 확인 |
-| 잘못된 기간 | `400` | `range` allowlist 확인 |
-| 기간/요금제 제한 | `200`, `rangeUnavailable: true` | Vercel 플랜의 Analytics 조회 가능 기간 확인 |
-| Vercel API 실패·timeout·응답 형식 오류 | `502` + 안전한 `error` | token 권한, project/team ID, Vercel 상태 확인 |
+| 증상                                   | endpoint 결과                   | 확인 순서                                     |
+| -------------------------------------- | ------------------------------- | --------------------------------------------- |
+| 설정 안내 빈 상태                      | `200`, `configured: false`      | `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` 존재 여부 |
+| 일반 사용자가 호출                     | `403`                           | 세션과 `profiles.role` 확인                   |
+| 잘못된 기간                            | `400`                           | `range` allowlist 확인                        |
+| 기간/요금제 제한                       | `200`, `rangeUnavailable: true` | Vercel 플랜의 Analytics 조회 가능 기간 확인   |
+| Vercel API 실패·timeout·응답 형식 오류 | `502` + 안전한 `error`          | token 권한, project/team ID, Vercel 상태 확인 |
 
 Vercel API에서 402가 오면 provider의 조회 가능 기간 제한으로 취급한다. 다른 provider 오류는 서버 로그에만 기록하고 브라우저에는 “페이지 통계를 불러오지 못했습니다”만 반환한다. `Authorization` header, token, provider 원문 response는 로그나 응답에 포함하지 않는다.
 

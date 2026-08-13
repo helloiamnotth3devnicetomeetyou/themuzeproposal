@@ -54,13 +54,13 @@ Repository가 client를 인자로 받으므로 실제 Supabase 없이 단위 테
 
 공개 캐시는 대체로 300초다.
 
-| tag | 소비자 |
-| --- | --- |
-| `public-navigation-artists` | 공개 layout navigation |
-| `public-site-settings` | footer·회사 설정 |
-| `public-notices` | 회사/아티스트 공지 |
-| `artist-scene-data` | 아티스트 scene |
-| `public-artist-title`, `public-member-title`, `public-notice-title` | SEO metadata |
+| tag                                                                 | 소비자                 |
+| ------------------------------------------------------------------- | ---------------------- |
+| `public-navigation-artists`                                         | 공개 layout navigation |
+| `public-site-settings`                                              | footer·회사 설정       |
+| `public-notices`                                                    | 회사/아티스트 공지     |
+| `artist-scene-data`                                                 | 아티스트 scene         |
+| `public-artist-title`, `public-member-title`, `public-notice-title` | SEO metadata           |
 
 관리자 저장 후 즉시 반영해야 하는 tag는 `/api/admin/revalidate` allowlist에도 추가하고 호출부 테스트를 함께 갱신한다. TTL만 기다리는 방식으로 편집 UX를 깨뜨리지 않는다.
 
@@ -123,18 +123,18 @@ Vercel 설정이 없으면 endpoint는 빈 통계와 `configured: false`를 반�
 
 ## `src/core`: 공유 기반
 
-| 하위 경로 | 책임 |
-| --- | --- |
-| `auth/` | browser auth facade, server login/verify/OAuth, role helpers |
-| `supabase/` | browser/server/service/proxy client와 guide sandbox |
-| `http/` | same-origin, client IP, 요청 크기, URL, rate limit |
-| `uploads/` | magic-byte 검증, 객체 path 안전성, Supabase service client export |
-| `storage/` | R2 S3 client, 공개 URL, 서명 URL, 객체 삭제, asset proxy |
-| `i18n/` | locale 판별·fallback·메시지·서버 cookie |
-| `preview/` | draft preview token/envelope/entry/exit/provider |
-| `providers/` | theme와 locale context |
-| `seo/` | 공통 metadata |
-| `utils/` | rich text, SVG, redirect, 음악/scene/schedule 순수 로직 |
+| 하위 경로    | 책임                                                              |
+| ------------ | ----------------------------------------------------------------- |
+| `auth/`      | browser auth facade, server login/verify/OAuth, role helpers      |
+| `supabase/`  | browser/server/service/proxy client와 guide sandbox               |
+| `http/`      | same-origin, client IP, 요청 크기, URL, rate limit                |
+| `uploads/`   | magic-byte 검증, 객체 path 안전성, Supabase service client export |
+| `storage/`   | R2 S3 client, 공개 URL, 서명 URL, 객체 삭제, asset proxy          |
+| `i18n/`      | locale 판별·fallback·메시지·서버 cookie                           |
+| `preview/`   | draft preview token/envelope/entry/exit/provider                  |
+| `providers/` | theme와 locale context                                            |
+| `seo/`       | 공통 metadata                                                     |
+| `utils/`     | rich text, SVG, redirect, 음악/scene/schedule 순수 로직           |
 
 `server-only` import가 있는 파일을 Client Component에서 import하면 안 된다. 브라우저와 서버 양쪽에서 필요한 순수 함수는 별도 파일로 분리한다.
 
@@ -175,13 +175,13 @@ Browser
 
 ## 새 코드 위치 결정
 
-| 만들려는 것 | 위치 |
-| --- | --- |
-| 새 공개 URL | `src/app/(public)/...` 어댑터 + `src/public/pages/...` |
-| 공개 query | `src/public/features/<domain>/repository.ts` |
-| 관리자 화면 | `src/admin/pages/<domain>` 또는 `components/<domain>` |
-| API 로직 | public/admin/core의 domain route + `src/app` re-export |
-| 서버 전용 공통 보안 | `src/core/http`, `auth`, `uploads`, `supabase` |
-| DB 권한/제약/함수 | 새 `supabase/migrations/<timestamp>_*.sql` |
-| CSS literal token | `src/styles/(core)/foundations` |
-| feature 전용 CSS | 해당 public/admin styles 폴더의 module 또는 page stylesheet |
+| 만들려는 것         | 위치                                                        |
+| ------------------- | ----------------------------------------------------------- |
+| 새 공개 URL         | `src/app/(public)/...` 어댑터 + `src/public/pages/...`      |
+| 공개 query          | `src/public/features/<domain>/repository.ts`                |
+| 관리자 화면         | `src/admin/pages/<domain>` 또는 `components/<domain>`       |
+| API 로직            | public/admin/core의 domain route + `src/app` re-export      |
+| 서버 전용 공통 보안 | `src/core/http`, `auth`, `uploads`, `supabase`              |
+| DB 권한/제약/함수   | 새 `supabase/migrations/<timestamp>_*.sql`                  |
+| CSS literal token   | `src/styles/(core)/foundations`                             |
+| feature 전용 CSS    | 해당 public/admin styles 폴더의 module 또는 page stylesheet |

@@ -27,22 +27,54 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   await connection();
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get("muze-locale")?.value;
   const cookieTheme = cookieStore.get("muze-theme")?.value;
-  const initialLocale: Locale = cookieLocale === "ko" || cookieLocale === "en" || cookieLocale === "ja" ? cookieLocale : "ko";
-  const initialTheme: Theme = cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "dark";
+  const initialLocale: Locale =
+    cookieLocale === "ko" || cookieLocale === "en" || cookieLocale === "ja"
+      ? cookieLocale
+      : "ko";
+  const initialTheme: Theme =
+    cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "dark";
 
   return (
-    <html lang={initialLocale} data-theme={initialTheme} className="h-full antialiased">
+    <html
+      lang={initialLocale}
+      data-theme={initialTheme}
+      className="h-full antialiased"
+    >
       <head>
-        <link rel="preconnect" href={getPublicAssetOrigin()} crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href={getPublicAssetOrigin()}
+          crossOrigin="anonymous"
+        />
         <link rel="dns-prefetch" href={getPublicAssetOrigin()} />
-        <link rel="preload" href="/fonts/ClashDisplay-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          href="/fonts/ClashDisplay-Bold.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={initialTheme}>

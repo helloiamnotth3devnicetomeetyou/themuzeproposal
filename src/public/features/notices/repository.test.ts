@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import { getPublicNotices, getPublicNotice, getPublicNoticeNavigation } from "./repository";
+import {
+  getPublicNotices,
+  getPublicNotice,
+  getPublicNoticeNavigation,
+} from "./repository";
 
 /**
  * Creates a supabase mock that faithfully reflects the real query chains:
@@ -17,22 +21,33 @@ function makeChain(resolvedValue: unknown) {
   chain.maybeSingle = () => Promise.resolve(resolvedValue);
   chain.single = () => Promise.resolve(resolvedValue);
   // make it thenable so `await query` (no .maybeSingle) also works
-  chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve(resolvedValue).then(resolve);
+  chain.then = (resolve: (v: unknown) => unknown) =>
+    Promise.resolve(resolvedValue).then(resolve);
   return chain;
 }
 
-function createMockSupabase(noticeRows: Record<string, unknown>[] = [], artistData: Record<string, unknown> | null = null) {
+function createMockSupabase(
+  noticeRows: Record<string, unknown>[] = [],
+  artistData: Record<string, unknown> | null = null,
+) {
   return {
     from: vi.fn((table: string) => {
       if (table === "artists") {
-        return makeChain({ data: artistData, error: artistData ? null : new Error("Not found") });
+        return makeChain({
+          data: artistData,
+          error: artistData ? null : new Error("Not found"),
+        });
       }
       return makeChain({ data: noticeRows, error: null });
     }),
   } as unknown as Parameters<typeof getPublicNotices>[0];
 }
 
-const makeRow = (id: string, title_ko = "공지", category_ko = "일반"): Record<string, unknown> => ({
+const makeRow = (
+  id: string,
+  title_ko = "공지",
+  category_ko = "일반",
+): Record<string, unknown> => ({
   id,
   date: "2026-01-01",
   title_ko,
@@ -65,15 +80,25 @@ describe("Notices Repository", () => {
     });
 
     it("maps multiple rows correctly", async () => {
-      const supabase = createMockSupabase([makeRow("1", "첫번째"), makeRow("2", "두번째")]);
+      const supabase = createMockSupabase([
+        makeRow("1", "첫번째"),
+        makeRow("2", "두번째"),
+      ]);
       const result = await getPublicNotices(supabase);
       expect(result.notices.length).toBe(2);
       expect(result.notices[1].title.ko).toBe("두번째");
     });
 
     it("fetches artist-scoped notices when artistSlug given", async () => {
-      const artist = { id: "artist-id-1", name: "RESCENE", eng_name: "RESCENE" };
-      const supabase = createMockSupabase([makeRow("10", "리센느 공지")], artist);
+      const artist = {
+        id: "artist-id-1",
+        name: "RESCENE",
+        eng_name: "RESCENE",
+      };
+      const supabase = createMockSupabase(
+        [makeRow("10", "리센느 공지")],
+        artist,
+      );
       const result = await getPublicNotices(supabase, "rescene");
       expect(result.name).toBe("RESCENE");
       expect(result.notices[0].title.ko).toBe("리센느 공지");
@@ -81,7 +106,9 @@ describe("Notices Repository", () => {
 
     it("throws when artist is not found", async () => {
       const supabase = createMockSupabase([], null);
-      await expect(getPublicNotices(supabase, "unknown-artist")).rejects.toThrow();
+      await expect(
+        getPublicNotices(supabase, "unknown-artist"),
+      ).rejects.toThrow();
     });
   });
 
@@ -121,7 +148,11 @@ describe("Notices Repository", () => {
   });
 
   it("returns adjacent notices with localized titles", async () => {
-    const supabase = createMockSupabase([makeRow("new", "New"), makeRow("current", "Current"), makeRow("old", "Old")]);
+    const supabase = createMockSupabase([
+      makeRow("new", "New"),
+      makeRow("current", "Current"),
+      makeRow("old", "Old"),
+    ]);
     const result = await getPublicNoticeNavigation(supabase, "current");
 
     expect(result.previous).toMatchObject({ id: "old", title: { ko: "Old" } });

@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
   const sessionClient = createServerClient(url, anonKey, {
     cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
   });
-  const { data: { user } } = await sessionClient.auth.getUser();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
   const email = user?.email?.trim().toLowerCase() ?? "";
   if (!user || !email) return jsonError("UNAUTHORIZED", 401);
   if (!user.identities?.some((identity) => identity.provider === "email")) {
@@ -60,7 +62,10 @@ export async function POST(request: NextRequest) {
   if (!limiterSecret) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
-  const ipHash = hashIdentifier(`ip:${clientIp(request) ?? `account:${email}`}`, limiterSecret);
+  const ipHash = hashIdentifier(
+    `ip:${clientIp(request) ?? `account:${email}`}`,
+    limiterSecret,
+  );
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
@@ -96,10 +101,10 @@ export async function POST(request: NextRequest) {
     // Captcha rejection is also surfaced as a generic 400 by GoTrue, so it must be
     // checked before the invalid-credentials fallback below or it gets misreported
     // as a wrong password.
-    if (authError?.code === "captcha_failed") return jsonError("CAPTCHA_FAILED", 400);
+    if (authError?.code === "captcha_failed")
+      return jsonError("CAPTCHA_FAILED", 400);
     const isInvalidCredentials =
-      authError?.code === "invalid_credentials" ||
-      authError?.status === 400;
+      authError?.code === "invalid_credentials" || authError?.status === 400;
     return jsonError(
       isInvalidCredentials ? "INVALID_CREDENTIALS" : "SERVICE_UNAVAILABLE",
       isInvalidCredentials ? 401 : 503,

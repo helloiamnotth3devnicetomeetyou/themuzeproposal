@@ -17,6 +17,11 @@ export async function POST(request: NextRequest) {
     { ok: true },
     { headers: { "Cache-Control": "private, no-store" } },
   );
-  response.cookies.set(PREVIEW_SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+  response.cookies.set(PREVIEW_SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
   return response;
 }

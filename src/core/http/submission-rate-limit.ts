@@ -5,9 +5,11 @@ import type { NextRequest } from "next/server";
 import { clientIp } from "@/core/http/client-ip";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
-export type SubmissionScope = "contact_inquiry" | "protect_report" | "audition_submission";
+export type SubmissionScope =
+  "contact_inquiry" | "protect_report" | "audition_submission";
 type SubmissionAttemptScope = `${SubmissionScope}_attempt`;
-type RateLimitScope = SubmissionScope | SubmissionAttemptScope | "admin_upload_attempt";
+type RateLimitScope =
+  SubmissionScope | SubmissionAttemptScope | "admin_upload_attempt";
 
 export const DAILY_SUBMISSION_LIMIT = 5;
 const IP_DAILY_LIMIT = 500;
@@ -33,7 +35,8 @@ async function consumeRateLimit(
   if (!client || !secret) return { error: true as const };
 
   const ip = clientIp(request);
-  if (!ip && process.env.NODE_ENV === "production") return { error: true as const };
+  if (!ip && process.env.NODE_ENV === "production")
+    return { error: true as const };
   const calls = [
     client.rpc("consume_submission_rate_limit", {
       p_scope: scope,
@@ -74,28 +77,66 @@ async function consumeRateLimit(
   };
 }
 
-export function consumeSubmissionAttemptRateLimit(request: NextRequest, scope: SubmissionScope, userId: string) {
-  return consumeRateLimit(request, `${scope}_attempt`, userId, ATTEMPT_LIMIT, IP_ATTEMPT_LIMIT, ATTEMPT_WINDOW_SECONDS);
+export function consumeSubmissionAttemptRateLimit(
+  request: NextRequest,
+  scope: SubmissionScope,
+  userId: string,
+) {
+  return consumeRateLimit(
+    request,
+    `${scope}_attempt`,
+    userId,
+    ATTEMPT_LIMIT,
+    IP_ATTEMPT_LIMIT,
+    ATTEMPT_WINDOW_SECONDS,
+  );
 }
 
-export function consumeSubmissionRateLimit(request: NextRequest, scope: SubmissionScope, userId: string) {
-  return consumeRateLimit(request, scope, userId, DAILY_SUBMISSION_LIMIT, IP_DAILY_LIMIT, WINDOW_SECONDS);
+export function consumeSubmissionRateLimit(
+  request: NextRequest,
+  scope: SubmissionScope,
+  userId: string,
+) {
+  return consumeRateLimit(
+    request,
+    scope,
+    userId,
+    DAILY_SUBMISSION_LIMIT,
+    IP_DAILY_LIMIT,
+    WINDOW_SECONDS,
+  );
 }
 
-export function consumeAdminUploadAttemptRateLimit(request: NextRequest, userId: string) {
-  return consumeRateLimit(request, "admin_upload_attempt", userId, 30, 100, 60 * 60);
+export function consumeAdminUploadAttemptRateLimit(
+  request: NextRequest,
+  userId: string,
+) {
+  return consumeRateLimit(
+    request,
+    "admin_upload_attempt",
+    userId,
+    30,
+    100,
+    60 * 60,
+  );
 }
 
-export async function getSubmissionRemaining(scope: SubmissionScope, userId: string) {
+export async function getSubmissionRemaining(
+  scope: SubmissionScope,
+  userId: string,
+) {
   const client = createServiceRoleClient();
   const secret = process.env.SUBMISSION_RATE_LIMIT_SECRET?.trim();
   if (!client || !secret) return 0;
-  const { data, error } = await client.rpc("get_submission_rate_limit_remaining", {
-    p_scope: scope,
-    p_key_hash: hashIdentifier(`${scope}:uid:${userId}`, secret),
-    p_limit: DAILY_SUBMISSION_LIMIT,
-    p_window_seconds: WINDOW_SECONDS,
-  });
+  const { data, error } = await client.rpc(
+    "get_submission_rate_limit_remaining",
+    {
+      p_scope: scope,
+      p_key_hash: hashIdentifier(`${scope}:uid:${userId}`, secret),
+      p_limit: DAILY_SUBMISSION_LIMIT,
+      p_window_seconds: WINDOW_SECONDS,
+    },
+  );
   if (error) return 0;
   const value = Array.isArray(data) ? data[0]?.remaining : data?.remaining;
   return Math.max(0, Math.min(DAILY_SUBMISSION_LIMIT, Number(value) || 0));

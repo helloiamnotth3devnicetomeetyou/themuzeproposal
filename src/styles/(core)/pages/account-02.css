@@ -1,4 +1,3 @@
-
 .avatarGroups {
   display: flex;
   flex-direction: column;
@@ -33,12 +32,14 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: filter var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    filter var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
 .avatarGroup button:hover img {
   transform: scale(1.025);
-  filter: brightness(.82);
+  filter: brightness(0.82);
 }
 
 .avatarGroup button > span {
@@ -99,7 +100,7 @@
   color: var(--color-brand-pink);
   font-size: 9px;
   font-weight: 750;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
 }
 
 .session h3 {
@@ -155,11 +156,24 @@
 }
 
 @media (max-width: 1024px) {
-  .page { padding-top: 124px; }
-  .shell { grid-template-columns: minmax(200px, .28fr) minmax(0, .72fr); gap: 40px; padding: 0 28px; }
-  .headerSticky { top: 124px; }
-  .header h1 { font-size: clamp(36px, 5vw, 54px); }
-  .formRow { grid-template-columns: 130px minmax(0, 1fr); gap: 20px; }
+  .page {
+    padding-top: 124px;
+  }
+  .shell {
+    grid-template-columns: minmax(200px, 0.28fr) minmax(0, 0.72fr);
+    gap: 40px;
+    padding: 0 28px;
+  }
+  .headerSticky {
+    top: 124px;
+  }
+  .header h1 {
+    font-size: clamp(36px, 5vw, 54px);
+  }
+  .formRow {
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 20px;
+  }
 }
 
 /* ── Mobile: single-column layout ── */
@@ -188,7 +202,7 @@
 
   .header h1 {
     font-size: var(--page-title-size);
-    line-height: .88;
+    line-height: 0.88;
   }
 
   .headerSticky > p {
@@ -232,9 +246,12 @@
     font-size: 11px;
     font-weight: 700;
     text-align: center;
-    letter-spacing: .02em;
+    letter-spacing: 0.02em;
     white-space: nowrap;
-    transition: border-color var(--duration-fast) ease, color var(--duration-fast) ease, background var(--duration-fast) ease;
+    transition:
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      background var(--duration-fast) ease;
   }
 
   .tabs button + button {
@@ -308,7 +325,7 @@
   .formRow > label {
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: .04em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text-muted);
   }
@@ -347,13 +364,33 @@
 }
 
 @media (max-width: 480px) {
-  .page { padding-top: 72px; }
-  .header { padding: 0 20px; }
-  .headerSticky { padding: 24px 0 20px; }
-  .header h1 { font-size: clamp(36px, 12vw, 52px); }
-  .tabs { margin-top: 16px; }
-  .contentHeader { padding: 24px 20px 18px; }
-  .form { padding: 28px 20px 36px; gap: 20px; }
-  .avatarForm { padding: 28px 20px 36px; gap: 22px; }
-  .session { padding: 28px 20px 36px; }
+  .page {
+    padding-top: 72px;
+  }
+  .header {
+    padding: 0 20px;
+  }
+  .headerSticky {
+    padding: 24px 0 20px;
+  }
+  .header h1 {
+    font-size: clamp(36px, 12vw, 52px);
+  }
+  .tabs {
+    margin-top: 16px;
+  }
+  .contentHeader {
+    padding: 24px 20px 18px;
+  }
+  .form {
+    padding: 28px 20px 36px;
+    gap: 20px;
+  }
+  .avatarForm {
+    padding: 28px 20px 36px;
+    gap: 22px;
+  }
+  .session {
+    padding: 28px 20px 36px;
+  }
 }

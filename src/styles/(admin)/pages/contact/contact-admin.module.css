@@ -27,7 +27,9 @@
   cursor: pointer;
 }
 
-.summaryTabs button + button { border-left: 1px solid var(--border-default); }
+.summaryTabs button + button {
+  border-left: 1px solid var(--border-default);
+}
 
 .summaryTabs button::after {
   position: absolute;
@@ -51,14 +53,18 @@
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: -.05em;
+  letter-spacing: -0.05em;
   transition: color var(--duration-fast);
 }
 
 .summaryTabs button:hover span,
 .summaryTabs button.active span,
-.summaryTabs button.active strong { color: var(--color-brand-pink); }
-.summaryTabs button.active::after { background: var(--color-brand-pink); }
+.summaryTabs button.active strong {
+  color: var(--color-brand-pink);
+}
+.summaryTabs button.active::after {
+  background: var(--color-brand-pink);
+}
 
 .noAttachment {
   margin: 18px 0 0;
@@ -69,12 +75,45 @@
   font-size: 9px;
   text-align: center;
 }
-.fullPage article > footer { position: sticky; z-index: 3; bottom: 0; border-top: 1px solid var(--border-default); }
-.answerRecord { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--text-muted); font-size: 12px; }
-.answerRecord button { min-height: 34px; padding: 0 12px; border: 1px solid var(--color-brand-pink); border-radius: 6px; background: transparent; color: var(--color-brand-pink); font-size: 12px; font-weight: 700; cursor: pointer; }
-.answerRecord button:disabled { opacity: .45; cursor: default; }
+.fullPage article > footer {
+  position: sticky;
+  z-index: 3;
+  bottom: 0;
+  border-top: 1px solid var(--border-default);
+}
+.answerRecord {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.answerRecord button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-brand-pink);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-brand-pink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.answerRecord button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 
 @media (max-width: 600px) {
-  .summaryTabs { min-height: 76px; border-top: 1px solid var(--border-default); border-inline: 0; }
-  .summaryTabs button { min-width: 0; flex: 1; }
+  .summaryTabs {
+    min-height: 76px;
+    border-top: 1px solid var(--border-default);
+    border-inline: 0;
+  }
+  .summaryTabs button {
+    min-width: 0;
+    flex: 1;
+  }
 }

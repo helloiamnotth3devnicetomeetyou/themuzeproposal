@@ -1,16 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import { getAdminInboxCounts } from "./inbox-counts";
 
-const countQuery = (count: number) => ({ eq: vi.fn().mockResolvedValue({ count, error: null }) });
+const countQuery = (count: number) => ({
+  eq: vi.fn().mockResolvedValue({ count, error: null }),
+});
 
 describe("getAdminInboxCounts", () => {
   it("uses pending counts for every inbox surface", async () => {
-    const client = { from: vi.fn()
-      .mockReturnValueOnce({ select: vi.fn(() => countQuery(1)) })
-      .mockReturnValueOnce({ select: vi.fn(() => countQuery(2)) })
-      .mockReturnValueOnce({ select: vi.fn(() => countQuery(3)) }),
+    const client = {
+      from: vi
+        .fn()
+        .mockReturnValueOnce({ select: vi.fn(() => countQuery(1)) })
+        .mockReturnValueOnce({ select: vi.fn(() => countQuery(2)) })
+        .mockReturnValueOnce({ select: vi.fn(() => countQuery(3)) }),
     };
 
-    await expect(getAdminInboxCounts(client as never)).resolves.toEqual({ auditions: 1, contacts: 2, reports: 3 });
+    await expect(getAdminInboxCounts(client as never)).resolves.toEqual({
+      auditions: 1,
+      contacts: 2,
+      reports: 3,
+    });
   });
 });

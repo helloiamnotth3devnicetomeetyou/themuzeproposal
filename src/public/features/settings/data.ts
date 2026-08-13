@@ -17,29 +17,40 @@ export const EMPTY_SETTINGS: SiteSettingsPreviewPayload = {
   social: [],
 };
 
-const normalizeSocial = (value: unknown): SiteSettingsPreviewPayload["social"] => {
+const normalizeSocial = (
+  value: unknown,
+): SiteSettingsPreviewPayload["social"] => {
   if (Array.isArray(value)) {
     return value.flatMap((item, index) => {
       if (!item || typeof item !== "object") return [];
       const candidate = item as Record<string, unknown>;
       const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
       if (!url) return [];
-      return [{
-        id: typeof candidate.id === "string" ? candidate.id : `site-social-${index}`,
-        platform: detectSocialPlatform(url) !== "other"
-          ? detectSocialPlatform(url)
-          : (typeof candidate.platform === "string" ? candidate.platform : "other"),
-        label: typeof candidate.label === "string" ? candidate.label : "",
-        url,
-      }];
+      return [
+        {
+          id:
+            typeof candidate.id === "string"
+              ? candidate.id
+              : `site-social-${index}`,
+          platform:
+            detectSocialPlatform(url) !== "other"
+              ? detectSocialPlatform(url)
+              : typeof candidate.platform === "string"
+                ? candidate.platform
+                : "other",
+          label: typeof candidate.label === "string" ? candidate.label : "",
+          url,
+        },
+      ];
     });
   }
 
   if (!value || typeof value !== "object") return [];
-  return Object.entries(value as Record<string, unknown>).flatMap(([platform, url], index) =>
-    typeof url === "string" && url.trim()
-      ? [{ id: `site-social-${index}`, platform, label: "", url: url.trim() }]
-      : [],
+  return Object.entries(value as Record<string, unknown>).flatMap(
+    ([platform, url], index) =>
+      typeof url === "string" && url.trim()
+        ? [{ id: `site-social-${index}`, platform, label: "", url: url.trim() }]
+        : [],
   );
 };
 
@@ -49,12 +60,22 @@ export function normalizeSiteSettings(
   const next = structuredClone(EMPTY_SETTINGS);
 
   rows?.forEach((item) => {
-    if (item.key === "company" && item.value && typeof item.value === "object") {
-      next.company = { ...next.company, ...(item.value as Partial<typeof next.company>) };
+    if (
+      item.key === "company" &&
+      item.value &&
+      typeof item.value === "object"
+    ) {
+      next.company = {
+        ...next.company,
+        ...(item.value as Partial<typeof next.company>),
+      };
     }
     if (item.key === "history") next.history = normalizeHistory(item.value);
     if (item.key === "footer" && item.value && typeof item.value === "object") {
-      next.footer = { ...next.footer, ...(item.value as Partial<typeof next.footer>) };
+      next.footer = {
+        ...next.footer,
+        ...(item.value as Partial<typeof next.footer>),
+      };
     }
     if (item.key === "social") next.social = normalizeSocial(item.value);
   });

@@ -10,8 +10,10 @@ export function replacePathExtension(path: string, extension: string) {
 }
 
 export function isSafeStoragePath(path: string) {
-  return path.length >= 3
-    && path.length <= 500
-    && !path.includes("..")
-    && /^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$/.test(path);
+  return (
+    path.length >= 3 &&
+    path.length <= 500 &&
+    !path.includes("..") &&
+    /^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$/.test(path)
+  );
 }

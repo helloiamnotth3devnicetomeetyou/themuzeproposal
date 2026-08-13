@@ -5,7 +5,14 @@ import ContentWorkbench from "./ContentWorkbench";
 describe("ContentWorkbench mobile rail", () => {
   it("opens the compact item rail and returns focus when it closes", () => {
     const { container } = render(
-      <ContentWorkbench rail={<div>항목 목록</div>} railLabel="항목 선택" identity={<div>선택한 항목</div>} tabs={[{ id: "basic", label: "기본" }]} activeTab="basic" onTabChange={() => {}}>
+      <ContentWorkbench
+        rail={<div>항목 목록</div>}
+        railLabel="항목 선택"
+        identity={<div>선택한 항목</div>}
+        tabs={[{ id: "basic", label: "기본" }]}
+        activeTab="basic"
+        onTabChange={() => {}}
+      >
         <div>편집 영역</div>
       </ContentWorkbench>,
     );

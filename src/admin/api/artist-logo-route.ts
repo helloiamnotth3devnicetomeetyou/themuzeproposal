@@ -7,14 +7,22 @@ import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
-import { sanitizeSvg, trimSvgToContent, UnsafeSvgError } from "@/core/utils/svg-sanitizer";
+import {
+  sanitizeSvg,
+  trimSvgToContent,
+  UnsafeSvgError,
+} from "@/core/utils/svg-sanitizer";
 
 const MAX_SVG_BYTES = 10 * 1024 * 1024;
 
 function safePathPart(value: FormDataEntryValue | null, fallback: string) {
-  const normalized = typeof value === "string"
-    ? value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "")
-    : "";
+  const normalized =
+    typeof value === "string"
+      ? value
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, "-")
+          .replace(/^-|-$/g, "")
+      : "";
   return normalized || fallback;
 }
 
@@ -25,19 +33,27 @@ function errorResponse(code: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
+  if (!isSameOriginRequest(request))
+    return errorResponse("INVALID_REQUEST", 400);
 
   const supabase = await createSupabaseServerClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+  if (!(await isAdmin(supabase, user.id)))
+    return errorResponse("FORBIDDEN", 403);
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
   if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429);
 
   let formData: FormData;
   try {
-    const parsed = await parseFormDataWithinLimit(request, MAX_SVG_BYTES + 64 * 1024);
+    const parsed = await parseFormDataWithinLimit(
+      request,
+      MAX_SVG_BYTES + 64 * 1024,
+    );
     if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
     formData = parsed;
   } catch {
@@ -45,11 +61,13 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get("file");
-  if (!(file instanceof File)
-    || file.size < 1
-    || file.size > MAX_SVG_BYTES
-    || !file.name.toLowerCase().endsWith(".svg")
-    || !["image/svg+xml", "text/xml", "application/xml", ""].includes(file.type)) {
+  if (
+    !(file instanceof File) ||
+    file.size < 1 ||
+    file.size > MAX_SVG_BYTES ||
+    !file.name.toLowerCase().endsWith(".svg") ||
+    !["image/svg+xml", "text/xml", "application/xml", ""].includes(file.type)
+  ) {
     return errorResponse("INVALID_FILE", 400);
   }
 
@@ -72,7 +90,8 @@ export async function POST(request: NextRequest) {
       sanitized = await trimSvgToContent(sanitized);
     }
   } catch (error) {
-    if (error instanceof UnsafeSvgError) return errorResponse("UNSAFE_SVG", 400);
+    if (error instanceof UnsafeSvgError)
+      return errorResponse("UNSAFE_SVG", 400);
     return errorResponse("INVALID_FILE", 400);
   }
 
@@ -80,9 +99,10 @@ export async function POST(request: NextRequest) {
   if (!adminClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
   const artistKey = safePathPart(formData.get("artistKey"), "draft");
   const entityKey = safePathPart(formData.get("entityKey"), "asset");
-  const assetFolder = formData.get("assetKind") === "album-typography"
-    ? "album-typography-sanitized"
-    : "artist-logo-sanitized";
+  const assetFolder =
+    formData.get("assetKind") === "album-typography"
+      ? "album-typography-sanitized"
+      : "artist-logo-sanitized";
   const path = `${artistKey}/${assetFolder}/${entityKey}/${crypto.randomUUID()}.svg`;
   const { error: uploadError } = await uploadObject({
     bucket: "artist-assets",
@@ -94,16 +114,23 @@ export async function POST(request: NextRequest) {
 
   if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
 
-  const { error: auditError } = await adminClient.from("admin_audit_logs").insert({
-    actor_id: user.id,
-    actor_email: user.email ?? null,
-    operation: "INSERT",
-    table_name: "storage.objects",
-    record_id: `artist-assets/${path}`,
-    record_label: `Artist logo: ${path}`,
-    changed_fields: ["name", "metadata"],
-    after_values: { bucket: "artist-assets", path, mime_type: "image/svg+xml", size: sanitized.length },
-  });
+  const { error: auditError } = await adminClient
+    .from("admin_audit_logs")
+    .insert({
+      actor_id: user.id,
+      actor_email: user.email ?? null,
+      operation: "INSERT",
+      table_name: "storage.objects",
+      record_id: `artist-assets/${path}`,
+      record_label: `Artist logo: ${path}`,
+      changed_fields: ["name", "metadata"],
+      after_values: {
+        bucket: "artist-assets",
+        path,
+        mime_type: "image/svg+xml",
+        size: sanitized.length,
+      },
+    });
   if (auditError) {
     await deleteObjects("artist-assets", [path]);
     return errorResponse("AUDIT_FAILED", 503);

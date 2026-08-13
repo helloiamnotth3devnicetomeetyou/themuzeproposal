@@ -22,12 +22,21 @@ export type FileValidationProfile =
 
 export type ValidatedFile = {
   mimeType: ValidatedFileType;
-  extension: "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "mp3" | "mp4" | "webm";
+  extension:
+    "jpg" | "png" | "webp" | "gif" | "pdf" | "zip" | "mp3" | "mp4" | "webm";
 };
 
-const PROFILE_TYPES: Record<FileValidationProfile, ReadonlySet<ValidatedFileType>> = {
+const PROFILE_TYPES: Record<
+  FileValidationProfile,
+  ReadonlySet<ValidatedFileType>
+> = {
   "public-image": new Set(["image/jpeg", "image/png", "image/webp"]),
-  "track-asset": new Set(["image/jpeg", "image/png", "image/webp", "audio/mpeg"]),
+  "track-asset": new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "audio/mpeg",
+  ]),
   "protect-evidence": new Set([
     "image/jpeg",
     "image/png",
@@ -78,22 +87,34 @@ function ascii(bytes: Uint8Array, start: number, length: number) {
 
 function detectType(bytes: Uint8Array): ValidatedFileType | null {
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
-  if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
-  if (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a") return "image/gif";
-  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") return "image/webp";
+  if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    return "image/png";
+  if (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")
+    return "image/gif";
+  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP")
+    return "image/webp";
 
-  const pdfHeader = ascii(bytes.subarray(0, 1024), 0, Math.min(bytes.length, 1024));
+  const pdfHeader = ascii(
+    bytes.subarray(0, 1024),
+    0,
+    Math.min(bytes.length, 1024),
+  );
   if (pdfHeader.includes("%PDF-")) return "application/pdf";
 
-  const isZip = startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])
-    || startsWith(bytes, [0x50, 0x4b, 0x05, 0x06])
-    || startsWith(bytes, [0x50, 0x4b, 0x07, 0x08]);
+  const isZip =
+    startsWith(bytes, [0x50, 0x4b, 0x03, 0x04]) ||
+    startsWith(bytes, [0x50, 0x4b, 0x05, 0x06]) ||
+    startsWith(bytes, [0x50, 0x4b, 0x07, 0x08]);
   if (isZip) return "application/zip";
 
   if (ascii(bytes, 0, 3) === "ID3") return "audio/mpeg";
   if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return "audio/mpeg";
   if (ascii(bytes, 4, 4) === "ftyp") return "video/mp4";
-  if (startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3]) && ascii(bytes, 0, bytes.length).includes("webm")) return "video/webm";
+  if (
+    startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3]) &&
+    ascii(bytes, 0, bytes.length).includes("webm")
+  )
+    return "video/webm";
   return null;
 }
 
@@ -104,7 +125,9 @@ export async function validateFileSignature(
   if (file.size < 1) return null;
 
   const headerBytes = new Uint8Array(
-    await file.slice(0, Math.min(file.size, SIGNATURE_HEADER_BYTES)).arrayBuffer(),
+    await file
+      .slice(0, Math.min(file.size, SIGNATURE_HEADER_BYTES))
+      .arrayBuffer(),
   );
   const mimeType = detectType(headerBytes);
 
@@ -119,8 +142,15 @@ export async function validateFileSignature(
       const width = metadata.width ?? 0;
       const height = metadata.height ?? 0;
       const frames = metadata.pages ?? 1;
-      if (!width || !height || width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE
-        || width * height * frames > MAX_IMAGE_PIXELS || frames > MAX_IMAGE_FRAMES) return null;
+      if (
+        !width ||
+        !height ||
+        width > MAX_IMAGE_EDGE ||
+        height > MAX_IMAGE_EDGE ||
+        width * height * frames > MAX_IMAGE_PIXELS ||
+        frames > MAX_IMAGE_FRAMES
+      )
+        return null;
     } catch {
       return null;
     }
@@ -129,13 +159,22 @@ export async function validateFileSignature(
   return { mimeType, extension: EXTENSIONS[mimeType] };
 }
 
-export function extensionMatches(fileName: string, extension: ValidatedFile["extension"]) {
+export function extensionMatches(
+  fileName: string,
+  extension: ValidatedFile["extension"],
+) {
   const actual = fileName.split(".").pop()?.toLowerCase();
   if (extension === "jpg") return actual === "jpg" || actual === "jpeg";
   return actual === extension;
 }
 
 export function boundedFileName(fileName: string) {
-  const normalized = fileName.normalize("NFC").replace(/[\u0000-\u001f\u007f]/g, "").replace(/[\\/]/g, "_");
-  return Array.from(normalized).slice(0, MAX_DISPLAY_FILE_NAME_LENGTH).join("") || "attachment";
+  const normalized = fileName
+    .normalize("NFC")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[\\/]/g, "_");
+  return (
+    Array.from(normalized).slice(0, MAX_DISPLAY_FILE_NAME_LENGTH).join("") ||
+    "attachment"
+  );
 }

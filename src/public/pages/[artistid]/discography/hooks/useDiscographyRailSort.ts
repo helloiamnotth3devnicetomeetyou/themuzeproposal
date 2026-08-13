@@ -1,9 +1,25 @@
-import { useCallback, type Dispatch, type RefObject, type SetStateAction } from "react";
+import {
+  useCallback,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from "react";
 import type { AlbumSort, RailPhase } from "../lib/types";
 
-export function useDiscographyRailSort({ railPhase, albumCount, railTimersRef, setRailPhase, setSortBy, setAlbumIndex }: {
-  railPhase: RailPhase; albumCount: number; railTimersRef: RefObject<Array<ReturnType<typeof setTimeout>>>;
-  setRailPhase: (value: RailPhase) => void; setSortBy: Dispatch<SetStateAction<AlbumSort>>; setAlbumIndex: (value: number) => void;
+export function useDiscographyRailSort({
+  railPhase,
+  albumCount,
+  railTimersRef,
+  setRailPhase,
+  setSortBy,
+  setAlbumIndex,
+}: {
+  railPhase: RailPhase;
+  albumCount: number;
+  railTimersRef: RefObject<Array<ReturnType<typeof setTimeout>>>;
+  setRailPhase: (value: RailPhase) => void;
+  setSortBy: Dispatch<SetStateAction<AlbumSort>>;
+  setAlbumIndex: (value: number) => void;
 }) {
   return useCallback(() => {
     if (railPhase !== "idle") return;
@@ -11,11 +27,22 @@ export function useDiscographyRailSort({ railPhase, albumCount, railTimersRef, s
     const enterTime = 220 + albumCount * 28;
     setRailPhase("exit");
     const exitTimer = setTimeout(() => {
-      setSortBy((previous) => previous === "date-desc" ? "date-asc" : "date-desc");
+      setSortBy((previous) =>
+        previous === "date-desc" ? "date-asc" : "date-desc",
+      );
       setAlbumIndex(0);
       setRailPhase("enter");
-      railTimersRef.current.push(setTimeout(() => setRailPhase("idle"), enterTime));
+      railTimersRef.current.push(
+        setTimeout(() => setRailPhase("idle"), enterTime),
+      );
     }, exitTime);
     railTimersRef.current.push(exitTimer);
-  }, [albumCount, railPhase, railTimersRef, setAlbumIndex, setRailPhase, setSortBy]);
+  }, [
+    albumCount,
+    railPhase,
+    railTimersRef,
+    setAlbumIndex,
+    setRailPhase,
+    setSortBy,
+  ]);
 }

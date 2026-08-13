@@ -30,7 +30,10 @@ type ImageAssetFieldProps = {
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const safePathPart = (value: string, fallback: string) => {
-  const safe = value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
+  const safe = value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-|-$/g, "");
   return safe || fallback;
 };
 
@@ -56,9 +59,12 @@ export default function ImageAssetField({
   const uploadFile = async (file?: File) => {
     if (!file) return;
     const fileType = file.type;
-    const isSvg = kind === "artist-logo" && file.name.toLowerCase().endsWith(".svg");
+    const isSvg =
+      kind === "artist-logo" && file.name.toLowerCase().endsWith(".svg");
     if (!IMAGE_TYPES.includes(fileType) && !isSvg) {
-      onError(`${label}은 ${kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} 파일만 올릴 수 있습니다.`);
+      onError(
+        `${label}은 ${kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} 파일만 올릴 수 있습니다.`,
+      );
       return;
     }
     if (file.size > maxBytes) {
@@ -77,11 +83,12 @@ export default function ImageAssetField({
           method: "POST",
           body: formData,
         });
-        const payload = await response.json().catch(() => ({})) as {
+        const payload = (await response.json().catch(() => ({}))) as {
           asset?: UploadedImageAsset;
           code?: string;
         };
-        if (!response.ok || !payload.asset) throw new Error(payload.code || "UPLOAD_FAILED");
+        if (!response.ok || !payload.asset)
+          throw new Error(payload.code || "UPLOAD_FAILED");
         asset = payload.asset;
       } else {
         const converted = await toWebP(file);
@@ -92,9 +99,11 @@ export default function ImageAssetField({
       onUploaded?.(asset);
     } catch (cause) {
       const code = cause instanceof Error ? cause.message : "UPLOAD_FAILED";
-      onError(code === "UNSAFE_SVG"
-        ? "스크립트, 외부 리소스 또는 허용되지 않은 SVG 요소가 포함되어 있습니다."
-        : `${label} 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.`);
+      onError(
+        code === "UNSAFE_SVG"
+          ? "스크립트, 외부 리소스 또는 허용되지 않은 SVG 요소가 포함되어 있습니다."
+          : `${label} 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.`,
+      );
     } finally {
       setBusy(false);
       setDragging(false);
@@ -102,33 +111,89 @@ export default function ImageAssetField({
   };
 
   return (
-    <div className={`content-asset-field is-${shape} ${dragging ? "is-dragging" : ""} ${value ? "has-value" : ""}`}>
+    <div
+      className={`content-asset-field is-${shape} ${dragging ? "is-dragging" : ""} ${value ? "has-value" : ""}`}
+    >
       <div className="content-asset-preview">
-        {value ? <AdminAssetImage src={value} alt={`${label} 미리보기`} sizes="320px" className={kind === "artist-logo" && /\.svg(?:$|\?)/i.test(value) ? "is-theme-svg" : undefined} /> : <div><span>{kind === "artist-logo" ? "LOGO" : "IMAGE"}</span><b><Plus aria-hidden="true" /></b></div>}
+        {value ? (
+          <AdminAssetImage
+            src={value}
+            alt={`${label} 미리보기`}
+            sizes="320px"
+            className={
+              kind === "artist-logo" && /\.svg(?:$|\?)/i.test(value)
+                ? "is-theme-svg"
+                : undefined
+            }
+          />
+        ) : (
+          <div>
+            <span>{kind === "artist-logo" ? "LOGO" : "IMAGE"}</span>
+            <b>
+              <Plus aria-hidden="true" />
+            </b>
+          </div>
+        )}
       </div>
       <div
         className="content-asset-dropzone"
-        onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
-        onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
-        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }}
-        onDrop={(event) => { event.preventDefault(); setDragging(false); void uploadFile(event.dataTransfer.files?.[0]); }}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            setDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragging(false);
+          void uploadFile(event.dataTransfer.files?.[0]);
+        }}
       >
         <div className="content-asset-copy">
-          <span>{label}{required && <b>*</b>}</span>
+          <span>
+            {label}
+            {required && <b>*</b>}
+          </span>
           <p>{busy ? "업로드 중…" : hint}</p>
-          <small>{kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"} · 최대 {maxMegabytes}MB</small>
+          <small>
+            {kind === "artist-logo" ? "JPG, PNG, WebP, SVG" : "JPG, PNG, WebP"}{" "}
+            · 최대 {maxMegabytes}MB
+          </small>
         </div>
         <div className="content-asset-actions">
-          <label htmlFor={inputId}>{busy ? "업로드 중" : value ? "파일 교체" : "파일 선택"}</label>
-          {value && <button type="button" onClick={() => void onChange("")} disabled={busy}>제거</button>}
+          <label htmlFor={inputId}>
+            {busy ? "업로드 중" : value ? "파일 교체" : "파일 선택"}
+          </label>
+          {value && (
+            <button
+              type="button"
+              onClick={() => void onChange("")}
+              disabled={busy}
+            >
+              제거
+            </button>
+          )}
         </div>
         <input
           id={inputId}
           className="sr-only"
           type="file"
-          accept={kind === "artist-logo" ? "image/jpeg,image/png,image/webp,image/svg+xml,.svg" : "image/jpeg,image/png,image/webp"}
+          accept={
+            kind === "artist-logo"
+              ? "image/jpeg,image/png,image/webp,image/svg+xml,.svg"
+              : "image/jpeg,image/png,image/webp"
+          }
           disabled={busy}
-          onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }}
+          onChange={(event) => {
+            void uploadFile(event.target.files?.[0]);
+            event.currentTarget.value = "";
+          }}
         />
       </div>
     </div>

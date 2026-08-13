@@ -87,13 +87,19 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    color var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
 .mobileArtistTrigger:hover,
-.mobileArtistTrigger[aria-expanded="true"] { color: var(--color-brand-pink); }
+.mobileArtistTrigger[aria-expanded="true"] {
+  color: var(--color-brand-pink);
+}
 
-.mobileArtistTrigger:active { transform: translateY(1px); }
+.mobileArtistTrigger:active {
+  transform: translateY(1px);
+}
 
 .mobileArtistChevron {
   width: 16px;
@@ -135,7 +141,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mobileArtistTrigger,
-  .mobileArtistChevron { transition: none; }
+  .mobileArtistChevron {
+    transition: none;
+  }
   .mobileMenu,
-  .mobileArtistSublist { animation: none; }
+  .mobileArtistSublist {
+    animation: none;
+  }
 }

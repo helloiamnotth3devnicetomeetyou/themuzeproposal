@@ -22,7 +22,9 @@ export const TrackList = memo(function TrackList({
 }: TrackListProps) {
   const { t } = useLocale();
   return (
-    <div className={`flex flex-col gap-1 pr-1 ${layout === "panel" ? "flex-1 min-h-0 overflow-y-auto scrollbar-none" : "overflow-visible"}`}>
+    <div
+      className={`flex flex-col gap-1 pr-1 ${layout === "panel" ? "flex-1 min-h-0 overflow-y-auto scrollbar-none" : "overflow-visible"}`}
+    >
       {album.tracks.map((track, index) => {
         const isActive = currentTrackIndex === index;
         const isHovered = hoveredDisc === index;

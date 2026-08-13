@@ -9,7 +9,14 @@ import {
   type HistoryEntry,
 } from "@/core/content/site-content";
 
-export type SettingsTab = "company" | "history" | "footer" | "social" | "business" | "avatars" | "admins";
+export type SettingsTab =
+  | "company"
+  | "history"
+  | "footer"
+  | "social"
+  | "business"
+  | "avatars"
+  | "admins";
 export type HistoryLanguage = "ko" | "en" | "ja";
 
 export type CompanySettings = {
@@ -45,7 +52,10 @@ export const EMPTY_COMPANY: CompanySettings = {
 
 export const EMPTY_FOOTER: FooterSettings = { copyright: "" };
 export const EMPTY_SOCIAL: SocialLink[] = [];
-export const EMPTY_BUSINESS: BusinessAssets = { pressKitUrl: "", profilePdfUrl: "" };
+export const EMPTY_BUSINESS: BusinessAssets = {
+  pressKitUrl: "",
+  profilePdfUrl: "",
+};
 export const EMPTY_DRAFT: SettingsDraft = {
   company: EMPTY_COMPANY,
   history: DEFAULT_HISTORY,
@@ -87,18 +97,33 @@ export const normalizeSiteSocial = (value: unknown): SocialLink[] => {
   );
 };
 
-export function parseSettingsRows(rows: Array<{ key: string; value: unknown }> | null) {
+export function parseSettingsRows(
+  rows: Array<{ key: string; value: unknown }> | null,
+) {
   let company = EMPTY_COMPANY;
   let history = DEFAULT_HISTORY;
   let footer = EMPTY_FOOTER;
   let social = EMPTY_SOCIAL;
   let business = EMPTY_BUSINESS;
   rows?.forEach((item) => {
-    if (item.key === "company") company = { ...EMPTY_COMPANY, ...(item.value as Partial<CompanySettings>) };
+    if (item.key === "company")
+      company = {
+        ...EMPTY_COMPANY,
+        ...(item.value as Partial<CompanySettings>),
+      };
     if (item.key === "history") history = normalizeHistory(item.value);
-    if (item.key === "footer") footer = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
+    if (item.key === "footer")
+      footer = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
     if (item.key === "social") social = normalizeSiteSocial(item.value);
-    if (item.key === "business_assets" && item.value && typeof item.value === "object") business = { ...EMPTY_BUSINESS, ...(item.value as Partial<BusinessAssets>) };
+    if (
+      item.key === "business_assets" &&
+      item.value &&
+      typeof item.value === "object"
+    )
+      business = {
+        ...EMPTY_BUSINESS,
+        ...(item.value as Partial<BusinessAssets>),
+      };
   });
   return { company, history, footer, social, business };
 }

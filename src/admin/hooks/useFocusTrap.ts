@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const selector =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function useFocusTrap<T extends HTMLElement>(active: boolean) {
   const ref = useRef<T>(null);
@@ -9,7 +10,10 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean) {
     if (!active) return;
     const root = ref.current;
     if (!root) return;
-    const focusable = () => [...root.querySelectorAll<HTMLElement>(selector)].filter((element) => !element.hasAttribute("hidden"));
+    const focusable = () =>
+      [...root.querySelectorAll<HTMLElement>(selector)].filter(
+        (element) => !element.hasAttribute("hidden"),
+      );
     const first = focusable()[0];
     first?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -18,7 +22,9 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean) {
       if (!items.length) return;
       const current = document.activeElement;
       const index = items.indexOf(current as HTMLElement);
-      if (event.shiftKey ? index <= 0 : index === items.length - 1 || index < 0) {
+      if (
+        event.shiftKey ? index <= 0 : index === items.length - 1 || index < 0
+      ) {
         event.preventDefault();
         (event.shiftKey ? items.at(-1) : items[0])?.focus();
       }

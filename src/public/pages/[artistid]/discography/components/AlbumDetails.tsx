@@ -5,7 +5,12 @@ import { useLocale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
 import { SiSpotify } from "react-icons/si";
 
-import type { DiscographyAlbum, DiscographyGalleryItem, DiscographyMember, DiscographyTab } from "../lib/types";
+import type {
+  DiscographyAlbum,
+  DiscographyGalleryItem,
+  DiscographyMember,
+  DiscographyTab,
+} from "../lib/types";
 import { MemberGallery } from "./MemberGallery";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
@@ -57,9 +62,7 @@ export function AlbumDetails({
   return (
     <div className="hidden lg:col-span-5 lg:flex flex-col gap-4 w-full relative z-20 h-auto min-h-[620px] lg:h-full lg:min-h-0 lg:max-h-[600px]">
       <div className="shrink-0">
-        <span
-          className="text-[10px] font-medium uppercase text-[var(--color-static-white)]"
-        >
+        <span className="text-[10px] font-medium uppercase text-[var(--color-static-white)]">
           {album.type}
         </span>
         <div className="flex items-center justify-between mt-1">

@@ -12,7 +12,10 @@
  */
 export async function toWebP(file: File, quality = 0.88): Promise<File> {
   // Pass SVGs through untouched — they are vector, not raster.
-  if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
+  if (
+    file.type === "image/svg+xml" ||
+    file.name.toLowerCase().endsWith(".svg")
+  ) {
     return file;
   }
 

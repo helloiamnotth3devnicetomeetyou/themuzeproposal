@@ -20,18 +20,48 @@ export function useArtistProfileLoader(
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const { data, error } = await supabase.from("artists").select("*").eq("id", routeId).single();
+      const { data, error } = await supabase
+        .from("artists")
+        .select("*")
+        .eq("id", routeId)
+        .single();
       if (cancelled) return;
-      if (error || !data) { setError("아티스트 정보를 불러오지 못했습니다."); setLoading(false); return; }
+      if (error || !data) {
+        setError("아티스트 정보를 불러오지 못했습니다.");
+        setLoading(false);
+        return;
+      }
       const draft: ProfileDraft = {
-        name: data.name_ko || data.name || "", engName: data.name_en || data.eng_name || "", jaName: data.name_ja || "",
-        type: data.type || "group", debutDate: data.debut_date || "", imageUrl: data.image_url || "", logoUrl: data.logo_url || "",
-        color: data.color || BRAND_PINK_HEX, descKo: data.description_ko || "", descEn: data.description_en || "", descJa: data.description_ja || "",
-        socialLinks: normalizeSocialLinks(data.social_links), isActive: data.is_active ?? true,
+        name: data.name_ko || data.name || "",
+        engName: data.name_en || data.eng_name || "",
+        jaName: data.name_ja || "",
+        type: data.type || "group",
+        debutDate: data.debut_date || "",
+        imageUrl: data.image_url || "",
+        logoUrl: data.logo_url || "",
+        color: data.color || BRAND_PINK_HEX,
+        descKo: data.description_ko || "",
+        descEn: data.description_en || "",
+        descJa: data.description_ja || "",
+        socialLinks: normalizeSocialLinks(data.social_links),
+        isActive: data.is_active ?? true,
       };
-      setArtistId(data.id); setDraft(draft); setSnapshot(JSON.stringify(draft)); setLoading(false);
+      setArtistId(data.id);
+      setDraft(draft);
+      setSnapshot(JSON.stringify(draft));
+      setLoading(false);
     }
     void load();
-    return () => { cancelled = true; };
-  }, [isNew, routeId, setArtistId, setDraft, setError, setLoading, setSnapshot]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isNew,
+    routeId,
+    setArtistId,
+    setDraft,
+    setError,
+    setLoading,
+    setSnapshot,
+  ]);
 }

@@ -23,12 +23,20 @@ export default function ReportList({
 }: ReportListProps) {
   const { locale, t } = useLocale();
   const legacyPlatformCodes: Record<string, string> = {
-    Instagram: "instagram", "X (Twitter)": "x", YouTube: "youtube", TikTok: "tiktok",
-    Facebook: "facebook", "커뮤니티·게시판": "community", 기타: "other",
+    Instagram: "instagram",
+    "X (Twitter)": "x",
+    YouTube: "youtube",
+    TikTok: "tiktok",
+    Facebook: "facebook",
+    "커뮤니티·게시판": "community",
+    기타: "other",
   };
   const platformLabel = (value: string) => {
     const code = legacyPlatformCodes[value] ?? value;
-    return t.protect.platforms.find((platform) => platform.value === code)?.label ?? value;
+    return (
+      t.protect.platforms.find((platform) => platform.value === code)?.label ??
+      value
+    );
   };
   return (
     <section className={styles.myReports} aria-labelledby="my-reports-title">
@@ -54,16 +62,22 @@ export default function ReportList({
             <article key={report.id} className={styles.reportItem}>
               <div className={styles.reportMain}>
                 <span>
-                  {artists.find((artist) => artist.id === report.artist_id)?.name || t.protect.artistFallback} ·{" "}
-                  {reportTypes.find((type) => type.value === report.report_type)?.label || t.protect.reportTypes.at(-1)?.label}
+                  {artists.find((artist) => artist.id === report.artist_id)
+                    ?.name || t.protect.artistFallback}{" "}
+                  ·{" "}
+                  {reportTypes.find((type) => type.value === report.report_type)
+                    ?.label || t.protect.reportTypes.at(-1)?.label}
                 </span>
                 <h3>{report.title}</h3>
                 <p>
-                  {platformLabel(report.platform)} · {t.protect.receipt} {report.id.slice(0, 8).toUpperCase()}
+                  {platformLabel(report.platform)} · {t.protect.receipt}{" "}
+                  {report.id.slice(0, 8).toUpperCase()}
                 </p>
               </div>
               <div className={styles.reportStatus}>
-                <span data-status={report.status}>{statusLabels[report.status]}</span>
+                <span data-status={report.status}>
+                  {statusLabels[report.status]}
+                </span>
                 <time dateTime={report.created_at}>
                   {new Intl.DateTimeFormat(localeTags[locale], {
                     year: "numeric",

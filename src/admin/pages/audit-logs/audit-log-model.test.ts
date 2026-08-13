@@ -49,4 +49,3 @@ describe("audit log presentation model", () => {
     expect(formatAuditValue({ key: "value" })).toContain('"key": "value"');
   });
 });
-

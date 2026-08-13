@@ -23,15 +23,19 @@ type RegisteredDraftAsset = UploadedImageAsset & { createdAt: number };
 function readRegistry(): RegisteredDraftAsset[] {
   if (typeof window === "undefined") return [];
   try {
-    const parsed: unknown = JSON.parse(window.localStorage.getItem(DRAFT_ASSET_REGISTRY_KEY) || "[]");
+    const parsed: unknown = JSON.parse(
+      window.localStorage.getItem(DRAFT_ASSET_REGISTRY_KEY) || "[]",
+    );
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is RegisteredDraftAsset =>
-      Boolean(item)
-      && typeof item === "object"
-      && (item as RegisteredDraftAsset).bucket === "artist-assets"
-      && typeof (item as RegisteredDraftAsset).path === "string"
-      && typeof (item as RegisteredDraftAsset).url === "string"
-      && typeof (item as RegisteredDraftAsset).createdAt === "number");
+    return parsed.filter(
+      (item): item is RegisteredDraftAsset =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        (item as RegisteredDraftAsset).bucket === "artist-assets" &&
+        typeof (item as RegisteredDraftAsset).path === "string" &&
+        typeof (item as RegisteredDraftAsset).url === "string" &&
+        typeof (item as RegisteredDraftAsset).createdAt === "number",
+    );
   } catch {
     return [];
   }
@@ -40,7 +44,10 @@ function readRegistry(): RegisteredDraftAsset[] {
 function writeRegistry(items: RegisteredDraftAsset[]) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(DRAFT_ASSET_REGISTRY_KEY, JSON.stringify(items));
+    window.localStorage.setItem(
+      DRAFT_ASSET_REGISTRY_KEY,
+      JSON.stringify(items),
+    );
   } catch {
     // Cleanup is best-effort when browser storage is unavailable.
   }
@@ -63,7 +70,10 @@ export async function cleanupAbandonedDraftImageAssets(client: SupabaseClient) {
   const registry = readRegistry();
   const abandoned = registry.filter((asset) => asset.createdAt < cutoff);
   if (!abandoned.length) return;
-  await removePaths(client, abandoned.map((asset) => asset.path));
+  await removePaths(
+    client,
+    abandoned.map((asset) => asset.path),
+  );
   untrackDraftImageAssets(abandoned);
 }
 
@@ -71,7 +81,10 @@ export async function discardDraftImageAssets(
   client: SupabaseClient,
   queued: UploadedImageAsset[],
 ) {
-  await removePaths(client, queued.map((asset) => asset.path));
+  await removePaths(
+    client,
+    queued.map((asset) => asset.path),
+  );
   untrackDraftImageAssets(queued);
 }
 

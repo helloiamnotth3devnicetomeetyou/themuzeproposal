@@ -222,87 +222,152 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
 
   if (kind === "artist-profile") {
     const artist = payload.artist;
-    return isRecord(artist)
-      && hasStrings(artist, ["id", "slug", "name", "eng_name", "name_ko", "name_en", "type"])
-      && isNullableString(artist.name_ja)
-      && isNullableString(artist.debut_date)
-      && isNullableString(artist.image_url)
-      && isNullableString(artist.logo_url)
-      && isNullableString(artist.color)
-      && isNullableString(artist.description_ko)
-      && isNullableString(artist.description_en)
-      && isNullableString(artist.description_ja)
-      && Array.isArray(artist.social_links)
-      && typeof artist.is_active === "boolean";
+    return (
+      isRecord(artist) &&
+      hasStrings(artist, [
+        "id",
+        "slug",
+        "name",
+        "eng_name",
+        "name_ko",
+        "name_en",
+        "type",
+      ]) &&
+      isNullableString(artist.name_ja) &&
+      isNullableString(artist.debut_date) &&
+      isNullableString(artist.image_url) &&
+      isNullableString(artist.logo_url) &&
+      isNullableString(artist.color) &&
+      isNullableString(artist.description_ko) &&
+      isNullableString(artist.description_en) &&
+      isNullableString(artist.description_ja) &&
+      Array.isArray(artist.social_links) &&
+      typeof artist.is_active === "boolean"
+    );
   }
 
   if (kind === "artist-member") {
     const artist = payload.artist;
     const member = payload.member;
-    return isRecord(artist)
-      && hasStrings(artist, ["id", "slug", "name"])
-      && isRecord(member)
-      && hasStrings(member, ["id", "slug", "name", "name_ko", "name_en", "name_ja"])
-      && isNullableString(member.eng_name)
-      && isNullableString(member.image_url)
-      && isFiniteNumber(member.sort_order);
+    return (
+      isRecord(artist) &&
+      hasStrings(artist, ["id", "slug", "name"]) &&
+      isRecord(member) &&
+      hasStrings(member, [
+        "id",
+        "slug",
+        "name",
+        "name_ko",
+        "name_en",
+        "name_ja",
+      ]) &&
+      isNullableString(member.eng_name) &&
+      isNullableString(member.image_url) &&
+      isFiniteNumber(member.sort_order)
+    );
   }
 
   if (kind === "album") {
     const artist = payload.artist;
     const album = payload.album;
-    return isRecord(artist)
-      && hasStrings(artist, ["id", "slug", "name"])
-      && isRecord(album)
-      && hasStrings(album, ["id", "title", "title_ko", "title_en", "title_ja", "type", "release_date", "cover_url", "color"])
-      && Array.isArray(album.tracks)
-      && album.tracks.every((track) =>
-        isRecord(track)
-        && hasStrings(track, ["id", "title", "title_ko", "title_en", "title_ja", "spotify_url", "youtube_url", "audio_url", "music_video_url"])
-        && typeof track.is_title === "boolean");
+    return (
+      isRecord(artist) &&
+      hasStrings(artist, ["id", "slug", "name"]) &&
+      isRecord(album) &&
+      hasStrings(album, [
+        "id",
+        "title",
+        "title_ko",
+        "title_en",
+        "title_ja",
+        "type",
+        "release_date",
+        "cover_url",
+        "color",
+      ]) &&
+      Array.isArray(album.tracks) &&
+      album.tracks.every(
+        (track) =>
+          isRecord(track) &&
+          hasStrings(track, [
+            "id",
+            "title",
+            "title_ko",
+            "title_en",
+            "title_ja",
+            "spotify_url",
+            "youtube_url",
+            "audio_url",
+            "music_video_url",
+          ]) &&
+          typeof track.is_title === "boolean",
+      )
+    );
   }
 
   if (kind === "notice") {
     const scope = payload.scope;
     const notice = payload.notice;
-    return isRecord(scope)
-      && isString(scope.name)
-      && (scope.artistSlug === undefined || isString(scope.artistSlug))
-      && isRecord(notice)
-      && hasStrings(notice, ["id", "date"])
-      && isRecord(notice.title)
-      && isRecord(notice.content)
-      && isRecord(notice.category)
-      && hasStrings(notice.title, ["ko", "en", "ja"])
-      && hasStrings(notice.content, ["ko", "en", "ja"])
-      && hasStrings(notice.category, ["ko", "en", "ja"]);
+    return (
+      isRecord(scope) &&
+      isString(scope.name) &&
+      (scope.artistSlug === undefined || isString(scope.artistSlug)) &&
+      isRecord(notice) &&
+      hasStrings(notice, ["id", "date"]) &&
+      isRecord(notice.title) &&
+      isRecord(notice.content) &&
+      isRecord(notice.category) &&
+      hasStrings(notice.title, ["ko", "en", "ja"]) &&
+      hasStrings(notice.content, ["ko", "en", "ja"]) &&
+      hasStrings(notice.category, ["ko", "en", "ja"])
+    );
   }
 
   if (kind === "schedule") {
     const artist = payload.artist;
     const schedule = payload.schedule;
-    return isRecord(artist)
-      && hasStrings(artist, ["id", "slug"])
-      && isNullableString(artist.color)
-      && isRecord(schedule)
-      && hasStrings(schedule, ["id", "event_date", "category", "title_ko", "location_ko", "location_en", "location_ja"])
-      && isFiniteNumber(schedule.sort_order);
+    return (
+      isRecord(artist) &&
+      hasStrings(artist, ["id", "slug"]) &&
+      isNullableString(artist.color) &&
+      isRecord(schedule) &&
+      hasStrings(schedule, [
+        "id",
+        "event_date",
+        "category",
+        "title_ko",
+        "location_ko",
+        "location_en",
+        "location_ja",
+      ]) &&
+      isFiniteNumber(schedule.sort_order)
+    );
   }
 
   const company = payload.company;
   const history = payload.history;
   const footer = payload.footer;
-  return isRecord(company)
-    && hasStrings(company, [
-      "name_ko", "name_en", "name_ja",
-      "address_ko", "address_en", "address_ja", "email",
-    ])
-    && Array.isArray(history)
-    && history.every((item) =>
-      isRecord(item) && hasStrings(item, ["id", "date", "event_ko", "event_en", "event_ja"]))
-    && isRecord(footer)
-    && isString(footer.copyright)
-    && Array.isArray(payload.social);
+  return (
+    isRecord(company) &&
+    hasStrings(company, [
+      "name_ko",
+      "name_en",
+      "name_ja",
+      "address_ko",
+      "address_en",
+      "address_ja",
+      "email",
+    ]) &&
+    Array.isArray(history) &&
+    history.every(
+      (item) =>
+        isRecord(item) &&
+        hasStrings(item, ["id", "date", "event_ko", "event_en", "event_ja"]),
+    ) &&
+    isRecord(footer) &&
+    isString(footer.copyright) &&
+    Array.isArray(payload.social)
+  );
 }
 
 export const previewStorageKey = (token: string) =>
@@ -313,7 +378,8 @@ export function clearPreviewStorage() {
   try {
     for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
       const key = window.localStorage.key(index);
-      if (key?.startsWith(PREVIEW_STORAGE_PREFIX)) window.localStorage.removeItem(key);
+      if (key?.startsWith(PREVIEW_STORAGE_PREFIX))
+        window.localStorage.removeItem(key);
     }
   } catch {
     // Storage access is optional; authentication sign-out must still proceed.
@@ -321,7 +387,9 @@ export function clearPreviewStorage() {
 }
 
 export function isPreviewToken(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 export function parsePreviewEnvelope(
@@ -332,14 +400,34 @@ export function parsePreviewEnvelope(
     const parsed: unknown = JSON.parse(value);
     if (!isRecord(parsed)) return null;
     if (parsed.version !== PREVIEW_VERSION) return null;
-    if (typeof parsed.token !== "string" || !isPreviewToken(parsed.token)) return null;
+    if (typeof parsed.token !== "string" || !isPreviewToken(parsed.token))
+      return null;
     if (expectedToken && parsed.token !== expectedToken) return null;
-    if (typeof parsed.kind !== "string" || !PREVIEW_KINDS.has(parsed.kind as PreviewKind)) return null;
-    if (typeof parsed.targetPath !== "string" || !parsed.targetPath.startsWith("/") || parsed.targetPath.startsWith("//")) return null;
-    if (typeof parsed.revision !== "number" || !Number.isFinite(parsed.revision)) return null;
-    if (typeof parsed.updatedAt !== "number" || !Number.isFinite(parsed.updatedAt)) return null;
-    if (typeof parsed.expiresAt !== "number" || parsed.expiresAt <= Date.now()) return null;
-    if (!isPayloadForKind(parsed.kind as PreviewKind, parsed.payload)) return null;
+    if (
+      typeof parsed.kind !== "string" ||
+      !PREVIEW_KINDS.has(parsed.kind as PreviewKind)
+    )
+      return null;
+    if (
+      typeof parsed.targetPath !== "string" ||
+      !parsed.targetPath.startsWith("/") ||
+      parsed.targetPath.startsWith("//")
+    )
+      return null;
+    if (
+      typeof parsed.revision !== "number" ||
+      !Number.isFinite(parsed.revision)
+    )
+      return null;
+    if (
+      typeof parsed.updatedAt !== "number" ||
+      !Number.isFinite(parsed.updatedAt)
+    )
+      return null;
+    if (typeof parsed.expiresAt !== "number" || parsed.expiresAt <= Date.now())
+      return null;
+    if (!isPayloadForKind(parsed.kind as PreviewKind, parsed.payload))
+      return null;
     return parsed as PreviewEnvelope;
   } catch {
     return null;

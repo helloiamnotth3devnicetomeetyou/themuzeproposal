@@ -1,9 +1,42 @@
 @import "./audit-logs-01.css";
 @import "./audit-logs-02.css";
 @import "./audit-logs-03.css";
-.copyId { margin-left: 6px; border: 0; background: transparent; color: var(--color-brand-pink); font-size: 11px; cursor: pointer; }
-.transactionRecords { display: grid; gap: 6px; padding: 16px; border-bottom: 1px solid var(--border-default); }
-.transactionRecords h3 { margin: 0 0 5px; color: var(--text-primary); font-size: 12px; }
-.transactionRecords button { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; gap: 8px; padding: 9px; border: 1px solid var(--border-default); border-radius: 7px; background: transparent; color: var(--text-secondary); text-align: left; cursor: pointer; }
-.transactionRecords button b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.activeTransactionRecord { border-color: var(--color-brand-pink) !important; }
+.copyId {
+  margin-left: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-brand-pink);
+  font-size: 11px;
+  cursor: pointer;
+}
+.transactionRecords {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+.transactionRecords h3 {
+  margin: 0 0 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.transactionRecords button {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--border-default);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+.transactionRecords button b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activeTransactionRecord {
+  border-color: var(--color-brand-pink) !important;
+}

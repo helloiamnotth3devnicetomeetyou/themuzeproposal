@@ -45,13 +45,9 @@ export const AlbumArtwork = memo(function AlbumArtwork({
           const total = album.tracks.length;
           const isActiveTrack = currentTrackIndex === trackIndex;
           const fanX = showDiscs ? 90 + trackIndex * 58 : 0;
-          const fanY = showDiscs
-            ? (trackIndex - (total - 1) / 2) * 20
-            : 0;
+          const fanY = showDiscs ? (trackIndex - (total - 1) / 2) * 20 : 0;
           const fanZ = showDiscs ? -(60 + trackIndex * 15) : -30;
-          const fanRotZ = showDiscs
-            ? (trackIndex - (total - 1) / 2) * 4
-            : 0;
+          const fanRotZ = showDiscs ? (trackIndex - (total - 1) / 2) * 4 : 0;
 
           return (
             <div
@@ -104,7 +100,7 @@ export const AlbumArtwork = memo(function AlbumArtwork({
                   willChange: isActiveTrack && isPlaying ? "transform" : "auto",
                 }}
               >
-                 <Image
+                <Image
                   key={`${album.id}-disc-img-${trackIndex}`}
                   src={album.cover}
                   alt={track.title}

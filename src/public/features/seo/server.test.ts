@@ -6,9 +6,14 @@ import { displayName, noticeDisplayTitle, pageTypeLabel } from "./server";
 import { vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
-vi.mock("@supabase/supabase-js", () => ({ createClient: vi.fn(() => ({ from: vi.fn() })) }));
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => ({ from: vi.fn() })),
+}));
 vi.mock("@/core/config/public-env", () => ({
-  getPublicSupabaseConfig: () => ({ url: "https://test.supabase.co", anonKey: "test-key" }),
+  getPublicSupabaseConfig: () => ({
+    url: "https://test.supabase.co",
+    anonKey: "test-key",
+  }),
 }));
 
 describe("seo/server pure functions", () => {
@@ -18,24 +23,48 @@ describe("seo/server pure functions", () => {
     });
 
     it("returns localized name_ko for ko locale", () => {
-      const entity = { name: "RESCENE", eng_name: null, name_ko: "리센느", name_en: "RESCENE", name_ja: null };
+      const entity = {
+        name: "RESCENE",
+        eng_name: null,
+        name_ko: "리센느",
+        name_en: "RESCENE",
+        name_ja: null,
+      };
       expect(displayName(entity, "ko")).toBe("리센느");
     });
 
     it("falls back to eng_name for en locale when name_en is null", () => {
-      const entity = { name: "RESCENE", eng_name: "RESCENE ENG", name_ko: null, name_en: null, name_ja: null };
+      const entity = {
+        name: "RESCENE",
+        eng_name: "RESCENE ENG",
+        name_ko: null,
+        name_en: null,
+        name_ja: null,
+      };
       expect(displayName(entity, "en")).toBe("RESCENE ENG");
     });
 
     it("falls back to name when all localized fields are null", () => {
-      const entity = { name: "RESCENE", eng_name: null, name_ko: null, name_en: null, name_ja: null };
+      const entity = {
+        name: "RESCENE",
+        eng_name: null,
+        name_ko: null,
+        name_en: null,
+        name_ja: null,
+      };
       // localizeText falls through to the fallback
       const result = displayName(entity, "en");
       expect(result).toBeTruthy();
     });
 
     it("returns null when all fields are null/empty", () => {
-      const entity = { name: "", eng_name: null, name_ko: null, name_en: null, name_ja: null };
+      const entity = {
+        name: "",
+        eng_name: null,
+        name_ko: null,
+        name_en: null,
+        name_ja: null,
+      };
       expect(displayName(entity, "ko")).toBeNull();
     });
   });
@@ -46,12 +75,20 @@ describe("seo/server pure functions", () => {
     });
 
     it("returns ko title for ko locale", () => {
-      const notice = { title_ko: "이벤트 공지", title_en: "Event Notice", title_ja: null };
+      const notice = {
+        title_ko: "이벤트 공지",
+        title_en: "Event Notice",
+        title_ja: null,
+      };
       expect(noticeDisplayTitle(notice, "ko")).toBe("이벤트 공지");
     });
 
     it("returns en title for en locale", () => {
-      const notice = { title_ko: "이벤트 공지", title_en: "Event Notice", title_ja: null };
+      const notice = {
+        title_ko: "이벤트 공지",
+        title_en: "Event Notice",
+        title_ja: null,
+      };
       expect(noticeDisplayTitle(notice, "en")).toBe("Event Notice");
     });
 

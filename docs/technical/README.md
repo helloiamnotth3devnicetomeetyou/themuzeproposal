@@ -48,14 +48,14 @@ npm run db:test
 
 다음 시스템에 접근 가능한지 확인한다. 실제 계정이나 token을 이 문서에 기록하지 않는다.
 
-| 시스템 | 필요한 권한 | 인수 시 확인할 것 |
-| --- | --- | --- |
-| GitHub | 저장소 read/write, Actions 로그 읽기 | 기본 브랜치 보호 규칙, 배포 workflow 상태 |
-| Vercel | 프로젝트·배포 로그·환경 변수 읽기, 필요 시 배포 | production/preview 프로젝트, 연결된 Git repository, 환경 변수 소유자 |
-| Supabase | 프로젝트·Auth·SQL·로그 접근 | production/preview project ref, Database password·service key 보관 위치, Auth redirect URL |
-| Cloudflare R2 | public/private bucket, API token, CDN·CORS 설정 접근 | bucket 이름, token rotation 위치, 공개 CDN domain, hero upload CORS |
-| Google OAuth·메일 provider | 설정을 조회하거나 담당자에게 요청할 수 있는 권한 | OAuth redirect URL, client secret 갱신 절차, 메일 발송 책임자 |
-| 도메인/DNS | 설정을 확인하거나 담당자에게 요청할 수 있는 권한 | canonical origin, DNS·TLS 갱신 담당자 |
+| 시스템                     | 필요한 권한                                          | 인수 시 확인할 것                                                                          |
+| -------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| GitHub                     | 저장소 read/write, Actions 로그 읽기                 | 기본 브랜치 보호 규칙, 배포 workflow 상태                                                  |
+| Vercel                     | 프로젝트·배포 로그·환경 변수 읽기, 필요 시 배포      | production/preview 프로젝트, 연결된 Git repository, 환경 변수 소유자                       |
+| Supabase                   | 프로젝트·Auth·SQL·로그 접근                          | production/preview project ref, Database password·service key 보관 위치, Auth redirect URL |
+| Cloudflare R2              | public/private bucket, API token, CDN·CORS 설정 접근 | bucket 이름, token rotation 위치, 공개 CDN domain, hero upload CORS                        |
+| Google OAuth·메일 provider | 설정을 조회하거나 담당자에게 요청할 수 있는 권한     | OAuth redirect URL, client secret 갱신 절차, 메일 발송 책임자                              |
+| 도메인/DNS                 | 설정을 확인하거나 담당자에게 요청할 수 있는 권한     | canonical origin, DNS·TLS 갱신 담당자                                                      |
 
 `super_admin`은 최소 한 명이 존재해야 한다. 일반 `editor`는 콘텐츠를 관리할 수 있지만 관리자 역할을 관리할 수 없다. 특정 담당자 한 명만 super_admin이거나 Vercel/Supabase 소유자인 상태는 인수 완료가 아니다.
 
@@ -85,16 +85,16 @@ production과 preview 각각에 대해 다음을 확인한다.
 
 ## 문서 지도
 
-| 문서 | 답하는 질문 |
-| --- | --- |
-| [01-project-overview.md](./01-project-overview.md) | 이 제품은 무엇이고 어떤 화면과 기능이 있는가? |
-| [02-architecture.md](./02-architecture.md) | 요청이 어느 계층을 지나고 새 코드는 어디에 두는가? |
-| [03-data-and-supabase.md](./03-data-and-supabase.md) | 테이블, RLS, R2 객체 저장소, 마이그레이션은 어떻게 연결되는가? |
-| [04-security.md](./04-security.md) | 인증·권한·입력·업로드 보안 경계는 무엇인가? |
-| [05-frontend-and-design.md](./05-frontend-and-design.md) | 디자인 언어, CSS, 반응형, 접근성, 다국어 규칙은 무엇인가? |
-| [06-code-style-and-workflows.md](./06-code-style-and-workflows.md) | 코드 스타일과 기능별 구현 절차는 무엇인가? |
-| [07-testing-and-operations.md](./07-testing-and-operations.md) | 테스트, CI, 배포, 장애 확인은 어떻게 하는가? |
-| [08-admin-analytics.md](./08-admin-analytics.md) | 관리자 페이지 통계의 설정, 권한, API, 장애 처리는 어떻게 하는가? |
+| 문서                                                               | 답하는 질문                                                      |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| [01-project-overview.md](./01-project-overview.md)                 | 이 제품은 무엇이고 어떤 화면과 기능이 있는가?                    |
+| [02-architecture.md](./02-architecture.md)                         | 요청이 어느 계층을 지나고 새 코드는 어디에 두는가?               |
+| [03-data-and-supabase.md](./03-data-and-supabase.md)               | 테이블, RLS, R2 객체 저장소, 마이그레이션은 어떻게 연결되는가?   |
+| [04-security.md](./04-security.md)                                 | 인증·권한·입력·업로드 보안 경계는 무엇인가?                      |
+| [05-frontend-and-design.md](./05-frontend-and-design.md)           | 디자인 언어, CSS, 반응형, 접근성, 다국어 규칙은 무엇인가?        |
+| [06-code-style-and-workflows.md](./06-code-style-and-workflows.md) | 코드 스타일과 기능별 구현 절차는 무엇인가?                       |
+| [07-testing-and-operations.md](./07-testing-and-operations.md)     | 테스트, CI, 배포, 장애 확인은 어떻게 하는가?                     |
+| [08-admin-analytics.md](./08-admin-analytics.md)                   | 관리자 페이지 통계의 설정, 권한, API, 장애 처리는 어떻게 하는가? |
 
 `docs/reference/`는 참고 문서다. 구현 판단은 실제 코드와 migration을 우선한다. 전체 문서 목록은 [../README.md](../README.md)를 본다.
 
@@ -119,14 +119,14 @@ production과 preview 각각에 대해 다음을 확인한다.
 
 ## 운영 책임 경계
 
-| 영역 | 코드로 관리하는 것 | 운영에서 결정·관리할 것 |
-| --- | --- | --- |
-| 애플리케이션 | Next route, 권한 확인, 입력 검증, cache invalidation | Vercel 배포 권한, 로그 보존, rollback 승인 |
-| Supabase | migration, RLS, RPC | project 접근권한, Auth provider 설정, DB backup/복구 정책 |
-| Cloudflare R2 | 객체 path·서명 URL·파일 검증 | bucket 접근권한, API token rotation, CDN/CORS, 객체 보존 정책 |
-| 콘텐츠 | 관리자 편집 UI, 발행 상태, 감사 로그 | 콘텐츠 승인 주체, 공개 일정, 개인정보 보존 기준 |
-| 외부 연동 | OAuth callback 처리, Vercel Analytics API 호출 | Google/OAuth client 소유자, token rotation, 플랜·비용 |
-| 보안 | CSP, same-origin, rate limit, 파일 시그니처 검증 | incident 연락망, secret rotation, 법무·보존 정책 |
+| 영역          | 코드로 관리하는 것                                   | 운영에서 결정·관리할 것                                       |
+| ------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| 애플리케이션  | Next route, 권한 확인, 입력 검증, cache invalidation | Vercel 배포 권한, 로그 보존, rollback 승인                    |
+| Supabase      | migration, RLS, RPC                                  | project 접근권한, Auth provider 설정, DB backup/복구 정책     |
+| Cloudflare R2 | 객체 path·서명 URL·파일 검증                         | bucket 접근권한, API token rotation, CDN/CORS, 객체 보존 정책 |
+| 콘텐츠        | 관리자 편집 UI, 발행 상태, 감사 로그                 | 콘텐츠 승인 주체, 공개 일정, 개인정보 보존 기준               |
+| 외부 연동     | OAuth callback 처리, Vercel Analytics API 호출       | Google/OAuth client 소유자, token rotation, 플랜·비용         |
+| 보안          | CSP, same-origin, rate limit, 파일 시그니처 검증     | incident 연락망, secret rotation, 법무·보존 정책              |
 
 코드가 관리하지 않는 운영 결정을 코드의 기본값으로 추정하지 않는다. 예를 들어 `supabase/config.toml`은 로컬 설정일 뿐 hosted production의 Auth 설정을 보장하지 않고, `schema.remote.sql`은 운영 적용 상태를 보장하지 않는다.
 
@@ -144,19 +144,23 @@ production과 preview 각각에 대해 다음을 확인한다.
 
 ```md
 ## 변경 요약
+
 - 사용자 흐름 / URL:
 - 영향 범위: 공개 | 관리자 | API | DB | R2 | 외부 연동
 
 ## 배포 순서
+
 1.
 2.
 
 ## 환경·운영 변경
+
 - 새/변경 환경 변수:
 - secret store 또는 외부 콘솔에서 수행할 작업:
 - cache tag / backfill / 보존 정책:
 
 ## 검증
+
 - 실행한 명령:
 - 수동 확인한 화면/권한:
 - 롤백 또는 복구 방법:

@@ -1,7 +1,4 @@
-import {
-  normalizeOutline,
-  type ArtistScene,
-} from "@/core/utils/artist-scenes";
+import { normalizeOutline, type ArtistScene } from "@/core/utils/artist-scenes";
 import { managedAssetFromUrl } from "@/core/storage/public-url";
 
 export type MemberLookup = {

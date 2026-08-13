@@ -5,10 +5,15 @@ import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import { EMPTY_SETTINGS, normalizeSiteSettings } from "./data";
 
-export function useSiteSettings(initialSettings: SiteSettingsPreviewPayload = EMPTY_SETTINGS) {
+export function useSiteSettings(
+  initialSettings: SiteSettingsPreviewPayload = EMPTY_SETTINGS,
+) {
   const preview = usePreviewPayload("site-settings");
-  const [stored, setStored] = useState<SiteSettingsPreviewPayload>(initialSettings);
-  const [loading, setLoading] = useState(!preview && initialSettings === EMPTY_SETTINGS);
+  const [stored, setStored] =
+    useState<SiteSettingsPreviewPayload>(initialSettings);
+  const [loading, setLoading] = useState(
+    !preview && initialSettings === EMPTY_SETTINGS,
+  );
 
   useEffect(() => {
     if (preview || initialSettings !== EMPTY_SETTINGS) return;
@@ -23,7 +28,9 @@ export function useSiteSettings(initialSettings: SiteSettingsPreviewPayload = EM
       setLoading(false);
     }
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [initialSettings, preview]);
 
   return useMemo(

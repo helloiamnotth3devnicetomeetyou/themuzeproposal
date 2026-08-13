@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeHref } from "@/core/http/safe-href";
 import type { HomeSlideDTO } from "./types";
 
-const HOME_SLIDE_LIMIT = 7 ;
+const HOME_SLIDE_LIMIT = 7;
 
 type AlbumRow = {
   id: string;
@@ -40,7 +40,9 @@ type HeroSlideRow = {
   video_url: string | null;
 };
 
-export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeSlideDTO[]> {
+export async function getPublicHomeSlides(
+  client: SupabaseClient,
+): Promise<HomeSlideDTO[]> {
   const { data: heroSlideData, error: heroSlideError } = await client
     .from("home_hero_slides")
     .select("id, album_id, sort_order, video_url")
@@ -56,7 +58,9 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
 
   const albumResult = await client
     .from("albums")
-    .select("id, artist_id, title, title_ko, title_en, title_ja, type, color, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja")
+    .select(
+      "id, artist_id, title, title_ko, title_en, title_ja, type, color, cover_url, hero_image_url, typo_logo_url, spotify_id, youtube_url, description_ko, description_en, description_ja",
+    )
     .in("id", albumIds)
     .eq("is_published", true)
     .lte("published_at", new Date().toISOString());
@@ -76,31 +80,50 @@ export async function getPublicHomeSlides(client: SupabaseClient): Promise<HomeS
 
   if (artistResult.error) throw artistResult.error;
 
-  const artistsById = new Map(((artistResult.data ?? []) as ArtistRow[]).map((artist) => [artist.id, artist]));
+  const artistsById = new Map(
+    ((artistResult.data ?? []) as ArtistRow[]).map((artist) => [
+      artist.id,
+      artist,
+    ]),
+  );
   return configuredSlides.flatMap((heroSlide) => {
     const album = albumsById.get(heroSlide.album_id);
     const artist = album ? artistsById.get(album.artist_id) : null;
     if (!album || !artist) return [];
 
-    return [{
-      id: album.id,
-      artistName: artist.name,
-      artistNames: { ko: artist.name_ko ?? artist.name, en: artist.name_en ?? artist.eng_name, ja: artist.name_ja },
-      artistSlug: artist.slug,
-      title: album.title,
-      titles: { ko: album.title_ko ?? album.title, en: album.title_en, ja: album.title_ja },
-      type: album.type,
-      color: album.color,
-      imageUrl: album.hero_image_url || album.cover_url || "",
-      typoLogoUrl: album.typo_logo_url,
-      spotifyId: album.spotify_id,
-      youtubeUrl: safeHref(album.youtube_url) ?? null,
-      videoUrl: safeHref(heroSlide.video_url) ?? null,
-      descriptions: {
-        ko: album.description_ko ?? "",
-        en: album.description_en ?? album.description_ko ?? "",
-        ja: album.description_ja ?? album.description_en ?? album.description_ko ?? "",
+    return [
+      {
+        id: album.id,
+        artistName: artist.name,
+        artistNames: {
+          ko: artist.name_ko ?? artist.name,
+          en: artist.name_en ?? artist.eng_name,
+          ja: artist.name_ja,
+        },
+        artistSlug: artist.slug,
+        title: album.title,
+        titles: {
+          ko: album.title_ko ?? album.title,
+          en: album.title_en,
+          ja: album.title_ja,
+        },
+        type: album.type,
+        color: album.color,
+        imageUrl: album.hero_image_url || album.cover_url || "",
+        typoLogoUrl: album.typo_logo_url,
+        spotifyId: album.spotify_id,
+        youtubeUrl: safeHref(album.youtube_url) ?? null,
+        videoUrl: safeHref(heroSlide.video_url) ?? null,
+        descriptions: {
+          ko: album.description_ko ?? "",
+          en: album.description_en ?? album.description_ko ?? "",
+          ja:
+            album.description_ja ??
+            album.description_en ??
+            album.description_ko ??
+            "",
+        },
       },
-    }];
+    ];
   });
 }

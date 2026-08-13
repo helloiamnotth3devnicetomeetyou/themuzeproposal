@@ -10,7 +10,6 @@ import {
   type PreviewPayloadByKind,
 } from "@/core/preview/types";
 
-
 type UseAdminPreviewOptions<K extends PreviewKind> = {
   kind: K;
   payload: PreviewPayloadByKind[K] | null;
@@ -32,7 +31,9 @@ export function useAdminPreview<K extends PreviewKind>({
   const revisionRef = useRef(0);
   const activeRef = useRef(false);
   const latestRef = useRef({ payload, targetPath });
-  useEffect(() => { latestRef.current = { payload, targetPath }; }, [payload, targetPath]);
+  useEffect(() => {
+    latestRef.current = { payload, targetPath };
+  }, [payload, targetPath]);
 
   const writePreview = useCallback(() => {
     const token = tokenRef.current;
@@ -53,10 +54,15 @@ export function useAdminPreview<K extends PreviewKind>({
     } as PreviewEnvelope;
 
     try {
-      window.localStorage.setItem(previewStorageKey(token), JSON.stringify(envelope));
+      window.localStorage.setItem(
+        previewStorageKey(token),
+        JSON.stringify(envelope),
+      );
       return true;
     } catch {
-      onError("브라우저 임시 저장소를 사용할 수 없어 미리보기를 열 수 없습니다.");
+      onError(
+        "브라우저 임시 저장소를 사용할 수 없어 미리보기를 열 수 없습니다.",
+      );
       return false;
     }
   }, [kind, onError]);
@@ -88,7 +94,10 @@ export function useAdminPreview<K extends PreviewKind>({
     form.method = "POST";
     form.action = "/api/admin/preview";
     form.target = target;
-    for (const [name, value] of [["token", tokenRef.current], ["path", targetPath]] as const) {
+    for (const [name, value] of [
+      ["token", tokenRef.current],
+      ["path", targetPath],
+    ] as const) {
       const input = document.createElement("input");
       input.type = "hidden";
       input.name = name;
@@ -98,7 +107,14 @@ export function useAdminPreview<K extends PreviewKind>({
     document.body.append(form);
     form.submit();
     form.remove();
-  }, [canPreview, onError, payload, targetPath, unavailableMessage, writePreview]);
+  }, [
+    canPreview,
+    onError,
+    payload,
+    targetPath,
+    unavailableMessage,
+    writePreview,
+  ]);
 
   return { openPreview };
 }

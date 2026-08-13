@@ -11,7 +11,10 @@ import {
   SiYoutube,
 } from "react-icons/si";
 
-export function SocialIcon({ platform, ...props }: SVGProps<SVGSVGElement> & { platform: string }) {
+export function SocialIcon({
+  platform,
+  ...props
+}: SVGProps<SVGSVGElement> & { platform: string }) {
   const Icon = {
     instagram: SiInstagram,
     youtube: SiYoutube,
@@ -25,7 +28,14 @@ export function SocialIcon({ platform, ...props }: SVGProps<SVGSVGElement> & { p
   }[platform];
 
   if (!Icon) {
-    const Fallback = platform === "weverse" ? Users : platform === "homepage" ? Globe : platform === "other" ? Link : Music2;
+    const Fallback =
+      platform === "weverse"
+        ? Users
+        : platform === "homepage"
+          ? Globe
+          : platform === "other"
+            ? Link
+            : Music2;
     return <Fallback {...props} />;
   }
   return <Icon {...props} />;

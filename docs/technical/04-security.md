@@ -34,10 +34,10 @@ Supabase Auth는 모든 환경에서 이메일 확인을 요구하고, 12자 이
 
 `profiles.role`이 권한의 정본이다.
 
-| 역할 | 권한 |
-| --- | --- |
-| `null` | 일반 계정, 본인 데이터만 |
-| `editor` | 관리자 스튜디오와 콘텐츠 작업 |
+| 역할          | 권한                           |
+| ------------- | ------------------------------ |
+| `null`        | 일반 계정, 본인 데이터만       |
+| `editor`      | 관리자 스튜디오와 콘텐츠 작업  |
 | `super_admin` | editor 권한 + 관리자 계정 관리 |
 
 `/api/admin/accounts`는 다음 위험 작업을 막는다.
@@ -113,10 +113,10 @@ GET에서 상태를 변경하지 않는다. API 성공·실패 응답은 민감 
 
 `SUBMISSION_RATE_LIMIT_SECRET`과 scope별 설정을 사용한다.
 
-| scope | 제한 |
-| --- | --- |
-| `contact_inquiry` | IP당 15분 5회 |
-| `protect_report` | IP 및 user당 15분 5회 |
+| scope                 | 제한                    |
+| --------------------- | ----------------------- |
+| `contact_inquiry`     | IP당 15분 5회           |
+| `protect_report`      | IP 및 user당 15분 5회   |
 | `audition_submission` | IP 및 user당 24시간 3회 |
 
 rate-limit 저장소나 secret이 없으면 fail-open하지 않고 503으로 실패한다.
@@ -166,22 +166,22 @@ preview 진입은 다음을 모두 요구한다.
 
 ## 환경과 secret
 
-| 변수 | 공개 가능 | 용도 |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | 예 | canonical site origin |
-| `NEXT_PUBLIC_SUPABASE_URL` | 예 | Supabase origin |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 예 | RLS 적용 공개 key |
-| `NEXT_PUBLIC_SUPABASE_PROJECT_REF` | 예 | URL 일치 검증 |
-| `SUPABASE_SERVICE_ROLE_KEY` | 아니오 | 서버 RLS 우회 작업 |
-| `AUTH_RATE_LIMIT_SECRET` | 아니오 | 로그인 identifier HMAC |
-| `SUBMISSION_RATE_LIMIT_SECRET` | 아니오 | 제출 identifier HMAC |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | 아니오 | R2 S3 API 접근 |
-| `R2_PUBLIC_BUCKET`, `R2_PRIVATE_BUCKET` | 아니오 | 물리 R2 bucket 이름 |
-| `NEXT_PUBLIC_R2_PUBLIC_URL` | 예 | 공개 R2 CDN base |
-| `VERCEL_TOKEN` | 아니오 | 서버의 Vercel Web Analytics API 인증 |
-| `VERCEL_PROJECT_ID` | 아니오 | 조회할 Vercel 프로젝트 식별자 |
-| `VERCEL_TEAM_ID` | 아니오 | 팀 소속 프로젝트일 때의 선택 식별자 |
-| `STRICT_ENV_VALIDATION` | 설정 | 비 Vercel production의 엄격 검증 |
+| 변수                                                        | 공개 가능 | 용도                                 |
+| ----------------------------------------------------------- | --------- | ------------------------------------ |
+| `NEXT_PUBLIC_SITE_URL`                                      | 예        | canonical site origin                |
+| `NEXT_PUBLIC_SUPABASE_URL`                                  | 예        | Supabase origin                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                             | 예        | RLS 적용 공개 key                    |
+| `NEXT_PUBLIC_SUPABASE_PROJECT_REF`                          | 예        | URL 일치 검증                        |
+| `SUPABASE_SERVICE_ROLE_KEY`                                 | 아니오    | 서버 RLS 우회 작업                   |
+| `AUTH_RATE_LIMIT_SECRET`                                    | 아니오    | 로그인 identifier HMAC               |
+| `SUBMISSION_RATE_LIMIT_SECRET`                              | 아니오    | 제출 identifier HMAC                 |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | 아니오    | R2 S3 API 접근                       |
+| `R2_PUBLIC_BUCKET`, `R2_PRIVATE_BUCKET`                     | 아니오    | 물리 R2 bucket 이름                  |
+| `NEXT_PUBLIC_R2_PUBLIC_URL`                                 | 예        | 공개 R2 CDN base                     |
+| `VERCEL_TOKEN`                                              | 아니오    | 서버의 Vercel Web Analytics API 인증 |
+| `VERCEL_PROJECT_ID`                                         | 아니오    | 조회할 Vercel 프로젝트 식별자        |
+| `VERCEL_TEAM_ID`                                            | 아니오    | 팀 소속 프로젝트일 때의 선택 식별자  |
+| `STRICT_ENV_VALIDATION`                                     | 설정      | 비 Vercel production의 엄격 검증     |
 
 production/Vercel build는 누락, URL/project 불일치, 32자 미만 rate-limit secret을 실패시킨다. secret은 코드·문서·브라우저·CI 로그에 실제 값을 쓰지 않는다.
 

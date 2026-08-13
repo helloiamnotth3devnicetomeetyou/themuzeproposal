@@ -15,14 +15,20 @@ export const localT = {
     googleSignIn: "Google로 계속하기",
     loginRequired: "로그인이 필요한 서비스입니다.",
     googleFailed: "Google 로그인에 실패했습니다. 다시 시도해 주세요.",
-    loginFailed: "로그인 요청을 완료하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.",
-    invalidCredentials: "이메일 또는 비밀번호가 올바르지 않습니다. 입력 내용을 확인하고 다시 시도해 주세요.",
-    serviceUnavailable: "로그인 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-    rateLimited: "로그인 시도가 너무 많아 일시적으로 제한되었습니다. 약 {minutes}분 후 다시 시도해 주세요.",
+    loginFailed:
+      "로그인 요청을 완료하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.",
+    invalidCredentials:
+      "이메일 또는 비밀번호가 올바르지 않습니다. 입력 내용을 확인하고 다시 시도해 주세요.",
+    serviceUnavailable:
+      "로그인 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    rateLimited:
+      "로그인 시도가 너무 많아 일시적으로 제한되었습니다. 약 {minutes}분 후 다시 시도해 주세요.",
     signupFailed: "회원가입에 실패했습니다.",
     passwordLengthErr: "비밀번호는 12자 이상이어야 합니다.",
-    confirmEmail: "가입 확인 메일을 보냈습니다. 이메일을 확인한 뒤 로그인해 주세요.",
-    passwordStrengthErr: "비밀번호에 대소문자, 숫자, 기호를 각각 하나 이상 포함해야 합니다.",
+    confirmEmail:
+      "가입 확인 메일을 보냈습니다. 이메일을 확인한 뒤 로그인해 주세요.",
+    passwordStrengthErr:
+      "비밀번호에 대소문자, 숫자, 기호를 각각 하나 이상 포함해야 합니다.",
     passwordMatchErr: "비밀번호가 일치하지 않습니다.",
     backToHome: "← 홈으로 돌아가기",
     accountSign: "계정 로그인",
@@ -47,14 +53,19 @@ export const localT = {
     googleSignIn: "CONTINUE WITH GOOGLE",
     loginRequired: "Please sign in to continue.",
     googleFailed: "Google sign-in failed. Please try again.",
-    loginFailed: "We could not complete the sign-in request. Check your internet connection and try again.",
-    invalidCredentials: "The email address or password is incorrect. Check your details and try again.",
-    serviceUnavailable: "The sign-in service is temporarily unavailable. Please try again shortly.",
-    rateLimited: "Too many sign-in attempts. Please try again in about {minutes} minute(s).",
+    loginFailed:
+      "We could not complete the sign-in request. Check your internet connection and try again.",
+    invalidCredentials:
+      "The email address or password is incorrect. Check your details and try again.",
+    serviceUnavailable:
+      "The sign-in service is temporarily unavailable. Please try again shortly.",
+    rateLimited:
+      "Too many sign-in attempts. Please try again in about {minutes} minute(s).",
     signupFailed: "Failed to create account.",
     passwordLengthErr: "Password must be at least 12 characters.",
     confirmEmail: "Check your email to confirm the account, then sign in.",
-    passwordStrengthErr: "Password must include lowercase, uppercase, a digit, and a symbol.",
+    passwordStrengthErr:
+      "Password must include lowercase, uppercase, a digit, and a symbol.",
     passwordMatchErr: "Passwords do not match.",
     backToHome: "← BACK TO HOME",
     accountSign: "ACCOUNT SIGN IN",
@@ -79,14 +90,20 @@ export const localT = {
     googleSignIn: "Googleで続行",
     loginRequired: "このサービスを利用するにはログインが必要です。",
     googleFailed: "Googleログインに失敗しました。もう一度お試しください。",
-    loginFailed: "ログインを完了できませんでした。インターネット接続を確認して、もう一度お試しください。",
-    invalidCredentials: "メールアドレスまたはパスワードが正しくありません。入力内容を確認してください。",
-    serviceUnavailable: "ログインサービスに一時的な問題が発生しています。しばらくしてから再試行してください。",
-    rateLimited: "ログイン試行回数が多いため一時的に制限されています。約{minutes}分後に再試行してください。",
+    loginFailed:
+      "ログインを完了できませんでした。インターネット接続を確認して、もう一度お試しください。",
+    invalidCredentials:
+      "メールアドレスまたはパスワードが正しくありません。入力内容を確認してください。",
+    serviceUnavailable:
+      "ログインサービスに一時的な問題が発生しています。しばらくしてから再試行してください。",
+    rateLimited:
+      "ログイン試行回数が多いため一時的に制限されています。約{minutes}分後に再試行してください。",
     signupFailed: "会員登録に失敗しました。",
     passwordLengthErr: "パスワードは12文字以上である必要があります。",
-    confirmEmail: "確認メールを送信しました。メールを確認してからログインしてください。",
-    passwordStrengthErr: "パスワードには大文字・小文字・数字・記号をそれぞれ1文字以上含めてください。",
+    confirmEmail:
+      "確認メールを送信しました。メールを確認してからログインしてください。",
+    passwordStrengthErr:
+      "パスワードには大文字・小文字・数字・記号をそれぞれ1文字以上含めてください。",
     passwordMatchErr: "パスワードが一致しません。",
     backToHome: "← ホームに戻る",
     accountSign: "アカウントログイン",
@@ -98,4 +115,6 @@ export const localT = {
 } as const;
 
 export type LocaleKey = keyof typeof localT;
-export type LoginTranslations = { readonly [K in keyof typeof localT.ko]: string };
+export type LoginTranslations = {
+  readonly [K in keyof typeof localT.ko]: string;
+};

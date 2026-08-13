@@ -4,11 +4,17 @@ import { updateSession } from "@/core/supabase/proxy";
 export async function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
-  const vercelToolbar = process.env.VERCEL_ENV === "preview" ? " https://vercel.live" : "";
-  const cspHeader = isDev ? undefined : `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://challenges.cloudflare.com${vercelToolbar}; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data: https:; style-src 'self'${vercelToolbar}; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com${vercelToolbar}; connect-src 'self' https:${vercelToolbar ? " wss://ws-us3.pusher.com" : ""}; form-action 'self'`;
+  const vercelToolbar =
+    process.env.VERCEL_ENV === "preview" ? " https://vercel.live" : "";
+  const cspHeader = isDev
+    ? undefined
+    : `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://challenges.cloudflare.com${vercelToolbar}; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data: https:; style-src 'self'${vercelToolbar}; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com${vercelToolbar}; connect-src 'self' https:${vercelToolbar ? " wss://ws-us3.pusher.com" : ""}; form-action 'self'`;
 
   const pathname = request.nextUrl.pathname;
-  const isAuthRoute = pathname.startsWith("/admin") || pathname === "/account" || pathname === "/protect";
+  const isAuthRoute =
+    pathname.startsWith("/admin") ||
+    pathname === "/account" ||
+    pathname === "/protect";
 
   const requestHeaders = new Headers(request.headers);
   if (cspHeader) {

@@ -14,8 +14,14 @@ describe("artist root redirect", () => {
   });
 
   it("rejects a decoded protocol-relative route segment", async () => {
-    navigation.notFound.mockImplementationOnce(() => { throw new Error("not found"); });
-    await expect(ArtistRootPage({ params: Promise.resolve({ artistid: "//attacker.example" }) })).rejects.toThrow("not found");
+    navigation.notFound.mockImplementationOnce(() => {
+      throw new Error("not found");
+    });
+    await expect(
+      ArtistRootPage({
+        params: Promise.resolve({ artistid: "//attacker.example" }),
+      }),
+    ).rejects.toThrow("not found");
     expect(navigation.notFound).toHaveBeenCalledOnce();
     expect(navigation.redirect).not.toHaveBeenCalled();
   });

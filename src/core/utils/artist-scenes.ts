@@ -35,7 +35,9 @@ export function normalizeSceneLink(value: string | null | undefined) {
   if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
   try {
     const url = new URL(trimmed);
-    return url.protocol === "http:" || url.protocol === "https:" ? trimmed : null;
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? trimmed
+      : null;
   } catch {
     return null;
   }
@@ -48,21 +50,27 @@ export function normalizeOutline(value: unknown): ScenePoint[] {
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const candidate = item as Partial<ScenePoint>;
-    if (typeof candidate.x !== "number" || typeof candidate.y !== "number") return [];
-    if (!Number.isFinite(candidate.x) || !Number.isFinite(candidate.y)) return [];
+    if (typeof candidate.x !== "number" || typeof candidate.y !== "number")
+      return [];
+    if (!Number.isFinite(candidate.x) || !Number.isFinite(candidate.y))
+      return [];
     return [{ x: clamp(candidate.x), y: clamp(candidate.y) }];
   });
 }
 
 export function outlineCentroid(points: ScenePoint[]) {
   if (!points.length) return { x: 50, y: 50 };
-  const total = points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 });
+  const total = points.reduce(
+    (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
+    { x: 0, y: 0 },
+  );
   return { x: total.x / points.length, y: total.y / points.length };
 }
 
 export function outlineToPath(points: ScenePoint[]) {
   if (points.length < 3) return "";
-  const point = (index: number) => points[(index + points.length) % points.length];
+  const point = (index: number) =>
+    points[(index + points.length) % points.length];
   const first = points[0];
   let path = `M ${first.x.toFixed(3)} ${first.y.toFixed(3)}`;
 
@@ -85,15 +93,29 @@ export function outlineToPath(points: ScenePoint[]) {
   return `${path} Z`;
 }
 
-const perpendicularDistance = (point: ScenePoint, start: ScenePoint, end: ScenePoint) => {
+const perpendicularDistance = (
+  point: ScenePoint,
+  start: ScenePoint,
+  end: ScenePoint,
+) => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   if (!dx && !dy) return Math.hypot(point.x - start.x, point.y - start.y);
-  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((point.x - start.x) * dx + (point.y - start.y) * dy) /
+        (dx * dx + dy * dy),
+    ),
+  );
   return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy));
 };
 
-function simplifySegment(points: ScenePoint[], tolerance: number): ScenePoint[] {
+function simplifySegment(
+  points: ScenePoint[],
+  tolerance: number,
+): ScenePoint[] {
   if (points.length <= 2) return points;
   let distance = 0;
   let splitIndex = 0;

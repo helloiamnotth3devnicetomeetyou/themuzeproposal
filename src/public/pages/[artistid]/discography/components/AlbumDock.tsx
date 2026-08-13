@@ -3,11 +3,7 @@ import { memo, type RefObject } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 
-import type {
-  AlbumSort,
-  DiscographyAlbum,
-  RailPhase,
-} from "../lib/types";
+import type { AlbumSort, DiscographyAlbum, RailPhase } from "../lib/types";
 
 interface AlbumDockProps {
   albumIndex: number;
@@ -54,7 +50,9 @@ export const AlbumDock = memo(function AlbumDock({
               ? t.discography.sortAscending
               : t.discography.sortDescending
           }
-          title={sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
+          title={
+            sortBy === "date-desc" ? t.discography.newest : t.discography.oldest
+          }
           className="flex w-11 h-11 sm:w-auto min-h-11 items-center justify-center gap-1 px-1 sm:px-2 py-1 rounded-lg border shrink-0 transition-all duration-base hover:border-[var(--alpha-ffffff-2)] hover:bg-[var(--alpha-ffffff-04)] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
           style={{
             borderColor: "var(--alpha-ffffff-08)",
@@ -66,7 +64,9 @@ export const AlbumDock = memo(function AlbumDock({
             aria-hidden="true"
           />
           <span className="hidden sm:inline text-[8px] font-sans font-semibold tracking-wider text-[var(--palette-9ca3af)]">
-            {sortBy === "date-desc" ? t.discography.newest : t.discography.oldest}
+            {sortBy === "date-desc"
+              ? t.discography.newest
+              : t.discography.oldest}
           </span>
         </button>
 
@@ -109,9 +109,7 @@ export const AlbumDock = memo(function AlbumDock({
                   backgroundColor: isCurrent
                     ? "var(--alpha-ffffff-06)"
                     : undefined,
-                  borderColor: isCurrent
-                    ? currentAlbum.color
-                    : "transparent",
+                  borderColor: isCurrent ? currentAlbum.color : "transparent",
                   ...(railPhase === "exit"
                     ? {
                         transform: "translateY(7px)",
@@ -174,10 +172,18 @@ export const AlbumDock = memo(function AlbumDock({
         </div>
 
         <button
-          onPointerEnter={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
-          onFocus={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
-          onTouchStart={() => onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))}
-          onClick={() => selectAlbum(Math.min(albumIndex + 1, albums.length - 1))}
+          onPointerEnter={() =>
+            onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))
+          }
+          onFocus={() =>
+            onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))
+          }
+          onTouchStart={() =>
+            onIntentAlbum(Math.min(albumIndex + 1, albums.length - 1))
+          }
+          onClick={() =>
+            selectAlbum(Math.min(albumIndex + 1, albums.length - 1))
+          }
           disabled={albumIndex === albums.length - 1}
           aria-label={t.discography.nextAlbum}
           className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-base hover:border-[var(--alpha-ffffff-2)] active:scale-95 disabled:opacity-20 disabled:cursor-default disabled:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"

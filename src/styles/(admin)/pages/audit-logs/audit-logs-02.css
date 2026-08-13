@@ -141,7 +141,7 @@
 
 .pagination button:disabled {
   cursor: not-allowed;
-  opacity: .3;
+  opacity: 0.3;
 }
 
 .detailPanel {
@@ -166,7 +166,7 @@
   margin: 11px 0 0;
   font-family: var(--font-display);
   font-size: 19px;
-  letter-spacing: -.035em;
+  letter-spacing: -0.035em;
 }
 
 .detailHeading p {
@@ -217,7 +217,7 @@
 .changeColumns,
 .changeRow {
   display: grid;
-  grid-template-columns: minmax(82px, .65fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(82px, 0.65fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -324,7 +324,7 @@
   }
 
   .workspace {
-    grid-template-columns: minmax(0, 1fr) minmax(330px, .52fr);
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 0.52fr);
   }
 }
 
@@ -344,4 +344,3 @@
     max-height: none;
   }
 }
-

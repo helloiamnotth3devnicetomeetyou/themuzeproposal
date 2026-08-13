@@ -11,9 +11,5 @@
     "src/**/*.mts",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    ".next-*"
-  ]
+  "exclude": ["node_modules", ".next", ".next-*"]
 }

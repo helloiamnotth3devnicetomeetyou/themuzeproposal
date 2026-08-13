@@ -1,28 +1,166 @@
 @font-face {
   font-family: "Pretendard Subset";
-  src: url("/fonts/Pretendard/subset/Pretendard-Thin.subset.woff2") format("woff2");
+  src: url("/fonts/Pretendard/subset/Pretendard-Thin.subset.woff2")
+    format("woff2");
   font-weight: 100;
   font-style: normal;
   font-display: optional;
 }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-ExtraLight.subset.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Light.subset.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Medium.subset.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-SemiBold.subset.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-ExtraBold.subset.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: optional; }
-@font-face { font-family: "Pretendard Subset"; src: url("/fonts/Pretendard/subset/Pretendard-Black.subset.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: optional; }
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-ExtraLight.subset.woff2")
+    format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Light.subset.woff2")
+    format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Medium.subset.woff2")
+    format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-SemiBold.subset.woff2")
+    format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-ExtraBold.subset.woff2")
+    format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Pretendard Subset";
+  src: url("/fonts/Pretendard/subset/Pretendard-Black.subset.woff2")
+    format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: optional;
+}
 
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Thin.woff2") format("woff2"); font-weight: 100; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-ExtraLight.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-ExtraBold.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
-@font-face { font-family: "Pretendard JP"; src: url("/fonts/Pretendard/jp/PretendardJP-Black.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: swap; unicode-range: U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Thin.woff2") format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-ExtraLight.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Pretendard JP";
+  src: url("/fonts/Pretendard/jp/PretendardJP-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF, U+3000-303F, U+3040-30FF, U+31F0-31FF, U+3400-4DBF,
+    U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
 
 @font-face {
   font-family: "Clash Display";
@@ -39,8 +177,16 @@
   --color-static-white: var(--palette-ffffff);
   --color-static-black: var(--palette-000000);
   --color-success: var(--palette-22c55e);
-  --color-success-subtle: color-mix(in srgb, var(--color-success) 3%, transparent);
-  --color-success-border: color-mix(in srgb, var(--color-success) 15%, transparent);
+  --color-success-subtle: color-mix(
+    in srgb,
+    var(--color-success) 3%,
+    transparent
+  );
+  --color-success-border: color-mix(
+    in srgb,
+    var(--color-success) 15%,
+    transparent
+  );
   --color-error: var(--palette-ef4444);
   --color-error-subtle: color-mix(in srgb, var(--color-error) 3%, transparent);
   --color-error-border: color-mix(in srgb, var(--color-error) 15%, transparent);
@@ -49,9 +195,13 @@
   --color-status-danger: var(--palette-e46b6b);
   --color-platform-youtube: var(--palette-ff0033);
   --color-platform-spotify: var(--palette-1db954);
-  --font-sans: "Pretendard Subset", "Pretendard JP", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Clash Display", "Pretendard Subset", "Pretendard JP", sans-serif;
-  --font-hero: "Clash Display", "Pretendard Subset", "Pretendard JP", sans-serif;
+  --font-sans:
+    "Pretendard Subset", "Pretendard JP", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-display:
+    "Clash Display", "Pretendard Subset", "Pretendard JP", sans-serif;
+  --font-hero:
+    "Clash Display", "Pretendard Subset", "Pretendard JP", sans-serif;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -98,7 +248,11 @@
   --border-strong: var(--alpha-ffffff-2);
 
   --nav-bg-scrolled: var(--alpha-0a0a0a-9);
-  --nav-bg-gradient: linear-gradient(to bottom, var(--alpha-000000-7), transparent);
+  --nav-bg-gradient: linear-gradient(
+    to bottom,
+    var(--alpha-000000-7),
+    transparent
+  );
   --mobile-menu-bg: var(--alpha-0a0a0a-97);
 
   --footer-bg: var(--palette-000000);
@@ -108,8 +262,18 @@
   --lang-inactive-text: var(--palette-9ca3af);
   --lang-inactive-hover: var(--palette-ffffff);
 
-  --hero-overlay-gradient: linear-gradient(to right, var(--alpha-000000-8), var(--alpha-000000-4), var(--alpha-000000-7));
-  --hero-overlay-top: linear-gradient(to top, var(--palette-000000) 0%, transparent 50%, var(--alpha-000000-4) 100%);
+  --hero-overlay-gradient: linear-gradient(
+    to right,
+    var(--alpha-000000-8),
+    var(--alpha-000000-4),
+    var(--alpha-000000-7)
+  );
+  --hero-overlay-top: linear-gradient(
+    to top,
+    var(--palette-000000) 0%,
+    transparent 50%,
+    var(--alpha-000000-4) 100%
+  );
   --hero-text: var(--palette-ffffff);
   --hero-desc-text: var(--palette-d1d5db);
   --hero-btn-secondary: var(--alpha-ffffff-05);
@@ -150,8 +314,18 @@
   --lang-inactive-text: var(--palette-6b7280);
   --lang-inactive-hover: var(--palette-111111);
 
-  --hero-overlay-gradient: linear-gradient(to right, var(--alpha-000000-65), var(--alpha-000000-25), var(--alpha-000000-55));
-  --hero-overlay-top: linear-gradient(to top, var(--palette-000000) 0%, transparent 50%, var(--alpha-000000-35) 100%);
+  --hero-overlay-gradient: linear-gradient(
+    to right,
+    var(--alpha-000000-65),
+    var(--alpha-000000-25),
+    var(--alpha-000000-55)
+  );
+  --hero-overlay-top: linear-gradient(
+    to top,
+    var(--palette-000000) 0%,
+    transparent 50%,
+    var(--alpha-000000-35) 100%
+  );
   --hero-text: var(--palette-ffffff);
   --hero-desc-text: var(--palette-e5e7eb);
   --hero-btn-secondary: var(--alpha-ffffff-08);
@@ -175,7 +349,9 @@ body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
+  transition:
+    background-color var(--duration-slow) ease,
+    color var(--duration-slow) ease;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
@@ -289,11 +465,15 @@ select option {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto !important; }
-  *, *::before, *::after {
+  html {
     scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

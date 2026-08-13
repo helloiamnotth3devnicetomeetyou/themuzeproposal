@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 import { createMockFile } from "./helpers/test-helpers";
 
 test.describe("Contact Inquiry & Protect Report File Validation API", () => {
-  test("contact inquiry allows anonymous submission but rejects a missing captcha token", async ({ request }) => {
+  test("contact inquiry allows anonymous submission but rejects a missing captcha token", async ({
+    request,
+  }) => {
     const fakeJpg = createMockFile("jpg");
 
     const response = await request.post("/api/contact-inquiries", {
       headers: {
-        "Origin": "http://localhost:3000",
+        Origin: "http://localhost:3000",
       },
       multipart: {
         category: "business",
@@ -36,7 +38,7 @@ test.describe("Contact Inquiry & Protect Report File Validation API", () => {
   test("protect report requires authorization", async ({ request }) => {
     const response = await request.post("/api/protect-reports", {
       headers: {
-        "Origin": "http://localhost:3000",
+        Origin: "http://localhost:3000",
       },
       multipart: {
         artistId: "rescene",

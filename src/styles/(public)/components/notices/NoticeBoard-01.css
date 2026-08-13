@@ -109,7 +109,9 @@
   justify-content: flex-end;
   border-bottom: 1px solid transparent;
   color: var(--text-muted);
-  transition: width var(--duration-base) ease, border-color var(--duration-fast) ease;
+  transition:
+    width var(--duration-base) ease,
+    border-color var(--duration-fast) ease;
 }
 
 .searchControl.searchOpen {
@@ -122,7 +124,9 @@
   min-width: 0;
   overflow: hidden;
   opacity: 0;
-  transition: width var(--duration-base) ease, opacity var(--duration-fast) ease;
+  transition:
+    width var(--duration-base) ease,
+    opacity var(--duration-fast) ease;
 }
 
 .searchOpen .searchField {
@@ -186,13 +190,19 @@
   border-bottom: 1px solid var(--border-default);
   color: var(--text-primary);
   text-decoration: none;
-  transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    background-color var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
 .item:hover,
-.item:focus-visible { background: var(--bg-subtle); }
+.item:focus-visible {
+  background: var(--bg-subtle);
+}
 
-.item:active { transform: translateY(1px); }
+.item:active {
+  transform: translateY(1px);
+}
 
 .item::before {
   position: absolute;
@@ -202,7 +212,9 @@
   content: "";
   opacity: 0;
   transform: scaleY(0.25);
-  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
 .item:hover::before,
@@ -245,7 +257,9 @@
   font-weight: 650;
   letter-spacing: -0.025em;
   line-height: 1.42;
-  transition: color var(--duration-fast) ease, transform var(--duration-base) ease;
+  transition:
+    color var(--duration-fast) ease,
+    transform var(--duration-base) ease;
 }
 
 .item time {
@@ -264,7 +278,10 @@
   color: var(--text-faint);
   opacity: 0;
   transform: translate(-5px, 5px);
-  transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, transform var(--duration-base) ease;
+  transition:
+    color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease,
+    transform var(--duration-base) ease;
 }
 
 .item:hover strong,
@@ -357,9 +374,39 @@
   height: 15px;
 }
 
-.detailNavigation { display: grid; gap: 12px; margin-top: 34px; }
-.detailNavigation a { display: grid; gap: 5px; color: var(--text-secondary); text-decoration: none; }
-.detailNavigation a:hover { color: var(--color-brand-pink); }
-.detailNavigation span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-faint); font-size: 9px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
-.detailNavigation span svg { width: 12px; height: 12px; }
-.detailNavigation b { overflow: hidden; font-size: 11px; font-weight: 650; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.detailNavigation {
+  display: grid;
+  gap: 12px;
+  margin-top: 34px;
+}
+.detailNavigation a {
+  display: grid;
+  gap: 5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.detailNavigation a:hover {
+  color: var(--color-brand-pink);
+}
+.detailNavigation span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.detailNavigation span svg {
+  width: 12px;
+  height: 12px;
+}
+.detailNavigation b {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

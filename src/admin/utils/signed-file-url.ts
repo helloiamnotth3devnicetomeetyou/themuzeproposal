@@ -1,4 +1,8 @@
-export async function fetchSignedFileUrl(bucket: string, path: string, downloadName?: string): Promise<string> {
+export async function fetchSignedFileUrl(
+  bucket: string,
+  path: string,
+  downloadName?: string,
+): Promise<string> {
   try {
     const response = await fetch("/api/files/signed-url", {
       method: "POST",
@@ -6,7 +10,7 @@ export async function fetchSignedFileUrl(bucket: string, path: string, downloadN
       body: JSON.stringify({ bucket, path, downloadName }),
     });
     if (!response.ok) return "";
-    const data = await response.json() as { url?: string };
+    const data = (await response.json()) as { url?: string };
     return data.url || "";
   } catch {
     return "";

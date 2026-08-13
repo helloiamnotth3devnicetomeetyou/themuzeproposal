@@ -1,0 +1,124 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_hero_4_image",
+      "label": "hero_4.webp (RESCENE Re:Scene Tracklist Image)",
+      "file_type": "image",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_images_hero_4_rescene_group",
+      "label": "RESCENE",
+      "file_type": "concept",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_images_hero_4_album",
+      "label": "Re:Scene (The 1st Single Album)",
+      "file_type": "concept",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_images_hero_4_track_yoyo",
+      "label": "YoYo (Track 01)",
+      "file_type": "concept",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_images_hero_4_track_uhuh",
+      "label": "UhUh (Track 02, Title Track)",
+      "file_type": "concept",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_images_hero_4_the_muze_entertainment",
+      "label": "The Muze Entertainment Corp.",
+      "file_type": "concept",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\images\\hero_4.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "public_images_hero_4_image",
+      "target": "public_images_hero_4_album",
+      "relation": "depicts_tracklist_of",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_album",
+      "target": "public_images_hero_4_rescene_group",
+      "relation": "performed_by",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_album",
+      "target": "public_images_hero_4_track_yoyo",
+      "relation": "includes_track",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_album",
+      "target": "public_images_hero_4_track_uhuh",
+      "relation": "includes_track",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_track_uhuh",
+      "target": "public_images_hero_4_album",
+      "relation": "is_title_track_of",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_album",
+      "target": "public_images_hero_4_the_muze_entertainment",
+      "relation": "copyright_owned_by",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "public_images_hero_4_image",
+      "target": "public_images_hero_4_the_muze_entertainment",
+      "relation": "used_as_promotional_material_by",
+      "type": "INFERRED",
+      "confidence_score": 0.85
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

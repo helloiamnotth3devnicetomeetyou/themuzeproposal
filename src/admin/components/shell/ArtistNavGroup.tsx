@@ -35,7 +35,10 @@ export default function ArtistNavGroup({
 }: ArtistNavGroupProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
-  const [popupPos, setPopupPos] = useState<{ top: number; left: number } | null>(null);
+  const [popupPos, setPopupPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const headingRef = useRef<HTMLButtonElement>(null);
 
   const updatePosition = useCallback(() => {
@@ -61,7 +64,10 @@ export default function ArtistNavGroup({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onFocusCapture={() => setHasFocus(true)}
-      onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHasFocus(false); }}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setHasFocus(false);
+      }}
     >
       <button
         ref={headingRef}
@@ -132,9 +138,7 @@ export default function ArtistNavGroup({
             zIndex: 9999,
           }}
         >
-          <div className="cms-artist-collapsed-popup-header">
-            {artist.name}
-          </div>
+          <div className="cms-artist-collapsed-popup-header">{artist.name}</div>
           <div className="cms-artist-collapsed-popup-links">
             {artistLinks.map((item) => {
               const href = `/admin/artists/${artist.id}/${item.segment}`;

@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import styles from "@/styles/(core)/components/form/CustomSelect.module.css";
@@ -41,14 +50,21 @@ export default function CustomSelect({
   disabled = false,
 }: CustomSelectProps) {
   const reactId = useId();
-  const id = useMemo(() => `custom-select-${reactId.replace(/:/g, "")}`, [reactId]);
+  const id = useMemo(
+    () => `custom-select-${reactId.replace(/:/g, "")}`,
+    [reactId],
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
-  const [listboxPosition, setListboxPosition] = useState<ListboxPosition | null>(null);
+  const [listboxPosition, setListboxPosition] =
+    useState<ListboxPosition | null>(null);
   const selected = options.find((option) => option.value === value);
 
   const updateListboxPosition = useCallback(() => {
@@ -60,17 +76,26 @@ export default function CustomSelect({
     const preferredHeight = 250;
     const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
     const spaceAbove = rect.top - gap - viewportPadding;
-    const placement = spaceBelow >= Math.min(160, preferredHeight) || spaceBelow >= spaceAbove ? "bottom" : "top";
+    const placement =
+      spaceBelow >= Math.min(160, preferredHeight) || spaceBelow >= spaceAbove
+        ? "bottom"
+        : "top";
     const availableHeight = placement === "bottom" ? spaceBelow : spaceAbove;
     const width = Math.max(rect.width, variant === "line" ? 210 : rect.width);
-    const left = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - width - viewportPadding));
+    const left = Math.max(
+      viewportPadding,
+      Math.min(rect.left, window.innerWidth - width - viewportPadding),
+    );
 
     setListboxPosition({
       left,
       width,
       maxHeight: Math.max(96, Math.min(preferredHeight, availableHeight)),
       placement,
-      edge: placement === "bottom" ? rect.bottom + gap : window.innerHeight - rect.top + gap,
+      edge:
+        placement === "bottom"
+          ? rect.bottom + gap
+          : window.innerHeight - rect.top + gap,
     });
   }, [variant]);
 
@@ -78,7 +103,11 @@ export default function CustomSelect({
     if (!open) return;
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (!rootRef.current?.contains(target) && !listRef.current?.contains(target)) setOpen(false);
+      if (
+        !rootRef.current?.contains(target) &&
+        !listRef.current?.contains(target)
+      )
+        setOpen(false);
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
@@ -167,7 +196,11 @@ export default function CustomSelect({
   };
 
   return (
-    <div ref={rootRef} className={`${styles.root} ${open ? styles.open : ""} ${className}`} data-variant={variant}>
+    <div
+      ref={rootRef}
+      className={`${styles.root} ${open ? styles.open : ""} ${className}`}
+      data-variant={variant}
+    >
       <button
         id={`${id}-button`}
         ref={triggerRef}
@@ -189,46 +222,55 @@ export default function CustomSelect({
         }}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span className={!selected ? styles.placeholder : ""}>{selected?.label || placeholder}</span>
+        <span className={!selected ? styles.placeholder : ""}>
+          {selected?.label || placeholder}
+        </span>
         <ChevronDown aria-hidden="true" />
       </button>
 
-      {open && listboxPosition && typeof document !== "undefined" && createPortal(
-        <div
-          id={`${id}-listbox`}
-          ref={listRef}
-          className={styles.listbox}
-          style={{
-            left: listboxPosition.left,
-            width: listboxPosition.width,
-            maxHeight: listboxPosition.maxHeight,
-            ...(listboxPosition.placement === "bottom" ? { top: listboxPosition.edge } : { bottom: listboxPosition.edge }),
-          } as CSSProperties}
-          role="listbox"
-          aria-label={ariaLabel}
-          aria-activedescendant={`${id}-option-${activeIndex}`}
-          tabIndex={-1}
-          onKeyDown={handleListKeyDown}
-        >
-          {options.map((option, index) => (
-            <div
-              id={`${id}-option-${index}`}
-              key={option.value}
-              className={`${styles.option} ${option.value === value ? styles.selected : ""} ${index === activeIndex ? styles.active : ""}`}
-              role="option"
-              aria-selected={option.value === value}
-              aria-disabled={option.disabled || undefined}
-              onPointerMove={() => !option.disabled && setActiveIndex(index)}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => selectOption(index)}
-            >
-              <span>{option.label}</span>
-              {option.value === value && <Check aria-hidden="true" />}
-            </div>
-          ))}
-        </div>,
-        document.body,
-      )}
+      {open &&
+        listboxPosition &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            id={`${id}-listbox`}
+            ref={listRef}
+            className={styles.listbox}
+            style={
+              {
+                left: listboxPosition.left,
+                width: listboxPosition.width,
+                maxHeight: listboxPosition.maxHeight,
+                ...(listboxPosition.placement === "bottom"
+                  ? { top: listboxPosition.edge }
+                  : { bottom: listboxPosition.edge }),
+              } as CSSProperties
+            }
+            role="listbox"
+            aria-label={ariaLabel}
+            aria-activedescendant={`${id}-option-${activeIndex}`}
+            tabIndex={-1}
+            onKeyDown={handleListKeyDown}
+          >
+            {options.map((option, index) => (
+              <div
+                id={`${id}-option-${index}`}
+                key={option.value}
+                className={`${styles.option} ${option.value === value ? styles.selected : ""} ${index === activeIndex ? styles.active : ""}`}
+                role="option"
+                aria-selected={option.value === value}
+                aria-disabled={option.disabled || undefined}
+                onPointerMove={() => !option.disabled && setActiveIndex(index)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectOption(index)}
+              >
+                <span>{option.label}</span>
+                {option.value === value && <Check aria-hidden="true" />}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

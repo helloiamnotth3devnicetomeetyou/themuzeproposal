@@ -6,10 +6,28 @@ import styles from "@/styles/(core)/pages/error-state.module.css";
 
 type Locale = "ko" | "en" | "ja";
 
-const copy: Record<Locale, { eyebrow: string; title: string; description: string; retry: string }> = {
-  ko: { eyebrow: "오류", title: "문제가 발생했습니다", description: "일시적인 오류가 발생했습니다. 다시 시도해 주세요.", retry: "다시 시도" },
-  en: { eyebrow: "Error", title: "Something went wrong", description: "A temporary error occurred. Please try again.", retry: "Try again" },
-  ja: { eyebrow: "エラー", title: "問題が発生しました", description: "一時的なエラーが発生しました。もう一度お試しください。", retry: "再試行" },
+const copy: Record<
+  Locale,
+  { eyebrow: string; title: string; description: string; retry: string }
+> = {
+  ko: {
+    eyebrow: "오류",
+    title: "문제가 발생했습니다",
+    description: "일시적인 오류가 발생했습니다. 다시 시도해 주세요.",
+    retry: "다시 시도",
+  },
+  en: {
+    eyebrow: "Error",
+    title: "Something went wrong",
+    description: "A temporary error occurred. Please try again.",
+    retry: "Try again",
+  },
+  ja: {
+    eyebrow: "エラー",
+    title: "問題が発生しました",
+    description: "一時的なエラーが発生しました。もう一度お試しください。",
+    retry: "再試行",
+  },
 };
 
 export default function GlobalError({

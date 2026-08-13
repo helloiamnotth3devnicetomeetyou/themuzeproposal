@@ -1,8 +1,13 @@
 import type { HeroSlide } from "./HeroSlideCard";
 
-export const getActiveHeroSlides = (slides: HeroSlide[]) => slides.filter((slide) => slide.is_active);
+export const getActiveHeroSlides = (slides: HeroSlide[]) =>
+  slides.filter((slide) => slide.is_active);
 
-export const createHeroSlideDraft = (slides: HeroSlide[], storedSlides: HeroSlide[], albumId: string): HeroSlide => {
+export const createHeroSlideDraft = (
+  slides: HeroSlide[],
+  storedSlides: HeroSlide[],
+  albumId: string,
+): HeroSlide => {
   const stored = storedSlides.find((slide) => slide.album_id === albumId);
   return {
     id: stored?.id ?? crypto.randomUUID(),

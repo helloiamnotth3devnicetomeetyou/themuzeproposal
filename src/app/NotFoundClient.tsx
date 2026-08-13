@@ -13,10 +13,38 @@ interface RouteCandidate {
 
 type Locale = "ko" | "en" | "ja";
 
-const copy: Record<Locale, { eyebrow: string; title: string; description: string; suggested: string; home: string }> = {
-  ko: { eyebrow: "404 — 페이지를 찾을 수 없습니다", title: "페이지를 찾을 수 없습니다", description: "요청하신 주소가 잘못 입력되었거나 변경되었을 수 있습니다.", suggested: "추천 페이지", home: "홈으로 돌아가기" },
-  en: { eyebrow: "404 — Page Not Found", title: "Page not found", description: "The address you requested may be mistyped or have changed.", suggested: "Suggested pages", home: "Return to home" },
-  ja: { eyebrow: "404 — ページが見つかりません", title: "ページが見つかりません", description: "アクセスされたアドレスが誤っているか、変更された可能性があります。", suggested: "おすすめのページ", home: "ホームに戻る" },
+const copy: Record<
+  Locale,
+  {
+    eyebrow: string;
+    title: string;
+    description: string;
+    suggested: string;
+    home: string;
+  }
+> = {
+  ko: {
+    eyebrow: "404 — 페이지를 찾을 수 없습니다",
+    title: "페이지를 찾을 수 없습니다",
+    description: "요청하신 주소가 잘못 입력되었거나 변경되었을 수 있습니다.",
+    suggested: "추천 페이지",
+    home: "홈으로 돌아가기",
+  },
+  en: {
+    eyebrow: "404 — Page Not Found",
+    title: "Page not found",
+    description: "The address you requested may be mistyped or have changed.",
+    suggested: "Suggested pages",
+    home: "Return to home",
+  },
+  ja: {
+    eyebrow: "404 — ページが見つかりません",
+    title: "ページが見つかりません",
+    description:
+      "アクセスされたアドレスが誤っているか、変更された可能性があります。",
+    suggested: "おすすめのページ",
+    home: "ホームに戻る",
+  },
 };
 
 function getLevenshteinDistance(a: string, b: string): number {
@@ -35,7 +63,7 @@ function getLevenshteinDistance(a: string, b: string): number {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1,
           matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
+          matrix[i - 1][j] + 1,
         );
       }
     }
@@ -44,7 +72,10 @@ function getLevenshteinDistance(a: string, b: string): number {
   return matrix[lenB][lenA];
 }
 
-function findRecommendations(pathname: string, routes: RouteCandidate[]): RouteCandidate[] {
+function findRecommendations(
+  pathname: string,
+  routes: RouteCandidate[],
+): RouteCandidate[] {
   const cleanPath = pathname.toLowerCase().trim();
   const segments = cleanPath.split("/").filter(Boolean);
 
@@ -60,10 +91,20 @@ function findRecommendations(pathname: string, routes: RouteCandidate[]): RouteC
       }
     }
 
-    if (/disco|album|song|track|music/.test(cleanPath) && routePath.includes("discography")) score += 25;
-    if (/sched|calendar|event/.test(cleanPath) && routePath.includes("schedule")) score += 25;
-    if (/noti|board|news/.test(cleanPath) && routePath.includes("notice")) score += 20;
-    if (/artist|member/.test(cleanPath) && routePath.includes("artist")) score += 20;
+    if (
+      /disco|album|song|track|music/.test(cleanPath) &&
+      routePath.includes("discography")
+    )
+      score += 25;
+    if (
+      /sched|calendar|event/.test(cleanPath) &&
+      routePath.includes("schedule")
+    )
+      score += 25;
+    if (/noti|board|news/.test(cleanPath) && routePath.includes("notice"))
+      score += 20;
+    if (/artist|member/.test(cleanPath) && routePath.includes("artist"))
+      score += 20;
 
     const dist = getLevenshteinDistance(cleanPath, routePath);
     const maxLen = Math.max(cleanPath.length, routePath.length);
@@ -77,7 +118,11 @@ function findRecommendations(pathname: string, routes: RouteCandidate[]): RouteC
   return scored.slice(0, 3).map((item) => item.route);
 }
 
-export default function NotFoundClient({ routes }: { routes: RouteCandidate[] }) {
+export default function NotFoundClient({
+  routes,
+}: {
+  routes: RouteCandidate[];
+}) {
   const pathname = usePathname();
   const { locale } = useLocale();
   const pageCopy = copy[locale as Locale] || copy.ko;
@@ -95,19 +140,32 @@ export default function NotFoundClient({ routes }: { routes: RouteCandidate[] })
 
         {recommendations.length > 0 && (
           <div className={styles.recommendations}>
-            <span className={styles.recommendationsLabel}>{pageCopy.suggested}</span>
+            <span className={styles.recommendationsLabel}>
+              {pageCopy.suggested}
+            </span>
             <div className={styles.recommendationList}>
               {recommendations.map((rec) => (
-                <Link key={rec.path} href={rec.path} className={styles.recommendationLink}>
+                <Link
+                  key={rec.path}
+                  href={rec.path}
+                  className={styles.recommendationLink}
+                >
                   <span>{rec.label}</span>
-                  <span className={styles.recommendationArrow} aria-hidden="true">↗</span>
+                  <span
+                    className={styles.recommendationArrow}
+                    aria-hidden="true"
+                  >
+                    ↗
+                  </span>
                 </Link>
               ))}
             </div>
           </div>
         )}
 
-        <Link href="/" className={styles.homeLink}>{pageCopy.home}</Link>
+        <Link href="/" className={styles.homeLink}>
+          {pageCopy.home}
+        </Link>
       </div>
     </main>
   );

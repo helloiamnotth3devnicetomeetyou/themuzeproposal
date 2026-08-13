@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "THE MUZE";
-export const SITE_DESCRIPTION = "Artists, music, auditions and news from THE MUZE Entertainment.";
+export const SITE_DESCRIPTION =
+  "Artists, music, auditions and news from THE MUZE Entertainment.";
 
-export function createPageMetadata(title: string, description = SITE_DESCRIPTION): Metadata {
+export function createPageMetadata(
+  title: string,
+  description = SITE_DESCRIPTION,
+): Metadata {
   return {
     title,
     description,
@@ -12,5 +16,8 @@ export function createPageMetadata(title: string, description = SITE_DESCRIPTION
 }
 
 export function createPrivatePageMetadata(title: string): Metadata {
-  return { ...createPageMetadata(title), robots: { index: false, follow: false } };
+  return {
+    ...createPageMetadata(title),
+    robots: { index: false, follow: false },
+  };
 }

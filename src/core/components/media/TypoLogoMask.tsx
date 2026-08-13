@@ -20,7 +20,20 @@ export default function TypoLogoMask({ src, label, className, style }: Props) {
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" aria-hidden="true" loading="eager" decoding="async" style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        decoding="async"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      />
       <span
         aria-label={label}
         className={className}

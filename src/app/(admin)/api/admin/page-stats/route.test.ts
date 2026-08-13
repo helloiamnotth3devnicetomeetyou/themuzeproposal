@@ -7,14 +7,20 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
-vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createClient }));
+vi.mock("@/core/supabase/server", () => ({
+  createSupabaseServerClient: mocks.createClient,
+}));
 
 describe("GET /api/admin/page-stats", () => {
   beforeEach(() => {
     vi.stubEnv("VERCEL_TOKEN", "token");
     vi.stubEnv("VERCEL_PROJECT_ID", "prj_test");
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.createClient.mockResolvedValue({ auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "admin" } } }) } });
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "admin" } } }),
+      },
+    });
   });
 
   afterEach(() => {
@@ -29,10 +35,14 @@ describe("GET /api/admin/page-stats", () => {
         { timestamp: "2026-08-03T00:00:00.000Z", pageviews: 12, visitors: 8 },
         { timestamp: "2026-08-10T00:00:00.000Z", pageviews: 7, visitors: 5 },
       ],
-      requestPath: [{ requestPath: "/artists/rescene", pageviews: 10, visitors: 7 }],
+      requestPath: [
+        { requestPath: "/artists/rescene", pageviews: 10, visitors: 7 },
+      ],
       country: [{ country: "KR", pageviews: 8, visitors: 5 }],
       deviceType: [{ deviceType: "mobile", pageviews: 7, visitors: 4 }],
-      referrerHostname: [{ referrerHostname: "google.com", pageviews: 6, visitors: 4 }],
+      referrerHostname: [
+        { referrerHostname: "google.com", pageviews: 6, visitors: 4 },
+      ],
     };
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       const by = new URL(url).searchParams.get("by") || "";
@@ -40,7 +50,9 @@ describe("GET /api/admin/page-stats", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET(new Request("https://themuze.kr/api/admin/page-stats?range=12w"));
+    const response = await GET(
+      new Request("https://themuze.kr/api/admin/page-stats?range=12w"),
+    );
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
@@ -57,11 +69,20 @@ describe("GET /api/admin/page-stats", () => {
   });
 
   it("요금제 조회 기간을 넘으면 구체적인 제한 상태를 반환한다", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({}, { status: 402 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({}, { status: 402 })),
+    );
 
-    const response = await GET(new Request("https://themuze.kr/api/admin/page-stats?range=12m"));
+    const response = await GET(
+      new Request("https://themuze.kr/api/admin/page-stats?range=12m"),
+    );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ configured: true, range: "12m", rangeUnavailable: true });
+    expect(await response.json()).toMatchObject({
+      configured: true,
+      range: "12m",
+      rangeUnavailable: true,
+    });
   });
 });

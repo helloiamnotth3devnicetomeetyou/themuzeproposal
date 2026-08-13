@@ -18,8 +18,18 @@ vi.mock("@/core/supabase/server", () => ({
   createSupabaseServerClient: mocks.createSessionClient,
 }));
 vi.mock("@/core/storage/r2", () => ({
-  uploadObject: (options: { bucket: string; path: string; body: unknown; contentType: string; cacheControl?: string }) =>
-    mocks.upload(options.path, options.body, { contentType: options.contentType, cacheControl: options.cacheControl, upsert: false }),
+  uploadObject: (options: {
+    bucket: string;
+    path: string;
+    body: unknown;
+    contentType: string;
+    cacheControl?: string;
+  }) =>
+    mocks.upload(options.path, options.body, {
+      contentType: options.contentType,
+      cacheControl: options.cacheControl,
+      upsert: false,
+    }),
   deleteObjects: (_bucket: string, paths: string[]) => mocks.remove(paths),
 }));
 vi.mock("@/core/uploads/service-storage", () => ({
@@ -61,13 +71,28 @@ function request(formData: FormData) {
 describe("POST /api/contact-inquiries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "contact@example.com" } }, error: null });
-    mocks.createSessionClient.mockResolvedValue({ auth: { getUser: mocks.getUser } });
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "contact@example.com" } },
+      error: null,
+    });
+    mocks.createSessionClient.mockResolvedValue({
+      auth: { getUser: mocks.getUser },
+    });
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 4, retryAfter: 0 });
-    mocks.consumeAttemptRateLimit.mockResolvedValue({ error: false, allowed: true, remaining: 29, retryAfter: 0 });
+    mocks.consumeRateLimit.mockResolvedValue({
+      error: false,
+      allowed: true,
+      remaining: 4,
+      retryAfter: 0,
+    });
+    mocks.consumeAttemptRateLimit.mockResolvedValue({
+      error: false,
+      allowed: true,
+      remaining: 29,
+      retryAfter: 0,
+    });
     mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.createServiceClient.mockReturnValue({
       from: vi.fn(() => ({ insert: mocks.insert })),
@@ -75,7 +100,9 @@ describe("POST /api/contact-inquiries", () => {
   });
 
   it("stores the received byte length and canonical MIME type", async () => {
-    const file = new File(["%PDF-1.7\ncontent"], "proposal.pdf", { type: "text/html" });
+    const file = new File(["%PDF-1.7\ncontent"], "proposal.pdf", {
+      type: "text/html",
+    });
     const response = await POST(request(validForm(file)));
 
     expect(response.status).toBe(200);
@@ -84,14 +111,18 @@ describe("POST /api/contact-inquiries", () => {
       file,
       expect.objectContaining({ contentType: "application/pdf" }),
     );
-    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({
-      attachment_name: "proposal.pdf",
-      attachment_size: file.size,
-    }));
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachment_name: "proposal.pdf",
+        attachment_size: file.size,
+      }),
+    );
   });
 
   it("bounds the persisted attachment filename", async () => {
-    const file = new File(["%PDF-1.7\ncontent"], `${"a".repeat(300)}.pdf`, { type: "application/pdf" });
+    const file = new File(["%PDF-1.7\ncontent"], `${"a".repeat(300)}.pdf`, {
+      type: "application/pdf",
+    });
     const response = await POST(request(validForm(file)));
 
     expect(response.status).toBe(200);
@@ -105,7 +136,9 @@ describe("POST /api/contact-inquiries", () => {
     const response = await POST(request(validForm(file)));
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ code: "INVALID_FILE_TYPE" });
+    await expect(response.json()).resolves.toEqual({
+      code: "INVALID_FILE_TYPE",
+    });
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });
@@ -123,7 +156,12 @@ describe("POST /api/contact-inquiries", () => {
   });
 
   it("stops rate-limited submissions before uploading or inserting", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({ error: false, allowed: false, remaining: 0, retryAfter: 90 });
+    mocks.consumeRateLimit.mockResolvedValue({
+      error: false,
+      allowed: false,
+      remaining: 0,
+      retryAfter: 90,
+    });
     const nextRequest = request(validForm());
     const response = await POST(nextRequest);
 
@@ -134,7 +172,12 @@ describe("POST /api/contact-inquiries", () => {
   });
 
   it("rejects exhausted attempt budgets before parsing the body", async () => {
-    mocks.consumeAttemptRateLimit.mockResolvedValueOnce({ error: false, allowed: false, remaining: 0, retryAfter: 30 });
+    mocks.consumeAttemptRateLimit.mockResolvedValueOnce({
+      error: false,
+      allowed: false,
+      remaining: 0,
+      retryAfter: 30,
+    });
     const response = await POST(request(validForm()));
     expect(response.status).toBe(429);
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();

@@ -11,7 +11,11 @@ import { isSafeStoragePath } from "@/core/uploads/service-storage";
 const SIGNED_URL_TTL_SECONDS = 900;
 const MAX_BODY_BYTES = 8 * 1024;
 
-const PRIVATE_BUCKETS = ["contact-attachments", "protect-evidence", "audition-attachments"] as const;
+const PRIVATE_BUCKETS = [
+  "contact-attachments",
+  "protect-evidence",
+  "audition-attachments",
+] as const;
 type PrivateBucket = (typeof PRIVATE_BUCKETS)[number];
 
 function errorResponse(code: string, status: number) {
@@ -28,49 +32,83 @@ async function isReferencedAttachment(
   path: string,
 ): Promise<boolean> {
   if (bucket === "contact-attachments") {
-    const { data } = await supabase.from("contact_inquiries").select("id").eq("attachment_path", path).maybeSingle();
+    const { data } = await supabase
+      .from("contact_inquiries")
+      .select("id")
+      .eq("attachment_path", path)
+      .maybeSingle();
     return Boolean(data);
   }
   if (bucket === "protect-evidence") {
-    const { data } = await supabase.from("protect_report_attachments").select("id").eq("file_path", path).maybeSingle();
+    const { data } = await supabase
+      .from("protect_report_attachments")
+      .select("id")
+      .eq("file_path", path)
+      .maybeSingle();
     return Boolean(data);
   }
   const service = createServiceRoleClient();
   if (!service) return false;
-  const { data, error } = await service.from("audition_submissions").select("answers");
+  const { data, error } = await service
+    .from("audition_submissions")
+    .select("answers");
   if (error) return false;
   // ponytail: O(n) answer scan; move this to a JSONB path RPC if submission volume makes it measurable.
   return (data ?? []).some((row) => {
     const answers = row.answers;
-    if (!answers || typeof answers !== "object" || Array.isArray(answers)) return false;
-    return Object.values(answers as Record<string, unknown>).some((answer) => (
-      answer && typeof answer === "object" && !Array.isArray(answer)
-      && (answer as { path?: unknown }).path === path
-    ));
+    if (!answers || typeof answers !== "object" || Array.isArray(answers))
+      return false;
+    return Object.values(answers as Record<string, unknown>).some(
+      (answer) =>
+        answer &&
+        typeof answer === "object" &&
+        !Array.isArray(answer) &&
+        (answer as { path?: unknown }).path === path,
+    );
   });
 }
 
 export async function POST(request: NextRequest) {
-  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
+  if (!isSameOriginRequest(request))
+    return errorResponse("INVALID_REQUEST", 400);
 
   const supabase = await createSupabaseServerClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+  if (!(await isAdmin(supabase, user.id)))
+    return errorResponse("FORBIDDEN", 403);
 
-  const body = await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null) as { bucket?: unknown; path?: unknown; downloadName?: unknown } | null;
+  const body = (await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(
+    () => null,
+  )) as { bucket?: unknown; path?: unknown; downloadName?: unknown } | null;
   const bucket = typeof body?.bucket === "string" ? body.bucket : "";
   const path = typeof body?.path === "string" ? body.path : "";
-  const downloadName = typeof body?.downloadName === "string" ? boundedFileName(body.downloadName) : undefined;
-  if (!PRIVATE_BUCKETS.includes(bucket as PrivateBucket) || !isSafeStoragePath(path)) {
+  const downloadName =
+    typeof body?.downloadName === "string"
+      ? boundedFileName(body.downloadName)
+      : undefined;
+  if (
+    !PRIVATE_BUCKETS.includes(bucket as PrivateBucket) ||
+    !isSafeStoragePath(path)
+  ) {
     return errorResponse("INVALID_REQUEST", 400);
   }
 
-  if (!(await isReferencedAttachment(supabase, bucket as PrivateBucket, path))) {
+  if (
+    !(await isReferencedAttachment(supabase, bucket as PrivateBucket, path))
+  ) {
     return errorResponse("FORBIDDEN", 403);
   }
 
-  const url = await createSignedDownloadUrl(bucket, path, SIGNED_URL_TTL_SECONDS, downloadName);
+  const url = await createSignedDownloadUrl(
+    bucket,
+    path,
+    SIGNED_URL_TTL_SECONDS,
+    downloadName,
+  );
   if (!url) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const response = NextResponse.json({ url });

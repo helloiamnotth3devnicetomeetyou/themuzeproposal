@@ -16,21 +16,29 @@ function limitedBody(request: Request, maxBytes: number, timeoutMs?: number) {
   if (!request.body) return new ReadableStream<Uint8Array>();
 
   let size = 0;
-  const body = request.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-    transform(chunk, controller) {
-      size += chunk.byteLength;
-      if (size > maxBytes) throw new BodyTooLargeError();
-      controller.enqueue(chunk);
-    },
-  }), timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : undefined);
+  const body = request.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        size += chunk.byteLength;
+        if (size > maxBytes) throw new BodyTooLargeError();
+        controller.enqueue(chunk);
+      },
+    }),
+    timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : undefined,
+  );
   return body;
 }
 
-export async function parseJsonWithinLimit(request: Request, maxBytes: number): Promise<unknown | null> {
+export async function parseJsonWithinLimit(
+  request: Request,
+  maxBytes: number,
+): Promise<unknown | null> {
   const body = limitedBody(request, maxBytes);
   if (!body) return null;
   return new Response(body, {
-    headers: { "content-type": request.headers.get("content-type") || "application/json" },
+    headers: {
+      "content-type": request.headers.get("content-type") || "application/json",
+    },
   }).json();
 }
 
@@ -43,8 +51,9 @@ export async function parseFormDataWithinLimit(
   const body = limitedBody(request, maxBytes, timeoutMs);
   if (!body) return null;
   const contentType = request.headers.get("content-type") || "";
-  const boundary = /(?:^|;)\s*boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[1]
-    || /(?:^|;)\s*boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[2]?.trim();
+  const boundary =
+    /(?:^|;)\s*boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[1] ||
+    /(?:^|;)\s*boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[2]?.trim();
   const guardedBody = boundary
     ? body.pipeThrough(multipartGuard(boundary, limits))
     : body;
@@ -54,10 +63,12 @@ export async function parseFormDataWithinLimit(
     }).formData();
   } catch (error) {
     if (
-      error instanceof BodyTooLargeError
-      || error instanceof MultipartTooComplexError
-      || (error instanceof DOMException && ["AbortError", "TimeoutError"].includes(error.name))
-    ) return null;
+      error instanceof BodyTooLargeError ||
+      error instanceof MultipartTooComplexError ||
+      (error instanceof DOMException &&
+        ["AbortError", "TimeoutError"].includes(error.name))
+    )
+      return null;
     throw error;
   }
 }
@@ -66,7 +77,8 @@ function multipartGuard(boundary: string, limits: MultipartLimits) {
   const delimiter = `\r\n--${boundary}`;
   const opening = `--${boundary}`;
   const maxParts = limits.maxParts ?? DEFAULT_MAX_MULTIPART_PARTS;
-  const maxMetadataBytes = limits.maxMetadataBytes ?? DEFAULT_MAX_MULTIPART_METADATA_BYTES;
+  const maxMetadataBytes =
+    limits.maxMetadataBytes ?? DEFAULT_MAX_MULTIPART_METADATA_BYTES;
   const decoder = new TextDecoder("latin1");
   let mode: "preamble" | "boundary" | "headers" | "body" | "done" = "preamble";
   let buffer = "";
@@ -87,7 +99,10 @@ function multipartGuard(boundary: string, limits: MultipartLimits) {
           buffer = buffer.slice(start);
           return;
         }
-        if (!afterOpening.startsWith("--") && !afterOpening.startsWith("\r\n")) {
+        if (
+          !afterOpening.startsWith("--") &&
+          !afterOpening.startsWith("\r\n")
+        ) {
           buffer = buffer.slice(start + 2);
           continue;
         }
@@ -119,12 +134,14 @@ function multipartGuard(boundary: string, limits: MultipartLimits) {
         if (end < 0) {
           const keep = Math.min(3, buffer.length);
           metadataBytes += buffer.length - keep;
-          if (metadataBytes > maxMetadataBytes) throw new MultipartTooComplexError();
+          if (metadataBytes > maxMetadataBytes)
+            throw new MultipartTooComplexError();
           buffer = buffer.slice(-keep);
           return;
         }
         metadataBytes += end + 4;
-        if (metadataBytes > maxMetadataBytes) throw new MultipartTooComplexError();
+        if (metadataBytes > maxMetadataBytes)
+          throw new MultipartTooComplexError();
         buffer = buffer.slice(end + 4);
         mode = "body";
         continue;
@@ -140,7 +157,10 @@ function multipartGuard(boundary: string, limits: MultipartLimits) {
         buffer = buffer.slice(nextBoundary);
         return;
       }
-      if (!afterDelimiter.startsWith("--") && !afterDelimiter.startsWith("\r\n")) {
+      if (
+        !afterDelimiter.startsWith("--") &&
+        !afterDelimiter.startsWith("\r\n")
+      ) {
         buffer = buffer.slice(nextBoundary + 2);
         continue;
       }

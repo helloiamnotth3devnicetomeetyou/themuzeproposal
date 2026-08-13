@@ -101,9 +101,7 @@ export const monthFromDateKey = (value: string) => {
 export const monthKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
-export const emptyScheduleDraft = (
-  eventDate = today(),
-): ScheduleDraft => ({
+export const emptyScheduleDraft = (eventDate = today()): ScheduleDraft => ({
   id: "",
   eventDate,
   startTime: "",
@@ -141,7 +139,9 @@ export const scheduleToDraft = (row: ScheduleRow): ScheduleDraft => ({
   sortOrder: row.sort_order,
 });
 
-export const duplicateScheduleDraft = (draft: ScheduleDraft): ScheduleDraft => ({
+export const duplicateScheduleDraft = (
+  draft: ScheduleDraft,
+): ScheduleDraft => ({
   ...draft,
   id: "",
   isPublished: false,

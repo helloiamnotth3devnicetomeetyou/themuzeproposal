@@ -13,4 +13,8 @@ export type NoticeDraft = {
   published: boolean;
 };
 
-export const duplicateNoticeDraft = (draft: NoticeDraft): NoticeDraft => ({ ...draft, id: null, published: false });
+export const duplicateNoticeDraft = (draft: NoticeDraft): NoticeDraft => ({
+  ...draft,
+  id: null,
+  published: false,
+});

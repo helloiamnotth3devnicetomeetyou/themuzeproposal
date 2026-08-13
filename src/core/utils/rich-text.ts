@@ -45,7 +45,9 @@ export function plainTextToRichText(value: string): string {
 
   return normalized
     .split(/\n{2,}/)
-    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+    .map(
+      (paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`,
+    )
     .join("");
 }
 
@@ -68,17 +70,23 @@ export function sanitizeRichText(value: string): string {
 }
 
 function decodeTextEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#0*39;|&apos;/gi, "'")
-    .replace(/&#(\d+);?/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);?/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
-    // &amp; must be decoded last: decoding it first would allow double-encoded
-    // entities like &amp;lt; to pass through as < (CodeQL High #7).
-    .replace(/&amp;/gi, "&");
+  return (
+    value
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;|&apos;/gi, "'")
+      .replace(/&#(\d+);?/g, (_, code: string) =>
+        String.fromCodePoint(Number(code)),
+      )
+      .replace(/&#x([0-9a-f]+);?/gi, (_, code: string) =>
+        String.fromCodePoint(Number.parseInt(code, 16)),
+      )
+      // &amp; must be decoded last: decoding it first would allow double-encoded
+      // entities like &amp;lt; to pass through as < (CodeQL High #7).
+      .replace(/&amp;/gi, "&")
+  );
 }
 
 export function richTextToPlainText(value: string): string {

@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
 const mocks = vi.hoisted(() => ({ updateSession: vi.fn() }));
-vi.mock("@/core/supabase/proxy", () => ({ updateSession: mocks.updateSession }));
+vi.mock("@/core/supabase/proxy", () => ({
+  updateSession: mocks.updateSession,
+}));
 
 import { proxy } from "./proxy";
 
@@ -21,7 +23,9 @@ describe("proxy security headers", () => {
     expect(forwarded.headers.get("x-nonce")).toBeTruthy();
     expect(forwarded.headers.get("content-security-policy")).toBe(policy);
     expect(policy).toContain("media-src 'self' blob: https:");
-    expect(policy).toContain("style-src 'self'; style-src-attr 'unsafe-inline'");
+    expect(policy).toContain(
+      "style-src 'self'; style-src-attr 'unsafe-inline'",
+    );
     expect(policy).toMatch(/script-src 'self' 'nonce-[^']+'/);
   });
 });

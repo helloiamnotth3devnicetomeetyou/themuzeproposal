@@ -35,6 +35,8 @@ describe("parsePreviewEnvelope", () => {
       },
     };
 
-    expect(parsePreviewEnvelope(JSON.stringify(envelope), token)).toEqual(envelope);
+    expect(parsePreviewEnvelope(JSON.stringify(envelope), token)).toEqual(
+      envelope,
+    );
   });
 });

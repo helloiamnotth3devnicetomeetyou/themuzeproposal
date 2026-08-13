@@ -5,7 +5,11 @@ import {
   getNavigationAccount,
 } from "@/public/features/layout/server";
 
-export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [initialArtists, initialSettings, initialAccount] = await Promise.all([
     getCachedNavigationArtists(),
     getCachedSiteSettings(),

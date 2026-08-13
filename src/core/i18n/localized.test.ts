@@ -13,7 +13,9 @@ describe("localizeText", () => {
   });
 
   it("treats whitespace as missing and uses the canonical value last", () => {
-    expect(localizeText({ ko: " ", en: "" }, "en", "Canonical")).toBe("Canonical");
+    expect(localizeText({ ko: " ", en: "" }, "en", "Canonical")).toBe(
+      "Canonical",
+    );
   });
 
   it("returns an empty string when no value exists", () => {

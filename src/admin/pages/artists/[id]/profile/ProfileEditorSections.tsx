@@ -48,9 +48,12 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>아티스트 기본 정보</h3>
-            <span>공개 페이지와 관리자 목록에서 사용하는 이름과 고유 ID입니다.</span>
+            <span>
+              공개 페이지와 관리자 목록에서 사용하는 이름과 고유 ID입니다.
+            </span>
           </div>
-          <FormField activeLang={language}
+          <FormField
+            activeLang={language}
             label="아티스트명"
             valueKo={draft.name}
             valueEn={draft.engName}
@@ -63,7 +66,11 @@ export default function ProfileEditorSections({
           <div className="music-field-grid two">
             <label className="music-field">
               <span>공개 경로</span>
-              <input className="admin-input" value={`/${toArtistSlug(draft.engName) || "english-name"}`} readOnly />
+              <input
+                className="admin-input"
+                value={`/${toArtistSlug(draft.engName) || "english-name"}`}
+                readOnly
+              />
               <small>영문명을 기준으로 자동 생성됩니다.</small>
             </label>
             <div className="music-field">
@@ -81,7 +88,14 @@ export default function ProfileEditorSections({
           </div>
           <label className="music-field content-field-short">
             <span>데뷔일</span>
-            <input type="date" className="admin-input" value={draft.debutDate} onChange={(event) => patchDraft({ debutDate: event.target.value })} />
+            <input
+              type="date"
+              className="admin-input"
+              value={draft.debutDate}
+              onChange={(event) =>
+                patchDraft({ debutDate: event.target.value })
+              }
+            />
           </label>
         </>
       )}
@@ -119,10 +133,24 @@ export default function ProfileEditorSections({
             />
           </div>
           <label className="music-field content-field-short">
-            <span>테마 컬러 <b>*</b></span>
+            <span>
+              테마 컬러 <b>*</b>
+            </span>
             <div className="content-color-row">
-              <input type="color" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} />
-              <input className="admin-input" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} />
+              <input
+                type="color"
+                value={draft.color}
+                onChange={(event) =>
+                  patchDraft({ color: event.target.value.toUpperCase() })
+                }
+              />
+              <input
+                className="admin-input"
+                value={draft.color}
+                onChange={(event) =>
+                  patchDraft({ color: event.target.value.toUpperCase() })
+                }
+              />
             </div>
           </label>
         </>
@@ -132,9 +160,13 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>아티스트 소개</h3>
-            <span>한국어 소개는 필수이며 영문과 일본어는 준비되었을 때 추가할 수 있습니다.</span>
+            <span>
+              한국어 소개는 필수이며 영문과 일본어는 준비되었을 때 추가할 수
+              있습니다.
+            </span>
           </div>
-          <FormField activeLang={language}
+          <FormField
+            activeLang={language}
             label="아티스트 소개"
             type="richtext"
             required
@@ -152,9 +184,15 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>아티스트 공식 계정</h3>
-            <span>공개 프로필에 연결할 공식 채널과 음악 플랫폼을 등록합니다. 필요한 만큼 자유롭게 추가할 수 있습니다.</span>
+            <span>
+              공개 프로필에 연결할 공식 채널과 음악 플랫폼을 등록합니다. 필요한
+              만큼 자유롭게 추가할 수 있습니다.
+            </span>
           </div>
-          <SocialLinksField value={draft.socialLinks} onChange={(socialLinks) => patchDraft({ socialLinks })} />
+          <SocialLinksField
+            value={draft.socialLinks}
+            onChange={(socialLinks) => patchDraft({ socialLinks })}
+          />
         </>
       )}
 
@@ -162,9 +200,18 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>인터랙티브 멤버 장면</h3>
-            <span>한 화면 안에서 전환할 콘셉트 이미지와 멤버별 정밀 실루엣을 편집합니다.</span>
+            <span>
+              한 화면 안에서 전환할 콘셉트 이미지와 멤버별 정밀 실루엣을
+              편집합니다.
+            </span>
           </div>
-          <ArtistSceneManager artistId={isNew ? null : artistId} heroUrl={draft.imageUrl} onError={onError} onToast={onToast} language={language} />
+          <ArtistSceneManager
+            artistId={isNew ? null : artistId}
+            heroUrl={draft.imageUrl}
+            onError={onError}
+            onToast={onToast}
+            language={language}
+          />
         </>
       )}
 
@@ -172,9 +219,17 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>아티스트 통합 갤러리</h3>
-            <span>앨범과 멤버에 등록된 이미지를 한곳에서 보고, 두 분류를 교차해 정리합니다.</span>
+            <span>
+              앨범과 멤버에 등록된 이미지를 한곳에서 보고, 두 분류를 교차해
+              정리합니다.
+            </span>
           </div>
-          <GalleryManager artistId={isNew ? null : artistId} scope="artist" onError={onError} onToast={onToast} />
+          <GalleryManager
+            artistId={isNew ? null : artistId}
+            scope="artist"
+            onError={onError}
+            onToast={onToast}
+          />
         </>
       )}
 
@@ -182,22 +237,59 @@ export default function ProfileEditorSections({
         <>
           <div className="content-section-heading">
             <h3>공개 설정</h3>
-            <span>저장 후 사이트 메뉴와 아티스트 프로필에 표시할지 선택합니다.</span>
+            <span>
+              저장 후 사이트 메뉴와 아티스트 프로필에 표시할지 선택합니다.
+            </span>
           </div>
           <div className="content-publish-summary">
-            <div><span>아티스트</span><strong>{draft.name || "미입력"} / {draft.engName || "미입력"}</strong></div>
-            <div><span>테마 컬러</span><strong>{draft.color}</strong></div>
-            <div><span>유형 · 데뷔일</span><strong>{draft.type === "group" ? "그룹" : "솔로"} · {draft.debutDate || "미설정"}</strong></div>
-            <div><span>필수 정보</span><strong>{saveIssues.length ? `${saveIssues.length}개 확인 필요` : "저장 준비 완료"}</strong></div>
+            <div>
+              <span>아티스트</span>
+              <strong>
+                {draft.name || "미입력"} / {draft.engName || "미입력"}
+              </strong>
+            </div>
+            <div>
+              <span>테마 컬러</span>
+              <strong>{draft.color}</strong>
+            </div>
+            <div>
+              <span>유형 · 데뷔일</span>
+              <strong>
+                {draft.type === "group" ? "그룹" : "솔로"} ·{" "}
+                {draft.debutDate || "미설정"}
+              </strong>
+            </div>
+            <div>
+              <span>필수 정보</span>
+              <strong>
+                {saveIssues.length
+                  ? `${saveIssues.length}개 확인 필요`
+                  : "저장 준비 완료"}
+              </strong>
+            </div>
           </div>
           <div className="content-choice-grid">
             <label className="content-choice">
-              <input type="radio" checked={draft.isActive} onChange={() => patchDraft({ isActive: true })} />
-              <span><b>바로 공개</b><small>사이트 메뉴와 프로필에 표시합니다.</small></span>
+              <input
+                type="radio"
+                checked={draft.isActive}
+                onChange={() => patchDraft({ isActive: true })}
+              />
+              <span>
+                <b>바로 공개</b>
+                <small>사이트 메뉴와 프로필에 표시합니다.</small>
+              </span>
             </label>
             <label className="content-choice">
-              <input type="radio" checked={!draft.isActive} onChange={() => patchDraft({ isActive: false })} />
-              <span><b>비공개로 저장</b><small>준비가 끝난 뒤 공개할 수 있습니다.</small></span>
+              <input
+                type="radio"
+                checked={!draft.isActive}
+                onChange={() => patchDraft({ isActive: false })}
+              />
+              <span>
+                <b>비공개로 저장</b>
+                <small>준비가 끝난 뒤 공개할 수 있습니다.</small>
+              </span>
             </label>
           </div>
         </>

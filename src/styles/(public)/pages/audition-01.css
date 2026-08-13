@@ -14,79 +14,374 @@
   box-sizing: border-box;
 }
 
-.campaignGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
-.campaignCard,.campaignEmpty,.reviewCard,.successCard { padding:28px; border:1px solid var(--border-default); border-radius:14px; background:var(--bg-card); }
-.campaignCard h2 { margin:14px 0 8px; color:var(--text-primary); font-family:var(--font-display); font-size:24px; }
-.campaignCard p,.campaignEmpty p,.reviewCard > p,.successCard p { color:var(--text-muted); font-size:13px; line-height:1.7; }
-.localizedDescription span { display:none; }
-:global(html[lang="ko"]) .localizedDescription span[data-locale="ko"],:global(html[lang="en"]) .localizedDescription span[data-locale="en"],:global(html[lang="ja"]) .localizedDescription span[data-locale="ja"] { display:inline; }
-.campaignCard small { display:block; margin-top:20px; color:var(--text-faint); font-size:10px; }
-.campaignCard a,.successCard a,.formActions button { display:inline-flex; min-height:44px; align-items:center; justify-content:center; gap:8px; margin-top:20px; padding:0 18px; border:1px solid var(--color-brand-pink); border-radius:8px; background:var(--color-brand-pink); color:#171017; font-size:11px; font-weight:800; }
-.campaignEmpty { grid-column:1/-1; text-align:center; }
-.backLink { display:inline-flex; align-items:center; gap:7px; margin-bottom:28px; color:var(--text-muted); font-size:11px; }
-.backLink svg { width:15px; }
-.fieldHelp { color:var(--text-muted); font-size:11px; line-height:1.5; }
-.optionList { display:flex; flex-direction:column; gap:9px; }
-.optionList label,.consentField { display:flex; align-items:flex-start; gap:9px; color:var(--text-secondary); font-size:13px; line-height:1.5; }
-.optionList input,.consentField input { margin-top:2px; accent-color:var(--color-brand-pink); }
-.reviewCard h2,.successCard h1 { margin:0; color:var(--text-primary); font-family:var(--font-display); }
-.reviewCard dl { margin:24px 0 0; border-top:1px solid var(--border-default); }
-.reviewCard dl div { display:grid; grid-template-columns:minmax(120px,32%) 1fr; gap:18px; padding:14px 0; border-bottom:1px solid var(--border-default); }
-.reviewCard dt { color:var(--text-muted); font-size:11px; }
-.reviewCard dd { margin:0; color:var(--text-primary); font-size:12px; white-space:pre-wrap; }
-.formActions { display:flex; justify-content:flex-end; gap:10px; }
-.formActions button { margin-top:0; cursor:pointer; }
-.formActions button:first-child:not(:only-child) { border-color:var(--border-default); background:transparent; color:var(--text-primary); }
-.formActions button:disabled { opacity:.5; cursor:default; }
-.formActions svg { width:15px; }
-.successCard { margin-top:80px; text-align:center; }
-.successCard > svg { width:42px; height:42px; margin-bottom:20px; color:var(--color-brand-pink); }
+.campaignGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.campaignCard,
+.campaignEmpty,
+.reviewCard,
+.successCard {
+  padding: 28px;
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+.campaignCard h2 {
+  margin: 14px 0 8px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+.campaignCard p,
+.campaignEmpty p,
+.reviewCard > p,
+.successCard p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.localizedDescription span {
+  display: none;
+}
+:global(html[lang="ko"]) .localizedDescription span[data-locale="ko"],
+:global(html[lang="en"]) .localizedDescription span[data-locale="en"],
+:global(html[lang="ja"]) .localizedDescription span[data-locale="ja"] {
+  display: inline;
+}
+.campaignCard small {
+  display: block;
+  margin-top: 20px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+.campaignCard a,
+.successCard a,
+.formActions button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 0 18px;
+  border: 1px solid var(--color-brand-pink);
+  border-radius: 8px;
+  background: var(--color-brand-pink);
+  color: #171017;
+  font-size: 11px;
+  font-weight: 800;
+}
+.campaignEmpty {
+  grid-column: 1/-1;
+  text-align: center;
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 28px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.backLink svg {
+  width: 15px;
+}
+.fieldHelp {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.optionList label,
+.consentField {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.optionList input,
+.consentField input {
+  margin-top: 2px;
+  accent-color: var(--color-brand-pink);
+}
+.reviewCard h2,
+.successCard h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+.reviewCard dl {
+  margin: 24px 0 0;
+  border-top: 1px solid var(--border-default);
+}
+.reviewCard dl div {
+  display: grid;
+  grid-template-columns: minmax(120px, 32%) 1fr;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+.reviewCard dt {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.reviewCard dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.formActions button {
+  margin-top: 0;
+  cursor: pointer;
+}
+.formActions button:first-child:not(:only-child) {
+  border-color: var(--border-default);
+  background: transparent;
+  color: var(--text-primary);
+}
+.formActions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.formActions svg {
+  width: 15px;
+}
+.successCard {
+  margin-top: 80px;
+  text-align: center;
+}
+.successCard > svg {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 20px;
+  color: var(--color-brand-pink);
+}
 
 @media (max-width: 640px) {
-  .campaignGrid { grid-template-columns:1fr; }
-  .reviewCard dl div { grid-template-columns:1fr; gap:5px; }
+  .campaignGrid {
+    grid-template-columns: 1fr;
+  }
+  .reviewCard dl div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
 }
 
-.applicationPanel { min-height: 560px; padding-top: 34px; }
-.campaignPicker { padding: 0 14px 30px; border-bottom: 1px solid var(--border-default); }
-.campaignIntro { padding: 34px 14px 28px; border-bottom: 1px solid var(--border-default); }
-.campaignStatus { display:inline-flex; margin-bottom:12px; color:var(--color-brand-pink); font-size:9px; font-weight:800; letter-spacing:.12em; }
-.campaignIntro h2 { margin: 0; color: var(--text-primary); font-family: var(--font-display); font-size: clamp(24px, 3vw, 38px); letter-spacing: -.04em; }
-.campaignIntro p { max-width: 680px; margin: 12px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.75; white-space: pre-wrap; }
-.campaignIntro time { display: block; margin-top: 18px; color: var(--text-faint); font-size: 10px; }
-.editButton { padding: 0; border: 0; background: transparent; color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: pointer; }
-.editButton:hover { color: var(--text-primary); }
-.choiceList { display: grid; gap: 8px; }
-.choiceList label { display: flex; min-height: 48px; align-items: center; gap: 11px; padding: 0 15px; border: 1px solid var(--border-strong); border-radius: 2px; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
-.choiceList label:hover,.choiceList .isChecked { border-color: var(--color-brand-pink); color: var(--text-primary); }
-.choiceList input { accent-color: var(--color-brand-pink); }
-.fieldHelp { grid-column: 2; align-self: center; color: var(--text-muted); font-size: 10px; line-height: 1.5; }
-.sizedTextarea { min-height: auto !important; }
-.inlineSuccess { display: flex; min-height: 520px; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-.inlineSuccess > svg { width: 40px; height: 40px; color: var(--color-brand-pink); }
-.inlineSuccess h2 { margin: 20px 0 0; color: var(--text-primary); font-family: var(--font-display); font-size: 28px; }
-.inlineSuccess p { margin: 10px 0 0; color: var(--text-muted); font-size: 11px; }
-.inlineSuccess button { margin-top: 28px; padding: 0; border: 0; background: transparent; color: var(--text-primary); font-size: 11px; font-weight: 700; cursor: pointer; }
+.applicationPanel {
+  min-height: 560px;
+  padding-top: 34px;
+}
+.campaignPicker {
+  padding: 0 14px 30px;
+  border-bottom: 1px solid var(--border-default);
+}
+.campaignIntro {
+  padding: 34px 14px 28px;
+  border-bottom: 1px solid var(--border-default);
+}
+.campaignStatus {
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: var(--color-brand-pink);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.campaignIntro h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 38px);
+  letter-spacing: -0.04em;
+}
+.campaignIntro p {
+  max-width: 680px;
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.campaignIntro time {
+  display: block;
+  margin-top: 18px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+.editButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.editButton:hover {
+  color: var(--text-primary);
+}
+.choiceList {
+  display: grid;
+  gap: 8px;
+}
+.choiceList label {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.choiceList label:hover,
+.choiceList .isChecked {
+  border-color: var(--color-brand-pink);
+  color: var(--text-primary);
+}
+.choiceList input {
+  accent-color: var(--color-brand-pink);
+}
+.fieldHelp {
+  grid-column: 2;
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.sizedTextarea {
+  min-height: auto !important;
+}
+.inlineSuccess {
+  display: flex;
+  min-height: 520px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+.inlineSuccess > svg {
+  width: 40px;
+  height: 40px;
+  color: var(--color-brand-pink);
+}
+.inlineSuccess h2 {
+  margin: 20px 0 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 28px;
+}
+.inlineSuccess p {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.inlineSuccess button {
+  margin-top: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
 
-.campaignCard { transition:border-color var(--duration-base) ease,transform var(--duration-base) ease; }
-.campaignCard:hover { border-color:var(--alpha-fc6fcf-35); transform:translateY(-2px); }
-.campaignCard a,.successCard a,.formActions button,.editButton,.inlineSuccess button { transition:color var(--duration-fast) ease,filter var(--duration-fast) ease,transform var(--duration-fast) ease; }
-.campaignCard a:hover,.successCard a:hover,.formActions button:hover:not(:disabled) { filter:brightness(.94); }
-.campaignCard a:active,.successCard a:active,.formActions button:active:not(:disabled),.editButton:active,.inlineSuccess button:active { transform:translateY(1px); }
-.campaignCard a:focus-visible,.successCard a:focus-visible,.formActions button:focus-visible,.editButton:focus-visible,.inlineSuccess button:focus-visible { outline:2px solid var(--color-brand-pink); outline-offset:3px; }
-.choiceList label { transition:border-color var(--duration-fast) ease,color var(--duration-fast) ease,background-color var(--duration-fast) ease; }
-.inlineSuccess { animation:publicFeedbackIn var(--duration-slow) ease both; }
+.campaignCard {
+  transition:
+    border-color var(--duration-base) ease,
+    transform var(--duration-base) ease;
+}
+.campaignCard:hover {
+  border-color: var(--alpha-fc6fcf-35);
+  transform: translateY(-2px);
+}
+.campaignCard a,
+.successCard a,
+.formActions button,
+.editButton,
+.inlineSuccess button {
+  transition:
+    color var(--duration-fast) ease,
+    filter var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
+}
+.campaignCard a:hover,
+.successCard a:hover,
+.formActions button:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+.campaignCard a:active,
+.successCard a:active,
+.formActions button:active:not(:disabled),
+.editButton:active,
+.inlineSuccess button:active {
+  transform: translateY(1px);
+}
+.campaignCard a:focus-visible,
+.successCard a:focus-visible,
+.formActions button:focus-visible,
+.editButton:focus-visible,
+.inlineSuccess button:focus-visible {
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: 3px;
+}
+.choiceList label {
+  transition:
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+.inlineSuccess {
+  animation: publicFeedbackIn var(--duration-slow) ease both;
+}
 
 @media (max-width: 760px) {
-  .applicationPanel { padding-top: 24px; }
-  .campaignPicker,.campaignIntro { padding-right: 0; padding-left: 0; }
-  .fieldHelp { grid-column: 1; }
+  .applicationPanel {
+    padding-top: 24px;
+  }
+  .campaignPicker,
+  .campaignIntro {
+    padding-right: 0;
+    padding-left: 0;
+  }
+  .fieldHelp {
+    grid-column: 1;
+  }
 }
 
-@media (prefers-reduced-motion:reduce) {
-  .campaignCard,.campaignCard a,.successCard a,.formActions button,.editButton,.inlineSuccess button,.choiceList label { transition:none; }
-  .campaignCard:hover { transform:none; }
-  .inlineSuccess { animation:none; }
+@media (prefers-reduced-motion: reduce) {
+  .campaignCard,
+  .campaignCard a,
+  .successCard a,
+  .formActions button,
+  .editButton,
+  .inlineSuccess button,
+  .choiceList label {
+    transition: none;
+  }
+  .campaignCard:hover {
+    transform: none;
+  }
+  .inlineSuccess {
+    animation: none;
+  }
 }
 
 .header {
@@ -180,7 +475,9 @@
   font-family: var(--font-sans);
   font-size: 14px;
   box-sizing: border-box;
-  transition: border-color var(--duration-fast, 0.15s), box-shadow var(--duration-fast, 0.15s);
+  transition:
+    border-color var(--duration-fast, 0.15s),
+    box-shadow var(--duration-fast, 0.15s);
 }
 
 .fieldInput:focus,
@@ -213,7 +510,10 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
   user-select: none;
 }
 
@@ -242,7 +542,9 @@
   height: 18px;
   border: 1.5px solid var(--border-strong);
   background: var(--bg-surface);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .fieldRadioLabel .fieldOptionIndicator {
@@ -257,7 +559,9 @@
   content: "";
   display: block;
   opacity: 0;
-  transition: opacity 0.12s, transform 0.12s;
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
   transform: scale(0.5);
 }
 
@@ -289,7 +593,11 @@
 .fieldRadioLabel.is-checked .fieldOptionIndicator,
 .fieldCheckLabel.is-checked .fieldOptionIndicator {
   border-color: var(--color-brand-pink);
-  background: color-mix(in srgb, var(--color-brand-pink) 12%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-brand-pink) 12%,
+    var(--bg-surface)
+  );
 }
 
 .fieldRadioLabel.is-checked .fieldOptionIndicator::after,
@@ -362,5 +670,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }

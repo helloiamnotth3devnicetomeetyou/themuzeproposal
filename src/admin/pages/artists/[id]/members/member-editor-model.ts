@@ -1,6 +1,9 @@
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { WorkbenchTab } from "@/admin/components/content/ContentWorkbench";
-import { normalizeSocialLinks, type SocialLink } from "@/admin/components/content/SocialLinksField";
+import {
+  normalizeSocialLinks,
+  type SocialLink,
+} from "@/admin/components/content/SocialLinksField";
 
 export type Member = {
   id: string;
@@ -70,11 +73,12 @@ export const memberTabs: WorkbenchTab<MemberTab>[] = [
   { id: "gallery", label: "갤러리" },
 ];
 
-export const toMemberSlug = (value: string) => value
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "");
+export const toMemberSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 export const memberToDraft = (member: Member): MemberDraft => ({
   id: member.id,

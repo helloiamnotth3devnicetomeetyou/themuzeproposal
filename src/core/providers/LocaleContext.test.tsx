@@ -8,7 +8,9 @@ function Consumer() {
     <>
       <p data-testid="copy">{locale === "ko" ? "가나다" : "ABC"}</p>
       <p data-testid="unchanged">same</p>
-      <button type="button" onClick={() => setLocale("en")}>switch</button>
+      <button type="button" onClick={() => setLocale("en")}>
+        switch
+      </button>
     </>
   );
 }
@@ -16,7 +18,11 @@ function Consumer() {
 describe("LocaleProvider", () => {
   it("updates translated text without replacing React-owned nodes", () => {
     vi.useFakeTimers();
-    render(<LocaleProvider initialLocale="ko"><Consumer /></LocaleProvider>);
+    render(
+      <LocaleProvider initialLocale="ko">
+        <Consumer />
+      </LocaleProvider>,
+    );
     fireEvent.click(screen.getByText("switch"));
     vi.advanceTimersByTime(0);
 

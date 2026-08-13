@@ -6,7 +6,10 @@ import { clientIp } from "@/core/http/client-ip";
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const VERIFY_TIMEOUT_MS = 5_000;
 
-export async function verifyTurnstileToken(token: string, request: NextRequest): Promise<boolean> {
+export async function verifyTurnstileToken(
+  token: string,
+  request: NextRequest,
+): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secret || !token) return false;
 
@@ -24,7 +27,9 @@ export async function verifyTurnstileToken(token: string, request: NextRequest):
       signal: controller.signal,
     });
     if (!response.ok) return false;
-    const result = await response.json().catch(() => null) as { success?: boolean } | null;
+    const result = (await response.json().catch(() => null)) as {
+      success?: boolean;
+    } | null;
     return result?.success === true;
   } catch {
     return false;

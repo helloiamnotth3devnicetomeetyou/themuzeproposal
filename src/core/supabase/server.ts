@@ -4,7 +4,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
 
-const { url: supabaseUrl, anonKey: supabaseAnonKey } = getPublicSupabaseConfig();
+const { url: supabaseUrl, anonKey: supabaseAnonKey } =
+  getPublicSupabaseConfig();
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();

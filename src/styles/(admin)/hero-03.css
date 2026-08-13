@@ -1,8 +1,12 @@
-
 .hero-slide-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, var(--alpha-000000-28), transparent 42%, var(--alpha-000000-82));
+  background: linear-gradient(
+    180deg,
+    var(--alpha-000000-28),
+    transparent 42%,
+    var(--alpha-000000-82)
+  );
   pointer-events: none;
 }
 
@@ -26,8 +30,8 @@
 .hero-slide-position small {
   font-size: 4px;
   font-weight: 800;
-  letter-spacing: .14em;
-  opacity: .6;
+  letter-spacing: 0.14em;
+  opacity: 0.6;
 }
 
 .hero-slide-position b {
@@ -71,7 +75,7 @@
 
 .hero-slide-grab:disabled {
   cursor: not-allowed;
-  opacity: .45;
+  opacity: 0.45;
 }
 
 .hero-slide-grab svg {
@@ -151,7 +155,7 @@
   color: var(--alpha-ffffff-57);
   font-size: 5px;
   font-weight: 700;
-  letter-spacing: .05em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -159,7 +163,7 @@
   margin-top: 3px;
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  letter-spacing: -.04em;
+  letter-spacing: -0.04em;
   text-shadow: 0 1px 12px var(--alpha-000000-4);
 }
 
@@ -209,7 +213,7 @@
 
 .hero-slide-footer button:disabled {
   cursor: not-allowed;
-  opacity: .28;
+  opacity: 0.28;
 }
 
 .hero-slide-footer svg {
@@ -219,9 +223,11 @@
 
 .hero-slide-card.is-overlay {
   z-index: 1000;
-  opacity: .98;
+  opacity: 0.98;
   border-color: var(--alpha-fc6fcf-65);
-  box-shadow: 0 28px 70px var(--alpha-000000-34), 0 0 0 5px var(--alpha-fc6fcf-11);
+  box-shadow:
+    0 28px 70px var(--alpha-000000-34),
+    0 0 0 5px var(--alpha-fc6fcf-11);
   cursor: grabbing;
   transform: rotate(1.2deg) scale(1.025);
 }
@@ -367,7 +373,7 @@
     width: 42px;
     height: 42px;
   }
-  .hero-admin-row-actions button:nth-child(-n+2) {
+  .hero-admin-row-actions button:nth-child(-n + 2) {
     display: none;
   }
   .hero-admin-row-actions button:nth-child(3) {

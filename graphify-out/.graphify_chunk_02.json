@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "public_favicon_icon",
+      "label": "Site Favicon Icon",
+      "file_type": "image",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\favicon.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_favicon_muze_logo",
+      "label": "MUZE Brand Logo Mark",
+      "file_type": "image",
+      "source_file": "C:\\themuze\\themuzedemo\\codebase\\public\\favicon.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "public_favicon_icon",
+      "target": "public_favicon_muze_logo",
+      "relation": "DEPICTS",
+      "type": "EXTRACTED",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -25,12 +25,16 @@ describe("draft image asset lifecycle", () => {
   });
 
   it("deletes only abandoned tracked uploads", async () => {
-    vi.spyOn(Date, "now").mockReturnValueOnce(1_000).mockReturnValueOnce(31 * 60 * 1_000);
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(1_000)
+      .mockReturnValueOnce(31 * 60 * 1_000);
     trackDraftImageAsset(asset("artist/old.jpg"));
 
     await cleanupAbandonedDraftImageAssets(client as never);
 
-    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", ["artist/old.jpg"]);
+    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", [
+      "artist/old.jpg",
+    ]);
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
 
@@ -44,10 +48,16 @@ describe("draft image asset lifecycle", () => {
       client as never,
       [kept, unused],
       [kept.url],
-      ["https://storage.example/artist-assets/artist/old%20logo.jpg", "https://external.example/logo.jpg"],
+      [
+        "https://storage.example/artist-assets/artist/old%20logo.jpg",
+        "https://external.example/logo.jpg",
+      ],
     );
 
-    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", ["artist/unused.jpg", "artist/old logo.jpg"]);
+    expect(deleteAdminAssets).toHaveBeenCalledWith("artist-assets", [
+      "artist/unused.jpg",
+      "artist/old logo.jpg",
+    ]);
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
 });

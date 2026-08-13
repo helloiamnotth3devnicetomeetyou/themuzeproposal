@@ -40,8 +40,20 @@ describe("site-content", () => {
 
     it("parses valid history entries and sorts newest first", () => {
       const raw = [
-        { id: "e1", date: "2020. 01", event_ko: "설립", event_en: "Founded", event_ja: "設立" },
-        { id: "e2", date: "2024. 03", event_ko: "데뷔", event_en: "Debut", event_ja: "デビュー" },
+        {
+          id: "e1",
+          date: "2020. 01",
+          event_ko: "설립",
+          event_en: "Founded",
+          event_ja: "設立",
+        },
+        {
+          id: "e2",
+          date: "2024. 03",
+          event_ko: "데뷔",
+          event_en: "Debut",
+          event_ja: "デビュー",
+        },
       ];
       const result = normalizeHistory(raw);
       expect(result[0].id).toBe("e2");
@@ -49,13 +61,26 @@ describe("site-content", () => {
     });
 
     it("skips non-object items in array", () => {
-      const result = normalizeHistory([null, "invalid", 42, { id: "ok", date: "2024. 01", event_ko: "k", event_en: "e", event_ja: "j" }]);
+      const result = normalizeHistory([
+        null,
+        "invalid",
+        42,
+        {
+          id: "ok",
+          date: "2024. 01",
+          event_ko: "k",
+          event_en: "e",
+          event_ja: "j",
+        },
+      ]);
       expect(result.length).toBe(1);
       expect(result[0].id).toBe("ok");
     });
 
     it("generates fallback id when id is missing", () => {
-      const result = normalizeHistory([{ date: "2024. 01", event_ko: "k", event_en: "e", event_ja: "j" }]);
+      const result = normalizeHistory([
+        { date: "2024. 01", event_ko: "k", event_en: "e", event_ja: "j" },
+      ]);
       expect(result[0].id).toBe("history-0");
     });
   });

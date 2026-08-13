@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AuthUserError, signIn, signInWithGoogle, signUp } from "@/core/auth/auth";
+import {
+  AuthUserError,
+  signIn,
+  signInWithGoogle,
+  signUp,
+} from "@/core/auth/auth";
 import { SLIDES } from "./constants";
 import { localT, type LocaleKey, type LoginTranslations } from "./locales";
 
@@ -15,7 +20,10 @@ function loginErrorMessage(error: unknown, t: LoginTranslations) {
     case "INVALID_CREDENTIALS":
       return t.invalidCredentials;
     case "RATE_LIMITED": {
-      const minutes = Math.max(1, Math.ceil((error.retryAfterSeconds ?? 15 * 60) / 60));
+      const minutes = Math.max(
+        1,
+        Math.ceil((error.retryAfterSeconds ?? 15 * 60) / 60),
+      );
       return t.rateLimited.replace("{minutes}", String(minutes));
     }
     case "SERVICE_UNAVAILABLE":
@@ -74,7 +82,8 @@ export function useLoginForm({
   const [loading, setLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [turnstileToken, setTurnstileTokenState] = useState("");
-  const setTurnstileToken = (v: string | null) => setTurnstileTokenState(v ?? "");
+  const setTurnstileToken = (v: string | null) =>
+    setTurnstileTokenState(v ?? "");
 
   // Autoplay slideshow
   useEffect(() => {
@@ -202,7 +211,10 @@ export function useLoginForm({
     setName,
     setTurnstileToken,
     switchMode,
-    previousSignupStep: () => { setSignupStep(1); setError(""); },
+    previousSignupStep: () => {
+      setSignupStep(1);
+      setError("");
+    },
     handleLogin,
     handleSignup,
     handleGoogleLogin,

@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Login Rate Limiting", () => {
-  test("returns 429 when rate limit is exceeded via API", async ({ request }) => {
+  test("returns 429 when rate limit is exceeded via API", async ({
+    request,
+  }) => {
     const email = `ratelimit-test-${Date.now()}@example.com`;
     const password = "WrongPassword123!";
 
@@ -10,7 +12,7 @@ test.describe("Login Rate Limiting", () => {
     for (let i = 0; i < 10; i++) {
       lastResponse = await request.post("/api/auth/login", {
         headers: {
-          "Origin": "http://localhost:3000",
+          Origin: "http://localhost:3000",
         },
         data: {
           email,

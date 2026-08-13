@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { Check, Search } from "lucide-react";
 
 type NoticeCategoryInputProps = {
@@ -9,19 +16,28 @@ type NoticeCategoryInputProps = {
   onChange: (value: string) => void;
 };
 
-export default function NoticeCategoryInput({ value, options, onChange }: NoticeCategoryInputProps) {
+export default function NoticeCategoryInput({
+  value,
+  options,
+  onChange,
+}: NoticeCategoryInputProps) {
   const id = useId().replace(/:/g, "");
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const query = value.trim().toLocaleLowerCase("ko");
   const suggestions = useMemo(
-    () => options
-      .filter((option) => !query || option.toLocaleLowerCase("ko").includes(query))
-      .slice(0, 8),
+    () =>
+      options
+        .filter(
+          (option) => !query || option.toLocaleLowerCase("ko").includes(query),
+        )
+        .slice(0, 8),
     [options, query],
   );
-  const exactMatch = options.some((option) => option.toLocaleLowerCase("ko") === query);
+  const exactMatch = options.some(
+    (option) => option.toLocaleLowerCase("ko") === query,
+  );
   const showPanel = open && (suggestions.length > 0 || Boolean(value.trim()));
 
   useEffect(() => {
@@ -33,7 +49,8 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
       }
     };
     document.addEventListener("pointerdown", closeOnOutsideClick);
-    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
   }, [open]);
 
   const choose = (category: string) => {
@@ -46,7 +63,9 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setOpen(true);
-      setActiveIndex((current) => Math.min(current + 1, suggestions.length - 1));
+      setActiveIndex((current) =>
+        Math.min(current + 1, suggestions.length - 1),
+      );
       return;
     }
     if (event.key === "ArrowUp") {
@@ -92,13 +111,22 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
         aria-autocomplete="list"
         aria-expanded={showPanel}
         aria-controls={`${id}-suggestions`}
-        aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
+        aria-activedescendant={
+          activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined
+        }
         autoComplete="off"
       />
 
       {showPanel && (
-        <div id={`${id}-suggestions`} className="notice-category-suggestions" role="listbox" aria-label="분류 제안">
-          <span className="notice-category-suggestions-label">{query ? "검색 결과" : "분류 제안"}</span>
+        <div
+          id={`${id}-suggestions`}
+          className="notice-category-suggestions"
+          role="listbox"
+          aria-label="분류 제안"
+        >
+          <span className="notice-category-suggestions-label">
+            {query ? "검색 결과" : "분류 제안"}
+          </span>
           {suggestions.map((category, index) => (
             <button
               id={`${id}-option-${index}`}
@@ -118,7 +146,9 @@ export default function NoticeCategoryInput({ value, options, onChange }: Notice
           {!exactMatch && value.trim() && (
             <div className="notice-category-new-hint">
               <b>NEW</b>
-              <span><strong>{value.trim()}</strong> 그대로 새 분류로 저장됩니다.</span>
+              <span>
+                <strong>{value.trim()}</strong> 그대로 새 분류로 저장됩니다.
+              </span>
             </div>
           )}
         </div>

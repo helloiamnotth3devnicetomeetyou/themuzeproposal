@@ -46,14 +46,29 @@ export default function MemberEditorSections({
             <h3>멤버 기본 정보</h3>
             <span>프로필과 멤버 목록에서 사용하는 이름과 역할입니다.</span>
           </div>
-          <FormField activeLang={language} label="멤버 이름" valueKo={draft.name} valueEn={draft.engName} valueJa={draft.jaName} onChangeKo={(value) => patchDraft({ name: value })} onChangeEn={(value) => patchDraft({ engName: value })} onChangeJa={(value) => patchDraft({ jaName: value })} required />
+          <FormField
+            activeLang={language}
+            label="멤버 이름"
+            valueKo={draft.name}
+            valueEn={draft.engName}
+            valueJa={draft.jaName}
+            onChangeKo={(value) => patchDraft({ name: value })}
+            onChangeEn={(value) => patchDraft({ engName: value })}
+            onChangeJa={(value) => patchDraft({ jaName: value })}
+            required
+          />
           <label className="music-field content-field-short">
             <span>공개 경로</span>
-            <input className="admin-input" value={`/${toMemberSlug(draft.engName) || "english-name"}`} readOnly />
+            <input
+              className="admin-input"
+              value={`/${toMemberSlug(draft.engName) || "english-name"}`}
+              readOnly
+            />
             <small>영문명을 기준으로 자동 생성됩니다.</small>
           </label>
           <div className="music-divider" />
-          <FormField activeLang={language}
+          <FormField
+            activeLang={language}
             label="역할 / 포지션"
             valueKo={draft.roleKo}
             valueEn={draft.roleEn}
@@ -86,18 +101,42 @@ export default function MemberEditorSections({
           <div className="music-field-grid two">
             <label className="music-field">
               <span>생년월일</span>
-              <input className="admin-input" value={draft.birth} onChange={(event) => patchDraft({ birth: event.target.value })} placeholder="2004. 05. 25" />
+              <input
+                className="admin-input"
+                value={draft.birth}
+                onChange={(event) => patchDraft({ birth: event.target.value })}
+                placeholder="2004. 05. 25"
+              />
             </label>
             <label className="music-field">
               <span>MBTI</span>
-              <input className="admin-input" value={draft.mbti} onChange={(event) => patchDraft({ mbti: event.target.value.toUpperCase() })} placeholder="ESFP" />
+              <input
+                className="admin-input"
+                value={draft.mbti}
+                onChange={(event) =>
+                  patchDraft({ mbti: event.target.value.toUpperCase() })
+                }
+                placeholder="ESFP"
+              />
             </label>
           </div>
           <label className="music-field content-field-short">
             <span>테마 컬러</span>
             <div className="content-color-row">
-              <input type="color" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} />
-              <input className="admin-input" value={draft.color} onChange={(event) => patchDraft({ color: event.target.value.toUpperCase() })} />
+              <input
+                type="color"
+                value={draft.color}
+                onChange={(event) =>
+                  patchDraft({ color: event.target.value.toUpperCase() })
+                }
+              />
+              <input
+                className="admin-input"
+                value={draft.color}
+                onChange={(event) =>
+                  patchDraft({ color: event.target.value.toUpperCase() })
+                }
+              />
             </div>
           </label>
         </>
@@ -109,7 +148,8 @@ export default function MemberEditorSections({
             <h3>멤버 소개</h3>
             <span>멤버 페이지에서 보여줄 소개를 언어별로 입력합니다.</span>
           </div>
-          <FormField activeLang={language}
+          <FormField
+            activeLang={language}
             label="멤버 소개"
             type="textarea"
             valueKo={draft.bioKo}
@@ -120,10 +160,31 @@ export default function MemberEditorSections({
             onChangeJa={(value) => patchDraft({ bioJa: value })}
           />
           <div className="content-publish-summary">
-            <div><span>멤버</span><strong>{draft.name || "미입력"} / {draft.engName || "미입력"}</strong></div>
-            <div><span>역할</span><strong>{draft.roleKo || "미입력"}</strong></div>
-            <div><span>공개 경로</span><strong>{toMemberSlug(draft.engName) ? `/${toMemberSlug(draft.engName)}` : "영문명 입력 필요"}</strong></div>
-            <div><span>프로필</span><strong>{draft.birth || "생년월일 미설정"} · {draft.mbti || "MBTI 미설정"}</strong></div>
+            <div>
+              <span>멤버</span>
+              <strong>
+                {draft.name || "미입력"} / {draft.engName || "미입력"}
+              </strong>
+            </div>
+            <div>
+              <span>역할</span>
+              <strong>{draft.roleKo || "미입력"}</strong>
+            </div>
+            <div>
+              <span>공개 경로</span>
+              <strong>
+                {toMemberSlug(draft.engName)
+                  ? `/${toMemberSlug(draft.engName)}`
+                  : "영문명 입력 필요"}
+              </strong>
+            </div>
+            <div>
+              <span>프로필</span>
+              <strong>
+                {draft.birth || "생년월일 미설정"} ·{" "}
+                {draft.mbti || "MBTI 미설정"}
+              </strong>
+            </div>
           </div>
         </>
       )}
@@ -132,9 +193,15 @@ export default function MemberEditorSections({
         <>
           <div className="content-section-heading">
             <h3>멤버 공식 계정</h3>
-            <span>멤버 개인의 공식 채널과 음악 플랫폼 계정을 등록합니다. 필요한 만큼 자유롭게 추가할 수 있습니다.</span>
+            <span>
+              멤버 개인의 공식 채널과 음악 플랫폼 계정을 등록합니다. 필요한 만큼
+              자유롭게 추가할 수 있습니다.
+            </span>
           </div>
-          <SocialLinksField value={draft.socialLinks} onChange={(socialLinks) => patchDraft({ socialLinks })} />
+          <SocialLinksField
+            value={draft.socialLinks}
+            onChange={(socialLinks) => patchDraft({ socialLinks })}
+          />
         </>
       )}
 
@@ -144,7 +211,13 @@ export default function MemberEditorSections({
             <h3>멤버 갤러리</h3>
             <span>이 멤버의 이미지를 모으고, 관련 앨범을 함께 지정합니다.</span>
           </div>
-          <GalleryManager artistId={artistId || null} scope="member" memberId={draft.id} onError={onError} onToast={onToast} />
+          <GalleryManager
+            artistId={artistId || null}
+            scope="member"
+            memberId={draft.id}
+            onError={onError}
+            onToast={onToast}
+          />
         </>
       )}
     </div>

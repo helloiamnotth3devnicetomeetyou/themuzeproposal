@@ -4,11 +4,11 @@
 
 제품은 하나의 공통 토큰 위에 세 가지 밀도를 가진다.
 
-| 모드 | 화면 | 특징 |
-| --- | --- | --- |
-| Cinematic | 홈, artist scene, discography | 검정 전시장, 이미지·앨범 중심, 큰 제목, 적은 chrome |
-| Editorial | about, notice, account, protect, contact | 강한 타이포 계층, hairline, 읽기 폭 제한 |
-| Control | admin | 높은 정보 밀도, rail/workbench, 명시적 상태와 저장 동작 |
+| 모드      | 화면                                     | 특징                                                    |
+| --------- | ---------------------------------------- | ------------------------------------------------------- |
+| Cinematic | 홈, artist scene, discography            | 검정 전시장, 이미지·앨범 중심, 큰 제목, 적은 chrome     |
+| Editorial | about, notice, account, protect, contact | 강한 타이포 계층, hairline, 읽기 폭 제한                |
+| Control   | admin                                    | 높은 정보 밀도, rail/workbench, 명시적 상태와 저장 동작 |
 
 브랜드 pink는 배경 장식이 아니라 primary action, focus, active, selection 신호다. 앨범/아티스트 색상은 ambient/progress 같은 콘텐츠 맥락에만 쓰고 success/error 의미를 대체하지 않는다.
 
@@ -26,16 +26,16 @@
 
 핵심 runtime 값:
 
-| 역할 | 값/변수 |
-| --- | --- |
-| Brand pink | `--color-brand-pink`, `#FC6FCF` |
-| Dark canvas/surface/elevated | `#0A0A0A` / `#121212` / `#1A1A1A` |
-| Light canvas/surface/elevated | `#F7F8FA` / `#F0F2F5` / `#FFFFFF` |
-| Page gutter | `clamp(20px, 4vw, 68px)`; mobile 18–24px |
-| Header | 64px, hero 72px |
-| Admin mobile bar | 56px |
-| Breakpoints | 30rem, 48rem, 64rem, 80rem |
-| Motion | fast 150ms, base 200ms, slow 300ms |
+| 역할                          | 값/변수                                  |
+| ----------------------------- | ---------------------------------------- |
+| Brand pink                    | `--color-brand-pink`, `#FC6FCF`          |
+| Dark canvas/surface/elevated  | `#0A0A0A` / `#121212` / `#1A1A1A`        |
+| Light canvas/surface/elevated | `#F7F8FA` / `#F0F2F5` / `#FFFFFF`        |
+| Page gutter                   | `clamp(20px, 4vw, 68px)`; mobile 18–24px |
+| Header                        | 64px, hero 72px                          |
+| Admin mobile bar              | 56px                                     |
+| Breakpoints                   | 30rem, 48rem, 64rem, 80rem               |
+| Motion                        | fast 150ms, base 200ms, slow 300ms       |
 
 ## 타이포그래피
 

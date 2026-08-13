@@ -11,10 +11,19 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/supabase/client", () => ({
-  supabase: { auth: { getUser: mocks.getUser, signUp: mocks.signUp }, from: mocks.from },
+  supabase: {
+    auth: { getUser: mocks.getUser, signUp: mocks.signUp },
+    from: mocks.from,
+  },
 }));
 
-import { AuthUserError, getUserProfile, signIn, signUp, updateUserAvatar } from "./auth";
+import {
+  AuthUserError,
+  getUserProfile,
+  signIn,
+  signUp,
+  updateUserAvatar,
+} from "./auth";
 
 describe("signIn", () => {
   afterEach(() => {
@@ -22,18 +31,22 @@ describe("signIn", () => {
   });
 
   it("preserves the server retry interval for a rate-limited login", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
-      JSON.stringify({ code: "RATE_LIMITED" }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": "125",
-        },
-      },
-    )));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ code: "RATE_LIMITED" }), {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": "125",
+          },
+        }),
+      ),
+    );
 
-    await expect(signIn("user@example.com", "password", "captcha-token")).rejects.toMatchObject({
+    await expect(
+      signIn("user@example.com", "password", "captcha-token"),
+    ).rejects.toMatchObject({
       name: "AuthUserError",
       code: "RATE_LIMITED",
       retryAfterSeconds: 125,
@@ -41,11 +54,18 @@ describe("signIn", () => {
   });
 
   it("uses the service-unavailable fallback for a malformed error response", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not-json", {
-      status: 503,
-    })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("not-json", {
+          status: 503,
+        }),
+      ),
+    );
 
-    await expect(signIn("user@example.com", "password", "captcha-token")).rejects.toMatchObject({
+    await expect(
+      signIn("user@example.com", "password", "captcha-token"),
+    ).rejects.toMatchObject({
       code: "SERVICE_UNAVAILABLE",
       retryAfterSeconds: undefined,
     });
@@ -60,9 +80,14 @@ describe("signUp", () => {
   it("does not query an account's identity provider when signup returns no identities", async () => {
     const fetch = vi.fn();
     vi.stubGlobal("fetch", fetch);
-    mocks.signUp.mockResolvedValue({ data: { user: { identities: [] } }, error: null });
+    mocks.signUp.mockResolvedValue({
+      data: { user: { identities: [] } },
+      error: null,
+    });
 
-    await expect(signUp("user@example.com", "ValidPass123!", "captcha-token")).rejects.toMatchObject({
+    await expect(
+      signUp("user@example.com", "ValidPass123!", "captcha-token"),
+    ).rejects.toMatchObject({
       code: "SIGNUP_FAILED",
     });
     expect(fetch).not.toHaveBeenCalled();
@@ -78,10 +103,15 @@ describe("updateUserAvatar", () => {
     mocks.update.mockReturnValue({ eq: mocks.eq });
     mocks.eq.mockReturnValue({ select: mocks.select });
     mocks.select.mockReturnValue({ single: mocks.single });
-    mocks.single.mockResolvedValue({ data: { avatar_asset_id: null }, error: null });
+    mocks.single.mockResolvedValue({
+      data: { avatar_asset_id: null },
+      error: null,
+    });
 
     await expect(updateUserAvatar("inactive-avatar")).resolves.toBeNull();
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ avatar_asset_id: "inactive-avatar" }));
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ avatar_asset_id: "inactive-avatar" }),
+    );
     expect(avatarChanged).toHaveBeenCalledOnce();
     window.removeEventListener("account-avatar-changed", avatarChanged);
   });
@@ -89,13 +119,21 @@ describe("updateUserAvatar", () => {
 
 describe("getUserProfile", () => {
   it("selects only the profile fields used by the application", async () => {
-    const profile = { id: "user-1", email: "user@example.com", name: "User", role: "editor", avatar_asset_id: null };
+    const profile = {
+      id: "user-1",
+      email: "user@example.com",
+      name: "User",
+      role: "editor",
+      avatar_asset_id: null,
+    };
     mocks.from.mockReturnValue({ select: mocks.select });
     mocks.select.mockReturnValue({ eq: mocks.eq });
     mocks.eq.mockReturnValue({ single: mocks.single });
     mocks.single.mockResolvedValue({ data: profile });
 
     await expect(getUserProfile("user-1")).resolves.toEqual(profile);
-    expect(mocks.select).toHaveBeenCalledWith("id,email,name,role,avatar_asset_id");
+    expect(mocks.select).toHaveBeenCalledWith(
+      "id,email,name,role,avatar_asset_id",
+    );
   });
 });

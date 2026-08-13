@@ -8,17 +8,27 @@ describe("parseFormDataWithinLimit", () => {
     const form = new FormData();
     form.set("one", "1");
     form.set("two", "2");
-    const request = new Request("https://themuze.kr/upload", { method: "POST", body: form });
+    const request = new Request("https://themuze.kr/upload", {
+      method: "POST",
+      body: form,
+    });
 
-    await expect(parseFormDataWithinLimit(request, 1024, 1000, { maxParts: 1 })).resolves.toBeNull();
+    await expect(
+      parseFormDataWithinLimit(request, 1024, 1000, { maxParts: 1 }),
+    ).resolves.toBeNull();
   });
 
   it("rejects multipart headers above the metadata budget", async () => {
     const form = new FormData();
     form.set("x".repeat(128), "value");
-    const request = new Request("https://themuze.kr/upload", { method: "POST", body: form });
+    const request = new Request("https://themuze.kr/upload", {
+      method: "POST",
+      body: form,
+    });
 
-    await expect(parseFormDataWithinLimit(request, 4096, 1000, { maxMetadataBytes: 32 })).resolves.toBeNull();
+    await expect(
+      parseFormDataWithinLimit(request, 4096, 1000, { maxMetadataBytes: 32 }),
+    ).resolves.toBeNull();
   });
 
   it("stops reading an oversized body", async () => {
@@ -34,7 +44,14 @@ describe("parseFormDataWithinLimit", () => {
     const oversized = new Request("https://themuze.kr/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('{"value":"1234567890"}')); controller.close(); } }),
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode('{"value":"1234567890"}'),
+          );
+          controller.close();
+        },
+      }),
       duplex: "half",
     } as RequestInit);
     const valid = new Request("https://themuze.kr/login", {
@@ -44,19 +61,32 @@ describe("parseFormDataWithinLimit", () => {
     });
 
     await expect(parseJsonWithinLimit(oversized, 10)).rejects.toThrow();
-    await expect(parseJsonWithinLimit(valid, 64)).resolves.toEqual({ value: "ok" });
+    await expect(parseJsonWithinLimit(valid, 64)).resolves.toEqual({
+      value: "ok",
+    });
   });
 
   it("does not let one multipart parse block another request", async () => {
     let release!: () => void;
     vi.spyOn(Response.prototype, "formData")
-      .mockImplementationOnce(() => new Promise<FormData>((resolve) => {
-        release = () => resolve(new FormData());
-      }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<FormData>((resolve) => {
+            release = () => resolve(new FormData());
+          }),
+      )
       .mockResolvedValueOnce(new FormData());
-    const first = parseFormDataWithinLimit(new Request("https://themuze.kr/upload", { method: "POST" }), 10);
+    const first = parseFormDataWithinLimit(
+      new Request("https://themuze.kr/upload", { method: "POST" }),
+      10,
+    );
 
-    await expect(parseFormDataWithinLimit(new Request("https://themuze.kr/upload", { method: "POST" }), 10)).resolves.toBeInstanceOf(FormData);
+    await expect(
+      parseFormDataWithinLimit(
+        new Request("https://themuze.kr/upload", { method: "POST" }),
+        10,
+      ),
+    ).resolves.toBeInstanceOf(FormData);
     release();
     await expect(first).resolves.toBeInstanceOf(FormData);
   });
@@ -66,16 +96,22 @@ describe("parseFormDataWithinLimit", () => {
     const request = new Request("https://themuze.kr/upload", {
       method: "POST",
       body: new ReadableStream<Uint8Array>({
-        start(controller) { controller.enqueue(new Uint8Array([1])); },
+        start(controller) {
+          controller.enqueue(new Uint8Array([1]));
+        },
         cancel,
       }),
       duplex: "half",
     } as RequestInit);
-    vi.spyOn(Response.prototype, "formData").mockImplementationOnce(async function readUntilClosed(this: Response) {
-      const reader = this.body!.getReader();
-      while (!(await reader.read()).done) { /* wait for EOF or timeout */ }
-      return new FormData();
-    });
+    vi.spyOn(Response.prototype, "formData").mockImplementationOnce(
+      async function readUntilClosed(this: Response) {
+        const reader = this.body!.getReader();
+        while (!(await reader.read()).done) {
+          /* wait for EOF or timeout */
+        }
+        return new FormData();
+      },
+    );
 
     await expect(parseFormDataWithinLimit(request, 10, 20)).resolves.toBeNull();
     expect(cancel).toHaveBeenCalledOnce();

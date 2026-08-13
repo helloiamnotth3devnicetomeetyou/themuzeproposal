@@ -12,19 +12,27 @@ const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
 }));
 
-vi.mock("@/core/config/public-env", () => ({ getPublicSupabaseConfig: mocks.getConfig }));
+vi.mock("@/core/config/public-env", () => ({
+  getPublicSupabaseConfig: mocks.getConfig,
+}));
 vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createClient }));
 vi.mock("@/core/supabase/service", () => ({
   createServiceRoleClient: mocks.createServiceClient,
 }));
-vi.mock("@supabase/ssr", () => ({ createServerClient: mocks.createServerClient }));
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: mocks.createServerClient,
+}));
 
 import { POST } from "./verify-password-route";
 
 const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
   new NextRequest("http://localhost/api/auth/verify-password", {
     method: "POST",
-    headers: { "content-type": "application/json", origin: "http://localhost", ...headers },
+    headers: {
+      "content-type": "application/json",
+      origin: "http://localhost",
+      ...headers,
+    },
     body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
   });
 
@@ -32,11 +40,23 @@ describe("POST /api/auth/verify-password", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
-    mocks.getConfig.mockReturnValue({ url: "https://project.supabase.co", anonKey: "anon" });
+    mocks.getConfig.mockReturnValue({
+      url: "https://project.supabase.co",
+      anonKey: "anon",
+    });
 
     // Session client: returns authenticated user
     mocks.createServerClient.mockReturnValue({
-      auth: { getUser: mocks.getUser.mockResolvedValue({ data: { user: { email: "user@example.com", identities: [{ provider: "email" }] } } }) },
+      auth: {
+        getUser: mocks.getUser.mockResolvedValue({
+          data: {
+            user: {
+              email: "user@example.com",
+              identities: [{ provider: "email" }],
+            },
+          },
+        }),
+      },
     });
 
     mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
@@ -55,7 +75,12 @@ describe("POST /api/auth/verify-password", () => {
   });
 
   it("rejects cross-origin requests before reading the session", async () => {
-    const response = await POST(request({ password: "somepassword" }, { origin: "https://attacker.example" }));
+    const response = await POST(
+      request(
+        { password: "somepassword" },
+        { origin: "https://attacker.example" },
+      ),
+    );
     expect(response.status).toBe(400);
     expect(mocks.createServerClient).not.toHaveBeenCalled();
   });
@@ -70,13 +95,20 @@ describe("POST /api/auth/verify-password", () => {
 
   it("rejects password checks for Google-only accounts", async () => {
     mocks.getUser.mockResolvedValueOnce({
-      data: { user: { email: "user@example.com", identities: [{ provider: "google" }] } },
+      data: {
+        user: {
+          email: "user@example.com",
+          identities: [{ provider: "google" }],
+        },
+      },
     });
 
     const response = await POST(request({ password: "somepassword" }));
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ code: "PASSWORD_UNAVAILABLE" });
+    await expect(response.json()).resolves.toEqual({
+      code: "PASSWORD_UNAVAILABLE",
+    });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
@@ -92,13 +124,18 @@ describe("POST /api/auth/verify-password", () => {
   });
 
   it("returns INVALID_CREDENTIALS when Supabase rejects the password", async () => {
-    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{ is_allowed: true }],
+      error: null,
+    });
     mocks.signInWithPassword.mockResolvedValueOnce({
       error: { code: "invalid_credentials", status: 400 },
     });
     const response = await POST(request({ password: "wrongpassword" }));
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ code: "INVALID_CREDENTIALS" });
+    await expect(response.json()).resolves.toEqual({
+      code: "INVALID_CREDENTIALS",
+    });
   });
 
   it("returns 200 with no Set-Cookie header on success", async () => {
@@ -131,7 +168,10 @@ describe("POST /api/auth/verify-password", () => {
   });
 
   it("returns CAPTCHA_FAILED without leaking it as an invalid-credentials error", async () => {
-    mocks.rpc.mockResolvedValueOnce({ data: [{ is_allowed: true }], error: null });
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{ is_allowed: true }],
+      error: null,
+    });
     mocks.signInWithPassword.mockResolvedValueOnce({
       error: { code: "captcha_failed", status: 400 },
     });

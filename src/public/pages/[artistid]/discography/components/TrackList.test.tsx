@@ -102,8 +102,13 @@ describe("TrackList", () => {
         onPlayTrack={vi.fn()}
       />,
     );
-    const spotifyLink = screen.getByRole("link", { name: /superstar spotify/i });
-    expect(spotifyLink).toHaveAttribute("href", "https://open.spotify.com/track/abc");
+    const spotifyLink = screen.getByRole("link", {
+      name: /superstar spotify/i,
+    });
+    expect(spotifyLink).toHaveAttribute(
+      "href",
+      "https://open.spotify.com/track/abc",
+    );
   });
 
   it("shows MV link only when videoUrl is present", () => {
@@ -116,7 +121,9 @@ describe("TrackList", () => {
         onPlayTrack={vi.fn()}
       />,
     );
-    expect(screen.getByRole("link", { name: /superstar 뮤직비디오/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /superstar 뮤직비디오/i }),
+    ).toBeInTheDocument();
   });
 
   it("does not show spotify/MV links for tracks without URLs", () => {
@@ -130,7 +137,9 @@ describe("TrackList", () => {
       />,
     );
     expect(screen.queryByRole("link", { name: /runway spotify/i })).toBeNull();
-    expect(screen.queryByRole("link", { name: /runway 뮤직비디오/i })).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: /runway 뮤직비디오/i }),
+    ).toBeNull();
   });
 
   it("shows playing animation bars when track is active and playing", () => {
