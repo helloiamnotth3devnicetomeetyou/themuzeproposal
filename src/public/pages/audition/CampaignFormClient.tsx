@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, CircleAlert, Send, Trash2, Upload } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
+import TurnstileWidget, {
+  type TurnstileWidgetHandle,
+} from "@/core/components/form/TurnstileWidget";
 import {
   auditionTextareaRows,
   fieldLabel,
@@ -75,6 +78,8 @@ export default function CampaignFormClient({
   const [submitting, setSubmitting] = useState(false);
   const [savedId, setSavedId] = useState("");
   const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const setValue = (key: string, value: string | string[]) =>
     setValues((current) => ({ ...current, [key]: value }));
   const existingFile = (field: AuditionFormField) => {
@@ -127,10 +132,15 @@ export default function CampaignFormClient({
     setReviewing(true);
   };
   const submit = async () => {
+    if (!turnstileToken) {
+      setError(m.captchaRequired);
+      return;
+    }
     setSubmitting(true);
     setError("");
     const formData = new FormData();
     formData.set("campaignId", campaign.id);
+    formData.set("turnstileToken", turnstileToken);
     if (initialSubmission) formData.set("submissionId", initialSubmission.id);
     for (const field of fields) {
       const key = `answers[${field.field_key}]`;
@@ -158,6 +168,8 @@ export default function CampaignFormClient({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : m.submitFailed);
       setReviewing(false);
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -199,13 +211,23 @@ export default function CampaignFormClient({
             );
           })}
         </dl>
+        <div className={protectStyles.formRow}>
+          <TurnstileWidget
+            ref={turnstileRef}
+            onToken={(token) => {
+              setTurnstileToken(token ?? "");
+              if (token) setError("");
+            }}
+            action="audition_submission"
+          />
+        </div>
         <div className={styles.formActions}>
           <button type="button" onClick={() => setReviewing(false)}>
             {m.revise}
           </button>
           <button
             type="button"
-            disabled={submitting}
+            disabled={submitting || !turnstileToken}
             onClick={() => void submit()}
           >
             <Send aria-hidden="true" />

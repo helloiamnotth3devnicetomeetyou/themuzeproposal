@@ -15,6 +15,7 @@ import {
 } from "@/core/http/submission-rate-limit";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
+import { verifyTurnstileToken } from "@/core/http/turnstile";
 import {
   extensionMatches,
   validateFileSignature,
@@ -104,6 +105,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return errorResponse("INVALID_REQUEST", 400);
   }
+
+  const turnstileToken =
+    typeof formData.get("turnstileToken") === "string"
+      ? String(formData.get("turnstileToken")).trim()
+      : "";
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
   const campaignId =
     typeof formData.get("campaignId") === "string"

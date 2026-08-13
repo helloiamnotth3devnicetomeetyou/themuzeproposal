@@ -9,11 +9,15 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   upload: vi.fn(),
   remove: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
   existing: null as Record<string, unknown> | null,
 }));
 vi.mock("@/core/http/submission-rate-limit", () => ({
   consumeSubmissionRateLimit: mocks.consumeRateLimit,
   consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
+}));
+vi.mock("@/core/http/turnstile", () => ({
+  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 vi.mock("@/core/uploads/service-storage", () => ({
   createServiceRoleClient: () => service,
@@ -172,6 +176,7 @@ function request(part = "보컬") {
   form.set("answers[email]", "applicant@example.com");
   form.set("answers[part]", part);
   form.set("answers[privacy]", "true");
+  form.set("turnstileToken", "test-turnstile-token");
   return new NextRequest("http://localhost/api/audition/submit", {
     method: "POST",
     headers: { origin: "http://localhost" },
@@ -218,6 +223,15 @@ describe("POST /api/audition/submit", () => {
     mocks.existing = null;
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
+    mocks.verifyTurnstileToken.mockResolvedValue(true);
+  });
+
+  it("rejects a submission with a missing or invalid captcha token before touching the database", async () => {
+    mocks.verifyTurnstileToken.mockResolvedValueOnce(false);
+    const response = await POST(request());
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("builds the snapshot server-side and ties the service-role write to the signed-in user", async () => {
