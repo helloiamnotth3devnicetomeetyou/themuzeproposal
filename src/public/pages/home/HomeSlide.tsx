@@ -94,6 +94,7 @@ export default function HomeSlide({
             }}
             className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
             src={slide.videoUrl}
+            poster={slide.imageUrl || undefined}
             data-slide-index={index}
             data-start-time={videoStartTime(slide.videoUrl)}
             muted
