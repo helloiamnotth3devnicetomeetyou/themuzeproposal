@@ -88,15 +88,17 @@ export function AlbumDetails({
             )}
           </h2>
           <div className="flex gap-2 shrink-0">
-            <a
-              href={album.links?.spotify || "#"}
-              target="_blank"
-              aria-label={`${album.title} on Spotify`}
-              rel="noreferrer"
-              className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[rgba(255,255,255,0.6)] hover:text-[#1DB954] hover:border-[#1DB954] transition-all duration-300"
-            >
-              <SiSpotify className="w-4 h-4" />
-            </a>
+            {album.links?.spotify && (
+              <a
+                href={album.links.spotify}
+                target="_blank"
+                aria-label={`${album.title} on Spotify`}
+                rel="noreferrer"
+                className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[rgba(255,255,255,0.6)] hover:text-[#1DB954] hover:border-[#1DB954] transition-all duration-300"
+              >
+                <SiSpotify className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
         <p className="text-xs text-[rgba(255,255,255,0.35)] mt-1 font-mono">
