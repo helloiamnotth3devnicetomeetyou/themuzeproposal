@@ -89,6 +89,9 @@ export default function HomeSlide({
         slide.videoUrl &&
         !failedVideoSlideIds.has(slide.id) && (
           <video
+            ref={(video) => {
+              if (video) video.defaultMuted = video.muted = true;
+            }}
             className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
             src={slide.videoUrl}
             data-slide-index={index}
