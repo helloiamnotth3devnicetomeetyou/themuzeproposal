@@ -29,6 +29,17 @@ describe("GET /api/admin/page-stats", () => {
     vi.clearAllMocks();
   });
 
+  it.each(["__proto__", "constructor", "toString"])(
+    "rejects inherited range %s",
+    async (range) => {
+      const response = await GET(
+        new Request(`https://themuze.kr/api/admin/page-stats?range=${range}`),
+      );
+
+      expect(response.status).toBe(400);
+    },
+  );
+
   it("선택 기간의 추이와 주요 유입 차원을 함께 반환한다", async () => {
     const dataByDimension: Record<string, unknown[]> = {
       week: [

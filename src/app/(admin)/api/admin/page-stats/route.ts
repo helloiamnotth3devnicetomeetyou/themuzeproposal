@@ -88,7 +88,7 @@ const parseBreakdown = (rows: unknown[], dimension: string) =>
 export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
-  if (!requestedRange || !(requestedRange in ranges))
+  if (!Object.hasOwn(ranges, requestedRange))
     return jsonNoStore({ error: "invalid range" }, { status: 400 });
   const range = requestedRange as Range;
   const summaryOnly = searchParams.get("summary") === "1";
