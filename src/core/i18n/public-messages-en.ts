@@ -62,6 +62,8 @@ export const enPublicMessages: PublicMessages = {
     processingStatus: "Status",
     receivedStatus: "Received",
     viewReports: "View my reports",
+    draftRestored:
+      "Your draft was restored. For security, please select attachments again.",
     reportTypes: [
       { value: "defamation", label: "Defamation or false information" },
       { value: "harassment", label: "Harassment or abusive comments" },

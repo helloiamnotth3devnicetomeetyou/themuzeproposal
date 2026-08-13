@@ -61,6 +61,8 @@ export const jaPublicMessages: PublicMessages = {
     processingStatus: "処理状況",
     receivedStatus: "受付完了",
     viewReports: "通報履歴を見る",
+    draftRestored:
+      "入力途中の内容を復元しました。添付ファイルは安全のため、もう一度選択してください。",
     reportTypes: [
       { value: "defamation", label: "名誉毀損・虚偽情報" },
       { value: "harassment", label: "悪質なコメント・誹謗中傷" },

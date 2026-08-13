@@ -1,11 +1,17 @@
 "use client";
 
 import {
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
 } from "react";
+import {
+  readSessionDraft,
+  removeSessionDraft,
+  writeSessionDraft,
+} from "@/core/browser/session-draft";
 import { useLocale } from "@/core/providers/LocaleContext";
 import {
   ALLOWED_EXTENSIONS,
@@ -21,6 +27,13 @@ import {
   type FormValues,
 } from "./contact-model";
 
+const DRAFT_STORAGE_KEY = "themuze:contact-draft";
+type SavedDraft = {
+  category: ContactCategory;
+  shared: { name: string; phone: string; email: string };
+  drafts: Record<ContactCategory, CategoryDraft>;
+};
+
 export function useContactForm({
   initialName,
   initialEmail,
@@ -34,15 +47,26 @@ export function useContactForm({
 }) {
   const { locale } = useLocale();
   const messages = contactCopy[locale];
-  const [category, setCategory] = useState<ContactCategory>("general");
+  const [savedDraft] = useState(() =>
+    readSessionDraft<SavedDraft>(DRAFT_STORAGE_KEY),
+  );
+  const hasSavedDraft =
+    savedDraft &&
+    (savedDraft.category === "general" || savedDraft.category === "business") &&
+    savedDraft.shared &&
+    savedDraft.drafts?.general &&
+    savedDraft.drafts?.business;
+  const [category, setCategory] = useState<ContactCategory>(
+    hasSavedDraft ? savedDraft.category : "general",
+  );
   const [shared, setShared] = useState({
-    name: initialName,
-    phone: "",
-    email: initialEmail,
+    name: hasSavedDraft ? savedDraft.shared.name : initialName,
+    phone: hasSavedDraft ? savedDraft.shared.phone : "",
+    email: hasSavedDraft ? savedDraft.shared.email : initialEmail,
   });
   const [drafts, setDrafts] = useState<Record<ContactCategory, CategoryDraft>>({
-    general: emptyCategoryDraft,
-    business: emptyCategoryDraft,
+    general: hasSavedDraft ? savedDraft.drafts.general : emptyCategoryDraft,
+    business: hasSavedDraft ? savedDraft.drafts.business : emptyCategoryDraft,
   });
   const [attachments, setAttachments] = useState<
     Record<ContactCategory, File | null>
@@ -78,6 +102,17 @@ export function useContactForm({
             ],
     }),
   );
+
+  useEffect(() => {
+    const hasDraft =
+      shared.name !== initialName ||
+      shared.phone ||
+      shared.email !== initialEmail ||
+      Object.values(drafts).some((draft) => Object.values(draft).some(Boolean));
+    if (hasDraft)
+      writeSessionDraft(DRAFT_STORAGE_KEY, { category, shared, drafts });
+    else removeSessionDraft(DRAFT_STORAGE_KEY);
+  }, [category, drafts, initialEmail, initialName, shared]);
 
   const clearFieldError = (_message?: string) => {
     void _message;
@@ -237,6 +272,7 @@ export function useContactForm({
       if (!response.ok || !result.id)
         throw new Error(result.code || "SUBMISSION_FAILED");
       if (typeof result.remaining === "number") setRemaining(result.remaining);
+      removeSessionDraft(DRAFT_STORAGE_KEY);
       setSubmittedId(result.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
@@ -256,6 +292,7 @@ export function useContactForm({
     }
   };
   const resetForm = () => {
+    removeSessionDraft(DRAFT_STORAGE_KEY);
     setSubmittedId("");
     setShared({ name: initialName, phone: "", email: initialEmail });
     setDrafts({ general: emptyCategoryDraft, business: emptyCategoryDraft });
@@ -268,6 +305,7 @@ export function useContactForm({
   return {
     locale,
     messages,
+    draftRestored: Boolean(hasSavedDraft),
     category,
     setCategory,
     form,

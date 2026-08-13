@@ -94,6 +94,8 @@ export const contactCopy = {
     closeErrorLabel: "오류 메시지 닫기",
     submitNote:
       "남겨주신 이메일로 순차적으로 답변드리고 있으며, 문의량에 따라 답변이 지연될 수 있는 점 양해 부탁드립니다.",
+    draftRestored:
+      "작성 중이던 내용을 복원했습니다. 첨부 파일은 보안을 위해 다시 선택해 주세요.",
     pressKit: {
       title: "프레스킷 다운로드",
       desc: "협업 검토에 필요한 공식 자료를 내려받을 수 있습니다.",
@@ -196,6 +198,8 @@ export const contactCopy = {
     closeErrorLabel: "Close error message",
     submitNote:
       "We reply to inquiries in the order received; responses may be delayed depending on volume.",
+    draftRestored:
+      "Your draft was restored. For security, please select attachments again.",
     pressKit: {
       title: "Download press kit",
       desc: "Download official materials for reviewing this proposal.",
@@ -301,6 +305,8 @@ export const contactCopy = {
     closeErrorLabel: "エラーメッセージを閉じる",
     submitNote:
       "お問い合わせは受付順にご返信しております。件数によりご返信が遅れる場合がございます。",
+    draftRestored:
+      "入力途中の内容を復元しました。添付ファイルは安全のため、もう一度選択してください。",
     pressKit: {
       title: "プレスキットのダウンロード",
       desc: "ご検討に必要な公式資料をダウンロードいただけます。",

@@ -11,6 +11,11 @@ import {
   type SetStateAction,
 } from "react";
 import { useRouter } from "next/navigation";
+import {
+  readSessionDraft,
+  removeSessionDraft,
+  writeSessionDraft,
+} from "@/core/browser/session-draft";
 import { useLocale } from "@/core/providers/LocaleContext";
 import type { TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import type { Artist, MyReport } from "../ProtectClient";
@@ -19,6 +24,7 @@ import styles from "@/styles/(public)/pages/protect.module.css";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const HOLD_DURATION_MS = 1500;
+const DRAFT_STORAGE_KEY = "themuze:protect-report-draft";
 const ACCEPTED_FILE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -49,8 +55,15 @@ type Props = {
   error: string;
 };
 
+type SavedDraft = {
+  owner: string;
+  form: ReportFormValues;
+  confirmed: boolean;
+};
+
 export default function ReportForm({
   artists,
+  userEmail,
   setMyReports,
   setSubmittedId,
   setRemaining,
@@ -59,13 +72,24 @@ export default function ReportForm({
 }: Props) {
   const { t } = useLocale();
   const router = useRouter();
-  const [form, setForm] = useState<ReportFormValues>(initialForm);
+  const [savedDraft] = useState(() =>
+    readSessionDraft<SavedDraft>(DRAFT_STORAGE_KEY),
+  );
+  const hasSavedDraft =
+    savedDraft?.owner === userEmail &&
+    savedDraft.form &&
+    typeof savedDraft.confirmed === "boolean";
+  const [form, setForm] = useState<ReportFormValues>(
+    hasSavedDraft ? savedDraft.form : initialForm,
+  );
   const [fileSlots, setFileSlots] = useState<Array<File | null>>([
     null,
     null,
     null,
   ]);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(
+    hasSavedDraft ? savedDraft.confirmed : false,
+  );
   const [holdingSubmit, setHoldingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
@@ -81,16 +105,24 @@ export default function ReportForm({
     [fileSlots],
   );
 
-  useEffect(
-    () => {
-      mounted.current = true;
-      return () => {
-        mounted.current = false;
-        if (holdTimer.current) window.clearTimeout(holdTimer.current);
-      };
-    },
-    [],
-  );
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!userEmail) return;
+    if (Object.values(form).some(Boolean) || confirmed)
+      writeSessionDraft(DRAFT_STORAGE_KEY, {
+        owner: userEmail,
+        form,
+        confirmed,
+      });
+    else removeSessionDraft(DRAFT_STORAGE_KEY);
+  }, [confirmed, form, userEmail]);
 
   const clearValidation = () => {
     if (error) setError("");
@@ -313,6 +345,7 @@ export default function ReportForm({
         ...current,
       ]);
       setSubmittedId(reportId);
+      removeSessionDraft(DRAFT_STORAGE_KEY);
       setForm(initialForm);
       setFileSlots([null, null, null]);
       setConfirmed(false);
@@ -346,6 +379,7 @@ export default function ReportForm({
 
   return (
     <form ref={formRef} className={styles.form} onSubmit={submitReport}>
+      {hasSavedDraft && <p role="status">{t.protect.draftRestored}</p>}
       <ReportFormFields
         artists={artists}
         form={form}

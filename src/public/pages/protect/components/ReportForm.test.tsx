@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -102,6 +108,7 @@ const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
 describe("ReportForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     vi.stubGlobal("fetch", mocks.fetch);
     mocks.fetch.mockResolvedValue(
       new Response(
@@ -142,6 +149,33 @@ describe("ReportForm", () => {
         getLocalDateInputValue(new Date()),
       ),
     );
+  });
+
+  it("restores text fields but not evidence files from the session draft", () => {
+    sessionStorage.setItem(
+      "themuze:protect-report-draft",
+      JSON.stringify({
+        owner: "user@example.com",
+        form: {
+          artistId: "artist-1",
+          reportType: "defamation",
+          title: "Saved title",
+          content: "Saved details",
+          platform: "instagram",
+          postUrl: "https://example.com/post",
+          postedAt: "2026-01-01",
+          authorName: "Author",
+          postIp: "",
+        },
+        confirmed: true,
+      }),
+    );
+
+    renderForm();
+
+    expect(document.getElementById("title")).toHaveValue("Saved title");
+    expect(document.getElementById("evidenceFiles")).toHaveValue("");
+    expect(screen.getByRole("status")).toHaveTextContent("attachments again");
   });
 
   it("submits the report and evidence through the server route", async () => {

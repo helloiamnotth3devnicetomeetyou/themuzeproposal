@@ -60,6 +60,8 @@ export const koPublicMessages: PublicMessages = {
     processingStatus: "처리 상태",
     receivedStatus: "접수 완료",
     viewReports: "내 신고 보기",
+    draftRestored:
+      "작성 중이던 내용을 복원했습니다. 첨부 파일은 보안을 위해 다시 선택해 주세요.",
     reportTypes: [
       { value: "defamation", label: "명예훼손·허위사실" },
       { value: "harassment", label: "악성 댓글·비방" },

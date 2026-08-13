@@ -36,6 +36,7 @@ export default function ContactClient({
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const {
     messages,
+    draftRestored,
     form,
     setForm,
     attachment,
@@ -198,6 +199,7 @@ export default function ContactClient({
             onSubmit={submitInquiry}
             noValidate
           >
+            {draftRestored && <p role="status">{messages.draftRestored}</p>}
             <div className={styles.formRow} id="contact-inquiry-type">
               <label>
                 {isBusiness ? messages.proposalType : messages.inquiryType}{" "}

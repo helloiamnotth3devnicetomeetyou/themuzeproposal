@@ -48,6 +48,7 @@ export interface PublicMessages {
     processingStatus: string;
     receivedStatus: string;
     viewReports: string;
+    draftRestored: string;
     reportTypes: OptionMessage[];
     status: Record<"pending" | "reviewing" | "resolved" | "rejected", string>;
     platforms: OptionMessage[];
