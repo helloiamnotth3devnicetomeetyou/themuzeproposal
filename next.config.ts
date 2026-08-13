@@ -12,6 +12,7 @@ const imageRemotePatterns = [r2PublicUrl].filter(Boolean).map((value) => {
 });
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: process.cwd(),
   poweredByHeader: false,
   experimental: { cssChunking: false },
   outputFileTracingIncludes: {},

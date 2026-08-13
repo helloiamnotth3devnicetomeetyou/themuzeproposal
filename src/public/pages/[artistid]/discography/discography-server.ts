@@ -58,7 +58,7 @@ const getCachedDiscography = unstable_cache(
         .order("sort_order", { ascending: true }),
     ]);
 
-    if (albumsResult.error)
+    if (albumsResult.error || membersResult.error || galleryResult.error)
       throw new Error("붿뒪肄붽렇?섑뵾瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??");
 
     const albums: DiscographyAlbum[] = (albumsResult.data ?? []).map(
