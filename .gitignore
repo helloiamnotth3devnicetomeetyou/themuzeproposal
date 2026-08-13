@@ -58,6 +58,7 @@ output/
 
 # temp files
 /tmp/*
+/graphify-out/
 
 # obsidian vault
 /themuzeproposal/*
