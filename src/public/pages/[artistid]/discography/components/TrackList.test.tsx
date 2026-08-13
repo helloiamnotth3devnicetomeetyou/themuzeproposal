@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+// @vitest-environment jsdom
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import type { DiscographyAlbum } from "../lib/types";

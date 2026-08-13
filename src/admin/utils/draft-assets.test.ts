@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const deleteAdminAssets = vi.hoisted(() => vi.fn());
 vi.mock("@/admin/utils/delete-admin-assets", () => ({ deleteAdminAssets }));
