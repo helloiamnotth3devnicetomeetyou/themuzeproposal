@@ -17,7 +17,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { cssChunking: false },
   outputFileTracingIncludes: {
-    "/api/uploads/admin-asset": ["./node_modules/ffmpeg-static/**"],
   },
   async headers() {
     return [
