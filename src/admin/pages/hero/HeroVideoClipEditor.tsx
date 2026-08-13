@@ -81,7 +81,10 @@ export default function HeroVideoClipEditor({ slideId, videoUrl, disabled, onCha
       setOpen(false);
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === "AbortError") setError("");
-      else setError(cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "변환 엔진이 응답하지 않았습니다. MP4(H.264) 원본으로 다시 시도하세요.");
+      else {
+        console.error("[HeroVideoClipEditor Upload Error]", cause);
+        setError(cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "변환 엔진이 응답하지 않았습니다. MP4(H.264) 원본으로 다시 시도하세요.");
+      }
     } finally {
       setBusy(false);
       setStage(null);

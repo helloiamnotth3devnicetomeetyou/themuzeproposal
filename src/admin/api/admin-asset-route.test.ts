@@ -28,6 +28,9 @@ vi.mock("@/core/uploads/service-storage", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/core/uploads/service-storage")>(),
   createServiceRoleClient: mocks.createServiceClient,
 }));
+vi.mock("@/core/uploads/transcode-video", () => ({
+  transcodeHeroVideo: vi.fn(async (input: Uint8Array) => input),
+}));
 
 import { POST } from "./admin-asset-route";
 
@@ -140,6 +143,6 @@ describe("POST /api/uploads/admin-asset", () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(mocks.upload).toHaveBeenCalledWith("clips/slide-1/clip.mp4", expect.any(File), expect.objectContaining({ contentType: "video/mp4" }));
+    expect(mocks.upload).toHaveBeenCalledWith("clips/slide-1/clip.mp4", expect.any(Uint8Array), expect.objectContaining({ contentType: "video/mp4" }));
   });
 });

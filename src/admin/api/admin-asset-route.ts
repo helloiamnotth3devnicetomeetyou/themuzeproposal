@@ -27,30 +27,31 @@ const BUCKETS = {
 } as const satisfies Record<string, { maxBytes: number; profile: FileValidationProfile }>;
 const MAX_DELETE_BODY_BYTES = 64 * 1024;
 
-function errorResponse(code: string, status: number) {
+function errorResponse(code: string, status: number, details?: Record<string, unknown>) {
+  console.error(`[AdminAssetUpload] Error HTTP ${status} code=${code}`, details ? JSON.stringify(details) : "");
   const response = NextResponse.json({ code }, { status });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
 
 export async function POST(request: NextRequest) {
-  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400);
+  if (!isSameOriginRequest(request)) return errorResponse("INVALID_REQUEST", 400, { reason: "invalid_origin", origin: request.headers.get("origin") });
 
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403);
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401, { reason: "user_auth_failed", userError: userError?.message });
+  if (!(await isAdmin(supabase, user.id))) return errorResponse("FORBIDDEN", 403, { reason: "not_admin", userId: user.id });
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
-  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429);
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503, { reason: "rate_limit_check_error" });
+  if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, { userId: user.id });
 
   let formData: FormData;
   try {
     const parsed = await parseFormDataWithinLimit(request, 100 * 1024 * 1024 + 64 * 1024, 3 * 60 * 1000);
-    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413);
+    if (!parsed) return errorResponse("FILE_TOO_LARGE", 413, { reason: "body_size_exceeded_stream_limit", limit: "100MB+64KB" });
     formData = parsed;
-  } catch {
-    return errorResponse("INVALID_FILE", 400);
+  } catch (error) {
+    return errorResponse("INVALID_FILE", 400, { reason: "parse_form_data_failed", error: error instanceof Error ? error.message : String(error) });
   }
 
   const bucket = String(formData.get("bucket") || "");
@@ -58,31 +59,36 @@ export async function POST(request: NextRequest) {
   const file = formData.get("file");
   const config = BUCKETS[bucket as keyof typeof BUCKETS];
   if (!config || !isSafeStoragePath(requestedPath) || !(file instanceof File)) {
-    return errorResponse("INVALID_FILE", 400);
+    return errorResponse("INVALID_FILE", 400, { reason: "invalid_params", bucket, requestedPath, isFile: file instanceof File });
   }
   const fileSize = file.size;
   if (!Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > config.maxBytes) {
-    return errorResponse(fileSize > config.maxBytes ? "FILE_TOO_LARGE" : "INVALID_FILE", fileSize > config.maxBytes ? 413 : 400);
+    const isTooLarge = fileSize > config.maxBytes;
+    return errorResponse(
+      isTooLarge ? "FILE_TOO_LARGE" : "INVALID_FILE",
+      isTooLarge ? 413 : 400,
+      { reason: isTooLarge ? "file_size_exceeds_bucket_limit" : "invalid_file_size", bucket, fileSize, maxBytes: config.maxBytes }
+    );
   }
 
   const validated = await validateFileSignature(file, config.profile);
-  if (!validated) return errorResponse("INVALID_FILE_TYPE", 400);
+  if (!validated) return errorResponse("INVALID_FILE_TYPE", 400, { reason: "file_signature_mismatch", bucket, fileName: file.name, fileSize });
 
   let path = replacePathExtension(requestedPath, validated.extension);
-  if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400);
+  if (!extensionMatches(path, validated.extension)) return errorResponse("INVALID_FILE_TYPE", 400, { reason: "extension_mismatch", path, extension: validated.extension });
   if (bucket === "business-assets") {
     if (path === "press-kit.zip" && validated.extension === "zip") path = `press-kit/${crypto.randomUUID()}.zip`;
     else if (path === "profile.pdf" && validated.extension === "pdf") path = `profile/${crypto.randomUUID()}.pdf`;
-    else return errorResponse("INVALID_FILE", 400);
+    else return errorResponse("INVALID_FILE", 400, { reason: "invalid_business_asset_path", path, extension: validated.extension });
   }
 
   const serviceClient = createServiceRoleClient();
-  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503, { reason: "service_role_client_missing" });
 
   let uploadBody: Blob | Uint8Array = file;
   if (bucket === "hero-videos") {
     const transcoded = await transcodeHeroVideo(new Uint8Array(await file.arrayBuffer()));
-    if (!transcoded) return errorResponse("TRANSCODE_FAILED", 422);
+    if (!transcoded) return errorResponse("TRANSCODE_FAILED", 422, { reason: "transcode_hero_video_failed", bucket, path, fileSize });
     uploadBody = transcoded;
   }
 
@@ -93,7 +99,7 @@ export async function POST(request: NextRequest) {
     contentType: validated.mimeType,
     cacheControl: "public, max-age=31536000, immutable",
   });
-  if (error) return errorResponse("UPLOAD_FAILED", 503);
+  if (error) return errorResponse("UPLOAD_FAILED", 503, { reason: "r2_upload_failed", bucket, path });
 
   const { error: auditError } = await serviceClient.from("admin_audit_logs").insert({
     actor_id: user.id,
@@ -107,7 +113,7 @@ export async function POST(request: NextRequest) {
   });
   if (auditError) {
     await deleteObjects(bucket, [path]);
-    return errorResponse("AUDIT_FAILED", 503);
+    return errorResponse("AUDIT_FAILED", 503, { reason: "audit_log_insert_failed", bucket, path, auditError: auditError.message });
   }
 
   const response = NextResponse.json({
