@@ -5,10 +5,19 @@ import { getPublicAssetUrl } from "@/core/storage/public-url";
 import type { AuditionCampaign, AuditionFormField, AuditionSubmission } from "@/core/auditions/types";
 import AuditionClient from "./AuditionClient";
 
-export default async function AuditionPage() {
+export default async function AuditionPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ campaign?: string | string[] }>;
+}) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/audition");
+  if (!user) {
+    const params = await searchParams;
+    const campaignId = Array.isArray(params?.campaign) ? params.campaign[0] : params?.campaign;
+    const target = campaignId ? `/audition?campaign=${encodeURIComponent(campaignId)}` : "/audition";
+    redirect(`/login?redirect=${encodeURIComponent(target)}`);
+  }
 
   const [campaignResult, fieldResult, submissionResult, profileResult, remaining] = await Promise.all([
     supabase.from("audition_campaigns").select("*").order("starts_at", { ascending: false }),
