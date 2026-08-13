@@ -190,7 +190,12 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
     const removedScenes = snapshot.filter((scene) => !scenes.some((item) => item.id === scene.id));
     const previousRegions = snapshot.flatMap((scene) => scene.artist_scene_members);
     const currentRegions = scenes.flatMap((scene) => scene.artist_scene_members);
-    const removedRegionIds = previousRegions.filter((region) => !currentRegions.some((item) => item.id === region.id)).map((region) => region.id);
+    const removedRegions = previousRegions.filter((region) => !currentRegions.some((item) => item.id === region.id));
+    const replacedRegions = previousRegions.filter((region) => {
+      const current = currentRegions.find((item) => item.id === region.id);
+      return current && current.mask_url !== region.mask_url;
+    });
+    const removedRegionIds = removedRegions.map((region) => region.id);
     const sceneResults = await Promise.all([
       ...(removedScenes.length ? [supabase.from("artist_scenes").delete().in("id", removedScenes.map((scene) => scene.id))] : []),
       ...scenes.map((scene) => supabase.from("artist_scenes").upsert({
@@ -212,7 +217,11 @@ export default function ArtistSceneManager({ artistId, heroUrl, onError, onToast
       supabase,
       uploadedAssets.current,
       scenes.flatMap((scene) => [scene.image_url, ...scene.artist_scene_members.map((region) => region.mask_url || "")]),
-      removedScenes.flatMap((scene) => [scene.image_url, ...scene.artist_scene_members.map((region) => region.mask_url || "")]),
+      [
+        ...removedScenes.flatMap((scene) => [scene.image_url, ...scene.artist_scene_members.map((region) => region.mask_url || "")]),
+        ...removedRegions.map((region) => region.mask_url || ""),
+        ...replacedRegions.map((region) => region.mask_url || ""),
+      ],
     );
     uploadedAssets.current = [];
     setSnapshot(scenes);

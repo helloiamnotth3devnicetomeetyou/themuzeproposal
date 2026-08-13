@@ -11,6 +11,7 @@ import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { loadAccountAvatarUrls } from "@/admin/utils/account-avatar";
+import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 import { fetchSignedFileUrl } from "@/admin/utils/signed-file-url";
 import { supabase } from "@/core/supabase/client";
 import { auditionTextareaRows, campaignDescription, fieldLabel, type AuditionCampaign, type AuditionFieldType, type AuditionFormField, type AuditionSubmission, type LocalizedLabel } from "@/core/auditions/types";
@@ -46,6 +47,19 @@ function campaignPeriod(campaign: AuditionCampaign) {
 function blankField(campaignId: string, sortOrder: number): AuditionFormField {
   const id = crypto.randomUUID();
   return { id, campaign_id: campaignId, field_key: `field_${id.replaceAll("-", "")}`, label_i18n: { ko: "새 질문" }, help_text: null, field_type: "short_text", options: [], required: false, max_length: 255, max_file_size_mb: null, accepted_file_types: [], sort_order: sortOrder, is_active: true, is_primary_label: false };
+}
+
+function attachmentPaths(rows: Array<{ answers?: unknown }>) {
+  const paths = new Set<string>();
+  for (const { answers } of rows) {
+    if (!answers || typeof answers !== "object" || Array.isArray(answers)) continue;
+    for (const answer of Object.values(answers as Record<string, unknown>)) {
+      if (answer && typeof answer === "object" && !Array.isArray(answer) && typeof (answer as { path?: unknown }).path === "string") {
+        paths.add((answer as { path: string }).path);
+      }
+    }
+  }
+  return [...paths];
 }
 
 function FieldPreview({ field, locale }: { field: AuditionFormField; locale: keyof LocalizedLabel }) {
@@ -114,10 +128,19 @@ export function CampaignListAdmin() {
     setError("");
     setDeleting(true);
     try {
+      const { data: submissions, error: attachmentQueryError } = await supabase.from("audition_submissions").select("answers").eq("campaign_id", campaign.id);
+      if (attachmentQueryError) { setError(attachmentQueryError.message); return; }
+      const paths = attachmentPaths((submissions ?? []) as Array<{ answers?: unknown }>);
       const { error: submissionsError } = await supabase.from("audition_submissions").delete().eq("campaign_id", campaign.id);
       if (submissionsError) { setError(submissionsError.message); return; }
       const { error: deleteError } = await supabase.from("audition_campaigns").delete().eq("id", campaign.id);
       if (deleteError) { setError(deleteError.message); return; }
+      for (let index = 0; index < paths.length; index += 100) {
+        if (!await deleteAdminAssets("audition-attachments", paths.slice(index, index + 100))) {
+          setError("지원서 첨부파일 일부를 삭제하지 못했습니다.");
+          break;
+        }
+      }
       setCampaigns((current) => current.filter((item) => item.id !== campaign.id));
       setSubmissionCounts((current) => { const next = { ...current }; delete next[campaign.id]; return next; });
       setDeleteCampaign(null);

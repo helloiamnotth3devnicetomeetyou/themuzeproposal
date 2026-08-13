@@ -15,6 +15,7 @@ import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { deleteAdminAssetUrls, deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
 import { notifyArtistsChanged } from "@/core/utils/artist-events";
@@ -224,6 +225,36 @@ export default function ArtistProfileAdmin() {
     if (!artistId || isNew) return;
     setDeleting(true);
     setError("");
+    const [galleryResult, memberResult, sceneResult, avatarResult, albumResult] = await Promise.all([
+      supabase.from("artist_gallery").select("image_url").eq("artist_id", artistId),
+      supabase.from("artist_members").select("id,image_url").eq("artist_id", artistId),
+      supabase.from("artist_scenes").select("id,image_url").eq("artist_id", artistId),
+      supabase.from("avatar_assets").select("image_path").eq("artist_id", artistId),
+      supabase.from("albums").select("id,cover_url,hero_image_url,typo_logo_url").eq("artist_id", artistId),
+    ]);
+    const sceneIds = (sceneResult.data ?? []).map((scene) => scene.id).filter(Boolean);
+    const memberIds = (memberResult.data ?? []).map((member) => member.id).filter(Boolean);
+    const albumIds = (albumResult.data ?? []).map((album) => album.id).filter(Boolean);
+    const [sceneRegionResult, memberRegionResult, trackResult] = await Promise.all([
+      sceneIds.length ? supabase.from("artist_scene_members").select("mask_url").in("scene_id", sceneIds) : Promise.resolve({ data: [] }),
+      memberIds.length ? supabase.from("artist_scene_members").select("mask_url").in("member_id", memberIds) : Promise.resolve({ data: [] }),
+      albumIds.length ? supabase.from("tracks").select("audio_url,music_video_url,logo_url").in("album_id", albumIds) : Promise.resolve({ data: [] }),
+    ]);
+    const assetUrls = [
+      draft?.imageUrl,
+      draft?.logoUrl,
+      ...(galleryResult.data ?? []).map((item) => item.image_url),
+      ...(memberResult.data ?? []).map((member) => member.image_url),
+      ...(sceneResult.data ?? []).map((scene) => scene.image_url),
+      ...(sceneRegionResult.data ?? []).map((region) => region.mask_url),
+      ...(memberRegionResult.data ?? []).map((region) => region.mask_url),
+      ...(albumResult.data ?? []).flatMap((album) => [album.cover_url, album.hero_image_url, album.typo_logo_url]),
+      ...(trackResult.data ?? []).flatMap((track) => [track.audio_url, track.music_video_url, track.logo_url]),
+    ].filter((url): url is string => typeof url === "string" && Boolean(url));
+    const avatarPaths = (avatarResult.data ?? [])
+      .map((asset) => asset.image_path)
+      .filter((path): path is string => typeof path === "string" && Boolean(path));
+    const queued = uploadedAssets.current;
     const { error: deleteError } = await supabase.from("artists").delete().eq("id", artistId);
     setDeleting(false);
     if (deleteError) {
@@ -231,6 +262,10 @@ export default function ArtistProfileAdmin() {
       setError(adminDbError(deleteError, "아티스트를 삭제하지 못했습니다."));
       return;
     }
+    await deleteAdminAssetUrls(assetUrls);
+    if (avatarPaths.length) await deleteAdminAssets("artist-assets", avatarPaths);
+    await discardDraftImageAssets(supabase, queued);
+    uploadedAssets.current = [];
     await notifyArtistsChanged();
     await revalidatePublicCache("public-navigation-artists");
     router.replace("/admin");

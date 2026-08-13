@@ -28,6 +28,7 @@ const BUCKETS = {
 const MAX_DELETE_BODY_BYTES = 64 * 1024;
 const HERO_VIDEO_BUCKET = "hero-videos";
 const HERO_VIDEO_MAX_BYTES = BUCKETS[HERO_VIDEO_BUCKET].maxBytes;
+const DELETABLE_BUCKETS = new Set([...Object.keys(BUCKETS), "audition-attachments"]);
 
 function errorResponse(code: string, status: number, details?: Record<string, unknown>) {
   console.error(`[AdminAssetUpload] Error HTTP ${status} code=${code}`, details ? JSON.stringify(details) : "");
@@ -199,7 +200,7 @@ export async function DELETE(request: NextRequest) {
   const bucket = typeof body?.bucket === "string" ? body.bucket : "";
   const paths = Array.isArray(body?.paths) && body.paths.length <= 100 && body.paths.every((path): path is string => typeof path === "string" && isSafeStoragePath(path))
     ? [...new Set(body.paths)] : [];
-  if (!(bucket in BUCKETS) || !paths.length) return errorResponse("INVALID_FILE", 400);
+  if (!DELETABLE_BUCKETS.has(bucket) || !paths.length) return errorResponse("INVALID_FILE", 400);
   const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);
   return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });

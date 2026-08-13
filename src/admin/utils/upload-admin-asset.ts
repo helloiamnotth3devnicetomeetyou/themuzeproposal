@@ -66,18 +66,27 @@ async function uploadHeroVideo(file: Blob, options: UploadOptions) {
   const preparation = await prepared.json().catch(() => ({})) as { upload?: { url: string; path: string }; code?: string };
   if (!prepared.ok || !preparation.upload) throw new Error(preparation.code || `HTTP_${prepared.status}`);
 
-  const uploaded = await putWithProgress(preparation.upload.url, file, contentType, options);
-  if (!uploaded.ok) throw new Error(`HTTP_${uploaded.status}`);
+  try {
+    const uploaded = await putWithProgress(preparation.upload.url, file, contentType, options);
+    if (!uploaded.ok) throw new Error(`HTTP_${uploaded.status}`);
 
-  const completed = await fetch("/api/uploads/admin-asset", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "completeHeroVideo", path: preparation.upload.path }),
-    signal: options.signal,
-  });
-  const result = await completed.json().catch(() => ({})) as { asset?: UploadedAsset; code?: string };
-  if (!completed.ok || !result.asset) throw new Error(result.code || `HTTP_${completed.status}`);
-  return result.asset;
+    const completed = await fetch("/api/uploads/admin-asset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "completeHeroVideo", path: preparation.upload.path }),
+      signal: options.signal,
+    });
+    const result = await completed.json().catch(() => ({})) as { asset?: UploadedAsset; code?: string };
+    if (!completed.ok || !result.asset) throw new Error(result.code || `HTTP_${completed.status}`);
+    return result.asset;
+  } catch (error) {
+    void fetch("/api/uploads/admin-asset", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bucket: "hero-videos", paths: [preparation.upload.path] }),
+    });
+    throw error;
+  }
 }
 
 function putWithProgress(url: string, file: Blob, contentType: string, { signal, onProgress }: UploadOptions) {

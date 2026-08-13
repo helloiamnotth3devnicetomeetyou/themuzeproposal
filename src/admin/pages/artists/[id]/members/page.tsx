@@ -18,6 +18,7 @@ import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
+import { deleteAdminAssetUrls } from "@/admin/utils/delete-admin-assets";
 import { cleanupAbandonedDraftImageAssets, discardDraftImageAssets, finalizeDraftImageAssets, trackDraftImageAsset } from "@/admin/utils/draft-assets";
 import { supabase } from "@/core/supabase/client";
 import { revalidatePublicCache } from "@/core/utils/public-cache";
@@ -256,6 +257,16 @@ export default function ArtistMembersAdmin() {
   const removeMember = async () => {
     if (!draft?.id) return;
     setDeleting(true);
+    const memberId = draft.id;
+    const { data: regions } = await supabase
+      .from("artist_scene_members")
+      .select("mask_url")
+      .eq("member_id", memberId);
+    const queued = uploadedAssets.current;
+    const assetUrls = [
+      draft.imageUrl,
+      ...(regions ?? []).map((region) => region.mask_url || ""),
+    ];
     const { error: deleteError } = await supabase.from("artist_members").delete().eq("id", draft.id);
     setDeleting(false);
     if (deleteError) {
@@ -263,6 +274,9 @@ export default function ArtistMembersAdmin() {
       setError(adminDbError(deleteError, "멤버를 삭제하지 못했습니다."));
       return;
     }
+    await deleteAdminAssetUrls(assetUrls);
+    await discardDraftImageAssets(supabase, queued);
+    uploadedAssets.current = [];
     setDeleteOpen(false);
     setToast("멤버를 삭제했습니다.");
     await revalidatePublicCache("artist-scene-data", "public-member-title");
