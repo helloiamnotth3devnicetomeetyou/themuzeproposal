@@ -11,6 +11,7 @@ import HomeSlideControls from "./HomeSlideControls";
 
 const TRANSITION_DURATION = 1100;
 const AUTOPLAY_DURATION = 10_000;
+const FIRST_VIDEO_READY_TIMEOUT = 4000;
 
 export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] }) {
   const { locale, t } = useLocale();
@@ -45,6 +46,14 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
     : nextVideoIndex === -1 ? Math.max(0, slides.length - 1) : nextVideoIndex;
 
   useEffect(() => () => { if (transitionTimeout.current) clearTimeout(transitionTimeout.current); }, []);
+  useEffect(() => {
+    const firstSlide = rawSlides[0];
+    if (!firstSlide?.videoUrl) return;
+    const timeout = setTimeout(() => {
+      setReadyVideoSlideIds((current) => current.has(firstSlide.id) ? current : new Set(current).add(firstSlide.id));
+    }, FIRST_VIDEO_READY_TIMEOUT);
+    return () => clearTimeout(timeout);
+  }, [rawSlides]);
   useEffect(() => {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncViewportPreferences = () => setPrefersReducedMotion(motionQuery.matches);
