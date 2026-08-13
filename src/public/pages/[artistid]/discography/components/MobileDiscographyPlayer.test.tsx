@@ -88,6 +88,6 @@ describe("MobileDiscographyPlayer", () => {
 
   it("prefers the album typo logo over its text title", () => {
     renderPlayer({ album: { ...albums[0], typoLogoUrl: "/one-logo.svg" } });
-    expect(screen.getAllByLabelText("One").some((element) => element.style.mask.includes("/one-logo.svg"))).toBe(true);
+    expect(screen.getAllByLabelText("One").some((element) => element.style.maskImage.includes("one-logo.svg"))).toBe(true);
   });
 });
