@@ -149,6 +149,11 @@ insert into public.home_hero_slides (
   true
 );
 
+insert into public.site_settings (key, value)
+values
+  ('footer', '{"copyright":"Visible footer"}'::jsonb),
+  ('internal_security_test', '{"token":"must-not-be-public"}'::jsonb);
+
 set local role anon;
 
 do $$
@@ -218,6 +223,16 @@ begin
     where id = '10000000-0000-0000-0000-000000000010'
   ) then
     raise exception 'global notice was hidden by artist visibility policy';
+  end if;
+  if not exists (
+    select 1 from public.site_settings where key = 'footer'
+  ) then
+    raise exception 'published site setting is hidden from anon';
+  end if;
+  if exists (
+    select 1 from public.site_settings where key = 'internal_security_test'
+  ) then
+    raise exception 'non-public site setting is visible to anon';
   end if;
 end;
 $$;
