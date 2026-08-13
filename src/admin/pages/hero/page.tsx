@@ -20,6 +20,7 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
+  type Modifier,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -46,6 +47,29 @@ import {
 } from "./HeroSlideCard";
 import { createHeroSlideDraft, getActiveHeroSlides } from "./hero-model";
 type SortMode = "hero" | "newest" | "title";
+
+const snapOverlayToCursor: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  transform,
+}) => {
+  if (!(activatorEvent instanceof PointerEvent) || !draggingNodeRect)
+    return transform;
+
+  return {
+    ...transform,
+    x:
+      transform.x +
+      activatorEvent.clientX -
+      draggingNodeRect.left -
+      draggingNodeRect.width / 2,
+    y:
+      transform.y +
+      activatorEvent.clientY -
+      draggingNodeRect.top -
+      draggingNodeRect.height / 2,
+  };
+};
 
 export default function HeroAdminPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -431,6 +455,7 @@ export default function HeroAdminPage() {
           </SortableContext>
           <DragOverlay
             adjustScale={false}
+            modifiers={[snapOverlayToCursor]}
             dropAnimation={{
               duration: 220,
               easing: "cubic-bezier(.18,.86,.28,1)",
