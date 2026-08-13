@@ -49,23 +49,12 @@ async function isReferencedAttachment(
   }
   const service = createServiceRoleClient();
   if (!service) return false;
-  const { data, error } = await service
-    .from("audition_submissions")
-    .select("answers");
+  const { data, error } = await service.rpc(
+    "audition_submission_has_attachment",
+    { p_path: path },
+  );
   if (error) return false;
-  // ponytail: O(n) answer scan; move this to a JSONB path RPC if submission volume makes it measurable.
-  return (data ?? []).some((row) => {
-    const answers = row.answers;
-    if (!answers || typeof answers !== "object" || Array.isArray(answers))
-      return false;
-    return Object.values(answers as Record<string, unknown>).some(
-      (answer) =>
-        answer &&
-        typeof answer === "object" &&
-        !Array.isArray(answer) &&
-        (answer as { path?: unknown }).path === path,
-    );
-  });
+  return data === true;
 }
 
 export async function POST(request: NextRequest) {
