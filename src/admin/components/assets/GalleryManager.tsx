@@ -198,21 +198,20 @@ export default function GalleryManager({
         const removed = snapshot.filter(
           (item) => !items.some((current) => current.id === item.id),
         );
-        const results = await Promise.all([
-          ...(removed.length
-            ? [
-                supabase
-                  .from("artist_gallery")
-                  .delete()
-                  .in(
-                    "id",
-                    removed.map((item) => item.id),
-                  ),
-              ]
-            : []),
-          ...items.map((item) => supabase.from("artist_gallery").upsert(item)),
-        ]);
-        const error = results.find((result) => result.error)?.error;
+        const { error } = await supabase.rpc("save_artist_gallery", {
+          p_artist_id: artistId,
+          p_items: items.map((item) => ({
+            id: item.id,
+            artist_id: item.artist_id,
+            album_id: item.album_id,
+            member_id: item.member_id,
+            image_url: item.image_url,
+            caption: item.caption,
+            sort_order: item.sort_order,
+            is_published: item.is_published,
+          })),
+          p_removed_ids: removed.map((item) => item.id),
+        });
         if (error) throw error;
         await finalizeDraftImageAssets(
           supabase,

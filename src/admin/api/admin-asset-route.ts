@@ -68,6 +68,8 @@ const PUBLIC_ASSET_URL_REFERENCES = {
 
 type ServiceClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
 
+type RpcError = { code?: string | null; message?: string | null } | null;
+
 async function referencedPublicAssetPaths(
   service: ServiceClient,
   bucket: keyof typeof PUBLIC_ASSET_URL_REFERENCES,
@@ -472,37 +474,85 @@ export async function DELETE(request: NextRequest) {
       : [];
   if (!ADMIN_DELETE_BUCKETS.has(bucket) || !paths.length)
     return errorResponse("INVALID_FILE", 400);
+  if (
+    bucket === "audition-attachments" &&
+    paths.some((path) => !AUDITION_ATTACHMENT_PATH.test(path))
+  )
+    return errorResponse("INVALID_FILE", 400);
 
   const service = createServiceRoleClient();
   if (!service)
     return errorResponse("SERVICE_UNAVAILABLE", 503, {
       reason: "service_role_client_missing",
     });
+
+  // Reserve the asset in Postgres before checking/deleting R2.  The database
+  // trigger uses the same advisory key, so concurrent content writes either
+  // commit before this check or wait until the reservation is released.
+  const reservationArgs = {
+    p_bucket: bucket,
+    p_paths: paths,
+    p_actor_id: user.id,
+  };
+  const { error: reservationError } = await service.rpc(
+    "reserve_r2_asset_deletions",
+    reservationArgs,
+  );
+  if (reservationError) {
+    const code = (reservationError as RpcError)?.code;
+    if (code === "23514") return errorResponse("FORBIDDEN", 403);
+    if (code === "55P03") return errorResponse("ASSET_BUSY", 409);
+    return errorResponse("SERVICE_UNAVAILABLE", 503, {
+      reason: "asset_reservation_failed",
+    });
+  }
+  const releaseReservation = () =>
+    service.rpc("release_r2_asset_deletions", reservationArgs);
+
   if (bucket === "audition-attachments") {
-    if (paths.some((path) => !AUDITION_ATTACHMENT_PATH.test(path)))
-      return errorResponse("INVALID_FILE", 400);
     const references = await Promise.all(
       paths.map((path) => isAuditionAttachmentReferenced(service, path)),
     );
-    if (references.some((value) => value === null))
+    if (references.some((value) => value === null)) {
+      await releaseReservation();
       return errorResponse("SERVICE_UNAVAILABLE", 503, {
         reason: "attachment_reference_check_failed",
       });
-    if (references.some(Boolean)) return errorResponse("FORBIDDEN", 403);
+    }
+    if (references.some(Boolean)) {
+      await releaseReservation();
+      return errorResponse("FORBIDDEN", 403);
+    }
   } else {
     const referenced = await referencedPublicAssetPaths(
       service,
       bucket as keyof typeof PUBLIC_ASSET_URL_REFERENCES,
       paths,
     );
-    if (!referenced)
+    if (!referenced) {
+      await releaseReservation();
       return errorResponse("SERVICE_UNAVAILABLE", 503, {
         reason: "asset_reference_check_failed",
       });
-    if (referenced.size) return errorResponse("FORBIDDEN", 403);
+    }
+    if (referenced.size) {
+      await releaseReservation();
+      return errorResponse("FORBIDDEN", 403);
+    }
   }
   const { error } = await deleteObjects(bucket, paths);
-  if (error) return errorResponse("DELETE_FAILED", 503);
+  if (error) {
+    await releaseReservation();
+    return errorResponse("DELETE_FAILED", 503);
+  }
+  const { error: completionError } = await service.rpc(
+    "complete_r2_asset_deletions",
+    reservationArgs,
+  );
+  if (completionError)
+    return errorResponse("SERVICE_UNAVAILABLE", 503, {
+      reason: "asset_reservation_finalize_failed",
+    });
   const { error: auditError } = await service.from("admin_audit_logs").insert(
     paths.map((path) => ({
       actor_id: user.id,

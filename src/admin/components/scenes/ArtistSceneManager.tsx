@@ -311,64 +311,36 @@ export default function ArtistSceneManager({
       return current && current.mask_url !== region.mask_url;
     });
     const removedRegionIds = removedRegions.map((region) => region.id);
-    const sceneResults = await Promise.all([
-      ...(removedScenes.length
-        ? [
-            supabase
-              .from("artist_scenes")
-              .delete()
-              .in(
-                "id",
-                removedScenes.map((scene) => scene.id),
-              ),
-          ]
-        : []),
-      ...scenes.map((scene) =>
-        supabase.from("artist_scenes").upsert({
-          id: scene.id,
-          artist_id: scene.artist_id,
-          image_url: scene.image_url,
-          title: scene.title.trim(),
-          title_ko: scene.title_ko?.trim() || scene.title.trim(),
-          title_en: scene.title_en?.trim() || null,
-          title_ja: scene.title_ja?.trim() || null,
-          link_url: scene.link_url?.trim() || null,
-          image_width: scene.image_width,
-          image_height: scene.image_height,
-          is_hero: scene.is_hero,
-          is_published: scene.is_published,
-          sort_order: scene.sort_order,
-        }),
-      ),
-    ]);
-    const sceneError = sceneResults.find((result) => result.error)?.error;
-    if (sceneError) {
-      onError(adminDbError(sceneError));
-      throw sceneError;
-    }
-    const regionResults = await Promise.all([
-      ...(removedRegionIds.length
-        ? [
-            supabase
-              .from("artist_scene_members")
-              .delete()
-              .in("id", removedRegionIds),
-          ]
-        : []),
-      ...scenes.flatMap((scene) =>
-        scene.artist_scene_members.map((region) =>
-          supabase
-            .from("artist_scene_members")
-            .upsert(
-              { ...region, scene_id: scene.id },
-              { onConflict: "scene_id,member_id" },
-            ),
-        ),
-      ),
-    ]);
-    const error = regionResults.find((result) => result.error)?.error;
+    const { error } = await supabase.rpc("save_artist_scenes", {
+      p_artist_id: artistId,
+      p_scenes: scenes.map((scene) => ({
+        id: scene.id,
+        artist_id: scene.artist_id,
+        title: scene.title.trim(),
+        title_ko: scene.title_ko?.trim() || scene.title.trim(),
+        title_en: scene.title_en?.trim() || null,
+        title_ja: scene.title_ja?.trim() || null,
+        link_url: scene.link_url?.trim() || null,
+        image_url: scene.image_url,
+        image_width: scene.image_width,
+        image_height: scene.image_height,
+        is_hero: scene.is_hero,
+        is_published: scene.is_published,
+        sort_order: scene.sort_order,
+        artist_scene_members: scene.artist_scene_members.map((region) => ({
+          id: region.id,
+          scene_id: scene.id,
+          member_id: region.member_id,
+          outline: region.outline,
+          mask_url: region.mask_url,
+          sort_order: region.sort_order,
+        })),
+      })),
+      p_removed_scene_ids: removedScenes.map((scene) => scene.id),
+      p_removed_region_ids: removedRegionIds,
+    });
     if (error) {
-      onError(error.message);
+      onError(adminDbError(error));
       throw error;
     }
     await finalizeDraftImageAssets(
@@ -392,7 +364,7 @@ export default function ArtistSceneManager({
     discardBackup();
     await revalidateArtistSceneData();
     onToast("장면과 외곽선 변경사항을 저장했습니다.");
-  }, [discardBackup, onError, onToast, scenes, snapshot]);
+  }, [artistId, discardBackup, onError, onToast, scenes, snapshot]);
 
   useEffect(() => {
     if (!dirty || !artistId) return;

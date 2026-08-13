@@ -387,6 +387,25 @@ describe("POST /api/uploads/admin-asset", () => {
     expect(mocks.remove).toHaveBeenCalledWith([path]);
   });
 
+  it("rejects an invalid audition path before reserving it", async () => {
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          bucket: "audition-attachments",
+          paths: ["not-a-submission.pdf"],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it("refuses to delete a public asset still referenced by content", async () => {
     mocks.select.mockResolvedValueOnce({
       data: [{ cover_url: "https://storage.example/album-covers/live.png" }],
@@ -412,6 +431,7 @@ describe("POST /api/uploads/admin-asset", () => {
   });
 
   it("refuses to delete an audition attachment still referenced by a submission", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: null });
     mocks.rpc.mockResolvedValueOnce({ data: true, error: null });
     const path =
       "123e4567-e89b-12d3-a456-426614174000/123e4567-e89b-12d3-a456-426614174001/123e4567-e89b-12d3-a456-426614174002/123e4567-e89b-12d3-a456-426614174003.pdf";
@@ -436,6 +456,36 @@ describe("POST /api/uploads/admin-asset", () => {
       { p_path: path },
     );
     expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("reserves an unreferenced asset before deleting and finalizes the reservation", async () => {
+    const path = "pending/123e4567-e89b-12d3-a456-426614174000.mp4";
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ bucket: "hero-videos", paths: [path] }),
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "reserve_r2_asset_deletions", {
+      p_bucket: "hero-videos",
+      p_paths: [path],
+      p_actor_id: "admin-1",
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      "complete_r2_asset_deletions",
+      {
+        p_bucket: "hero-videos",
+        p_paths: [path],
+        p_actor_id: "admin-1",
+      },
+    );
   });
 
   it("rate-limits deletion attempts before touching storage", async () => {
