@@ -175,4 +175,26 @@ describe("ReportForm", () => {
     });
     expect(routerReplace).toHaveBeenCalledWith("/login?redirect=/protect");
   });
+
+  it("does not update a tab after its pending submission unmounts", async () => {
+    let resolve!: (response: Response) => void;
+    mocks.fetch.mockReturnValueOnce(
+      new Promise<Response>((next) => {
+        resolve = next;
+      }),
+    );
+    const user = userEvent.setup();
+    const { container, unmount } = renderForm();
+    await fillValidForm(user);
+    fireEvent.submit(container.querySelector("form")!);
+    unmount();
+    resolve(
+      new Response(JSON.stringify({ id: "report-1" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    await Promise.resolve();
+    expect(mocks.setSubmittedId).not.toHaveBeenCalled();
+  });
 });

@@ -74,6 +74,7 @@ export default function ReportForm({
   const formRef = useRef<HTMLFormElement>(null);
   const holdTimer = useRef<number | null>(null);
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const mounted = useRef(true);
 
   const files = useMemo(
     () => fileSlots.filter((file): file is File => file !== null),
@@ -81,8 +82,12 @@ export default function ReportForm({
   );
 
   useEffect(
-    () => () => {
-      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    () => {
+      mounted.current = true;
+      return () => {
+        mounted.current = false;
+        if (holdTimer.current) window.clearTimeout(holdTimer.current);
+      };
     },
     [],
   );
@@ -285,12 +290,14 @@ export default function ReportForm({
         code?: string;
       };
       if (response.status === 401) {
+        if (!mounted.current) return;
         router.replace("/login?redirect=/protect");
         return;
       }
       const reportId = result.id;
       if (!response.ok || !reportId)
         throw new Error(result.code || "SUBMISSION_FAILED");
+      if (!mounted.current) return;
       if (typeof result.remaining === "number") setRemaining(result.remaining);
 
       setMyReports((current) => [
@@ -313,6 +320,7 @@ export default function ReportForm({
       turnstileRef.current?.reset();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
+      if (!mounted.current) return;
       const code =
         submitError instanceof Error
           ? submitError.message
@@ -332,7 +340,7 @@ export default function ReportForm({
       setTurnstileToken("");
       turnstileRef.current?.reset();
     } finally {
-      setSubmitting(false);
+      if (mounted.current) setSubmitting(false);
     }
   };
 
