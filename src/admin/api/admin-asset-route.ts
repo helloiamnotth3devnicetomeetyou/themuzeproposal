@@ -4,7 +4,7 @@ import { parseFormDataWithinLimit, parseJsonWithinLimit } from "@/core/http/requ
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
-import { deleteObjects, uploadObject } from "@/core/storage/r2";
+import { createSignedUploadUrl, deleteObjects, getObjectForValidation, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import {
   extensionMatches,
@@ -26,6 +26,8 @@ const BUCKETS = {
   "hero-videos": { maxBytes: 20 * 1024 * 1024, profile: "hero-video" },
 } as const satisfies Record<string, { maxBytes: number; profile: FileValidationProfile }>;
 const MAX_DELETE_BODY_BYTES = 64 * 1024;
+const HERO_VIDEO_BUCKET = "hero-videos";
+const HERO_VIDEO_MAX_BYTES = BUCKETS[HERO_VIDEO_BUCKET].maxBytes;
 
 function errorResponse(code: string, status: number, details?: Record<string, unknown>) {
   console.error(`[AdminAssetUpload] Error HTTP ${status} code=${code}`, details ? JSON.stringify(details) : "");
@@ -44,6 +46,66 @@ export async function POST(request: NextRequest) {
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
   if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503, { reason: "rate_limit_check_error" });
   if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429, { userId: user.id });
+
+  if (request.headers.get("content-type")?.startsWith("application/json")) {
+    const body = await parseJsonWithinLimit(request, MAX_DELETE_BODY_BYTES).catch(() => null) as {
+      action?: unknown;
+      fileSize?: unknown;
+      contentType?: unknown;
+      path?: unknown;
+    } | null;
+    if (body?.action === "prepareHeroVideo") {
+      if (body.contentType !== "video/mp4" || !Number.isSafeInteger(body.fileSize) || Number(body.fileSize) < 1 || Number(body.fileSize) > HERO_VIDEO_MAX_BYTES) {
+        return errorResponse(Number(body?.fileSize) > HERO_VIDEO_MAX_BYTES ? "FILE_TOO_LARGE" : "INVALID_FILE", Number(body?.fileSize) > HERO_VIDEO_MAX_BYTES ? 413 : 400);
+      }
+      const path = `pending/${crypto.randomUUID()}.mp4`;
+      const uploadUrl = await createSignedUploadUrl(HERO_VIDEO_BUCKET, path, "video/mp4", Number(body.fileSize));
+      if (!uploadUrl) return errorResponse("SERVICE_UNAVAILABLE", 503, { reason: "signed_upload_url_failed" });
+      return NextResponse.json({ upload: { url: uploadUrl, path } }, { headers: { "Cache-Control": "no-store" } });
+    }
+    if (body?.action === "completeHeroVideo") {
+      const path = typeof body.path === "string" ? body.path : "";
+      if (!/^pending\/[0-9a-f-]{36}\.mp4$/i.test(path) || !isSafeStoragePath(path)) return errorResponse("INVALID_FILE", 400);
+      const source = await getObjectForValidation(HERO_VIDEO_BUCKET, path, HERO_VIDEO_MAX_BYTES);
+      if (!source || "tooLarge" in source || source.body.byteLength < 1 || source.contentType !== "video/mp4") {
+        await deleteObjects(HERO_VIDEO_BUCKET, [path]);
+        return errorResponse(source && "tooLarge" in source ? "FILE_TOO_LARGE" : "INVALID_FILE", source && "tooLarge" in source ? 413 : 400);
+      }
+      const file = new File([new Uint8Array(source.body).buffer], "hero.mp4", { type: source.contentType });
+      if (!(await validateFileSignature(file, "hero-video"))) {
+        await deleteObjects(HERO_VIDEO_BUCKET, [path]);
+        return errorResponse("INVALID_FILE_TYPE", 400);
+      }
+      const finalPath = path.replace(/^pending\//, "clips/");
+      const { error } = await uploadObject({ bucket: HERO_VIDEO_BUCKET, path: finalPath, body: source.body, contentType: "video/mp4", cacheControl: "public, max-age=31536000, immutable" });
+      if (error) {
+        await deleteObjects(HERO_VIDEO_BUCKET, [path, finalPath]);
+        return errorResponse("UPLOAD_FAILED", 503);
+      }
+      const serviceClient = createServiceRoleClient();
+      if (!serviceClient) {
+        await deleteObjects(HERO_VIDEO_BUCKET, [path, finalPath]);
+        return errorResponse("SERVICE_UNAVAILABLE", 503);
+      }
+      const { error: auditError } = await serviceClient.from("admin_audit_logs").insert({
+        actor_id: user.id,
+        actor_email: user.email ?? null,
+        operation: "UPDATE",
+        table_name: "storage.objects",
+        record_id: `${HERO_VIDEO_BUCKET}/${finalPath}`,
+        record_label: `Hero video: ${finalPath}`,
+        changed_fields: ["name", "metadata"],
+        after_values: { bucket: HERO_VIDEO_BUCKET, path: finalPath, mime_type: "video/mp4", size: source.body.byteLength },
+      });
+      if (auditError) {
+        await deleteObjects(HERO_VIDEO_BUCKET, [path, finalPath]);
+        return errorResponse("AUDIT_FAILED", 503);
+      }
+      await deleteObjects(HERO_VIDEO_BUCKET, [path]);
+      return NextResponse.json({ asset: { bucket: HERO_VIDEO_BUCKET, path: finalPath, url: getPublicAssetUrl(HERO_VIDEO_BUCKET, finalPath) } }, { headers: { "Cache-Control": "no-store" } });
+    }
+    return errorResponse("INVALID_FILE", 400);
+  }
 
   let formData: FormData;
   try {

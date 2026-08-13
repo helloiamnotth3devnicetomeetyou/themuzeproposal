@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
   insert: vi.fn(),
   consumeUploadAttempt: vi.fn(),
+  createSignedUploadUrl: vi.fn(),
+  getObjectForValidation: vi.fn(),
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
@@ -21,6 +23,8 @@ vi.mock("@/core/storage/r2", () => ({
   uploadObject: (options: { bucket: string; path: string; body: unknown; contentType: string; cacheControl?: string }) =>
     mocks.upload(options.path, options.body, { contentType: options.contentType, cacheControl: options.cacheControl, upsert: false }),
   deleteObjects: (_bucket: string, paths: string[]) => mocks.remove(paths),
+  createSignedUploadUrl: (...args: unknown[]) => mocks.createSignedUploadUrl(...args),
+  getObjectForValidation: (...args: unknown[]) => mocks.getObjectForValidation(...args),
 }));
 vi.mock("@/core/supabase/server", () => ({ createSupabaseServerClient: mocks.createSessionClient }));
 vi.mock("@/core/http/submission-rate-limit", () => ({ consumeAdminUploadAttemptRateLimit: mocks.consumeUploadAttempt }));
@@ -47,6 +51,7 @@ describe("POST /api/uploads/admin-asset", () => {
     mocks.createServiceClient.mockReturnValue({
       from: vi.fn(() => ({ insert: mocks.insert })),
     });
+    mocks.createSignedUploadUrl.mockResolvedValue("https://r2.example/signed");
   });
 
   it.each(["artist-assets", "album-covers", "track-assets"] as const)("uploads %s through the validated service-role route", async (bucket) => {
@@ -144,5 +149,35 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.upload).toHaveBeenCalledWith("clips/slide-1/clip.mp4", expect.any(Uint8Array), expect.objectContaining({ contentType: "video/mp4" }));
+  });
+
+  it("uploads large hero videos directly to a server-generated R2 path and validates them before publishing", async () => {
+    const prepared = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST",
+      headers: { origin: "https://themuze.kr", "content-type": "application/json" },
+      body: JSON.stringify({ action: "prepareHeroVideo", fileSize: 10 * 1024 * 1024, contentType: "video/mp4", path: "caller-controlled.mp4" }),
+    }));
+    const preparation = await prepared.json();
+
+    expect(prepared.status).toBe(200);
+    expect(preparation.upload.path).toMatch(/^pending\/[0-9a-f-]{36}\.mp4$/);
+    expect(mocks.createSignedUploadUrl).toHaveBeenCalledWith("hero-videos", preparation.upload.path, "video/mp4", 10 * 1024 * 1024);
+
+    mocks.getObjectForValidation.mockResolvedValue({
+      body: new Uint8Array([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]),
+      contentType: "video/mp4",
+    });
+    const completed = await POST(new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+      method: "POST",
+      headers: { origin: "https://themuze.kr", "content-type": "application/json" },
+      body: JSON.stringify({ action: "completeHeroVideo", path: preparation.upload.path }),
+    }));
+
+    expect(completed.status).toBe(200);
+    const finalPath = preparation.upload.path.replace("pending/", "clips/");
+    expect(mocks.getObjectForValidation).toHaveBeenCalledWith("hero-videos", preparation.upload.path, 20 * 1024 * 1024);
+    expect(mocks.upload).toHaveBeenCalledWith(finalPath, expect.any(Uint8Array), expect.objectContaining({ contentType: "video/mp4" }));
+    expect(mocks.remove).toHaveBeenCalledWith([preparation.upload.path]);
+    expect(await completed.json()).toMatchObject({ asset: { bucket: "hero-videos", path: finalPath } });
   });
 });

@@ -15,6 +15,7 @@ export async function uploadAdminAsset<Bucket extends AdminAssetBucket>(
   options: UploadOptions = {},
 ): Promise<{ bucket: Bucket; path: string; url: string }> {
   if (isGuideSandboxActive()) return createGuideSandboxAsset(file, bucket, path);
+  if (bucket === "hero-videos") return uploadHeroVideo(file, options) as Promise<{ bucket: Bucket; path: string; url: string }>;
   const formData = new FormData();
   formData.set("bucket", bucket);
   formData.set("path", path);
@@ -52,6 +53,45 @@ export async function uploadAdminAsset<Bucket extends AdminAssetBucket>(
     path: body.asset.path,
     url: body.asset.url,
   };
+}
+
+async function uploadHeroVideo(file: Blob, options: UploadOptions) {
+  const contentType = "video/mp4";
+  const prepared = await fetch("/api/uploads/admin-asset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "prepareHeroVideo", fileSize: file.size, contentType }),
+    signal: options.signal,
+  });
+  const preparation = await prepared.json().catch(() => ({})) as { upload?: { url: string; path: string }; code?: string };
+  if (!prepared.ok || !preparation.upload) throw new Error(preparation.code || `HTTP_${prepared.status}`);
+
+  const uploaded = await putWithProgress(preparation.upload.url, file, contentType, options);
+  if (!uploaded.ok) throw new Error(`HTTP_${uploaded.status}`);
+
+  const completed = await fetch("/api/uploads/admin-asset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "completeHeroVideo", path: preparation.upload.path }),
+    signal: options.signal,
+  });
+  const result = await completed.json().catch(() => ({})) as { asset?: UploadedAsset; code?: string };
+  if (!completed.ok || !result.asset) throw new Error(result.code || `HTTP_${completed.status}`);
+  return result.asset;
+}
+
+function putWithProgress(url: string, file: Blob, contentType: string, { signal, onProgress }: UploadOptions) {
+  return new Promise<{ ok: boolean; status: number }>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("PUT", url);
+    request.setRequestHeader("Content-Type", contentType);
+    request.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(event.loaded / event.total); };
+    request.onload = () => resolve({ ok: request.status >= 200 && request.status < 300, status: request.status });
+    request.onerror = () => reject(new Error("R2 직접 업로드 연결에 실패했습니다. R2 버킷 CORS에 현재 사이트 origin과 PUT/Content-Type을 허용했는지 확인하세요."));
+    request.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
+    signal?.addEventListener("abort", () => request.abort(), { once: true });
+    request.send(file);
+  });
 }
 
 function uploadWithProgress(formData: FormData, { signal, onProgress }: UploadOptions) {

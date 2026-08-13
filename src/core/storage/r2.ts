@@ -6,6 +6,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import type { NodeJsRuntimeStreamingBlobPayloadOutputTypes } from "@smithy/types";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const PRIVATE_BUCKETS = new Set(["contact-attachments", "protect-evidence", "audition-attachments"]);
@@ -23,6 +24,7 @@ function getClient() {
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
+    requestChecksumCalculation: "WHEN_REQUIRED",
   });
   return client;
 }
@@ -62,6 +64,54 @@ export async function uploadObject(options: {
     return { error: false };
   } catch {
     return { error: true };
+  }
+}
+
+export async function createSignedUploadUrl(
+  bucket: string,
+  path: string,
+  contentType: string,
+  contentLength: number,
+  expiresIn = 60,
+): Promise<string | null> {
+  const s3 = getClient();
+  const location = s3 && resolveLocation(bucket, path);
+  if (!s3 || !location) return null;
+  try {
+    return await getSignedUrl(s3, new PutObjectCommand({
+      Bucket: location.r2Bucket,
+      Key: location.key,
+      ContentType: contentType,
+      ContentLength: contentLength,
+    }), { expiresIn });
+  } catch {
+    return null;
+  }
+}
+
+export async function getObjectForValidation(bucket: string, path: string, maxBytes: number): Promise<{
+  body: Uint8Array;
+  contentType: string;
+} | { tooLarge: true } | null> {
+  const s3 = getClient();
+  const location = s3 && resolveLocation(bucket, path);
+  if (!s3 || !location) return null;
+  try {
+    const head = await s3.send(new HeadObjectCommand({ Bucket: location.r2Bucket, Key: location.key }));
+    if (!head.ContentLength || !head.ETag) return null;
+    if (head.ContentLength > maxBytes) return { tooLarge: true };
+    const object = await s3.send(new GetObjectCommand({
+      Bucket: location.r2Bucket,
+      Key: location.key,
+      IfMatch: head.ETag,
+    }));
+    const body = object.Body as NodeJsRuntimeStreamingBlobPayloadOutputTypes | undefined;
+    return body ? {
+      body: await body.transformToByteArray(),
+      contentType: object.ContentType || head.ContentType || "",
+    } : null;
+  } catch {
+    return null;
   }
 }
 
