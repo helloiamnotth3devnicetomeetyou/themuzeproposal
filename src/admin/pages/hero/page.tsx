@@ -235,13 +235,10 @@ export default function HeroAdminPage() {
     const removedIds = previous
       .filter((slide) => !slides.some((item) => item.id === slide.id))
       .map((slide) => slide.id);
-    const results = await Promise.all([
-      ...(removedIds.length
-        ? [supabase.from("home_hero_slides").delete().in("id", removedIds)]
-        : []),
-      ...slides.map((slide) => supabase.from("home_hero_slides").upsert(slide)),
-    ]);
-    const saveError = results.find((result) => result.error)?.error;
+    const { error: saveError } = await supabase.rpc("save_home_hero_slides", {
+      p_slides: slides,
+      p_removed_ids: removedIds,
+    });
     if (saveError) setError(saveError.message);
     else {
       setStoredSlides((current) => {
