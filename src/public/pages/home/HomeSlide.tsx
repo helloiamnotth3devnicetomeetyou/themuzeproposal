@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronLeft, Headphones } from "lucide-react";
 import { type CSSProperties, type ComponentType, type ReactNode, type SVGProps } from "react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
+import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText, type Locale } from "@/core/i18n/localized";
 import { spotifyAlbumHref } from "@/core/http/spotify";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
@@ -74,7 +75,7 @@ export default function HomeSlide({
     {index === 0 && !firstSlideReady && <div className="home-hero-loading"><LoadingIndicator /></div>}
     <div className="home-hero-content"><div className="home-hero-copy">
       <span className="home-release-meta"><span style={{ color: "var(--slide-accent)" }}>{slide.artistName}</span>{slide.type && <><span style={{ color: "var(--alpha-ffffff-3)", margin: "0 0.4em" }}>·</span><span style={{ color: "var(--color-static-white)" }}>{slide.type}</span></>}</span>
-      <h2 className="home-release-title" aria-label={slide.title}>{isVisible && slide.typoLogoUrl ? <span aria-hidden="true" className="home-typo-logo" style={{ WebkitMaskImage: `url("${slide.typoLogoUrl}")`, maskImage: `url("${slide.typoLogoUrl}")` }} /> : slide.title}</h2>
+      <h2 className="home-release-title" aria-label={slide.title}>{isVisible && slide.typoLogoUrl ? <TypoLogoMask src={slide.typoLogoUrl} label={slide.title} className="home-typo-logo" /> : slide.title}</h2>
       {localizeText(slide.descriptions, locale) && <p className="home-release-description">{localizeText(slide.descriptions, locale)}</p>}
       <div className="home-release-actions">
         <Link href={`/${slide.artistSlug}/discography?album=${encodeURIComponent(slide.id)}`} prefetch={isActive ? null : false} className="home-primary-link">{exploreLabel}</Link>

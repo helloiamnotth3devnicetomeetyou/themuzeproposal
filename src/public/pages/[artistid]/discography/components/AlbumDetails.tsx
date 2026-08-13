@@ -1,4 +1,5 @@
 import type { Locale } from "@/core/providers/LocaleContext";
+import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import Image from "next/image";
@@ -64,12 +65,11 @@ export function AlbumDetails({
         <div className="flex items-center justify-between mt-1">
           <h2 className="font-hero text-4xl font-black leading-none tracking-tight text-[var(--color-static-white)] md:text-5xl w-full flex items-center min-h-[2.5rem] md:min-h-[3rem]">
             {album.typoLogoUrl ? (
-              <span
-                aria-label={album.title}
+              <TypoLogoMask
+                src={album.typoLogoUrl}
+                label={album.title}
                 className="block bg-current"
                 style={{
-                  WebkitMaskImage: `url("${album.typoLogoUrl}")`,
-                  maskImage: `url("${album.typoLogoUrl}")`,
                   WebkitMaskPosition: "left center",
                   maskPosition: "left center",
                   WebkitMaskRepeat: "no-repeat",

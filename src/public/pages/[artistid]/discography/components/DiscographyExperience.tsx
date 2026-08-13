@@ -5,7 +5,6 @@ import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { preload } from "react-dom";
 
 import { useLocale } from "@/core/providers/LocaleContext";
 import { preloadImages, scheduleImagePreload } from "@/core/utils/image-preload";
@@ -50,12 +49,6 @@ export function DiscographyExperience() {
   useEffect(() => {
     void preloadImages(queuedCoverCandidates, { concurrency: 2 });
   }, [queuedCoverCandidates]);
-
-  useEffect(() => {
-    if (discography.album?.typoLogoUrl) {
-      preload(discography.album.typoLogoUrl, { as: "image", crossOrigin: "anonymous", fetchPriority: "high" });
-    }
-  }, [discography.album?.typoLogoUrl]);
 
   useEffect(() => scheduleImagePreload(queuedGalleryCandidates, { concurrency: 3 }), [queuedGalleryCandidates]);
 

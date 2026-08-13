@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ListMusic, Pause, Play } from "lucide-react";
 import { useLayoutEffect, useRef, type MouseEvent, type TouchEvent } from "react";
+import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText } from "@/core/i18n/localized";
 import { safeHref } from "@/core/http/safe-href";
 import { useLocale, type Locale } from "@/core/providers/LocaleContext";
@@ -259,12 +260,17 @@ export function MobileDiscographyPlayer({
                 <p className="text-[10px] font-medium text-[var(--palette-9ca3af)]">{album.type} · {album.tracks.length} TRACKS</p>
                 <h1 className="mt-1 flex min-h-10 items-center font-display text-3xl font-semibold leading-none tracking-[-0.04em] text-[var(--color-static-white)]">
                   {album.typoLogoUrl ? (
-                    <span
-                      aria-label={album.title}
+                    <TypoLogoMask
+                      src={album.typoLogoUrl}
+                      label={album.title}
                       className="block h-10 w-full bg-current"
                       style={{
-                        WebkitMask: `url("${album.typoLogoUrl}") left center / contain no-repeat`,
-                        mask: `url("${album.typoLogoUrl}") left center / contain no-repeat`,
+                        WebkitMaskPosition: "left center",
+                        maskPosition: "left center",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskSize: "contain",
+                        maskSize: "contain",
                       }}
                     />
                   ) : album.title}
