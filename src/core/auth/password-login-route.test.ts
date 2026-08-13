@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({
@@ -18,6 +19,9 @@ vi.mock("@/core/supabase/service", () => ({
 }));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: mocks.createServerClient,
+}));
+vi.mock("@/core/http/turnstile", () => ({
+  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 
 import { POST } from "./password-login-route";
@@ -39,6 +43,7 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
     process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
+    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.getConfig.mockReturnValue({
       url: "https://project.supabase.co",
       anonKey: "anon",
@@ -122,32 +127,48 @@ describe("POST /api/auth/login", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("returns rate-limit information after a failed authentication", async () => {
+  it("returns rate-limit information before attempting authentication", async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: [{ is_allowed: false, retry_after_seconds: 32 }],
       error: null,
-    });
-    mocks.signInWithPassword.mockResolvedValueOnce({
-      error: { code: "invalid_credentials", status: 400 },
     });
     const response = await POST(
       request({ email: "USER@example.com", password: "password" }),
     );
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("32");
-    expect(mocks.signInWithPassword).toHaveBeenCalled();
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
   it("does not consume the login budget for a rejected CAPTCHA", async () => {
-    mocks.signInWithPassword.mockResolvedValueOnce({
-      error: { code: "captcha_failed", status: 400 },
-    });
+    mocks.verifyTurnstileToken.mockResolvedValueOnce(false);
     const response = await POST(
       request({ email: "USER@example.com", password: "password" }),
     );
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
     expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("validates CAPTCHA and applies the limiter before authentication", async () => {
+    const order: string[] = [];
+    mocks.verifyTurnstileToken.mockImplementationOnce(async () => {
+      order.push("captcha");
+      return true;
+    });
+    mocks.rpc.mockImplementationOnce(async () => {
+      order.push("rate-limit");
+      return { data: [{ is_allowed: true }], error: null };
+    });
+    mocks.signInWithPassword.mockImplementationOnce(async () => {
+      order.push("sign-in");
+      return { error: new Error("invalid") };
+    });
+
+    await POST(request({ email: "user@example.com", password: "password" }));
+
+    expect(order).toEqual(["captcha", "rate-limit", "sign-in"]);
   });
 
   it("fails closed before creating an account-wide limiter key when client IP is unavailable", async () => {

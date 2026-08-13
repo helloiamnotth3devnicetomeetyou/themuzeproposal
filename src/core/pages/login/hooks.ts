@@ -33,6 +33,20 @@ function loginErrorMessage(error: unknown, t: LoginTranslations) {
   }
 }
 
+function signupErrorMessage(
+  error: unknown,
+  t: LoginTranslations,
+  locale: LocaleKey,
+) {
+  if (!(error instanceof AuthUserError) || error.code !== "RATE_LIMITED")
+    return t.signupFailed;
+  if (locale === "ko")
+    return "회원가입 요청이 너무 많아 잠시 제한되었습니다. 보안상 1분 후 다시 시도해 주세요.";
+  if (locale === "ja")
+    return "登録リクエストが多すぎます。1分ほど待ってからもう一度お試しください。";
+  return "Too many sign-up requests. Please wait one minute before trying again.";
+}
+
 interface UseLoginFormOptions {
   redirectTo: string;
   oauthFailed: boolean;
@@ -173,8 +187,8 @@ export function useLoginForm({
       }
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
-    } catch {
-      setError(t.signupFailed);
+    } catch (error: unknown) {
+      setError(signupErrorMessage(error, t, locale));
       setTurnstileTokenState("");
       resetTurnstile?.();
     } finally {

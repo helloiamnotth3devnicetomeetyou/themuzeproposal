@@ -26,6 +26,10 @@ describe("normalizeSceneLink", () => {
     expect(normalizeSceneLink("//evil.com")).toBeNull();
   });
 
+  it("rejects backslash URLs that browsers normalize as external redirects", () => {
+    expect(normalizeSceneLink("/\\evil.example")).toBeNull();
+  });
+
   it("accepts http/https URLs", () => {
     expect(normalizeSceneLink("https://themuze.kr")).toBe("https://themuze.kr");
     expect(normalizeSceneLink("http://themuze.kr")).toBe("http://themuze.kr");

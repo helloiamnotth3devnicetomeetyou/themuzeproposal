@@ -208,4 +208,23 @@ describe("useLoginForm", () => {
     expect(result.current.notice).toBe(result.current.t.confirmEmail);
     expect(push).not.toHaveBeenCalled();
   });
+
+  it("explains a rate-limited signup", async () => {
+    auth.signUp.mockRejectedValue(new AuthUserError("RATE_LIMITED"));
+    const { result } = renderHook(() =>
+      useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }),
+    );
+    act(() => {
+      result.current.switchMode("signup");
+      result.current.setPassword("ValidPass123!");
+      result.current.setTurnstileToken("captcha-token");
+    });
+    await act(async () => {
+      await result.current.handleSignup({ preventDefault: vi.fn() } as never);
+    });
+    await act(async () => {
+      await result.current.handleSignup({ preventDefault: vi.fn() } as never);
+    });
+    expect(result.current.error).toContain("1분 후");
+  });
 });

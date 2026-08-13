@@ -28,4 +28,15 @@ describe("proxy security headers", () => {
     );
     expect(policy).toMatch(/script-src 'self' 'nonce-[^']+'/);
   });
+
+  it("protects admin path segments without matching similar public paths", async () => {
+    mocks.updateSession.mockResolvedValue(new NextResponse(null));
+
+    await proxy(new NextRequest("https://themuze.kr/admin/settings"));
+    expect(mocks.updateSession).toHaveBeenCalledTimes(1);
+
+    mocks.updateSession.mockClear();
+    await proxy(new NextRequest("https://themuze.kr/administrator"));
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
 });

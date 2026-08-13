@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   createServiceClient: vi.fn(),
   upload: vi.fn(),
   remove: vi.fn(),
+  select: vi.fn(),
+  rpc: vi.fn(),
   insert: vi.fn(),
   consumeUploadAttempt: vi.fn(),
   createSignedUploadUrl: vi.fn(),
@@ -73,9 +75,12 @@ describe("POST /api/uploads/admin-asset", () => {
     });
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
+    mocks.select.mockResolvedValue({ data: [], error: null });
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.createServiceClient.mockReturnValue({
-      from: vi.fn(() => ({ insert: mocks.insert })),
+      from: vi.fn(() => ({ insert: mocks.insert, select: mocks.select })),
+      rpc: mocks.rpc,
     });
     mocks.createSignedUploadUrl.mockResolvedValue("https://r2.example/signed");
   });
@@ -380,5 +385,80 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(204);
     expect(mocks.remove).toHaveBeenCalledWith([path]);
+  });
+
+  it("refuses to delete a public asset still referenced by content", async () => {
+    mocks.select.mockResolvedValueOnce({
+      data: [{ cover_url: "https://storage.example/album-covers/live.png" }],
+      error: null,
+    });
+
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          bucket: "album-covers",
+          paths: ["live.png"],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("refuses to delete an audition attachment still referenced by a submission", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: true, error: null });
+    const path =
+      "123e4567-e89b-12d3-a456-426614174000/123e4567-e89b-12d3-a456-426614174001/123e4567-e89b-12d3-a456-426614174002/123e4567-e89b-12d3-a456-426614174003.pdf";
+
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          bucket: "audition-attachments",
+          paths: [path],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "audition_submission_has_attachment",
+      { p_path: path },
+    );
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("rate-limits deletion attempts before touching storage", async () => {
+    mocks.consumeUploadAttempt.mockResolvedValueOnce({
+      error: false,
+      allowed: false,
+    });
+
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          bucket: "hero-videos",
+          paths: ["pending/123e4567-e89b-12d3-a456-426614174000.mp4"],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(429);
+    expect(mocks.remove).not.toHaveBeenCalled();
   });
 });

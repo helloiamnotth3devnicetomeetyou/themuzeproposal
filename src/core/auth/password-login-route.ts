@@ -6,6 +6,7 @@ import { getPublicSupabaseConfig } from "@/core/config/public-env";
 import { clientIp } from "@/core/http/client-ip";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
+import { verifyTurnstileToken } from "@/core/http/turnstile";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -64,6 +65,29 @@ export async function POST(request: NextRequest) {
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
+    action: "login",
+  });
+  if (!captchaOk) return jsonError("CAPTCHA_FAILED", 400);
+
+  const { data: rateData, error: rateError } = await limiterClient.rpc(
+    "consume_login_rate_limit",
+    {
+      p_identifier_hash: identifierHash,
+      p_ip_hash: ipHash,
+    },
+  );
+  if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
+
+  const rate = Array.isArray(rateData) ? rateData[0] : rateData;
+  if (!rate?.is_allowed) {
+    return jsonError(
+      "RATE_LIMITED",
+      429,
+      Math.max(1, Number(rate?.retry_after_seconds) || 900),
+    );
+  }
+
   const pendingCookies: PendingCookie[] = [];
   const authClient = createServerClient(url, anonKey, {
     cookies: {
@@ -77,32 +101,11 @@ export async function POST(request: NextRequest) {
   const { error: authError } = await authClient.auth.signInWithPassword({
     email,
     password,
-    options: { captchaToken: turnstileToken },
   });
 
-  // Supabase consumes the single-use CAPTCHA token. Record only an actual
-  // authentication failure so invalid CAPTCHA tokens cannot lock an account.
   if (authError) {
     if (authError.code === "captcha_failed")
       return jsonError("CAPTCHA_FAILED", 400);
-
-    const { data: rateData, error: rateError } = await limiterClient.rpc(
-      "consume_login_rate_limit",
-      {
-        p_identifier_hash: identifierHash,
-        p_ip_hash: ipHash,
-      },
-    );
-    if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
-
-    const rate = Array.isArray(rateData) ? rateData[0] : rateData;
-    if (!rate?.is_allowed) {
-      return jsonError(
-        "RATE_LIMITED",
-        429,
-        Math.max(1, Number(rate?.retry_after_seconds) || 900),
-      );
-    }
     return jsonError("INVALID_CREDENTIALS", 401);
   }
 

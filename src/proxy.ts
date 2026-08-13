@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
-    pathname.startsWith("/admin") ||
+    (pathname === "/admin" || pathname.startsWith("/admin/")) ||
     pathname === "/account" ||
     pathname === "/protect";
 

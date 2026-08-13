@@ -154,12 +154,13 @@ export async function deleteObjects(
   try {
     for (let i = 0; i < keys.length; i += DELETE_CHUNK_SIZE) {
       const chunk = keys.slice(i, i + DELETE_CHUNK_SIZE);
-      await s3.send(
+      const response = await s3.send(
         new DeleteObjectsCommand({
           Bucket: r2Bucket,
           Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
         }),
       );
+      if (response.Errors?.length) return { error: true };
     }
     return { error: false };
   } catch {

@@ -32,6 +32,7 @@ export type ArtistScene = {
 export function normalizeSceneLink(value: string | null | undefined) {
   const trimmed = value?.trim();
   if (!trimmed) return null;
+  if (trimmed.includes("\\")) return null;
   if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
   try {
     const url = new URL(trimmed);

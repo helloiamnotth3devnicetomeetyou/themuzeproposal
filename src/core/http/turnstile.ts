@@ -22,6 +22,8 @@ function normalizeHostname(value: string) {
 }
 
 function configuredHostname(request: NextRequest) {
+  if (process.env.NODE_ENV !== "production")
+    return normalizeHostname(request.nextUrl.hostname);
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (configured) {
     try {

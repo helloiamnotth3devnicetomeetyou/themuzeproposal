@@ -42,6 +42,90 @@ const ADMIN_DELETE_BUCKETS = new Set([
 ]);
 const AVATAR_PATH =
   /^([0-9a-f-]{36})\/avatars\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif)$/i;
+const UUID_PATH =
+  "[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+const AUDITION_ATTACHMENT_PATH = new RegExp(
+  `^${UUID_PATH}\/${UUID_PATH}\/${UUID_PATH}\/${UUID_PATH}\\.[a-z0-9]+$`,
+  "i",
+);
+
+const PUBLIC_ASSET_URL_REFERENCES = {
+  "artist-assets": [
+    ["artists", ["logo_url", "image_url"]],
+    ["albums", ["cover_url", "hero_image_url", "typo_logo_url"]],
+    ["artist_gallery", ["image_url"]],
+    ["artist_members", ["image_url"]],
+    ["artist_scenes", ["image_url"]],
+    ["artist_scene_members", ["mask_url"]],
+    ["tracks", ["audio_url", "music_video_url", "logo_url"]],
+    ["home_hero_slides", ["video_url"]],
+  ],
+  "album-covers": [["albums", ["cover_url"]]],
+  "track-assets": [["tracks", ["audio_url", "music_video_url", "logo_url"]]],
+  "hero-videos": [["home_hero_slides", ["video_url"]]],
+  "business-assets": [],
+} as const;
+
+type ServiceClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
+
+async function referencedPublicAssetPaths(
+  service: ServiceClient,
+  bucket: keyof typeof PUBLIC_ASSET_URL_REFERENCES,
+  paths: string[],
+) {
+  let urls: Map<string, string>;
+  try {
+    urls = new Map(
+      paths.map((path) => [getPublicAssetUrl(bucket, path), path]),
+    );
+  } catch {
+    return null;
+  }
+  const referenced = new Set<string>();
+  for (const [table, columns] of PUBLIC_ASSET_URL_REFERENCES[bucket]) {
+    const { data, error } = await service.from(table).select(columns.join(","));
+    if (error) return null;
+    for (const row of data ?? []) {
+      for (const column of columns) {
+        const value = (row as unknown as Record<string, unknown>)[column];
+        const path = urls.get(typeof value === "string" ? value : "");
+        if (path) referenced.add(path);
+      }
+    }
+  }
+  if (bucket === "artist-assets") {
+    const { data, error } = await service
+      .from("avatar_assets")
+      .select("image_path");
+    if (error) return null;
+    for (const row of data ?? []) {
+      if (paths.includes(row.image_path)) referenced.add(row.image_path);
+    }
+  }
+  if (bucket === "business-assets") {
+    const { data, error } = await service.from("site_settings").select("value");
+    if (error) return null;
+    for (const row of data ?? []) {
+      for (const key of ["pressKitUrl", "profilePdfUrl"]) {
+        const path = urls.get(row.value?.[key]);
+        if (path) referenced.add(path);
+      }
+    }
+  }
+  return referenced;
+}
+
+async function isAuditionAttachmentReferenced(
+  service: ServiceClient,
+  path: string,
+) {
+  const { data, error } = await service.rpc(
+    "audition_submission_has_attachment",
+    { p_path: path },
+  );
+  if (error) return null;
+  return data === true;
+}
 
 function errorResponse(
   code: string,
@@ -363,6 +447,13 @@ export async function DELETE(request: NextRequest) {
   if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
   if (!(await isAdmin(supabase, user.id)))
     return errorResponse("FORBIDDEN", 403);
+  const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
+  if (attempt.error)
+    return errorResponse("SERVICE_UNAVAILABLE", 503, {
+      reason: "rate_limit_check_error",
+    });
+  if (!attempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, { userId: user.id });
   const body = (await parseJsonWithinLimit(
     request,
     MAX_DELETE_BODY_BYTES,
@@ -379,6 +470,35 @@ export async function DELETE(request: NextRequest) {
       : [];
   if (!ADMIN_DELETE_BUCKETS.has(bucket) || !paths.length)
     return errorResponse("INVALID_FILE", 400);
+
+  const service = createServiceRoleClient();
+  if (!service)
+    return errorResponse("SERVICE_UNAVAILABLE", 503, {
+      reason: "service_role_client_missing",
+    });
+  if (bucket === "audition-attachments") {
+    if (paths.some((path) => !AUDITION_ATTACHMENT_PATH.test(path)))
+      return errorResponse("INVALID_FILE", 400);
+    const references = await Promise.all(
+      paths.map((path) => isAuditionAttachmentReferenced(service, path)),
+    );
+    if (references.some((value) => value === null))
+      return errorResponse("SERVICE_UNAVAILABLE", 503, {
+        reason: "attachment_reference_check_failed",
+      });
+    if (references.some(Boolean)) return errorResponse("FORBIDDEN", 403);
+  } else {
+    const referenced = await referencedPublicAssetPaths(
+      service,
+      bucket as keyof typeof PUBLIC_ASSET_URL_REFERENCES,
+      paths,
+    );
+    if (!referenced)
+      return errorResponse("SERVICE_UNAVAILABLE", 503, {
+        reason: "asset_reference_check_failed",
+      });
+    if (referenced.size) return errorResponse("FORBIDDEN", 403);
+  }
   const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);
   return new NextResponse(null, {
