@@ -31,6 +31,7 @@ const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
     headers: {
       "content-type": "application/json",
       origin: "http://localhost",
+      "x-test-client-ip": "127.0.0.1",
       ...headers,
     },
     body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
@@ -40,6 +41,7 @@ describe("POST /api/auth/verify-password", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
+    process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
     mocks.getConfig.mockReturnValue({
       url: "https://project.supabase.co",
       anonKey: "anon",
