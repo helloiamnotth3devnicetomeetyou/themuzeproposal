@@ -216,6 +216,70 @@ $$;
 
 reset role;
 
+insert into public.protect_reports (
+  id,
+  user_id,
+  reporter_email,
+  artist_id,
+  report_type,
+  title,
+  content,
+  platform,
+  post_url,
+  posted_at,
+  author_name,
+  confirmation,
+  status,
+  admin_note
+) values (
+  '00000000-0000-0000-0000-000000000402',
+  '00000000-0000-0000-0000-000000000102',
+  'reporter@example.com',
+  '00000000-0000-0000-0000-000000000201',
+  'other',
+  '蹂댁뺄 蹂닿린',
+  '蹂댁뺄 蹂닿린 蹂몃Ц',
+  'example.com',
+  'https://example.com/post',
+  current_date,
+  '蹂닿린 湲곗옄',
+  true,
+  'pending',
+  null
+);
+
+set local role authenticated;
+select * from public.review_protect_report(
+  '00000000-0000-0000-0000-000000000402',
+  'reviewing',
+  '寃??硫붾え',
+  (select updated_at from public.protect_reports
+   where id = '00000000-0000-0000-0000-000000000402')
+);
+
+do $$
+declare
+  v_stale timestamptz := (
+    select updated_at - interval '1 microsecond'
+    from public.protect_reports
+    where id = '00000000-0000-0000-0000-000000000402'
+  );
+begin
+  begin
+    perform public.review_protect_report(
+      '00000000-0000-0000-0000-000000000402',
+      'resolved',
+      'stale write',
+      v_stale
+    );
+    raise exception 'stale protect report review was accepted';
+  exception when sqlstate 'P0003' then null;
+  end;
+end;
+$$;
+
+reset role;
+
 insert into public.contact_inquiries (
   id,
   category,

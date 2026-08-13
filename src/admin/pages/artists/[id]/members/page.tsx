@@ -318,7 +318,14 @@ export default function ArtistMembersAdmin() {
           .single()
       : await supabase
           .from("artist_members")
-          .insert({ id: pendingId, ...payload, sort_order: members.length + 1 })
+          .insert({
+            id: pendingId,
+            ...payload,
+            sort_order: Math.max(
+              0,
+              ...members.map((member) => member.sort_order),
+            ) + 1,
+          })
           .select("id")
           .single();
     if (result.error) {

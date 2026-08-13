@@ -23,6 +23,12 @@ describe("safeRedirect", () => {
     expect(safeRedirect("//evil.com")).toBe("/");
   });
 
+  it("rejects dot-segment paths that normalize to a double slash", () => {
+    expect(safeRedirect("/.//evil.com")).toBe("/");
+    expect(safeRedirect("/..//evil.com")).toBe("/");
+    expect(safeRedirect("/%2e%2e//evil.com")).toBe("/");
+  });
+
   it("rejects absolute URLs", () => {
     expect(safeRedirect("https://evil.com")).toBe("/");
     expect(safeRedirect("http://evil.com/path")).toBe("/");

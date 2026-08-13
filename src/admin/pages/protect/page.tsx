@@ -42,6 +42,7 @@ type ProtectReport = {
   status: string;
   admin_note: string | null;
   created_at: string;
+  updated_at: string;
   artists: { name: string } | null;
 };
 type ProtectReportRow = Omit<
@@ -255,13 +256,33 @@ export default function ProtectAdminPage() {
     if (!viewing) return;
     setSaving(true);
     setError("");
-    const { error: updateError } = await supabase
-      .from("protect_reports")
-      .update(changes)
-      .eq("id", viewing.id);
-    if (updateError) setError(updateError.message);
-    else {
-      const updated = { ...viewing, ...changes };
+    const { data, error: updateError } = await supabase.rpc(
+      "review_protect_report",
+      {
+        p_report_id: viewing.id,
+        p_status: changes.status ?? viewing.status,
+        p_admin_note:
+          changes.admin_note !== undefined
+            ? changes.admin_note
+            : viewing.admin_note,
+        p_expected_updated_at: viewing.updated_at,
+      },
+    );
+    const patch = Array.isArray(data) ? data[0] : data;
+    if (updateError || !patch) {
+      if (updateError?.code === "P0003") {
+        setError(
+          "다른 관리자가 먼저 수정했습니다. 최신 내용을 불러온 뒤 다시 저장해 주세요.",
+        );
+        setViewing(null);
+        setUndoStatus(null);
+        setToast("");
+        void fetchReports();
+      } else {
+        setError(updateError?.message || "신고를 저장하지 못했습니다.");
+      }
+    } else {
+      const updated = { ...viewing, ...patch };
       setViewing(updated);
       setReports((current) =>
         current.map((report) => (report.id === viewing.id ? updated : report)),
@@ -269,6 +290,7 @@ export default function ProtectAdminPage() {
       window.dispatchEvent(new Event("admin-inbox-changed"));
     }
     setSaving(false);
+    return !updateError && Boolean(patch);
   };
 
   const changeStatus = async (status: ReportStatus) => {
@@ -285,14 +307,15 @@ export default function ProtectAdminPage() {
       }))
     )
       return;
-    setUndoStatus(viewing.status as ReportStatus);
-    await updateReport({ status });
+    const previousStatus = viewing.status as ReportStatus;
+    if (!(await updateReport({ status }))) return;
+    setUndoStatus(previousStatus);
     setToast("처리 상태를 변경했습니다.");
   };
 
   const undoLastStatus = async () => {
     if (!undoStatus) return;
-    await updateReport({ status: undoStatus });
+    if (!(await updateReport({ status: undoStatus }))) return;
     setUndoStatus(null);
     setToast("이전 처리 상태로 되돌렸습니다.");
   };

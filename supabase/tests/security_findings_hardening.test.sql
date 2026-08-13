@@ -13,9 +13,11 @@ begin
     or has_column_privilege('authenticated', 'public.audition_submissions', 'reviewed_by', 'update') then
     raise exception 'browser roles can still write workflow attribution columns';
   end if;
-  if not has_column_privilege('authenticated', 'public.protect_reports', 'status', 'update')
+  if has_column_privilege('authenticated', 'public.protect_reports', 'status', 'update')
+    or has_column_privilege('authenticated', 'public.protect_reports', 'admin_note', 'update')
     or not has_function_privilege('authenticated', 'public.update_contact_inquiry_workflow(uuid,text,text,timestamptz)', 'execute')
-    or not has_function_privilege('authenticated', 'public.review_audition_submission(uuid,text,text,timestamptz)', 'execute') then
+    or not has_function_privilege('authenticated', 'public.review_audition_submission(uuid,text,text,timestamptz)', 'execute')
+    or not has_function_privilege('authenticated', 'public.review_protect_report(uuid,text,text,timestamptz)', 'execute') then
     raise exception 'review workflow boundary functions are unavailable';
   end if;
   if has_table_privilege('authenticated', 'public.contact_inquiries', 'delete')

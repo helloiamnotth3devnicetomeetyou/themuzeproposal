@@ -16,7 +16,7 @@ export function safeRedirect(
     return "/";
 
   const parsed = new URL(trimmed, "https://app.invalid");
-  return parsed.origin === "https://app.invalid"
+  return parsed.origin === "https://app.invalid" && !parsed.pathname.startsWith("//")
     ? `${parsed.pathname}${parsed.search}${parsed.hash}`
     : "/";
 }

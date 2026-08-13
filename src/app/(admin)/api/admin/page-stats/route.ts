@@ -1,4 +1,5 @@
 import { isAdmin } from "@/core/auth/admin-auth";
+import { isSameOriginRequest } from "@/core/http/same-origin";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 
 type Range = "7d" | "30d" | "12w" | "12m";
@@ -86,6 +87,8 @@ const parseBreakdown = (rows: unknown[], dimension: string) =>
     .sort((a, b) => b.pageviews - a.pageviews);
 
 export async function GET(request: Request) {
+  if (!isSameOriginRequest(request))
+    return jsonNoStore({ error: "forbidden" }, { status: 403 });
   const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
   if (!Object.hasOwn(ranges, requestedRange))

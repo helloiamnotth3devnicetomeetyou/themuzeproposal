@@ -276,7 +276,10 @@ export function useDiscographyEditor({
     )
       return;
     await discardQueuedUploads();
-    const next = createAlbumDraft(artistId, albums.length + 1);
+    const next = createAlbumDraft(
+      artistId,
+      Math.max(0, ...albums.map((album) => album.sort_order)) + 1,
+    );
     setPendingDelete(false);
     setDraft(next);
     setSnapshot(JSON.stringify(next));

@@ -29,6 +29,12 @@ export function SubmissionReviewAdmin({ campaignId }: { campaignId: string }) {
   const [toast, setToast] = useState("");
   const [signed, setSigned] = useState<Record<string, string>>({});
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const fetchSubmissions = async () => {
+    const { data } = await supabase.rpc("get_admin_audition_submissions", {
+      p_campaign_id: campaignId,
+    });
+    if (data) setSubmissions(data as AuditionSubmission[]);
+  };
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -119,7 +125,15 @@ export function SubmissionReviewAdmin({ campaignId }: { campaignId: string }) {
     setSavingReview(false);
     const patch = Array.isArray(data) ? data[0] : data;
     if (error || !patch) {
-      setToast("저장하지 못했습니다.");
+      if (error?.code === "P0003") {
+        setToast(
+          "다른 관리자가 먼저 수정했습니다. 최신 내용을 불러온 뒤 다시 저장해 주세요.",
+        );
+        setSelected(null);
+        void fetchSubmissions();
+      } else {
+        setToast("저장하지 못했습니다.");
+      }
       return false;
     }
     const next = { ...selected, ...patch } as AuditionSubmission;

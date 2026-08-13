@@ -29,11 +29,23 @@ describe("GET /api/admin/page-stats", () => {
     vi.clearAllMocks();
   });
 
+  it("rejects cross-origin requests before calling Vercel", async () => {
+    const response = await GET(
+      new Request("https://themuze.kr/api/admin/page-stats", {
+        headers: { origin: "https://attacker.example" },
+      }),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
   it.each(["__proto__", "constructor", "toString"])(
     "rejects inherited range %s",
     async (range) => {
       const response = await GET(
-        new Request(`https://themuze.kr/api/admin/page-stats?range=${range}`),
+        new Request(`https://themuze.kr/api/admin/page-stats?range=${range}`, {
+          headers: { origin: "https://themuze.kr" },
+        }),
       );
 
       expect(response.status).toBe(400);
@@ -62,7 +74,9 @@ describe("GET /api/admin/page-stats", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await GET(
-      new Request("https://themuze.kr/api/admin/page-stats?range=12w"),
+      new Request("https://themuze.kr/api/admin/page-stats?range=12w", {
+        headers: { origin: "https://themuze.kr" },
+      }),
     );
 
     expect(response.status).toBe(200);
@@ -86,7 +100,9 @@ describe("GET /api/admin/page-stats", () => {
     );
 
     const response = await GET(
-      new Request("https://themuze.kr/api/admin/page-stats?range=12m"),
+      new Request("https://themuze.kr/api/admin/page-stats?range=12m", {
+        headers: { origin: "https://themuze.kr" },
+      }),
     );
 
     expect(response.status).toBe(200);
