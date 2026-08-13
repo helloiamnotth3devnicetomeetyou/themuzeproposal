@@ -60,7 +60,10 @@ const PUBLIC_ASSET_URL_REFERENCES = {
     ["tracks", ["audio_url", "music_video_url", "logo_url"]],
     ["home_hero_slides", ["video_url"]],
   ],
-  "album-covers": [["albums", ["cover_url"]]],
+  "album-covers": [
+    ["albums", ["cover_url", "hero_image_url", "typo_logo_url"]],
+    ["tracks", ["logo_url"]],
+  ],
   "track-assets": [["tracks", ["audio_url", "music_video_url", "logo_url"]]],
   "hero-videos": [["home_hero_slides", ["video_url"]]],
   "business-assets": [],

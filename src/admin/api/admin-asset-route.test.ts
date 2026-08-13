@@ -430,6 +430,25 @@ describe("POST /api/uploads/admin-asset", () => {
     expect(mocks.remove).not.toHaveBeenCalled();
   });
 
+  it("refuses to delete an album hero asset still referenced by content", async () => {
+    mocks.select.mockResolvedValueOnce({
+      data: [{ hero_image_url: "https://storage.example/album-covers/live.png" }],
+      error: null,
+    });
+
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: { origin: "https://themuze.kr", "content-type": "application/json" },
+        body: JSON.stringify({ bucket: "album-covers", paths: ["live.png"] }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.select).toHaveBeenCalledWith("cover_url,hero_image_url,typo_logo_url");
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
   it("refuses to delete an audition attachment still referenced by a submission", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: null, error: null });
     mocks.rpc.mockResolvedValueOnce({ data: true, error: null });
