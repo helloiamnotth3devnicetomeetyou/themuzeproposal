@@ -171,11 +171,7 @@ export default function Home({
       .forEach((video) => {
         const slideIndex = Number(video.dataset.slideIndex);
         const isCurrent = slideIndex === currentSlide;
-        if (
-          (!isCurrent && slideIndex !== prevSlide) ||
-          !isPageVisible ||
-          prefersReducedMotion
-        )
+        if ((!isCurrent && slideIndex !== prevSlide) || !isPageVisible)
           return video.pause();
         const playVideo = () => void video.play().catch(() => undefined);
         const startTime = Number(video.dataset.startTime || 0);
@@ -199,7 +195,17 @@ export default function Home({
         playVideo();
       });
     previousVideoSlide.current = currentSlide;
-  }, [currentSlide, isPageVisible, prefersReducedMotion, prevSlide]);
+    const retry = setTimeout(() => {
+      if (!isPageVisible) return;
+      void document
+        .querySelector<HTMLVideoElement>(
+          `.home-hero-video[data-slide-index="${currentSlide}"]`,
+        )
+        ?.play()
+        .catch(() => undefined);
+    }, TRANSITION_DURATION);
+    return () => clearTimeout(retry);
+  }, [currentSlide, isPageVisible, prevSlide]);
   useEffect(() => {
     if (slides.length <= 1 || !isPageVisible || prefersReducedMotion) return;
     const remaining = Math.max(
