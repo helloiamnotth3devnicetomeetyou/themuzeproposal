@@ -51,6 +51,7 @@ export function useArtistSceneData({
   const [data, setData] = useState<ArtistSceneData | null>(initialData);
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
+  const requestId = useRef(0);
   const loadedSceneIds = useRef(
     new Set(
       initialData?.scenes
@@ -63,6 +64,7 @@ export function useArtistSceneData({
   }, [profilePreview, memberPreview]);
 
   const load = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
     setError("");
     const current = previews.current;
@@ -82,6 +84,7 @@ export function useArtistSceneData({
         ? query.eq("id", previewMember.artist.id)
         : query.eq("slug", artistSlug).eq("is_active", true);
     let result = await query.maybeSingle();
+    if (currentRequest !== requestId.current) return;
     let fetched = result.data as
       | (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] })
       | null;
@@ -97,6 +100,7 @@ export function useArtistSceneData({
       fetched = result.data as
         | (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] })
         | null;
+      if (currentRequest !== requestId.current) return;
     }
     const artist = fetched
       ? { ...fetched, ...previewMember?.artist, ...previewArtist }
@@ -162,6 +166,7 @@ export function useArtistSceneData({
   }, [artistSlug]);
   useEffect(() => {
     if (!profilePreview && !memberPreview && initialData) {
+      ++requestId.current;
       let cancelled = false;
       void Promise.resolve().then(() => {
         if (cancelled) return;
@@ -188,19 +193,23 @@ export function useArtistSceneData({
         loadedSceneIds.current.add(sceneId);
         return;
       }
-      const regions = await getSceneMembers(sceneId);
-      loadedSceneIds.current.add(sceneId);
-      setData(
-        (current) =>
-          current && {
-            ...current,
-            scenes: current.scenes.map((scene) =>
-              scene.id === sceneId
-                ? normalizeScene({ ...scene, artist_scene_members: regions })
-                : scene,
-            ),
-          },
-      );
+      try {
+        const regions = await getSceneMembers(sceneId);
+        loadedSceneIds.current.add(sceneId);
+        setData(
+          (current) =>
+            current && {
+              ...current,
+              scenes: current.scenes.map((scene) =>
+                scene.id === sceneId
+                  ? normalizeScene({ ...scene, artist_scene_members: regions })
+                  : scene,
+              ),
+            },
+        );
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Unable to load scene members.");
+      }
     },
     [data],
   );
