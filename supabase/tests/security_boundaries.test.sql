@@ -8,17 +8,18 @@ begin
     raise exception 'development admin-promotion function still exists';
   end if;
   if to_regprocedure('public.check_login_rate_limit(text,text)') is not null
-    or to_regprocedure('public.record_login_attempt(text,text,boolean)') is not null then
+    or to_regprocedure('public.record_login_attempt(text,text,boolean)') is not null
+    or to_regprocedure('public.reset_login_rate_limit(text)') is not null then
     raise exception 'legacy non-atomic login rate-limit functions still exist';
   end if;
   if has_function_privilege('anon', 'public.consume_login_rate_limit(text,text)', 'execute')
     or has_function_privilege('authenticated', 'public.consume_login_rate_limit(text,text)', 'execute')
-    or has_function_privilege('anon', 'public.reset_login_rate_limit(text)', 'execute')
-    or has_function_privilege('authenticated', 'public.reset_login_rate_limit(text)', 'execute') then
+    or has_function_privilege('anon', 'public.reset_login_rate_limit(text,text)', 'execute')
+    or has_function_privilege('authenticated', 'public.reset_login_rate_limit(text,text)', 'execute') then
     raise exception 'login rate-limit functions are exposed to Data API roles';
   end if;
   if not has_function_privilege('service_role', 'public.consume_login_rate_limit(text,text)', 'execute')
-    or not has_function_privilege('service_role', 'public.reset_login_rate_limit(text)', 'execute') then
+    or not has_function_privilege('service_role', 'public.reset_login_rate_limit(text,text)', 'execute') then
     raise exception 'service role cannot execute login rate-limit functions';
   end if;
 end;
