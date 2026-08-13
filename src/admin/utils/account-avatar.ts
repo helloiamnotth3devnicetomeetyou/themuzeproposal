@@ -22,11 +22,12 @@ export function matchAccountAvatarPaths(
 export async function loadAccountAvatarUrls(userIds: Array<string | null>) {
   const ids = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
   if (!ids.length) return {};
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id,avatar_asset_id")
-    .in("id", ids);
-  const assetIds = (profiles ?? []).flatMap((profile) =>
+  const { data } = await supabase.rpc(
+    "get_referenced_account_avatars",
+    { p_user_ids: ids },
+  );
+  const profiles = (data ?? []) as ProfileAvatar[];
+  const assetIds = profiles.flatMap((profile) =>
     profile.avatar_asset_id ? [profile.avatar_asset_id] : [],
   );
   if (!assetIds.length) return {};
@@ -36,7 +37,7 @@ export async function loadAccountAvatarUrls(userIds: Array<string | null>) {
     .in("id", assetIds)
     .eq("is_active", true);
   return Object.fromEntries(
-    Object.entries(matchAccountAvatarPaths(profiles ?? [], assets ?? [])).map(
+    Object.entries(matchAccountAvatarPaths(profiles, assets ?? [])).map(
       ([userId, path]) => [userId, getPublicAssetUrl("artist-assets", path)],
     ),
   );
