@@ -61,7 +61,7 @@ export default function HomeSlide({
       poster={slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted playsInline autoPlay controls={false} disablePictureInPicture preload={index === 0 || shouldPreload || index === nextSlide ? "auto" : "metadata"} aria-hidden="true"
+      muted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
       onLoadedData={(event) => { onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
       onCanPlay={(event) => { if (isActive && event.currentTarget.paused) void event.currentTarget.play().catch(() => undefined); }}
       onError={() => onVideoFailure(slide.id)}
@@ -69,7 +69,7 @@ export default function HomeSlide({
     />}
     {shouldLoadMedia && slide.imageUrl && (index !== 0 || !slide.videoUrl || failedVideoSlideIds.has(slide.id)) && <Image
       src={slide.imageUrl} alt={`${slide.artistName} ${slide.title}`} fill sizes="100vw" preload={isActive}
-      fetchPriority={isActive ? "high" : undefined} loading="eager" quality={80} onLoad={() => { if (index === 0) onFirstImageLoaded(); }}
+      fetchPriority={isActive ? "high" : undefined} loading={isActive ? "eager" : "lazy"} quality={80} onLoad={() => { if (index === 0) onFirstImageLoaded(); }}
       className="object-cover object-center" style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
     />}
     <div className="home-hero-content"><div className="home-hero-copy">

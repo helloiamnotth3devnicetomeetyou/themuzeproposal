@@ -42,7 +42,7 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
   const firstSlideReady = firstSlideMediaReady(Boolean(rawSlides[0]?.videoUrl), Boolean(rawSlides[0] && readyVideoSlideIds.has(rawSlides[0].id)), Boolean(rawSlides[0] && failedVideoSlideIds.has(rawSlides[0].id)), isFirstImageLoaded);
   const nextVideoIndex = slides.findIndex((slide, index) => index > 0 && slide.videoUrl && !readyVideoSlideIds.has(slide.id) && !failedVideoSlideIds.has(slide.id));
   const preloadIndex = !firstSlideReady
-    ? Math.min(1, Math.max(0, slides.length - 1))
+    ? 0
     : nextVideoIndex === -1 ? Math.max(0, slides.length - 1) : nextVideoIndex;
 
   useEffect(() => () => { if (transitionTimeout.current) clearTimeout(transitionTimeout.current); }, []);
