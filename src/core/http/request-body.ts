@@ -1,7 +1,7 @@
 class BodyTooLargeError extends Error {}
 class MultipartTooComplexError extends Error {}
 
-const MULTIPART_BODY_TIMEOUT_MS = 15_000;
+const BODY_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_MULTIPART_PARTS = 128;
 const DEFAULT_MAX_MULTIPART_METADATA_BYTES = 64 * 1024;
 
@@ -32,8 +32,9 @@ function limitedBody(request: Request, maxBytes: number, timeoutMs?: number) {
 export async function parseJsonWithinLimit(
   request: Request,
   maxBytes: number,
+  timeoutMs = BODY_TIMEOUT_MS,
 ): Promise<unknown | null> {
-  const body = limitedBody(request, maxBytes);
+  const body = limitedBody(request, maxBytes, timeoutMs);
   if (!body) return null;
   return new Response(body, {
     headers: {
@@ -45,7 +46,7 @@ export async function parseJsonWithinLimit(
 export async function parseFormDataWithinLimit(
   request: Request,
   maxBytes: number,
-  timeoutMs = MULTIPART_BODY_TIMEOUT_MS,
+  timeoutMs = BODY_TIMEOUT_MS,
   limits: MultipartLimits = {},
 ) {
   const body = limitedBody(request, maxBytes, timeoutMs);

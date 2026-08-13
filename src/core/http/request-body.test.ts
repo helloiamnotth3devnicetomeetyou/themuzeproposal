@@ -66,6 +66,24 @@ describe("parseFormDataWithinLimit", () => {
     });
   });
 
+  it("cancels a stalled JSON body after the read deadline", async () => {
+    const cancel = vi.fn();
+    const request = new Request("https://themuze.kr/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("{"));
+        },
+        cancel,
+      }),
+      duplex: "half",
+    } as RequestInit);
+
+    await expect(parseJsonWithinLimit(request, 10, 20)).rejects.toThrow();
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
   it("does not let one multipart parse block another request", async () => {
     let release!: () => void;
     vi.spyOn(Response.prototype, "formData")
