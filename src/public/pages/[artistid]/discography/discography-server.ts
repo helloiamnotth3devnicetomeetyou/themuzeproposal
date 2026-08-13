@@ -29,10 +29,10 @@ const getCachedDiscography = unstable_cache(
       .maybeSingle();
 
     if (artistResult.error)
-      throw new Error("?꾪떚?ㅽ듃 ?뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+      throw new Error("아티스트 정보를 불러오지 못했습니다.");
 
     const artist = artistResult.data;
-    if (!artist) throw new Error("議댁옱?섏? ?딅뒗 ?꾪떚?ㅽ듃?낅땲??");
+    if (!artist) throw new Error("존재하지 않는 아티스트입니다.");
 
     const [albumsResult, membersResult, galleryResult] = await Promise.all([
       client
@@ -59,7 +59,7 @@ const getCachedDiscography = unstable_cache(
     ]);
 
     if (albumsResult.error || membersResult.error || galleryResult.error)
-      throw new Error("붿뒪肄붽렇?섑뵾瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+      throw new Error("디스코그래피를 불러오지 못했습니다.");
 
     const albums: DiscographyAlbum[] = (albumsResult.data ?? []).map(
       (item) => ({
@@ -162,7 +162,7 @@ export async function loadDiscography(artistSlug: string) {
       error:
         error instanceof Error
           ? error.message
-          : "?붿뒪肄붽렇?섑뵾瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??",
+          : "디스코그래피를 불러오지 못했습니다.",
     };
   }
 }

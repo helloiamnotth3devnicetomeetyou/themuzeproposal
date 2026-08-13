@@ -219,7 +219,7 @@ export default function ArtistProfileAdmin() {
     payload: previewPayload,
     targetPath: previewSlug ? `/${previewSlug}/artist` : "",
     canPreview: Boolean(previewPayload),
-    unavailableMessage: "????? ??? ?? ?????? ?? ??? ???.",
+    unavailableMessage: "미리보기를 열 수 없습니다.",
     onError: setError,
   });
 

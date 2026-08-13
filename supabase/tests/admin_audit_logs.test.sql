@@ -237,12 +237,12 @@ insert into public.protect_reports (
   'reporter@example.com',
   '00000000-0000-0000-0000-000000000201',
   'other',
-  '蹂댁뺄 蹂닿린',
-  '蹂댁뺄 蹂닿린 蹂몃Ц',
+  '보호 신고',
+  '보호 신고 본문',
   'example.com',
   'https://example.com/post',
   current_date,
-  '蹂닿린 湲곗옄',
+  '신고 작성자',
   true,
   'pending',
   null
@@ -252,7 +252,7 @@ set local role authenticated;
 select * from public.review_protect_report(
   '00000000-0000-0000-0000-000000000402',
   'reviewing',
-  '寃??硫붾え',
+  '검토 메모',
   (select updated_at from public.protect_reports
    where id = '00000000-0000-0000-0000-000000000402')
 );

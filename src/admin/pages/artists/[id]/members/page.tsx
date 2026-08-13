@@ -149,7 +149,7 @@ export default function ArtistMembersAdmin() {
         ? `/${artistSlug}/artist/${previewMemberSlug}`
         : "",
     canPreview: Boolean(previewPayload),
-    unavailableMessage: "????? ??? ?? ???? ???? ?? ??? ?????.",
+    unavailableMessage: "미리보기를 열 수 없습니다.",
     onError: setError,
   });
 

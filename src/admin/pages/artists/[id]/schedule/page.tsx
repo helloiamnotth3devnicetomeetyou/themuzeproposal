@@ -289,7 +289,7 @@ export default function ArtistScheduleAdminPage() {
     payload: previewPayload,
     targetPath: previewPayload ? `/${artistSlug}/schedule` : "",
     canPreview: Boolean(previewPayload),
-    unavailableMessage: "?? ????? ??? ??? ???? ?? ??? ?????.",
+    unavailableMessage: "미리보기를 열 수 없습니다.",
     onError: setError,
   });
 
