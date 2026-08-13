@@ -195,7 +195,9 @@ export default function ArtistSceneManager({
     try {
       // Download the source image and upload it as an independent copy so that
       // later changes to the hero image do not break the scene record.
-      const response = await fetch(heroUrl);
+      const response = await fetch(
+        `/api/asset-proxy?url=${encodeURIComponent(heroUrl)}`,
+      );
       if (!response.ok) throw new Error("대표 이미지를 내려받지 못했습니다.");
       const blob = await response.blob();
       const sourceFile = new File([blob], "hero", { type: blob.type });

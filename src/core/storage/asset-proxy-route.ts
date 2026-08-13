@@ -4,9 +4,10 @@ import {
   managedAssetFromUrl,
 } from "@/core/storage/public-url";
 
-const MAX_PROXY_BYTES = 10 * 1024 * 1024;
+const MAX_PROXY_BYTES = 20 * 1024 * 1024;
 const TYPOLOGY_PATH =
   /^[a-z0-9-]+\/album-typography-sanitized\/[a-z0-9-]+\/[0-9a-f-]{36}\.svg$/i;
+const IMAGE_PATH = /^[a-z0-9-]+\/.+\.(?:jpe?g|png|webp)$/i;
 
 /**
  * Streams a public R2 asset back through our own origin. CSS `mask-image` (used to tint
@@ -17,7 +18,11 @@ const TYPOLOGY_PATH =
 export async function GET(request: NextRequest) {
   const url = new URL(request.url).searchParams.get("url") ?? "";
   const asset = managedAssetFromUrl(url);
-  if (!asset || asset.bucket !== "artist-assets" || !TYPOLOGY_PATH.test(asset.path))
+  if (
+    !asset ||
+    asset.bucket !== "artist-assets" ||
+    (!TYPOLOGY_PATH.test(asset.path) && !IMAGE_PATH.test(asset.path))
+  )
     return NextResponse.json({ code: "INVALID_REQUEST" }, { status: 400 });
 
   let upstream: Response;
@@ -38,7 +43,9 @@ export async function GET(request: NextRequest) {
   const contentLengthHeader = upstream.headers.get("content-length");
   const contentLength = contentLengthHeader ? Number(contentLengthHeader) : null;
   if (
-    contentType !== "image/svg+xml" ||
+    !["image/svg+xml", "image/jpeg", "image/png", "image/webp"].includes(
+      contentType,
+    ) ||
     (contentLength !== null &&
       Number.isFinite(contentLength) &&
       (contentLength < 1 || contentLength > MAX_PROXY_BYTES))
@@ -62,7 +69,7 @@ export async function GET(request: NextRequest) {
   );
 
   const response = new NextResponse(body, { status: 200 });
-  response.headers.set("Content-Type", "image/svg+xml");
+  response.headers.set("Content-Type", contentType);
   response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
   return response;
 }

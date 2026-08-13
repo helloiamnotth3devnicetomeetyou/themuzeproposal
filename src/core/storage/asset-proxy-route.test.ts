@@ -47,7 +47,7 @@ describe("GET /api/asset-proxy", () => {
     ).toEqual({ bucket: "track-assets", path: "path/file.jpg" });
   });
 
-  it("only proxies bounded album typography SVGs", async () => {
+  it("proxies bounded artist SVGs and images", async () => {
     vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_URL", "https://cdn.example.com");
     vi.stubGlobal(
       "fetch",
@@ -70,5 +70,26 @@ describe("GET /api/asset-proxy", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/svg+xml");
     await expect(response.text()).resolves.toContain("<svg");
+  });
+
+  it("proxies artist images", async () => {
+    vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_URL", "https://cdn.example.com");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1]), {
+          headers: { "content-type": "image/webp" },
+        }),
+      ),
+    );
+    const url = "https://cdn.example.com/artist-assets/artist/profile/image.webp";
+    const response = await GET(
+      new NextRequest(
+        `https://themuze.kr/api/asset-proxy?url=${encodeURIComponent(url)}`,
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/webp");
   });
 });
