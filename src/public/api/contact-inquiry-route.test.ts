@@ -145,6 +145,7 @@ describe("POST /api/contact-inquiries", () => {
     const response = await POST(request(validForm()));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });
