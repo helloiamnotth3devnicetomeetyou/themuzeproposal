@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createMockFile } from "./helpers/test-helpers";
 
 test.describe("Contact Inquiry & Protect Report File Validation API", () => {
-  test("contact inquiry requires authorization before parsing a file", async ({ request }) => {
+  test("contact inquiry allows anonymous submission but rejects a missing captcha token", async ({ request }) => {
     const fakeJpg = createMockFile("jpg");
 
     const response = await request.post("/api/contact-inquiries", {
@@ -26,8 +26,11 @@ test.describe("Contact Inquiry & Protect Report File Validation API", () => {
       },
     });
 
-    expect(response.status()).toBe(401);
-    await expect(response.json()).resolves.toEqual({ code: "UNAUTHORIZED" });
+    // /contact intentionally allows anonymous submissions (rate-limited by IP instead of
+    // user id) — captcha verification runs before the file-signature check and rejects
+    // the request first since no turnstileToken was supplied.
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
   });
 
   test("protect report requires authorization", async ({ request }) => {

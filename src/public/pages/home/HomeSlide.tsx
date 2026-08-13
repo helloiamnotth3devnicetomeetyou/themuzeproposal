@@ -64,7 +64,7 @@ export default function HomeSlide({
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
       muted playsInline autoPlay controls={false} disablePictureInPicture preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
-      onCanPlay={() => onVideoReady(slide.id)}
+      onLoadedData={() => onVideoReady(slide.id)}
       onError={() => onVideoFailure(slide.id)}
       style={slide.imageUrl ? undefined : { opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
     />}
