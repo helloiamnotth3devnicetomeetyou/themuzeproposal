@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import nextEnv from "@next/env";
 
 const { loadEnvConfig } = nextEnv;
@@ -13,8 +14,9 @@ if (!dbUrl) {
 }
 
 const args = process.argv.slice(2);
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-const result = spawnSync(npx, ["--no-install", "supabase", ...args, "--db-url", dbUrl], {
+const require = createRequire(import.meta.url);
+const cli = require.resolve("supabase/dist/supabase.js");
+const result = spawnSync(process.execPath, [cli, ...args, "--db-url", dbUrl], {
   stdio: "inherit",
 });
 
