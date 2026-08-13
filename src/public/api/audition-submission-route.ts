@@ -24,6 +24,7 @@ import { createServiceRoleClient } from "@/core/uploads/service-storage";
 
 const MAX_BODY_BYTES = 30 * 1024 * 1024 + 256 * 1024;
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 class SubmissionConflictError extends Error {}
 
 function databaseError(error: unknown) {
@@ -110,7 +111,9 @@ export async function POST(request: NextRequest) {
     typeof formData.get("turnstileToken") === "string"
       ? String(formData.get("turnstileToken")).trim()
       : "";
-  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
+    action: "audition_submission",
+  });
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
   const campaignId =
@@ -122,10 +125,12 @@ export async function POST(request: NextRequest) {
       ? String(formData.get("submissionId")).trim()
       : "";
   const service = createServiceRoleClient();
-  if (!campaignId || !service)
+  if (!UUID_RE.test(campaignId) || (requestedSubmissionId && !UUID_RE.test(requestedSubmissionId)))
+    return errorResponse("INVALID_REQUEST", 400);
+  if (!service)
     return errorResponse(
-      service ? "INVALID_REQUEST" : "SERVICE_UNAVAILABLE",
-      service ? 400 : 503,
+      "SERVICE_UNAVAILABLE",
+      503,
     );
 
   const now = new Date().toISOString();
@@ -345,6 +350,7 @@ export async function POST(request: NextRequest) {
       p_answers: answers,
       p_form_snapshot: fields,
       p_applicant_email_hash: emailHash,
+      p_expected_updated_at: existing?.updated_at ?? null,
     });
     if (writeResult.error) throw writeResult.error;
     const persisted = Array.isArray(writeResult.data)

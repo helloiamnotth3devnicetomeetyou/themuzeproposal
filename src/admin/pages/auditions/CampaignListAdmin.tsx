@@ -9,11 +9,7 @@ import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { deleteAdminAssets } from "@/admin/utils/delete-admin-assets";
 import { supabase } from "@/core/supabase/client";
 import { type AuditionCampaign } from "@/core/auditions/types";
-import {
-  attachmentPaths,
-  blankField,
-  campaignPeriod,
-} from "./CampaignAdminShared";
+import { blankField, campaignPeriod } from "./CampaignAdminShared";
 
 export function CampaignListAdmin() {
   const requestConfirm = useAdminConfirm();
@@ -78,43 +74,39 @@ export function CampaignListAdmin() {
   }, []);
   const create = async () => {
     setError("");
-    const { data, error: createError } = await supabase
-      .from("audition_campaigns")
-      .insert({
-        title: "새 오디션",
-        description: "",
-        description_i18n: {},
-        is_active: false,
-      })
-      .select()
-      .single();
-    if (createError || !data) {
-      setError(createError?.message || "캠페인을 만들지 못했습니다.");
-      return;
-    }
+    const draftCampaignId = crypto.randomUUID();
     const fields = [
       {
-        ...blankField(data.id, 0),
+        ...blankField(draftCampaignId, 0),
         field_key: "name",
         label_i18n: { ko: "이름", en: "Name", ja: "氏名" },
         required: true,
         is_primary_label: true,
       },
       {
-        ...blankField(data.id, 1),
+        ...blankField(draftCampaignId, 1),
         field_key: "email",
         label_i18n: { ko: "이메일", en: "Email", ja: "メール" },
         required: true,
       },
     ];
-    const { error: fieldError } = await supabase
-      .from("audition_form_fields")
-      .insert(fields);
-    if (fieldError) {
-      setError(fieldError.message);
+    const { data, error: createError } = await supabase.rpc(
+      "create_audition_campaign",
+      {
+        p_campaign: {
+          title: "새 오디션",
+          description: "",
+          description_i18n: {},
+          is_active: false,
+        },
+        p_fields: fields,
+      },
+    );
+    if (createError || !data) {
+      setError(createError?.message || "캠페인을 만들지 못했습니다.");
       return;
     }
-    window.location.assign(`/admin/auditions/campaigns/${data.id}/builder`);
+    window.location.assign(`/admin/auditions/campaigns/${String(data)}/builder`);
   };
   const toggle = async (campaign: AuditionCampaign) => {
     if (
@@ -146,33 +138,20 @@ export function CampaignListAdmin() {
     setError("");
     setDeleting(true);
     try {
-      const { data: submissions, error: attachmentQueryError } = await supabase
-        .from("audition_submissions")
-        .select("answers")
-        .eq("campaign_id", campaign.id);
-      if (attachmentQueryError) {
-        setError(attachmentQueryError.message);
-        return;
-      }
-      const paths = attachmentPaths(
-        (submissions ?? []) as Array<{ answers?: unknown }>,
+      const { data: deleted, error: deleteError } = await supabase.rpc(
+        "delete_audition_campaign",
+        { p_campaign_id: campaign.id },
       );
-      const { error: submissionsError } = await supabase
-        .from("audition_submissions")
-        .delete()
-        .eq("campaign_id", campaign.id);
-      if (submissionsError) {
-        setError(submissionsError.message);
-        return;
-      }
-      const { error: deleteError } = await supabase
-        .from("audition_campaigns")
-        .delete()
-        .eq("id", campaign.id);
       if (deleteError) {
         setError(deleteError.message);
         return;
       }
+      const pathRow = (deleted as Array<{ attachment_paths?: unknown }> | null)?.[0];
+      const paths = Array.isArray(pathRow?.attachment_paths)
+        ? pathRow.attachment_paths.filter(
+            (path): path is string => typeof path === "string",
+          )
+        : [];
       for (let index = 0; index < paths.length; index += 100) {
         if (
           !(await deleteAdminAssets(

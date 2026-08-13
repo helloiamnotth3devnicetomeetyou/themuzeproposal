@@ -39,6 +39,25 @@ describe("draft image asset lifecycle", () => {
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
 
+  it("keeps old uploads still referenced by a saved draft", async () => {
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(1_000)
+      .mockReturnValueOnce(31 * 60 * 1_000);
+    const kept = asset("artist/still-used.jpg");
+    trackDraftImageAsset(kept);
+    localStorage.setItem(
+      "admin-draft:profile:artist-1",
+      JSON.stringify({ draft: { imageUrl: kept.url }, updatedAt: 1_000 }),
+    );
+
+    await cleanupAbandonedDraftImageAssets(client as never);
+
+    expect(deleteAdminAssets).not.toHaveBeenCalled();
+    expect(
+      JSON.parse(localStorage.getItem("themuze:admin-draft-assets")!),
+    ).toHaveLength(1);
+  });
+
   it("keeps referenced uploads and deletes replaced managed originals once", async () => {
     const kept = asset("artist/kept.jpg");
     const unused = asset("artist/unused.jpg");

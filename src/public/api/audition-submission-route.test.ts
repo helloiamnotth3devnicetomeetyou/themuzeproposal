@@ -213,7 +213,7 @@ describe("POST /api/audition/submit", () => {
     mocks.rpc.mockResolvedValue({
       data: [
         {
-          id: "submission-1",
+          id: "22222222-2222-4222-8222-222222222222",
           created_at: "2026-08-01T00:00:00.000Z",
           updated_at: "2026-08-01T00:00:00.000Z",
         },
@@ -224,6 +224,33 @@ describe("POST /api/audition/submit", () => {
     mocks.upload.mockResolvedValue({ error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.verifyTurnstileToken.mockResolvedValue(true);
+  });
+
+  it("rejects malformed campaign and submission UUIDs before database queries", async () => {
+    const invalidCampaign = request();
+    const campaignForm = await invalidCampaign.formData();
+    campaignForm.set("campaignId", "not-a-uuid");
+    const campaignResponse = await POST(
+      new NextRequest(invalidCampaign.url, {
+        method: "POST",
+        headers: { origin: "http://localhost" },
+        body: campaignForm,
+      }),
+    );
+    expect(campaignResponse.status).toBe(400);
+
+    const invalidSubmission = request();
+    const submissionForm = await invalidSubmission.formData();
+    submissionForm.set("submissionId", "not-a-uuid");
+    const submissionResponse = await POST(
+      new NextRequest(invalidSubmission.url, {
+        method: "POST",
+        headers: { origin: "http://localhost" },
+        body: submissionForm,
+      }),
+    );
+    expect(submissionResponse.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("rejects a submission with a missing or invalid captcha token before touching the database", async () => {
@@ -260,7 +287,7 @@ describe("POST /api/audition/submit", () => {
 
   it("updates only the signed-in user's existing submission while the campaign is open", async () => {
     mocks.existing = {
-      id: "submission-1",
+      id: "22222222-2222-4222-8222-222222222222",
       campaign_id: campaign.id,
       user_id: "user-1",
       answers: {},
@@ -273,7 +300,7 @@ describe("POST /api/audition/submit", () => {
     };
     const original = request("댄스");
     const form = await original.formData();
-    form.set("submissionId", "submission-1");
+    form.set("submissionId", "22222222-2222-4222-8222-222222222222");
     const response = await POST(
       new NextRequest(original.url, {
         method: "POST",
@@ -294,7 +321,7 @@ describe("POST /api/audition/submit", () => {
 
   it("does not let applicants edit a reviewed submission", async () => {
     mocks.existing = {
-      id: "submission-1",
+      id: "22222222-2222-4222-8222-222222222222",
       campaign_id: campaign.id,
       user_id: "user-1",
       answers: {},
@@ -308,7 +335,7 @@ describe("POST /api/audition/submit", () => {
 
     const original = request();
     const form = await original.formData();
-    form.set("submissionId", "submission-1");
+    form.set("submissionId", "22222222-2222-4222-8222-222222222222");
     const response = await POST(
       new NextRequest(original.url, {
         method: "POST",
@@ -326,7 +353,7 @@ describe("POST /api/audition/submit", () => {
 
   it("removes replacement uploads when an edit loses the version race", async () => {
     mocks.existing = {
-      id: "submission-1",
+      id: "22222222-2222-4222-8222-222222222222",
       campaign_id: campaign.id,
       user_id: "user-1",
       answers: {},
@@ -340,7 +367,7 @@ describe("POST /api/audition/submit", () => {
     mocks.rpc.mockResolvedValueOnce({ data: [], error: null });
     const original = request();
     const form = await original.formData();
-    form.set("submissionId", "submission-1");
+    form.set("submissionId", "22222222-2222-4222-8222-222222222222");
     form.set(
       "answers[portfolio]",
       new File(["%PDF-1.7\ncontent"], "portfolio.pdf", {

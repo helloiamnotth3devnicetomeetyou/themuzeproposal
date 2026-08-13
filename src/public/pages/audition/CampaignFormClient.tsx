@@ -80,6 +80,7 @@ export default function CampaignFormClient({
   const [error, setError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const submissionIdRef = useRef(initialSubmission?.id ?? "");
   const setValue = (key: string, value: string | string[]) =>
     setValues((current) => ({ ...current, [key]: value }));
   const existingFile = (field: AuditionFormField) => {
@@ -141,7 +142,10 @@ export default function CampaignFormClient({
     const formData = new FormData();
     formData.set("campaignId", campaign.id);
     formData.set("turnstileToken", turnstileToken);
-    if (initialSubmission) formData.set("submissionId", initialSubmission.id);
+    const submissionId =
+      initialSubmission?.id || submissionIdRef.current || crypto.randomUUID();
+    submissionIdRef.current = submissionId;
+    formData.set("submissionId", submissionId);
     for (const field of fields) {
       const key = `answers[${field.field_key}]`;
       const file = files[field.field_key];

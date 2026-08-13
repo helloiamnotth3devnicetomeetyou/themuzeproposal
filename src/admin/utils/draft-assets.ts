@@ -41,6 +41,21 @@ function readRegistry(): RegisteredDraftAsset[] {
   }
 }
 
+function referencedDraftPaths(registry: RegisteredDraftAsset[]) {
+  if (typeof window === "undefined") return new Set<string>();
+  const drafts = Object.keys(localStorage)
+    .filter((key) => key.startsWith("admin-draft:"))
+    .map((key) => localStorage.getItem(key) || "")
+    .join("\n");
+  return new Set(
+    registry
+      .filter(
+        (asset) => drafts.includes(asset.url) || drafts.includes(asset.path),
+      )
+      .map((asset) => asset.path),
+  );
+}
+
 function writeRegistry(items: RegisteredDraftAsset[]) {
   if (typeof window === "undefined") return;
   try {
@@ -68,7 +83,10 @@ export function trackDraftImageAsset(asset: UploadedImageAsset) {
 export async function cleanupAbandonedDraftImageAssets(client: SupabaseClient) {
   const cutoff = Date.now() - ABANDONED_ASSET_AGE_MS;
   const registry = readRegistry();
-  const abandoned = registry.filter((asset) => asset.createdAt < cutoff);
+  const referenced = referencedDraftPaths(registry);
+  const abandoned = registry.filter(
+    (asset) => asset.createdAt < cutoff && !referenced.has(asset.path),
+  );
   if (!abandoned.length) return;
   await removePaths(
     client,

@@ -402,18 +402,16 @@ export default function ArtistMembersAdmin() {
 
   const saveOrder = async () => {
     setSaving(true);
-    const results = await Promise.all(
-      members.map((member, index) =>
-        supabase
-          .from("artist_members")
-          .update({ sort_order: index + 1 })
-          .eq("id", member.id),
-      ),
+    const { error: reorderError } = await supabase.rpc(
+      "reorder_artist_members",
+      {
+        p_artist_id: artistId,
+        p_member_ids: members.map((member) => member.id),
+      },
     );
     setSaving(false);
-    const failed = results.find((result) => result.error);
-    if (failed?.error) {
-      setError(failed.error.message);
+    if (reorderError) {
+      setError(reorderError.message);
       return;
     }
     setSorting(false);

@@ -337,43 +337,6 @@ export function useDiscographyEditor({
     }
 
     const savedAlbumId = String(data ?? draft.id);
-    const [{ error: localizedAlbumError }, ...localizedTrackResults] =
-      await Promise.all([
-        supabase
-          .from("albums")
-          .update({
-            hero_image_url: draft.hero_image_url || null,
-            typo_logo_url: draft.typo_logo_url || null,
-            title_ko: draft.title_ko.trim() || draft.title,
-            title_en: draft.title_en.trim() || null,
-            title_ja: draft.title_ja.trim() || null,
-          })
-          .eq("id", savedAlbumId),
-        ...localizedTracks.map((track) =>
-          supabase
-            .from("tracks")
-            .update({
-              title_ko: track.title_ko,
-              title_en: track.title_en,
-              title_ja: track.title_ja,
-            })
-            .eq("id", track.id),
-        ),
-      ]);
-    const localizedTrackError = localizedTrackResults.find(
-      (result) => result.error,
-    )?.error;
-    if (localizedAlbumError || localizedTrackError) {
-      const assetError = localizedAlbumError || localizedTrackError;
-      setSaving(false);
-      setError(
-        assetError!.message.includes("title_ko")
-          ? "다국어 콘텐츠 DB 마이그레이션을 먼저 적용해 주세요."
-          : assetError!.message,
-      );
-      return;
-    }
-
     const referenced = collectAssetUrls(draft);
     const stale = original
       ? [...collectAssetUrls(original)]

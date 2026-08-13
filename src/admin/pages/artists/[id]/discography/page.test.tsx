@@ -149,5 +149,10 @@ describe("DiscographyAdmin", () => {
         expect.any(Object),
       ),
     );
+    const [, payload] = mocks.rpc.mock.calls[0];
+    expect(payload).toMatchObject({
+      p_album: expect.objectContaining({ title_ko: "Existing album" }),
+      p_tracks: [expect.objectContaining({ title_ko: "Opening" })],
+    });
   });
 });
