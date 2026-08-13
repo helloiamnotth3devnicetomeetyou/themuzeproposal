@@ -60,11 +60,11 @@ function validForm(attachment?: File) {
   return formData;
 }
 
-function request(formData: FormData) {
+function request(body: BodyInit) {
   return new NextRequest("http://localhost/api/contact-inquiries", {
     method: "POST",
     headers: { origin: "http://localhost" },
-    body: formData,
+    body,
   });
 }
 
@@ -178,8 +178,9 @@ describe("POST /api/contact-inquiries", () => {
       remaining: 0,
       retryAfter: 30,
     });
-    const response = await POST(request(validForm()));
+    const response = await POST(request(new URLSearchParams({ invalid: "body" })));
     expect(response.status).toBe(429);
+    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
   });
 
@@ -188,7 +189,7 @@ describe("POST /api/contact-inquiries", () => {
     const response = await POST(request(validForm()));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
-    expect(mocks.createSessionClient).not.toHaveBeenCalled();
+    expect(mocks.createSessionClient).toHaveBeenCalledOnce();
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
   });

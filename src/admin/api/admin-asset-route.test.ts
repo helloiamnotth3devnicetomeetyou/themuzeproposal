@@ -54,7 +54,7 @@ vi.mock("@/core/uploads/service-storage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/core/uploads/service-storage")>()),
   createServiceRoleClient: mocks.createServiceClient,
 }));
-import { POST } from "./admin-asset-route";
+import { DELETE, POST } from "./admin-asset-route";
 
 describe("POST /api/uploads/admin-asset", () => {
   beforeEach(() => {
@@ -98,14 +98,14 @@ describe("POST /api/uploads/admin-asset", () => {
 
       expect(response.status).toBe(200);
       expect(mocks.upload).toHaveBeenCalledWith(
-        "artist-1/asset.png",
+        expect.stringMatching(/^[0-9a-f-]{36}\.png$/),
         expect.any(File),
         expect.objectContaining({ contentType: "image/png" }),
       );
     },
   );
 
-  it("never enables caller-controlled overwrites", async () => {
+  it("uses a server-generated immutable upload path", async () => {
     const form = new FormData();
     form.set("bucket", "album-covers");
     form.set("path", "artist-1/asset.jpg");
@@ -122,7 +122,7 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.upload).toHaveBeenCalledWith(
-      "artist-1/asset.png",
+      expect.stringMatching(/^[0-9a-f-]{36}\.png$/),
       expect.any(File),
       expect.objectContaining({ upsert: false }),
     );
@@ -163,7 +163,9 @@ describe("POST /api/uploads/admin-asset", () => {
     );
 
     expect(response.status).toBe(503);
-    expect(mocks.remove).toHaveBeenCalledWith(["artist-1/asset.png"]);
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^[0-9a-f-]{36}\.png$/),
+    ]);
   });
 
   it("derives immutable business asset paths on the server", async () => {
@@ -209,10 +211,10 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      asset: { path: "artist-1/album-1/track-1/audio.mp3" },
+      asset: { path: expect.stringMatching(/^[0-9a-f-]{36}\.mp3$/) },
     });
     expect(mocks.upload).toHaveBeenCalledWith(
-      "artist-1/album-1/track-1/audio.mp3",
+      expect.stringMatching(/^[0-9a-f-]{36}\.mp3$/),
       expect.any(File),
       expect.objectContaining({ contentType: "audio/mpeg" }),
     );
@@ -245,7 +247,7 @@ describe("POST /api/uploads/admin-asset", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.upload).toHaveBeenCalledWith(
-      "clips/slide-1/clip.mp4",
+      expect.stringMatching(/^[0-9a-f-]{36}\.mp4$/),
       expect.any(File),
       expect.objectContaining({ contentType: "video/mp4" }),
     );
@@ -314,5 +316,41 @@ describe("POST /api/uploads/admin-asset", () => {
     expect(await completed.json()).toMatchObject({
       asset: { bucket: "hero-videos", path: finalPath },
     });
+  });
+
+  it("only deletes server-generated pending hero uploads", async () => {
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          bucket: "artist-assets",
+          paths: ["artist-1/asset.png"],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("deletes a server-generated pending hero upload", async () => {
+    const path = "pending/123e4567-e89b-12d3-a456-426614174000.mp4";
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ bucket: "hero-videos", paths: [path] }),
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(mocks.remove).toHaveBeenCalledWith([path]);
   });
 });

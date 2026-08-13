@@ -15,14 +15,12 @@ import {
 } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import {
-  extensionMatches,
   validateFileSignature,
   type FileValidationProfile,
 } from "@/core/uploads/file-signature";
 import {
   createServiceRoleClient,
   isSafeStoragePath,
-  replacePathExtension,
 } from "@/core/uploads/service-storage";
 
 const BUCKETS = {
@@ -38,10 +36,7 @@ const BUCKETS = {
 const MAX_DELETE_BODY_BYTES = 64 * 1024;
 const HERO_VIDEO_BUCKET = "hero-videos";
 const HERO_VIDEO_MAX_BYTES = BUCKETS[HERO_VIDEO_BUCKET].maxBytes;
-const DELETABLE_BUCKETS = new Set([
-  ...Object.keys(BUCKETS),
-  "audition-attachments",
-]);
+const PENDING_HERO_VIDEO_PATH = /^pending\/[0-9a-f-]{36}\.mp4$/i;
 
 function errorResponse(
   code: string,
@@ -273,17 +268,11 @@ export async function POST(request: NextRequest) {
       fileSize,
     });
 
-  let path = replacePathExtension(requestedPath, validated.extension);
-  if (!extensionMatches(path, validated.extension))
-    return errorResponse("INVALID_FILE_TYPE", 400, {
-      reason: "extension_mismatch",
-      path,
-      extension: validated.extension,
-    });
+  let path = `${crypto.randomUUID()}.${validated.extension}`;
   if (bucket === "business-assets") {
-    if (path === "press-kit.zip" && validated.extension === "zip")
+    if (requestedPath === "press-kit.zip" && validated.extension === "zip")
       path = `press-kit/${crypto.randomUUID()}.zip`;
-    else if (path === "profile.pdf" && validated.extension === "pdf")
+    else if (requestedPath === "profile.pdf" && validated.extension === "pdf")
       path = `profile/${crypto.randomUUID()}.pdf`;
     else
       return errorResponse("INVALID_FILE", 400, {
@@ -376,7 +365,11 @@ export async function DELETE(request: NextRequest) {
     )
       ? [...new Set(body.paths)]
       : [];
-  if (!DELETABLE_BUCKETS.has(bucket) || !paths.length)
+  if (
+    bucket !== HERO_VIDEO_BUCKET ||
+    !paths.length ||
+    paths.some((path) => !PENDING_HERO_VIDEO_PATH.test(path))
+  )
     return errorResponse("INVALID_FILE", 400);
   const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);

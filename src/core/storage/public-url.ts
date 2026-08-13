@@ -61,5 +61,15 @@ export function managedAssetFromUrl(
   const path = rest.slice(slash + 1);
   if (!path || !(PUBLIC_BUCKETS as readonly string[]).includes(bucket))
     return null;
+  if (
+    path.split("/").some(
+      (segment) =>
+        !segment ||
+        segment === "." ||
+        segment === ".." ||
+        /%2e|%2f|%5c/i.test(segment),
+    )
+  )
+    return null;
   return { bucket: bucket as PublicAssetBucket, path };
 }

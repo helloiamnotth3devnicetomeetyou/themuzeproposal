@@ -34,5 +34,16 @@ describe("GET /api/asset-proxy", () => {
         "https://cdn.example.com/track-assets/path%00file.jpg",
       ),
     ).toBeNull();
+    expect(
+      managedAssetFromUrl(
+        "https://cdn.example.com/track-assets/%252e%252e/other/file.jpg",
+      ),
+    ).toBeNull();
+    expect(
+      managedAssetFromUrl("https://cdn.example.com/track-assets/../file.jpg"),
+    ).toBeNull();
+    expect(
+      managedAssetFromUrl("https://cdn.example.com/track-assets/path/file.jpg"),
+    ).toEqual({ bucket: "track-assets", path: "path/file.jpg" });
   });
 });
