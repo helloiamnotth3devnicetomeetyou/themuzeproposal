@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, Headphones } from "lucide-react";
 import { type CSSProperties, type ComponentType, type ReactNode, type SVGProps } from "react";
-import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText, type Locale } from "@/core/i18n/localized";
 import { spotifyAlbumHref } from "@/core/http/spotify";
@@ -23,7 +22,6 @@ type Props = {
   openStreamingSlideId: string | null;
   readyVideoSlideIds: Set<string>;
   failedVideoSlideIds: Set<string>;
-  firstSlideReady: boolean;
   shouldPreload: boolean;
   onStreamingToggle: (id: string) => void;
   onStreamingClose: () => void;
@@ -35,7 +33,7 @@ type Props = {
 export default function HomeSlide({
   slide, index, currentSlide, previousSlide, nextSlide, previousSlideIndex, direction, locale,
   exploreLabel, listenLabel, openStreamingSlideId, readyVideoSlideIds, failedVideoSlideIds,
-  firstSlideReady, shouldPreload, onStreamingToggle, onStreamingClose, onVideoReady, onVideoFailure, onFirstImageLoaded,
+  shouldPreload, onStreamingToggle, onStreamingClose, onVideoReady, onVideoFailure, onFirstImageLoaded,
 }: Props) {
   const isActive = index === currentSlide;
   const isLeaving = index === previousSlide;
@@ -74,7 +72,6 @@ export default function HomeSlide({
       fetchPriority={isActive ? "high" : undefined} loading="eager" quality={80} onLoad={() => { if (index === 0) onFirstImageLoaded(); }}
       className="object-cover object-center" style={{ animation: isVisible ? "kenBurnsIn 8s ease-out forwards" : undefined }}
     />}
-    {index === 0 && !firstSlideReady && <div className="home-hero-loading"><LoadingIndicator /></div>}
     <div className="home-hero-content"><div className="home-hero-copy">
       <span className="home-release-meta"><span style={{ color: "var(--slide-accent)" }}>{slide.artistName}</span>{slide.type && <><span style={{ color: "var(--alpha-ffffff-3)", margin: "0 0.4em" }}>·</span><span style={{ color: "var(--color-static-white)" }}>{slide.type}</span></>}</span>
       <h2 className="home-release-title" aria-label={slide.title}>{isVisible && slide.typoLogoUrl ? <TypoLogoMask src={slide.typoLogoUrl} label={slide.title} className="home-typo-logo" /> : slide.title}</h2>

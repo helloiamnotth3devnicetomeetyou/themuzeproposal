@@ -8,8 +8,6 @@
   pointer-events: none;
 }
 
-.home-hero-loading { position:absolute; z-index:5; inset:0; display:grid; place-items:center; background:var(--color-static-black); }
-
 .home-hero-content {
   position: absolute;
   z-index: 20;
