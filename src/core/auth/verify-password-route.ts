@@ -61,9 +61,12 @@ export async function POST(request: NextRequest) {
     (process.env.NODE_ENV === "development" ? anonKey : "");
   if (!limiterSecret) return jsonError("SERVICE_UNAVAILABLE", 503);
 
+  const requestIp = clientIp(request);
+  if (!requestIp && process.env.NODE_ENV !== "development")
+    return jsonError("SERVICE_UNAVAILABLE", 503);
   const identifierHash = hashIdentifier(`email:${email}`, limiterSecret);
   const ipHash = hashIdentifier(
-    `ip:${clientIp(request) ?? `account:${email}`}`,
+    `ip:${requestIp ?? "development"}`,
     limiterSecret,
   );
   const limiterClient = createServiceRoleClient();

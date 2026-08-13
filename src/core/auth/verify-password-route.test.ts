@@ -186,4 +186,16 @@ describe("POST /api/auth/verify-password", () => {
     expect(response.status).toBe(503);
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
+
+  it("fails closed in production when client IP is unavailable", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    delete process.env.TRUSTED_CLIENT_IP_HEADER;
+
+    const response = await POST(request({ password: "somepassword" }));
+
+    expect(response.status).toBe(503);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
 });
