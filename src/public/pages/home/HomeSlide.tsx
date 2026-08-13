@@ -75,7 +75,7 @@ export default function HomeSlide({
           zIndex: isActive ? 10 : isLeaving ? 5 : 0,
           opacity: isVisible ? undefined : 0,
           pointerEvents: isActive ? "auto" : "none",
-          animation: isActive
+          animation: isActive && previousSlide !== null
             ? `${direction === 1 ? "slideRevealReverse" : "slideReveal"} 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards`
             : isLeaving
               ? `${direction === 1 ? "slideExitReverse" : "slideExit"} 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards`
