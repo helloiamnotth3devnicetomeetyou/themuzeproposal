@@ -112,6 +112,11 @@ export default function ArtistSchedulePage({
       setLoading(true);
       setError("");
       if (!previewArtistId && initialData) {
+        setArtistColor(initialData.artistColor || BRAND_PINK_HEX);
+        setEvents(initialData.events);
+        setPage(0);
+        setSelectedDate(null);
+        setSelectedEventId(null);
         setLoading(false);
         return;
       }
