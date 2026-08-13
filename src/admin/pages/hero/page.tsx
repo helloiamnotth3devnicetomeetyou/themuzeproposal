@@ -404,6 +404,7 @@ export default function HeroAdminPage() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          modifiers={[snapOverlayToCursor]}
           onDragStart={handleDragStart}
           onDragCancel={handleDragCancel}
           onDragEnd={(event) => void handleDragEnd(event)}
@@ -455,7 +456,6 @@ export default function HeroAdminPage() {
           </SortableContext>
           <DragOverlay
             adjustScale={false}
-            modifiers={[snapOverlayToCursor]}
             dropAnimation={{
               duration: 220,
               easing: "cubic-bezier(.18,.86,.28,1)",
