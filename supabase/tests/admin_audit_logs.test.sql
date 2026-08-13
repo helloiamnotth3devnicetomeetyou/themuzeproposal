@@ -155,8 +155,31 @@ set local role authenticated;
 select * from public.review_audition_submission(
   '00000000-0000-0000-0000-000000000401',
   'reviewing',
-  '수정된 심사 메모'
+  '수정된 심사 메모',
+  (select updated_at from public.audition_submissions
+   where id = '00000000-0000-0000-0000-000000000401')
 );
+
+do $$
+declare
+  v_stale timestamptz := (
+    select updated_at - interval '1 microsecond'
+    from public.audition_submissions
+    where id = '00000000-0000-0000-0000-000000000401'
+  );
+begin
+  begin
+    perform public.review_audition_submission(
+      '00000000-0000-0000-0000-000000000401',
+      'accepted',
+      'stale write',
+      v_stale
+    );
+    raise exception 'stale audition review was accepted';
+  exception when sqlstate 'P0003' then null;
+  end;
+end;
+$$;
 
 do $$
 declare

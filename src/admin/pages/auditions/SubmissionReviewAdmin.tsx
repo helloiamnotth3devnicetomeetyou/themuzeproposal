@@ -114,6 +114,7 @@ export function SubmissionReviewAdmin({ campaignId }: { campaignId: string }) {
       p_submission_id: selected.id,
       p_status: status,
       p_reviewer_notes: note.trim() || null,
+      p_expected_updated_at: selected.updated_at,
     });
     setSavingReview(false);
     const patch = Array.isArray(data) ? data[0] : data;
