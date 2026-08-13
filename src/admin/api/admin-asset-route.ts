@@ -11,6 +11,7 @@ import {
   validateFileSignature,
   type FileValidationProfile,
 } from "@/core/uploads/file-signature";
+import { transcodeHeroVideo } from "@/core/uploads/transcode-video";
 import {
   createServiceRoleClient,
   isSafeStoragePath,
@@ -78,10 +79,17 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
+  let uploadBody: Blob | Uint8Array = file;
+  if (bucket === "hero-videos") {
+    const transcoded = await transcodeHeroVideo(new Uint8Array(await file.arrayBuffer()));
+    if (!transcoded) return errorResponse("TRANSCODE_FAILED", 422);
+    uploadBody = transcoded;
+  }
+
   const { error } = await uploadObject({
     bucket,
     path,
-    body: file,
+    body: uploadBody,
     contentType: validated.mimeType,
     cacheControl: "public, max-age=31536000, immutable",
   });
@@ -95,7 +103,7 @@ export async function POST(request: NextRequest) {
     record_id: `${bucket}/${path}`,
     record_label: `Business asset: ${path}`,
     changed_fields: ["name", "metadata"],
-    after_values: { bucket, path, mime_type: validated.mimeType, size: fileSize },
+    after_values: { bucket, path, mime_type: validated.mimeType, size: uploadBody instanceof Blob ? fileSize : uploadBody.byteLength },
   });
   if (auditError) {
     await deleteObjects(bucket, [path]);
