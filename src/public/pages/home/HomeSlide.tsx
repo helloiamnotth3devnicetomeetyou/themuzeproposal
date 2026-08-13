@@ -57,13 +57,13 @@ export default function HomeSlide({
     } as CSSProperties}
   >
     <div className="home-hero-shade" aria-hidden="true" />
-    {shouldLoadMedia && slide.videoUrl && <video
+    {shouldLoadMedia && slide.videoUrl && !failedVideoSlideIds.has(slide.id) && <video
       className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
       src={slide.videoUrl}
       poster={slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted playsInline autoPlay={index === 0} preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
+      muted playsInline autoPlay controls={false} disablePictureInPicture preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
       onCanPlay={() => onVideoReady(slide.id)}
       onError={() => onVideoFailure(slide.id)}
       style={slide.imageUrl ? undefined : { opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}

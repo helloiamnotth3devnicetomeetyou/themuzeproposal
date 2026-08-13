@@ -5,6 +5,7 @@ import "@/styles/(core)/globals.css";
 import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
 import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
 import { getSiteUrl } from "@/core/config/public-env";
+import { getPublicAssetOrigin } from "@/core/storage/public-url";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
 
 import DisclaimerBanner from "@/core/components/banner/DisclaimerBanner";
@@ -37,6 +38,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={initialLocale} data-theme={initialTheme} className="h-full antialiased">
       <head>
+        <link rel="preconnect" href={getPublicAssetOrigin()} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={getPublicAssetOrigin()} />
         <link rel="preload" href="/fonts/ClashDisplay-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Regular.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/Pretendard/subset/Pretendard-Bold.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />

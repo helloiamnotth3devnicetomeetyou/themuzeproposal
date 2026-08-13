@@ -19,6 +19,12 @@ export function getPublicAssetUrl(bucket: string, path: string) {
   return `${getR2PublicBaseUrl()}/${bucket}/${path.replace(/^\/+/, "")}`;
 }
 
+/** Origin of the public R2 CDN, for `<link rel="preconnect">` so the TLS handshake with
+ * the CDN happens before the first asset request is issued. */
+export function getPublicAssetOrigin() {
+  return new URL(getR2PublicBaseUrl()).origin;
+}
+
 /**
  * Recovers the (bucket, path) pair from a previously issued public asset URL, e.g. one
  * stored on a DB row. Returns null for URLs that aren't managed R2 public assets.
