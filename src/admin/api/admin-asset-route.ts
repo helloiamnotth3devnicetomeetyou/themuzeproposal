@@ -496,6 +496,7 @@ export async function DELETE(request: NextRequest) {
     p_bucket: bucket,
     p_paths: paths,
     p_actor_id: user.id,
+    p_reservation_id: crypto.randomUUID(),
   };
   const { error: reservationError } = await service.rpc(
     "reserve_r2_asset_deletions",

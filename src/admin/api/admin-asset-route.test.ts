@@ -491,19 +491,25 @@ describe("POST /api/uploads/admin-asset", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "reserve_r2_asset_deletions", {
-      p_bucket: "hero-videos",
-      p_paths: [path],
-      p_actor_id: "admin-1",
-    });
     expect(mocks.rpc).toHaveBeenNthCalledWith(
-      2,
-      "complete_r2_asset_deletions",
-      {
+      1,
+      "reserve_r2_asset_deletions",
+      expect.objectContaining({
         p_bucket: "hero-videos",
         p_paths: [path],
         p_actor_id: "admin-1",
-      },
+        p_reservation_id: expect.any(String),
+      }),
+    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      "complete_r2_asset_deletions",
+      expect.objectContaining({
+        p_bucket: "hero-videos",
+        p_paths: [path],
+        p_actor_id: "admin-1",
+        p_reservation_id: mocks.rpc.mock.calls[0][1].p_reservation_id,
+      }),
     );
   });
 
@@ -523,11 +529,15 @@ describe("POST /api/uploads/admin-asset", () => {
     );
 
     expect(response.status).toBe(503);
-    expect(mocks.rpc).toHaveBeenLastCalledWith("release_r2_asset_deletions", {
-      p_bucket: "hero-videos",
-      p_paths: [path],
-      p_actor_id: "admin-1",
-    });
+    expect(mocks.rpc).toHaveBeenLastCalledWith(
+      "release_r2_asset_deletions",
+      expect.objectContaining({
+        p_bucket: "hero-videos",
+        p_paths: [path],
+        p_actor_id: "admin-1",
+        p_reservation_id: mocks.rpc.mock.calls[0][1].p_reservation_id,
+      }),
+    );
   });
 
   it("rate-limits deletion attempts before touching storage", async () => {
