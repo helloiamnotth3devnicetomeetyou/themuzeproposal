@@ -62,8 +62,9 @@ export default function HomeSlide({
       poster={isVideoFrameReady ? undefined : slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
-      onLoadedData={(event) => { setIsVideoFrameReady(true); onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
+      muted defaultMuted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
+      onLoadedData={(event) => { onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
+      onPlaying={() => setIsVideoFrameReady(true)}
       onCanPlay={(event) => { if (isActive && event.currentTarget.paused) void event.currentTarget.play().catch(() => undefined); }}
       onError={() => onVideoFailure(slide.id)}
       style={slide.imageUrl ? undefined : { opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
