@@ -111,6 +111,15 @@ function r2BucketFor(supabaseBucket) {
     : R2_PUBLIC_BUCKET;
 }
 
+// The legacy business-assets bucket was public before it was hardened. Only
+// documented public asset paths may be copied into the public R2 bucket.
+const BUSINESS_ASSET_PATH =
+  /^(?:press-kit\.zip|profile\.pdf|press-kit\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.zip|profile\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.pdf)$/i;
+
+function isSafeLegacyPath(bucket, filePath) {
+  return bucket !== "business-assets" || BUSINESS_ASSET_PATH.test(filePath);
+}
+
 async function listAllFiles(bucket, prefix = "") {
   const files = [];
   for (let offset = 0; ; offset += 1000) {
@@ -141,8 +150,19 @@ async function objectAlreadyExists(bucket, key) {
   try {
     await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    const status = error?.$metadata?.httpStatusCode ?? error?.statusCode;
+    if (
+      status === 404 ||
+      error?.name === "NotFound" ||
+      error?.name === "NoSuchKey"
+    ) {
+      return false;
+    }
+    throw new Error(
+      `head failed [${bucket}/${key}]: ${error?.message ?? String(error)}`,
+      { cause: error },
+    );
   }
 }
 
@@ -209,9 +229,20 @@ async function main() {
     console.log(`\n[${bucket}] listing objects...`);
     const files = await listAllFiles(bucket);
     console.log(`[${bucket}] ${files.length} objects found`);
+    const migratableFiles = files.filter(({ path }) =>
+      isSafeLegacyPath(bucket, path),
+    );
+    const skippedUnsafe = files.length - migratableFiles.length;
+    if (skippedUnsafe) {
+      console.warn(
+        `[${bucket}] skipped ${skippedUnsafe} legacy object(s) outside the public allowlist`,
+      );
+    }
 
-    const results = await runWithConcurrency(files, CONCURRENCY, (file) =>
-      copyFile(bucket, file),
+    const results = await runWithConcurrency(
+      migratableFiles,
+      CONCURRENCY,
+      (file) => copyFile(bucket, file),
     );
     for (const [i, result] of results.entries()) {
       if (result.status === "copied") {
@@ -222,14 +253,15 @@ async function main() {
       else if (result.status === "error") {
         failures.push({
           bucket,
-          path: files[i].path,
+          path: migratableFiles[i].path,
           message: result.error?.message ?? String(result.error),
         });
         console.error(
-          `[${bucket}] FAILED ${files[i].path}: ${result.error?.message ?? result.error}`,
+          `[${bucket}] FAILED ${migratableFiles[i].path}: ${result.error?.message ?? result.error}`,
         );
       }
     }
+    totalSkipped += skippedUnsafe;
   }
 
   console.log("\n" + "=".repeat(62));

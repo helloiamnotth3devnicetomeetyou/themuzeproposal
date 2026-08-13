@@ -384,6 +384,12 @@ const SOURCES = [
     sourceUrl,
   }),
 );
+const ALBUM_KEYS = new Set(SOURCES.map(({ albumKey }) => albumKey));
+if (FILTER && !ALBUM_KEYS.has(FILTER)) {
+  throw new Error(
+    `Unknown filter: ${FILTER} (allowed: ${[...ALBUM_KEYS].join(", ")})`,
+  );
+}
 const selectedSources = FILTER
   ? SOURCES.filter(({ albumKey }) => albumKey === FILTER)
   : SOURCES;

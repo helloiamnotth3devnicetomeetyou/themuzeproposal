@@ -72,6 +72,7 @@ jobs:
     permissions:
       contents: read
     env:
+      NODE_ENV: production
       NEXT_PUBLIC_SITE_URL: https://ci.example.com
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
@@ -79,6 +80,9 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ci-placeholder-turnstile-site-key
+      TURNSTILE_SECRET_KEY: ci-placeholder-turnstile-secret-key
+      TRUSTED_CLIENT_IP_HEADER: x-forwarded-for
       R2_ACCOUNT_ID: ci-placeholder-account-id
       R2_ACCESS_KEY_ID: ci-placeholder-access-key-id
       R2_SECRET_ACCESS_KEY: ci-placeholder-secret-access-key
@@ -104,13 +108,17 @@ jobs:
     permissions:
       contents: read
     env:
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NODE_ENV: production
+      NEXT_PUBLIC_SITE_URL: https://ci.example.com
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
       NEXT_PUBLIC_SUPABASE_PROJECT_REF: ci-placeholder
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ci-placeholder-turnstile-site-key
+      TURNSTILE_SECRET_KEY: ci-placeholder-turnstile-secret-key
+      TRUSTED_CLIENT_IP_HEADER: x-forwarded-for
       R2_ACCOUNT_ID: ci-placeholder-account-id
       R2_ACCESS_KEY_ID: ci-placeholder-access-key-id
       R2_SECRET_ACCESS_KEY: ci-placeholder-secret-access-key

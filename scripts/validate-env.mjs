@@ -49,7 +49,17 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
       problems.push("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim();
     const derivedRef = supabaseUrl.hostname.split(".")[0];
-    if (projectRef && derivedRef !== projectRef) {
+    const isSupabaseHostname = supabaseUrl.hostname.endsWith(".supabase.co");
+    if (!isSupabaseHostname) {
+      problems.push(
+        "NEXT_PUBLIC_SUPABASE_URL must use a *.supabase.co hostname.",
+      );
+    }
+    if (
+      projectRef &&
+      (derivedRef !== projectRef ||
+        supabaseUrl.hostname !== `${projectRef}.supabase.co`)
+    ) {
       problems.push(
         `Supabase URL and project ref do not match. (URL host ref: "${derivedRef}" [len ${derivedRef.length}], PROJECT_REF: "${projectRef}" [len ${projectRef.length}])`,
       );

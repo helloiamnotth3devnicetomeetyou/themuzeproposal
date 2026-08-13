@@ -16,8 +16,21 @@ if (!dbUrl) {
 const args = process.argv.slice(2);
 const require = createRequire(import.meta.url);
 const cli = require.resolve("supabase/dist/supabase.js");
-const result = spawnSync(process.execPath, [cli, ...args, "--db-url", dbUrl], {
-  stdio: "inherit",
-});
+const parsedDbUrl = new URL(dbUrl);
+const dbPassword = parsedDbUrl.password
+  ? decodeURIComponent(parsedDbUrl.password)
+  : null;
+parsedDbUrl.password = "";
+const childEnv = { ...process.env };
+delete childEnv.SUPABASE_DB_URL;
+if (dbPassword !== null) childEnv.PGPASSWORD = dbPassword;
+const result = spawnSync(
+  process.execPath,
+  [cli, ...args, "--db-url", parsedDbUrl.toString()],
+  {
+    stdio: "inherit",
+    env: childEnv,
+  },
+);
 
 process.exit(result.status ?? 1);

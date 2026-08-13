@@ -81,12 +81,20 @@ if (
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const BUCKET_FILTER = (() => {
+  const inline = args.find((arg) => arg.startsWith("--bucket="));
+  if (inline) return inline.slice("--bucket=".length);
   const idx = args.indexOf("--bucket");
   return idx !== -1 ? args[idx + 1] : null;
 })();
 
 // ── 설정 ──────────────────────────────────────────────────────────────────────
 const IMAGE_BUCKETS = ["album-covers", "artist-assets"];
+
+if (BUCKET_FILTER && !IMAGE_BUCKETS.includes(BUCKET_FILTER)) {
+  throw new Error(
+    `알 수 없는 버킷: ${BUCKET_FILTER} (허용: ${IMAGE_BUCKETS.join(", ")})`,
+  );
+}
 
 const CONVERTIBLE_EXTS = new Set([
   ".jpg",
@@ -199,8 +207,8 @@ async function updateDbUrls(bucket, oldPath, newPath) {
       .select("id");
 
     if (error) {
-      console.warn(
-        `    ⚠️  DB 업데이트 실패 (${table}.${column}): ${error.message}`,
+      throw new Error(
+        `DB 업데이트 실패 (${table}.${column}): ${error.message}`,
       );
     } else if (data && data.length > 0) {
       updated += data.length;
