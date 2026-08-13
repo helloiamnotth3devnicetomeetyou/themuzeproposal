@@ -51,6 +51,6 @@ describe("useAdminEntityEditor", () => {
     });
 
     expect(result.current.saving).toBe(false);
-    expect(result.current.error).toBe("save failed");
+    expect(result.current.error).toBe("요청을 처리하지 못했습니다.");
   });
 });

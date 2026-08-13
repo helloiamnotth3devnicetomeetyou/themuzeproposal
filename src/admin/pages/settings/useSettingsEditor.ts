@@ -8,6 +8,7 @@ import {
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { usePageDrafts } from "@/admin/hooks/usePageDrafts";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
 import { revalidatePublicCache } from "@/core/utils/public-cache";
 import { supabase } from "@/core/supabase/client";
@@ -99,7 +100,9 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
         .select("*");
       if (!active) return;
       if (fetchError) {
-        setError(fetchError.message);
+        setError(
+          adminDbError(fetchError, "사이트 설정을 불러오지 못했습니다."),
+        );
         setLoading(false);
         return;
       }
@@ -198,9 +201,12 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       setToast("비즈니스 자료를 업로드했습니다. 변경사항을 저장해 공개하세요.");
     } catch (uploadError) {
       setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "업로드하지 못했습니다.",
+        adminDbError(
+          uploadError && typeof uploadError === "object"
+            ? (uploadError as { code?: string; message?: string })
+            : null,
+          "업로드하지 못했습니다.",
+        ),
       );
     } finally {
       setSaving(false);
@@ -233,7 +239,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       .upsert(updates as never[]);
     setSaving(false);
     if (saveError) {
-      setError(saveError.message);
+      setError(adminDbError(saveError, "사이트 설정을 저장하지 못했습니다."));
       return;
     }
     setSnapshot(serializedDraft);

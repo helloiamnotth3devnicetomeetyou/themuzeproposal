@@ -1,4 +1,5 @@
 import { supabase } from "@/core/supabase/client";
+import { clearAdminDraftStorage } from "@/core/auth/admin-drafts";
 import { clearPreviewStorage } from "@/core/preview/types";
 
 export type AuthErrorCode =
@@ -79,7 +80,10 @@ export async function signUp(
       captchaToken: turnstileToken,
     },
   });
-  if (error) throw new AuthUserError("SIGNUP_FAILED");
+  if (error)
+    throw new AuthUserError(
+      error.status === 429 ? "RATE_LIMITED" : "SIGNUP_FAILED",
+    );
   if (data.user?.identities?.length === 0)
     throw new AuthUserError("SIGNUP_FAILED");
   return data;
@@ -89,6 +93,7 @@ export async function signOut() {
   clearPreviewStorage();
   const { error } = await supabase.auth.signOut();
   if (error) throw new AuthUserError("SERVICE_UNAVAILABLE");
+  clearAdminDraftStorage();
 }
 
 export async function getUser() {

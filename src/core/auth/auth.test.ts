@@ -93,6 +93,17 @@ describe("signUp", () => {
     });
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("reports Supabase signup throttling as rate-limited", async () => {
+    mocks.signUp.mockResolvedValue({
+      data: { user: null },
+      error: { status: 429 },
+    });
+
+    await expect(
+      signUp("user@example.com", "ValidPass123!", "captcha-token"),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  });
 });
 
 describe("updateUserAvatar", () => {

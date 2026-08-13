@@ -100,9 +100,6 @@ export default function AdminAnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (range === "12w" || range === "12m") {
-      return;
-    }
     const controller = new AbortController();
     const rangeConfig =
       ranges.find((item) => item.value === range) || ranges[0];
@@ -116,17 +113,14 @@ export default function AdminAnalyticsPage() {
           throw new Error(result.error || "페이지 통계를 불러오지 못했습니다.");
         setStats(result);
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (controller.signal.aborted) return;
         setStats({
           ...emptyPageStats,
           configured: true,
           range,
           granularity: rangeConfig.granularity,
-          error:
-            error instanceof Error
-              ? error.message
-              : "페이지 통계를 불러오지 못했습니다.",
+          error: "페이지 통계를 불러오지 못했습니다.",
         });
       })
       .finally(() => {
@@ -137,17 +131,7 @@ export default function AdminAnalyticsPage() {
 
   const selectedRange =
     ranges.find((item) => item.value === range) || ranges[0];
-  const stats =
-    range === "12w" || range === "12m"
-      ? {
-          ...emptyPageStats,
-          configured: true,
-          range,
-          granularity: range === "12w" ? ("week" as const) : ("month" as const),
-          rangeUnavailable: true,
-          error: "실개발시 추가",
-        }
-      : fetchedStats;
+  const stats = fetchedStats;
   const values = stats.points.map((point) => point.pageviews);
   const coordinates = chartCoordinates(values, 680, 220);
   const linePoints = chartPoints(values, 680, 220);
@@ -170,7 +154,7 @@ export default function AdminAnalyticsPage() {
 
   const changeRange = (nextRange: AnalyticsRange) => {
     if (nextRange === range) return;
-    setLoading(nextRange !== "12w" && nextRange !== "12m");
+    setLoading(true);
     setRange(nextRange);
   };
 

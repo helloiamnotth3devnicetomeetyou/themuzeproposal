@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildDraftDiff } from "@/admin/utils/draft-diff";
 import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
+import { useAdminDraftKey } from "./useAdminDraftKey";
 
 export function useDraftBackup<T>({
   key,
@@ -11,12 +12,13 @@ export function useDraftBackup<T>({
   dirty,
   restore,
 }: {
-  key: string;
+  key: string | null;
   draft: T | null;
   snapshot: string;
   dirty: boolean;
   restore: (draft: T) => void;
 }) {
+  const storageKey = useAdminDraftKey(key);
   const [recovery, setRecovery] = useState<{
     draft: T;
     updatedAt: number;
@@ -32,7 +34,7 @@ export function useDraftBackup<T>({
 
   useEffect(() => {
     let active = true;
-    if (!snapshot) return;
+    if (!snapshot || !storageKey) return;
     if (isGuideSandboxActive()) {
       queueMicrotask(() => {
         if (active) setRecovery(null);
@@ -42,7 +44,7 @@ export function useDraftBackup<T>({
       };
     }
     try {
-      const saved = JSON.parse(localStorage.getItem(key) || "null") as {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null") as {
         draft?: T;
         updatedAt?: number;
       } | null;
@@ -54,7 +56,7 @@ export function useDraftBackup<T>({
         if (active) setRecovery(nextRecovery);
       });
     } catch {
-      localStorage.removeItem(key);
+      localStorage.removeItem(storageKey);
       queueMicrotask(() => {
         if (active) setRecovery(null);
       });
@@ -62,40 +64,45 @@ export function useDraftBackup<T>({
     return () => {
       active = false;
     };
-  }, [key, snapshot]);
+  }, [snapshot, storageKey]);
 
   useEffect(() => {
-    if (!dirty || !draft || recovery || isGuideSandboxActive()) return;
+    if (!storageKey || !dirty || !draft || recovery || isGuideSandboxActive())
+      return;
     const timer = window.setTimeout(
       () =>
         localStorage.setItem(
-          key,
+          storageKey,
           JSON.stringify({ draft, updatedAt: Date.now() }),
         ),
       800,
     );
     return () => clearTimeout(timer);
-  }, [dirty, draft, key, recovery]);
+  }, [dirty, draft, recovery, storageKey]);
 
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent("admin-draft-dirty", { detail: { key, dirty, diff } }),
+      new CustomEvent("admin-draft-dirty", {
+        detail: { key: storageKey || key, dirty, diff },
+      }),
     );
     return () => {
       window.dispatchEvent(
-        new CustomEvent("admin-draft-dirty", { detail: { key, dirty: false } }),
+        new CustomEvent("admin-draft-dirty", {
+          detail: { key: storageKey || key, dirty: false },
+        }),
       );
     };
-  }, [diff, dirty, key]);
+  }, [diff, dirty, key, storageKey]);
 
   useEffect(() => {
     const reset = () => {
-      localStorage.removeItem(key);
+      if (storageKey) localStorage.removeItem(storageKey);
       setRecovery(null);
     };
     window.addEventListener("admin-draft-reset", reset);
     return () => window.removeEventListener("admin-draft-reset", reset);
-  }, [key]);
+  }, [storageKey]);
 
   const restoreBackup = useCallback(() => {
     if (recovery) {
@@ -107,8 +114,8 @@ export function useDraftBackup<T>({
     setRecovery(null);
   }, [recovery, restore]);
   const discardBackup = useCallback(() => {
-    localStorage.removeItem(key);
+    if (storageKey) localStorage.removeItem(storageKey);
     setRecovery(null);
-  }, [key]);
+  }, [storageKey]);
   return { recovery, restoreBackup, discardBackup };
 }

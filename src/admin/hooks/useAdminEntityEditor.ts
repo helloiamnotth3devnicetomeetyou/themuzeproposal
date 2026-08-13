@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildDraftDiff } from "@/admin/utils/draft-diff";
+import { adminDbError } from "@/admin/utils/admin-db-error";
 import { isGuideSandboxActive } from "@/core/supabase/guide-sandbox";
+import { useAdminDraftKey } from "./useAdminDraftKey";
 
 type EditorOperation = "loading" | "saving" | "deleting";
 
@@ -20,7 +22,12 @@ export interface RunEditorOperationOptions {
 const defaultSerialize = <T>(draft: T) => JSON.stringify(draft);
 
 const defaultErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "요청을 처리하지 못했습니다.";
+  adminDbError(
+    error && typeof error === "object"
+      ? (error as { code?: string; message?: string })
+      : null,
+    "요청을 처리하지 못했습니다.",
+  );
 
 export function useAdminEntityEditor<T>({
   initialDraft,
@@ -41,6 +48,7 @@ export function useAdminEntityEditor<T>({
     draft: T;
     updatedAt: number;
   } | null>(null);
+  const resolvedStorageKey = useAdminDraftKey(storageKey);
 
   const serializedDraft = useMemo(
     () => (draft ? serialize(draft) : ""),
@@ -79,13 +87,15 @@ export function useAdminEntityEditor<T>({
       if (nextDraft !== undefined) {
         setDraft(nextDraft);
         setSnapshot(nextDraft ? serialize(nextDraft) : "");
-        if (storageKey) window.localStorage.removeItem(storageKey);
+        if (resolvedStorageKey)
+          window.localStorage.removeItem(resolvedStorageKey);
         return;
       }
       setSnapshot(serializedDraft);
-      if (storageKey) window.localStorage.removeItem(storageKey);
+      if (resolvedStorageKey)
+        window.localStorage.removeItem(resolvedStorageKey);
     },
-    [serialize, serializedDraft, storageKey],
+    [resolvedStorageKey, serialize, serializedDraft],
   );
 
   const restoreDraft = useCallback(() => {
@@ -95,9 +105,9 @@ export function useAdminEntityEditor<T>({
   }, [recovery]);
 
   const discardDraftBackup = useCallback(() => {
-    if (storageKey) window.localStorage.removeItem(storageKey);
+    if (resolvedStorageKey) window.localStorage.removeItem(resolvedStorageKey);
     setRecovery(null);
-  }, [storageKey]);
+  }, [resolvedStorageKey]);
 
   const runOperation = useCallback(
     async <R>(
@@ -156,7 +166,8 @@ export function useAdminEntityEditor<T>({
     let resetting = false;
     const reset = () => {
       resetting = true;
-      if (storageKey) window.localStorage.removeItem(storageKey);
+      if (resolvedStorageKey)
+        window.localStorage.removeItem(resolvedStorageKey);
       setRecovery(null);
     };
     const warn = (event: BeforeUnloadEvent) => {
@@ -168,11 +179,11 @@ export function useAdminEntityEditor<T>({
       window.removeEventListener("admin-draft-reset", reset);
       window.removeEventListener("beforeunload", warn);
     };
-  }, [dirty, storageKey]);
+  }, [dirty, resolvedStorageKey]);
 
   useEffect(() => {
     let active = true;
-    if (!storageKey || !snapshot) return;
+    if (!resolvedStorageKey || !snapshot) return;
     if (isGuideSandboxActive()) {
       queueMicrotask(() => {
         if (active) setRecovery(null);
@@ -183,7 +194,7 @@ export function useAdminEntityEditor<T>({
     }
     try {
       const saved = JSON.parse(
-        window.localStorage.getItem(storageKey) || "null",
+        window.localStorage.getItem(resolvedStorageKey) || "null",
       ) as { draft?: T; updatedAt?: number } | null;
       if (saved?.draft && serialize(saved.draft) !== snapshot)
         queueMicrotask(() => {
@@ -194,27 +205,33 @@ export function useAdminEntityEditor<T>({
             });
         });
     } catch {
-      window.localStorage.removeItem(storageKey);
+      window.localStorage.removeItem(resolvedStorageKey);
     }
     return () => {
       active = false;
     };
-  }, [serialize, snapshot, storageKey]);
+  }, [resolvedStorageKey, serialize, snapshot]);
 
   useEffect(() => {
-    if (!storageKey || !dirty || !draft || recovery || isGuideSandboxActive())
+    if (
+      !resolvedStorageKey ||
+      !dirty ||
+      !draft ||
+      recovery ||
+      isGuideSandboxActive()
+    )
       return;
     const timer = window.setTimeout(() => {
       window.localStorage.setItem(
-        storageKey,
+        resolvedStorageKey,
         JSON.stringify({ draft, updatedAt: Date.now() }),
       );
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [dirty, draft, recovery, storageKey]);
+  }, [dirty, draft, recovery, resolvedStorageKey]);
 
   useEffect(() => {
-    const key = storageKey || `editor-${Math.random()}`;
+    const key = resolvedStorageKey || storageKey || `editor-${Math.random()}`;
     window.dispatchEvent(
       new CustomEvent("admin-draft-dirty", { detail: { key, dirty, diff } }),
     );
@@ -223,7 +240,7 @@ export function useAdminEntityEditor<T>({
         new CustomEvent("admin-draft-dirty", { detail: { key, dirty: false } }),
       );
     };
-  }, [diff, dirty, storageKey]);
+  }, [diff, dirty, resolvedStorageKey, storageKey]);
 
   return {
     draft,
