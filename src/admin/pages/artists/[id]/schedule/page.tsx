@@ -26,6 +26,7 @@ import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
 import { adminDbError } from "@/admin/utils/admin-db-error";
+import { revalidatePublicCache } from "@/core/utils/public-cache";
 import ScheduleCalendar from "./ScheduleCalendar";
 import styles from "@/styles/(admin)/pages/artist-schedule/schedule-admin.module.css";
 import {
@@ -341,6 +342,7 @@ export default function ArtistScheduleAdminPage() {
       draft.id ? "일정 변경사항을 저장했습니다." : "새 일정을 추가했습니다.",
     );
     discardDraftBackup();
+    await revalidatePublicCache("public-artist-schedule");
     await loadItems(result.data.id);
   };
 
@@ -383,6 +385,7 @@ export default function ArtistScheduleAdminPage() {
     setSnapshot("");
     setTab("calendar");
     setToast("일정을 삭제했습니다.");
+    await revalidatePublicCache("public-artist-schedule");
     await loadItems();
   };
 

@@ -23,25 +23,11 @@ import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { supabase } from "@/core/supabase/client";
 import { safeHref } from "@/core/http/safe-href";
 import styles from "@/styles/(public)/pages/artist-schedule.module.css";
-
-type Category = "show" | "release" | "anniversary" | "event" | "etc";
-type ScheduleRow = {
-  id: string;
-  event_date: string;
-  start_time: string | null;
-  category: Category;
-  title_ko: string;
-  title_en: string | null;
-  title_ja: string | null;
-  description_ko: string | null;
-  description_en: string | null;
-  description_ja: string | null;
-  location: string | null;
-  location_ko: string | null;
-  location_en: string | null;
-  location_ja: string | null;
-  link_url: string | null;
-};
+import type {
+  Category,
+  PublicScheduleData,
+  ScheduleRow,
+} from "./schedule-types";
 
 const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
   show: { icon: Radio, color: SCHEDULE_CATEGORY_COLORS.show },
@@ -60,7 +46,13 @@ const daysUntil = (value: string) => {
   );
 };
 
-export default function ArtistSchedulePage() {
+export default function ArtistSchedulePage({
+  initialData = null,
+  initialLoadFailed = false,
+}: {
+  initialData?: PublicScheduleData | null;
+  initialLoadFailed?: boolean;
+}) {
   const { artistid } = useParams<{ artistid: string }>();
   const { locale, t } = useLocale();
   const preview = usePreviewPayload("schedule");
@@ -71,10 +63,16 @@ export default function ArtistSchedulePage() {
   const [cursor, setCursor] = useState(
     () => new Date(now.getFullYear(), now.getMonth(), 1),
   );
-  const [artistColor, setArtistColor] = useState(BRAND_PINK_HEX);
-  const [events, setEvents] = useState<ScheduleRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [artistColor, setArtistColor] = useState(
+    initialData?.artistColor || BRAND_PINK_HEX,
+  );
+  const [events, setEvents] = useState<ScheduleRow[]>(
+    initialData?.events ?? [],
+  );
+  const [loading, setLoading] = useState(!initialData);
+  const [error, setError] = useState(
+    initialLoadFailed ? t.schedule.loadError : "",
+  );
   const [page, setPage] = useState(0);
   const [categoryFilters, setCategoryFilters] = useState<Category[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -86,6 +84,11 @@ export default function ArtistSchedulePage() {
       "id,event_date,start_time,category,title_ko,title_en,title_ja,description_ko,description_en,description_ja,location,location_ko,location_en,location_ja,link_url";
     async function load() {
       setLoading(true);
+      setError("");
+      if (!previewArtistId && initialData) {
+        setLoading(false);
+        return;
+      }
       if (previewArtistId) {
         setArtistColor(previewArtistColor || BRAND_PINK_HEX);
         setLoading(false);
@@ -181,7 +184,7 @@ export default function ArtistSchedulePage() {
     return () => {
       cancelled = true;
     };
-  }, [artistid, previewArtistColor, previewArtistId, t.schedule]);
+  }, [artistid, initialData, previewArtistColor, previewArtistId, t.schedule]);
 
   const effectiveEvents = useMemo(() => {
     if (!preview) return events;

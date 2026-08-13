@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ArtistSchedulePage from "@/public/pages/[artistid]/schedule/page";
+import { loadPublicArtistSchedule } from "@/public/pages/[artistid]/schedule/schedule-server";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { getServerLocale } from "@/core/i18n/server";
 import {
@@ -22,4 +23,14 @@ export async function generateMetadata({
   );
 }
 
-export default ArtistSchedulePage;
+export default async function ArtistScheduleRoute({
+  params,
+}: {
+  params: Promise<{ artistid: string }>;
+}) {
+  const { artistid } = await params;
+  const { data, loadFailed } = await loadPublicArtistSchedule(artistid);
+  return (
+    <ArtistSchedulePage initialData={data} initialLoadFailed={loadFailed} />
+  );
+}
