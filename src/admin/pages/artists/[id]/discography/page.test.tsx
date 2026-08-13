@@ -36,6 +36,7 @@ const draft: AlbumEditorDraft = {
       youtube_url: "",
       audio_url: "",
       music_video_url: "",
+      logo_url: "",
     },
   ],
 };

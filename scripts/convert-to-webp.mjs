@@ -16,12 +16,15 @@
  *   node scripts/convert-to-webp.mjs
  *   node scripts/convert-to-webp.mjs --dry-run          # 변경 없이 미리보기
  *   node scripts/convert-to-webp.mjs --bucket album-covers
+ *
+ * 원본은 기본적으로 보존합니다. 변환 대상과 같은 stem의 WebP가 이미 있으면
+ * 덮어쓰지 않고 실패로 기록합니다.
  */
 
 import { createClient } from "@supabase/supabase-js";
 import {
-  DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -189,6 +192,27 @@ async function listAllFiles(bucket, prefix = "") {
   return files;
 }
 
+async function objectExists(key) {
+  try {
+    await r2.send(
+      new HeadObjectCommand({
+        Bucket: R2_PUBLIC_BUCKET,
+        Key: key,
+      }),
+    );
+    return true;
+  } catch (error) {
+    const status = error?.$metadata?.httpStatusCode ?? error?.statusCode;
+    if (
+      status === 404 ||
+      error?.name === "NotFound" ||
+      error?.name === "NoSuchKey"
+    )
+      return false;
+    throw error;
+  }
+}
+
 // ── DB URL 업데이트 ────────────────────────────────────────────────────────────
 async function updateDbUrls(bucket, oldPath, newPath) {
   const oldUrl = storageUrl(bucket, oldPath);
@@ -221,6 +245,12 @@ async function updateDbUrls(bucket, oldPath, newPath) {
 
 // ── 단일 파일 변환 ─────────────────────────────────────────────────────────────
 async function convertFile(bucket, filePath) {
+  const webpPath = toWebpPath(filePath);
+  const webpKey = `${bucket}/${webpPath}`;
+  if (await objectExists(webpKey)) {
+    throw new Error(`target already exists; refusing to overwrite: ${webpKey}`);
+  }
+
   // 1) 다운로드
   const downloaded = await r2.send(
     new GetObjectCommand({
@@ -233,8 +263,6 @@ async function convertFile(bucket, filePath) {
 
   // 2) WebP 변환
   const outputBuffer = await sharp(inputBuffer).webp(WEBP_OPTIONS).toBuffer();
-
-  const webpPath = toWebpPath(filePath);
 
   // 3) 업로드
   await r2.send(
@@ -249,16 +277,6 @@ async function convertFile(bucket, filePath) {
 
   // 4) DB URL 업데이트
   await updateDbUrls(bucket, filePath, webpPath);
-
-  // 5) 원본 파일 삭제 (경로가 달라진 경우만)
-  if (webpPath !== filePath) {
-    await r2.send(
-      new DeleteObjectCommand({
-        Bucket: R2_PUBLIC_BUCKET,
-        Key: `${bucket}/${filePath}`,
-      }),
-    );
-  }
 
   return {
     originalSize: inputBuffer.byteLength,

@@ -22,6 +22,7 @@ const required = [
 ];
 
 const strict =
+  process.env.NODE_ENV === "production" ||
   process.env.VERCEL_ENV === "production" ||
   process.env.STRICT_ENV_VALIDATION === "1" ||
   (process.env.CI === "true" && process.env.NODE_ENV === "production");

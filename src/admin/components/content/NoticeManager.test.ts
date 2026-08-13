@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { duplicateNoticeDraft, type NoticeDraft } from "./notice-editor-model";
+import {
+  duplicateNoticeDraft,
+  resolvePublishedAt,
+  type NoticeDraft,
+} from "./notice-editor-model";
 
 describe("duplicateNoticeDraft", () => {
   it("keeps content but starts as an unpublished unsaved draft", () => {
@@ -22,5 +26,24 @@ describe("duplicateNoticeDraft", () => {
       id: null,
       published: false,
     });
+  });
+});
+
+describe("resolvePublishedAt", () => {
+  it("keeps an existing publication timestamp while published", () => {
+    expect(
+      resolvePublishedAt(
+        true,
+        "2026-08-01T00:00:00.000Z",
+        "2026-08-13T00:00:00.000Z",
+      ),
+    ).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("assigns a timestamp only when publishing a row without one", () => {
+    expect(resolvePublishedAt(true, null, "2026-08-13T00:00:00.000Z")).toBe(
+      "2026-08-13T00:00:00.000Z",
+    );
+    expect(resolvePublishedAt(false, "2026-08-01T00:00:00.000Z")).toBeNull();
   });
 });

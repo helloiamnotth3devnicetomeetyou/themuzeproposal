@@ -61,6 +61,12 @@ export default function AdminDashboard() {
   const [primaryArtistId, setPrimaryArtistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [renderedAt, setRenderedAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setRenderedAt(new Date()));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const loadDashboard = useCallback(() => {
     setLoading(true);
@@ -346,8 +352,8 @@ export default function AdminDashboard() {
           <h1>대시보드</h1>
           <p>사이트 운영 현황과 최근 작업을 한눈에 확인합니다.</p>
         </div>
-        <time dateTime={new Date().toISOString()}>
-          {formatDate.format(new Date())}
+        <time dateTime={renderedAt?.toISOString()}>
+          {renderedAt ? formatDate.format(renderedAt) : "—"}
         </time>
       </header>
 

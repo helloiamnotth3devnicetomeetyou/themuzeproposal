@@ -183,7 +183,14 @@ export function useAdminEntityEditor<T>({
 
   useEffect(() => {
     let active = true;
-    if (!resolvedStorageKey || !snapshot) return;
+    if (!resolvedStorageKey || !snapshot) {
+      queueMicrotask(() => {
+        if (active) setRecovery(null);
+      });
+      return () => {
+        active = false;
+      };
+    }
     if (isGuideSandboxActive()) {
       queueMicrotask(() => {
         if (active) setRecovery(null);
@@ -196,7 +203,7 @@ export function useAdminEntityEditor<T>({
       const saved = JSON.parse(
         window.localStorage.getItem(resolvedStorageKey) || "null",
       ) as { draft?: T; updatedAt?: number } | null;
-      if (saved?.draft && serialize(saved.draft) !== snapshot)
+      if (saved?.draft && serialize(saved.draft) !== snapshot) {
         queueMicrotask(() => {
           if (active)
             setRecovery({
@@ -204,8 +211,16 @@ export function useAdminEntityEditor<T>({
               updatedAt: saved.updatedAt || Date.now(),
             });
         });
+      } else {
+        queueMicrotask(() => {
+          if (active) setRecovery(null);
+        });
+      }
     } catch {
       window.localStorage.removeItem(resolvedStorageKey);
+      queueMicrotask(() => {
+        if (active) setRecovery(null);
+      });
     }
     return () => {
       active = false;

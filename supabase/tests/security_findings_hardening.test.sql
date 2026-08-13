@@ -14,14 +14,26 @@ begin
     raise exception 'browser roles can still write workflow attribution columns';
   end if;
   if not has_column_privilege('authenticated', 'public.protect_reports', 'status', 'update')
-    or not has_function_privilege('authenticated', 'public.update_contact_inquiry_workflow(uuid,text,text)', 'execute')
+    or not has_function_privilege('authenticated', 'public.update_contact_inquiry_workflow(uuid,text,text,timestamptz)', 'execute')
     or not has_function_privilege('authenticated', 'public.review_audition_submission(uuid,text,text)', 'execute') then
     raise exception 'review workflow boundary functions are unavailable';
   end if;
   if has_table_privilege('authenticated', 'public.contact_inquiries', 'delete')
     or has_table_privilege('authenticated', 'public.protect_reports', 'delete')
+    or has_table_privilege('authenticated', 'public.protect_report_attachments', 'delete')
     or has_column_privilege('authenticated', 'public.profiles', 'role', 'update') then
     raise exception 'a browser role retains a destructive or privileged mutation grant';
+  end if;
+  if exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'protect_report_attachments'
+      and policyname = 'users delete own protect report attachments'
+  ) then
+    raise exception 'browser roles can still delete protect-report evidence metadata';
+  end if;
+  if not has_table_privilege('service_role', 'public.protect_report_attachments', 'delete') then
+    raise exception 'server role cannot clean up protect-report evidence metadata';
   end if;
   if not has_function_privilege('authenticated', 'public.set_admin_role(uuid,text)', 'execute') then
     raise exception 'transactional role transition function is unavailable';

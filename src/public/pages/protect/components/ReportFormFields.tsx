@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEventHandler, RefObject } from "react";
+import { useEffect, useState, type ChangeEventHandler, type RefObject } from "react";
 import { Check } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import TurnstileWidget, {
@@ -22,6 +22,13 @@ export type ReportFormValues = {
   authorName: string;
   postIp: string;
 };
+
+export function getLocalDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 type Props = {
   artists: Artist[];
@@ -71,6 +78,14 @@ export default function ReportFormFields({
   const { t } = useLocale();
   const fields = t.protect.fields;
   const placeholders = t.protect.placeholders;
+  const [maxPostedAt, setMaxPostedAt] = useState<string>();
+  useEffect(() => {
+    const updateMaxPostedAt = () =>
+      setMaxPostedAt(getLocalDateInputValue(new Date()));
+    updateMaxPostedAt();
+    const timer = window.setInterval(updateMaxPostedAt, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const isMissing = (id: string) => missingFieldIds.includes(id);
   const fieldError = (id: string) =>
     isMissing(id)
@@ -199,7 +214,7 @@ export default function ReportFormFields({
           id="postedAt"
           type="date"
           required
-          max={new Date().toISOString().slice(0, 10)}
+          max={maxPostedAt}
           value={form.postedAt}
           onChange={updateField("postedAt")}
           {...fieldError("postedAt")}

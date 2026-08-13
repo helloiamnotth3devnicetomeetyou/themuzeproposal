@@ -38,7 +38,11 @@ export default function Navbar({
   }, []);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1279px)");
-    const sync = () => setIsMobileNav(media.matches);
+    const sync = () => {
+      const mobile = media.matches;
+      setIsMobileNav(mobile);
+      if (!mobile) setIsMobileMenuOpen(false);
+    };
     sync();
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);

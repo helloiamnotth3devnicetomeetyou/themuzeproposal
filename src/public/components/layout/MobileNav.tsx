@@ -107,6 +107,7 @@ export default function MobileNav({
               prefetch={false}
               onClick={onClose}
               className={`${styles.accountBtn} ${isLoggedIn ? styles.accountBtnLoggedIn : styles.accountBtnLoggedOut}`}
+              aria-label={isLoggedIn ? accountName || "Account" : "LOGIN"}
               title={isLoggedIn ? accountName : "LOGIN"}
             >
               {isLoggedIn ? (

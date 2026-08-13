@@ -101,7 +101,6 @@ export async function POST(request: NextRequest) {
   const { error: authError } = await authClient.auth.signInWithPassword({
     email,
     password,
-    options: { captchaToken: turnstileToken },
   });
 
   if (authError) {
@@ -114,6 +113,7 @@ export async function POST(request: NextRequest) {
     "reset_login_rate_limit",
     {
       p_identifier_hash: identifierHash,
+      p_ip_hash: ipHash,
     },
   );
   if (resetError) return jsonError("SERVICE_UNAVAILABLE", 503);

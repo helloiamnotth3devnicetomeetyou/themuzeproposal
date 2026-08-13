@@ -162,6 +162,16 @@ export default function AdminShell({
   }, [pathname]);
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 1199px)");
+    const closeOnDesktop = () => {
+      if (!media.matches) setIsNavigationOpen(false);
+    };
+    closeOnDesktop();
+    media.addEventListener("change", closeOnDesktop);
+    return () => media.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     void getAdminInboxCounts(supabase)
       .then(({ auditions, contacts, reports }) => {

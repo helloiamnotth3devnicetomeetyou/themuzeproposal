@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -60,6 +60,7 @@ vi.mock("@/core/components/form/TurnstileWidget", () => ({
 }));
 
 import ReportForm from "./ReportForm";
+import { getLocalDateInputValue } from "./ReportFormFields";
 import { LocaleProvider } from "@/core/providers/LocaleContext";
 
 const renderForm = () =>
@@ -130,6 +131,17 @@ describe("ReportForm", () => {
       },
     });
     expect(mocks.setError).toHaveBeenCalled();
+  });
+
+  it("uses the local calendar date as the posted-at maximum", async () => {
+    renderForm();
+
+    await waitFor(() =>
+      expect(document.getElementById("postedAt")).toHaveAttribute(
+        "max",
+        getLocalDateInputValue(new Date()),
+      ),
+    );
   });
 
   it("submits the report and evidence through the server route", async () => {

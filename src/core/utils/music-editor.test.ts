@@ -41,6 +41,7 @@ const draft = (
       youtube_url: "",
       audio_url: "",
       music_video_url: "",
+      logo_url: "",
     },
   ],
   ...overrides,

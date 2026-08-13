@@ -21,7 +21,11 @@ import { supabase } from "@/core/supabase/client";
 
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
-import { duplicateNoticeDraft, type NoticeDraft } from "./notice-editor-model";
+import {
+  duplicateNoticeDraft,
+  resolvePublishedAt,
+  type NoticeDraft,
+} from "./notice-editor-model";
 type Notice = {
   id: string;
   title_ko: string;
@@ -35,6 +39,7 @@ type Notice = {
   category_ja: string | null;
   date: string;
   is_published: boolean;
+  published_at: string | null;
 };
 
 type NoticeTab = "content" | "publish";
@@ -201,13 +206,13 @@ export default function NoticeManager({
           ? supabase
               .from("notices")
               .select(
-                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published",
+                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at",
               )
               .eq("artist_id", scopeArtistId)
           : supabase
               .from("notices")
               .select(
-                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published",
+                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at",
               )
               .is("artist_id", null)
       ).order("date", { ascending: false });
@@ -358,6 +363,9 @@ export default function NoticeManager({
     }
     setSaving(true);
     setError("");
+    const existingPublishedAt = draft.id
+      ? notices.find((notice) => notice.id === draft.id)?.published_at
+      : null;
     const payload = {
       artist_id: artistId,
       title_ko: draft.titleKo,
@@ -371,7 +379,7 @@ export default function NoticeManager({
       category_ja: draft.categoryJa.trim() || null,
       date: draft.date,
       is_published: draft.published,
-      published_at: draft.published ? new Date().toISOString() : null,
+      published_at: resolvePublishedAt(draft.published, existingPublishedAt),
     };
     const result = draft.id
       ? await supabase

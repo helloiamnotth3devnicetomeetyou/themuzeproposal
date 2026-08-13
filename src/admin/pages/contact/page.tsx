@@ -153,11 +153,18 @@ export default function ContactAdminPage() {
           changes.admin_note !== undefined
             ? changes.admin_note
             : viewing.admin_note,
+        p_expected_updated_at: viewing.updated_at,
       },
     );
     const patch = Array.isArray(data) ? data[0] : data;
     if (updateError || !patch) {
-      setError(updateError?.message || "문의를 저장하지 못했습니다.");
+      if (updateError?.code === "P0003") {
+        setError("다른 관리자가 먼저 수정했습니다. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
+        setViewing(null);
+        void fetchInquiries();
+      } else {
+        setError(updateError?.message || "문의를 저장하지 못했습니다.");
+      }
     } else {
       const updated = { ...viewing, ...patch };
       setViewing(updated);

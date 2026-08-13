@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { DiscographyGalleryItem, DiscographyMember } from "../lib/types";
@@ -22,12 +22,49 @@ export function MemberGalleryLightbox({
   onClose,
 }: Props) {
   const photo = gallery[index];
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusFrame = requestAnimationFrame(() => closeButtonRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      if (previousActiveElement?.isConnected) {
+        requestAnimationFrame(() => previousActiveElement.focus());
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowLeft" && index > 0) onIndexChange(index - 1);
       if (event.key === "ArrowRight" && index < gallery.length - 1)
         onIndexChange(index + 1);
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+        ) ?? [],
+      );
+      if (!focusable.length) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -37,11 +74,17 @@ export function MemberGalleryLightbox({
   const member = photo.memberId ? members.get(photo.memberId) : null;
   return createPortal(
     <div
+      ref={dialogRef}
       style={{ position: "fixed", inset: 0, zIndex: 9999 }}
       className="flex items-center justify-center bg-[var(--alpha-000000-92)] backdrop-blur-xl animate-fadeIn select-none overflow-hidden"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={photo.caption || "Gallery image"}
+      tabIndex={-1}
     >
       <button
+        ref={closeButtonRef}
         type="button"
         onClick={(event) => {
           event.stopPropagation();

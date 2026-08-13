@@ -215,7 +215,9 @@ set local role authenticated;
 select * from public.update_contact_inquiry_workflow(
   '00000000-0000-0000-0000-000000000301',
   'reviewing',
-  '확인 중'
+  '확인 중',
+  (select updated_at from public.contact_inquiries
+   where id = '00000000-0000-0000-0000-000000000301')
 );
 
 do $$

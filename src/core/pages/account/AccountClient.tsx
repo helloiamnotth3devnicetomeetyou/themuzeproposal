@@ -137,6 +137,7 @@ export default function AccountClient({
     setCurrentPasswordVerified(false);
     setCheckingCurrentPassword(false);
     setCurrentPasswordStatus(null);
+    turnstileRef.current?.reset();
     setPassword("");
     setPasswordConfirm("");
     setPasswordStatus(null);

@@ -13,6 +13,7 @@ type RawTrack = {
   youtube_url: string | null;
   audio_url: string | null;
   music_video_url: string | null;
+  logo_url: string | null;
 };
 
 export type RawAlbum = {
@@ -40,9 +41,9 @@ export type RawAlbum = {
 };
 
 export const albumSelect =
-  "id,artist_id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,title_ko,title_en,title_ja,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
+  "id,artist_id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,title_ko,title_en,title_ja,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url,logo_url)";
 export const legacyAlbumSelect =
-  "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url)";
+  "id,artist_id,title,type,release_date,cover_url,hero_image_url,color,spotify_id,youtube_url,description_ko,description_en,description_ja,is_published,published_at,sort_order,tracks(id,title,is_title,track_number,spotify_url,youtube_url,audio_url,music_video_url,logo_url)";
 
 export function filterAlbums(
   albums: AlbumEditorDraft[],
@@ -93,6 +94,7 @@ export function albumToDraft(album: RawAlbum): AlbumEditorDraft {
         youtube_url: track.youtube_url ?? "",
         audio_url: track.audio_url ?? "",
         music_video_url: track.music_video_url ?? "",
+        logo_url: track.logo_url ?? "",
       })),
   };
 }
@@ -138,6 +140,7 @@ export function createTrackDraft(): TrackDraft {
     youtube_url: "",
     audio_url: "",
     music_video_url: "",
+    logo_url: "",
   };
 }
 
@@ -150,6 +153,7 @@ export function collectAssetUrls(draft: AlbumEditorDraft) {
       ...draft.tracks.flatMap((track) => [
         track.audio_url,
         track.music_video_url,
+        track.logo_url,
       ]),
     ].filter(Boolean),
   );

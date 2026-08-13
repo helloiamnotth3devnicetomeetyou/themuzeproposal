@@ -44,7 +44,7 @@ function loadTurnstileScript(): Promise<void> {
   if (window.turnstile) return Promise.resolve();
   if (scriptLoadPromise) return scriptLoadPromise;
 
-  scriptLoadPromise = new Promise((resolve, reject) => {
+  const promise = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
       `script[src^="${SCRIPT_SRC.split("?")[0]}"]`,
     );
@@ -64,7 +64,16 @@ function loadTurnstileScript(): Promise<void> {
     script.onload = () => resolve();
     script.onerror = () => reject(new Error("Failed to load Turnstile script"));
     document.head.appendChild(script);
+  }).catch((error) => {
+    scriptLoadPromise = null;
+    document
+      .querySelector<HTMLScriptElement>(
+        `script[src^="${SCRIPT_SRC.split("?")[0]}"]`,
+      )
+      ?.remove();
+    throw error;
   });
+  scriptLoadPromise = promise;
   return scriptLoadPromise;
 }
 
@@ -88,6 +97,7 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
+    const executeWhenReadyRef = useRef(false);
     const onTokenRef = useRef(onToken);
     onTokenRef.current = onToken;
     const [failed, setFailed] = useState(false);
@@ -96,10 +106,14 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
       ref,
       () => ({
         execute: () => {
-          if (widgetIdRef.current && window.turnstile)
+          if (widgetIdRef.current && window.turnstile) {
             window.turnstile.execute(widgetIdRef.current);
+          } else {
+            executeWhenReadyRef.current = true;
+          }
         },
         reset: () => {
+          executeWhenReadyRef.current = false;
           if (widgetIdRef.current && window.turnstile) {
             window.turnstile.reset(widgetIdRef.current);
             onTokenRef.current(null);
@@ -132,6 +146,10 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
             "expired-callback": () => onTokenRef.current(null),
             "error-callback": () => onTokenRef.current(null),
           });
+          if (executeWhenReadyRef.current && widgetIdRef.current) {
+            executeWhenReadyRef.current = false;
+            window.turnstile.execute(widgetIdRef.current);
+          }
         })
         .catch(() => {
           if (!cancelled) setFailed(true);
@@ -139,8 +157,10 @@ const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
 
       return () => {
         cancelled = true;
+        executeWhenReadyRef.current = false;
         if (widgetIdRef.current && window.turnstile) {
           window.turnstile.remove(widgetIdRef.current);
+          onTokenRef.current(null);
           widgetIdRef.current = null;
         }
       };

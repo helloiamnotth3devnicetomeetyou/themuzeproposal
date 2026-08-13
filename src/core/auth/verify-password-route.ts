@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
   const { error: resetError } = await limiterClient.rpc(
     "reset_login_rate_limit",
-    { p_identifier_hash: identifierHash },
+    { p_identifier_hash: identifierHash, p_ip_hash: ipHash },
   );
   if (resetError) return jsonError("SERVICE_UNAVAILABLE", 503);
 

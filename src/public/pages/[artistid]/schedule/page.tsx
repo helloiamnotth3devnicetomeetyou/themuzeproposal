@@ -38,8 +38,8 @@ const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
 };
 const PAGE_SIZE = 5;
 const dateAtLocalMidnight = (value: string) => new Date(`${value}T00:00:00`);
-const daysUntil = (value: string) => {
-  const today = new Date();
+export const daysUntil = (value: string, referenceDate = new Date()) => {
+  const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   return Math.round(
     (dateAtLocalMidnight(value).getTime() - today.getTime()) / 86_400_000,
@@ -59,9 +59,12 @@ export default function ArtistSchedulePage({
   const previewArtistId = preview?.artist.id;
   const previewArtistColor = preview?.artist.color;
 
-  const now = new Date();
+  const [today, setToday] = useState(() => {
+    const current = new Date();
+    return new Date(current.getFullYear(), current.getMonth(), current.getDate());
+  });
   const [cursor, setCursor] = useState(
-    () => new Date(now.getFullYear(), now.getMonth(), 1),
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
   );
   const [artistColor, setArtistColor] = useState(
     initialData?.artistColor || BRAND_PINK_HEX,
@@ -77,6 +80,29 @@ export default function ArtistSchedulePage({
   const [categoryFilters, setCategoryFilters] = useState<Category[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let timer: number | undefined;
+    const updateToday = () => {
+      const current = new Date();
+      setToday(
+        new Date(current.getFullYear(), current.getMonth(), current.getDate()),
+      );
+      const nextMidnight = new Date(
+        current.getFullYear(),
+        current.getMonth(),
+        current.getDate() + 1,
+      );
+      timer = window.setTimeout(
+        updateToday,
+        Math.max(1, nextMidnight.getTime() - current.getTime() + 1),
+      );
+    };
+    updateToday();
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -308,7 +334,7 @@ export default function ArtistSchedulePage({
   const moveYear = (amount: number) =>
     changeCursor(new Date(cursor.getFullYear() + amount, cursor.getMonth(), 1));
   const goToday = () =>
-    changeCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+    changeCursor(new Date(today.getFullYear(), today.getMonth(), 1));
   const eventsOnDay = (day: number) =>
     monthEvents.filter(
       (event) => dateAtLocalMidnight(event.event_date).getDate() === day,
@@ -342,7 +368,7 @@ export default function ArtistSchedulePage({
           >
             {visibleEvents.map((event) => {
               const date = dateAtLocalMidnight(event.event_date);
-              const remaining = daysUntil(event.event_date);
+              const remaining = daysUntil(event.event_date, today);
               const category = CATEGORIES[event.category] || CATEGORIES.etc;
               const CategoryIcon = category.icon;
               const eventStyle = {
@@ -510,11 +536,11 @@ export default function ArtistSchedulePage({
               );
               const dateKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const isSelectedDate = selectedDate === dateKey;
-              const isPastDate = daysUntil(dateKey) < 0;
+              const isPastDate = daysUntil(dateKey, today) < 0;
               const isToday =
-                day === now.getDate() &&
-                cursor.getMonth() === now.getMonth() &&
-                cursor.getFullYear() === now.getFullYear();
+                day === today.getDate() &&
+                cursor.getMonth() === today.getMonth() &&
+                cursor.getFullYear() === today.getFullYear();
               return (
                 <button
                   key={day}

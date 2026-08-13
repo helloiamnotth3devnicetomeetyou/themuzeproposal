@@ -172,7 +172,6 @@ describe("POST /api/auth/login", () => {
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "user@example.com",
       password: "password",
-      options: { captchaToken: "test-turnstile-token" },
     });
   });
 

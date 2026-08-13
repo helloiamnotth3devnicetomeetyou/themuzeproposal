@@ -11,6 +11,7 @@ export type TrackDraft = {
   youtube_url: string;
   audio_url: string;
   music_video_url: string;
+  logo_url: string;
 };
 
 export type AlbumEditorDraft = {
@@ -81,6 +82,7 @@ export function parseBulkTracks(value: string): TrackDraft[] {
         youtube_url: "",
         audio_url: "",
         music_video_url: "",
+        logo_url: "",
       };
     });
 }

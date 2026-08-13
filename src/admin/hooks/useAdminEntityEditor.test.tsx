@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 import { useAdminEntityEditor } from "./useAdminEntityEditor";
 
 type Draft = {
@@ -9,6 +9,8 @@ type Draft = {
 };
 
 describe("useAdminEntityEditor", () => {
+  beforeEach(() => localStorage.clear());
+
   it("tracks draft patches and commits the current state", () => {
     const { result } = renderHook(() =>
       useAdminEntityEditor<Draft>({
@@ -52,5 +54,29 @@ describe("useAdminEntityEditor", () => {
 
     expect(result.current.saving).toBe(false);
     expect(result.current.error).toBe("요청을 처리하지 못했습니다.");
+  });
+
+  it("clears a previous entity recovery when its storage key changes", async () => {
+    localStorage.setItem(
+      "entity-one",
+      JSON.stringify({
+        draft: { id: "one", title: "Recovered" },
+        updatedAt: 1,
+      }),
+    );
+    const { result, rerender } = renderHook(
+      ({ storageKey }) =>
+        useAdminEntityEditor<Draft>({
+          initialDraft: { id: "one", title: "Current" },
+          storageKey,
+        }),
+      { initialProps: { storageKey: "entity-one" } },
+    );
+
+    await waitFor(() => expect(result.current.recovery).not.toBeNull());
+
+    rerender({ storageKey: "entity-two" });
+
+    await waitFor(() => expect(result.current.recovery).toBeNull());
   });
 });

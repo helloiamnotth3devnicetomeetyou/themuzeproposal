@@ -88,7 +88,9 @@ async function referencedPublicAssetPaths(
     for (const row of data ?? []) {
       for (const column of columns) {
         const value = (row as unknown as Record<string, unknown>)[column];
-        const path = urls.get(typeof value === "string" ? value : "");
+        const path = urls.get(
+          typeof value === "string" ? value.split("?", 1)[0] : "",
+        );
         if (path) referenced.add(path);
       }
     }
@@ -501,6 +503,19 @@ export async function DELETE(request: NextRequest) {
   }
   const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);
+  const { error: auditError } = await service.from("admin_audit_logs").insert(
+    paths.map((path) => ({
+      actor_id: user.id,
+      actor_email: user.email ?? null,
+      operation: "DELETE",
+      table_name: "storage.objects",
+      record_id: `${bucket}/${path}`,
+      record_label: `Asset: ${path}`,
+      changed_fields: ["name"],
+      before_values: { bucket, path },
+    })),
+  );
+  if (auditError) return errorResponse("AUDIT_FAILED", 503);
   return new NextResponse(null, {
     status: 204,
     headers: { "Cache-Control": "no-store" },

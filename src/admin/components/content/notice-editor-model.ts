@@ -18,3 +18,11 @@ export const duplicateNoticeDraft = (draft: NoticeDraft): NoticeDraft => ({
   id: null,
   published: false,
 });
+
+export function resolvePublishedAt(
+  published: boolean,
+  existingPublishedAt: string | null | undefined,
+  now = new Date().toISOString(),
+) {
+  return published ? (existingPublishedAt ?? now) : null;
+}
