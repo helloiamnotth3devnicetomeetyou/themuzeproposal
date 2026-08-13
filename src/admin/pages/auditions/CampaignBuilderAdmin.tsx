@@ -119,7 +119,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
     setDragging(null);
   };
   const save = async () => {
-    const emailField = fields.find(
+    const emailFields = fields.filter(
       (field) =>
         field.field_key === "email" || field.field_key === "applicant_email",
     );
@@ -136,8 +136,8 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
     );
     if (
       !campaign?.title.trim() ||
-      !emailField ||
-      emailField.field_type !== "short_text" ||
+      emailFields.length !== 1 ||
+      emailFields[0].field_type !== "short_text" ||
       new Set(fields.map((field) => field.field_key)).size !== fields.length ||
       fields.filter((field) => field.is_primary_label).length !== 1 ||
       invalidOptions ||
