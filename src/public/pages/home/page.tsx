@@ -88,8 +88,16 @@ export default function Home({ initialSlides }: { initialSlides: HomeSlideDTO[] 
       const slideIndex = Number(video.dataset.slideIndex);
       const isCurrent = slideIndex === currentSlide;
       if ((!isCurrent && slideIndex !== prevSlide) || !isPageVisible || prefersReducedMotion) return video.pause();
-      if (isCurrent && previousVideoSlide.current !== currentSlide) video.currentTime = Number(video.dataset.startTime || 0);
-      void video.play().catch(() => undefined);
+      const playVideo = () => void video.play().catch(() => undefined);
+      const startTime = Number(video.dataset.startTime || 0);
+      if (isCurrent && previousVideoSlide.current !== currentSlide && Math.abs(video.currentTime - startTime) > 0.1) {
+        const onSeeked = () => { video.removeEventListener("seeked", onSeeked); playVideo(); };
+        video.addEventListener("seeked", onSeeked);
+        video.currentTime = startTime;
+        setTimeout(() => { video.removeEventListener("seeked", onSeeked); playVideo(); }, 300);
+        return;
+      }
+      playVideo();
     });
     previousVideoSlide.current = currentSlide;
   }, [currentSlide, isPageVisible, prefersReducedMotion, prevSlide]);

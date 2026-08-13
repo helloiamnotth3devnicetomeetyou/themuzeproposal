@@ -61,7 +61,7 @@ export default function HomeSlide({
       poster={slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted playsInline autoPlay controls={false} disablePictureInPicture preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
+      muted playsInline autoPlay controls={false} disablePictureInPicture preload={index === 0 || shouldPreload || index === nextSlide ? "auto" : "metadata"} aria-hidden="true"
       onLoadedData={(event) => { onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
       onCanPlay={(event) => { if (isActive && event.currentTarget.paused) void event.currentTarget.play().catch(() => undefined); }}
       onError={() => onVideoFailure(slide.id)}
