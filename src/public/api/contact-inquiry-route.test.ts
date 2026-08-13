@@ -182,6 +182,7 @@ describe("POST /api/contact-inquiries", () => {
       request(new URLSearchParams({ turnstileToken: "test-turnstile-token" })),
     );
     expect(response.status).toBe(429);
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
     expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
     expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
   });

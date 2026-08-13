@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
+  const preParseAttempt = await consumeSubmissionAttemptRateLimit(
+    request,
+    "contact_inquiry",
+    `preparse:${clientIp(request) ?? "unknown"}`,
+  );
+  if (preParseAttempt.error)
+    return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!preParseAttempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, preParseAttempt.retryAfter);
+
   let formData: FormData;
   try {
     const parsed = await parseFormDataWithinLimit(
@@ -68,15 +78,16 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await sessionClient.auth.getUser();
-  const rateLimitId = user ? user.id : `anon:${clientIp(request) ?? "unknown"}`;
-  const attempt = await consumeSubmissionAttemptRateLimit(
-    request,
-    "contact_inquiry",
-    rateLimitId,
-  );
-  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!attempt.allowed)
-    return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+  if (user) {
+    const attempt = await consumeSubmissionAttemptRateLimit(
+      request,
+      "contact_inquiry",
+      user.id,
+    );
+    if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+    if (!attempt.allowed)
+      return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+  }
 
   const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
     action: "contact_inquiry",
@@ -90,6 +101,7 @@ export async function POST(request: NextRequest) {
   const phone = textField(formData, "phone");
   const email = textField(formData, "email").toLowerCase();
   const accountEmail = user?.email?.trim().toLowerCase() ?? null;
+  const rateLimitId = user ? user.id : `anon:${clientIp(request) ?? "unknown"}`;
   const message = textField(formData, "message");
   const consented = textField(formData, "privacyConsent") === "true";
   const validType =
