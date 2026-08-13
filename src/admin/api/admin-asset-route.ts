@@ -36,16 +36,24 @@ const BUCKETS = {
 const MAX_DELETE_BODY_BYTES = 64 * 1024;
 const HERO_VIDEO_BUCKET = "hero-videos";
 const HERO_VIDEO_MAX_BYTES = BUCKETS[HERO_VIDEO_BUCKET].maxBytes;
-const PENDING_HERO_VIDEO_PATH = /^pending\/[0-9a-f-]{36}\.mp4$/i;
+const ADMIN_DELETE_BUCKETS = new Set([
+  ...Object.keys(BUCKETS),
+  "audition-attachments",
+]);
+const AVATAR_PATH =
+  /^([0-9a-f-]{36})\/avatars\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif)$/i;
 
 function errorResponse(
   code: string,
   status: number,
   details?: Record<string, unknown>,
 ) {
+  const reason =
+    typeof details?.reason === "string" && /^[a-z0-9_]+$/.test(details.reason)
+      ? details.reason
+      : "";
   console.error(
-    `[AdminAssetUpload] Error HTTP ${status} code=${code}`,
-    details ? JSON.stringify(details) : "",
+    `[AdminAssetUpload] Error HTTP ${status} code=${code}${reason ? ` reason=${reason}` : ""}`,
   );
   const response = NextResponse.json({ code }, { status });
   response.headers.set("Cache-Control", "no-store");
@@ -269,6 +277,10 @@ export async function POST(request: NextRequest) {
     });
 
   let path = `${crypto.randomUUID()}.${validated.extension}`;
+  const avatarPath =
+    bucket === "artist-assets" ? requestedPath.match(AVATAR_PATH) : null;
+  if (avatarPath)
+    path = `${avatarPath[1]}/avatars/${crypto.randomUUID()}.${validated.extension}`;
   if (bucket === "business-assets") {
     if (requestedPath === "press-kit.zip" && validated.extension === "zip")
       path = `press-kit/${crypto.randomUUID()}.zip`;
@@ -365,11 +377,7 @@ export async function DELETE(request: NextRequest) {
     )
       ? [...new Set(body.paths)]
       : [];
-  if (
-    bucket !== HERO_VIDEO_BUCKET ||
-    !paths.length ||
-    paths.some((path) => !PENDING_HERO_VIDEO_PATH.test(path))
-  )
+  if (!ADMIN_DELETE_BUCKETS.has(bucket) || !paths.length)
     return errorResponse("INVALID_FILE", 400);
   const { error } = await deleteObjects(bucket, paths);
   if (error) return errorResponse("DELETE_FAILED", 503);

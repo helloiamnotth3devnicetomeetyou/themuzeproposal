@@ -190,6 +190,34 @@ describe("POST /api/uploads/admin-asset", () => {
     );
   });
 
+  it("keeps avatar assets under the artist-scoped database path", async () => {
+    const artistId = "123e4567-e89b-12d3-a456-426614174000";
+    const form = new FormData();
+    form.set("bucket", "artist-assets");
+    form.set(
+      "path",
+      `${artistId}/avatars/123e4567-e89b-12d3-a456-426614174001.png`,
+    );
+    form.set("file", new File([PNG], "avatar.png", { type: "image/png" }));
+
+    const response = await POST(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "POST",
+        headers: { origin: "https://themuze.kr" },
+        body: form,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.upload).toHaveBeenCalledWith(
+      expect.stringMatching(
+        new RegExp(`^${artistId}/avatars/[0-9a-f-]{36}\\.png$`),
+      ),
+      expect.any(File),
+      expect.objectContaining({ contentType: "image/png" }),
+    );
+  });
+
   it("uploads and validates the actual MP3 object through the service route", async () => {
     const form = new FormData();
     form.set("bucket", "track-assets");
@@ -318,7 +346,7 @@ describe("POST /api/uploads/admin-asset", () => {
     });
   });
 
-  it("only deletes server-generated pending hero uploads", async () => {
+  it("rejects deletion for unknown buckets", async () => {
     const response = await DELETE(
       new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
         method: "DELETE",
@@ -327,7 +355,7 @@ describe("POST /api/uploads/admin-asset", () => {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          bucket: "artist-assets",
+          bucket: "unknown-bucket",
           paths: ["artist-1/asset.png"],
         }),
       }),
