@@ -190,6 +190,7 @@ export async function POST(request: NextRequest) {
     for (const { file, validated } of validatedFiles) {
       if (!validated) return errorResponse("INVALID_FILE_TYPE", 400);
       const path = `${user.id}/${crypto.randomUUID()}.${validated.extension}`;
+      paths.push(path);
       const { error: uploadError } = await uploadObject({
         bucket: "protect-evidence",
         path,
@@ -197,7 +198,6 @@ export async function POST(request: NextRequest) {
         contentType: validated.mimeType,
       });
       if (uploadError) throw new Error("UPLOAD_FAILED");
-      paths.push(path);
     }
 
     const { error: insertError } = await serviceClient

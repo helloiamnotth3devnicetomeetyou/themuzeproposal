@@ -325,6 +325,7 @@ export async function POST(request: NextRequest) {
   try {
     for (const { field, file, extension, mimeType } of pendingFiles) {
       const path = `${campaignId}/${submissionId}/${field.id}/${crypto.randomUUID()}.${extension}`;
+      uploaded.push(path);
       const { error } = await uploadObject({
         bucket: "audition-attachments",
         path,
@@ -332,7 +333,6 @@ export async function POST(request: NextRequest) {
         contentType: mimeType,
       });
       if (error) throw error;
-      uploaded.push(path);
       answers[field.field_key] = {
         path,
         name: file.name.slice(0, 255),

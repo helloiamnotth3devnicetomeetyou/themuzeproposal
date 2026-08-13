@@ -169,7 +169,10 @@ export async function POST(request: NextRequest) {
       body: file,
       contentType: validated.mimeType,
     });
-    if (uploadError) return errorResponse("UPLOAD_FAILED", 503);
+    if (uploadError) {
+      await deleteObjects("contact-attachments", [attachmentPath]);
+      return errorResponse("UPLOAD_FAILED", 503);
+    }
   }
 
   const { error: insertError } = await serviceClient
