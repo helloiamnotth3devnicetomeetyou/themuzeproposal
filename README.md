@@ -39,7 +39,7 @@ npm run db:test
 
 - [프로젝트 개요](./docs/technical/01-project-overview.md): 제품 범위, URL, API
 - [애플리케이션 구조](./docs/technical/02-architecture.md): 레이어, 요청 흐름, 코드 위치
-- [데이터와 Supabase](./docs/technical/03-data-and-supabase.md): schema, RLS, Storage, migration
+- [데이터·인증과 R2](./docs/technical/03-data-and-supabase.md): schema, RLS, R2 객체 저장소, migration
 - [보안 모델](./docs/technical/04-security.md): 인증·권한·입력·업로드 경계
 - [프론트엔드와 디자인](./docs/technical/05-frontend-and-design.md): 토큰, 접근성, 다국어
 - [코드 스타일과 개발 절차](./docs/technical/06-code-style-and-workflows.md): 구현·검증 규칙

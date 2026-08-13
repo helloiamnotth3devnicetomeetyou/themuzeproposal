@@ -9,7 +9,7 @@
 1. `src/proxy.ts`와 Next response header
 2. Route Handler의 origin/auth/validation/rate limit
 3. Supabase RLS, grant, constraint, security-definer function
-4. Storage policy와 실제 파일 검증
+4. R2 접근 키 경계와 실제 파일 검증
 
 ## 인증과 세션
 
@@ -153,7 +153,7 @@ preview 진입은 다음을 모두 요구한다.
 
 ## 감사와 민감정보
 
-관리자 콘텐츠 변경은 trigger로 `admin_audit_logs`에 남는다. 문의·제보·지원서의 audit은 status와 관리자 메모처럼 제한된 필드만 기록해 원문 개인정보 복제를 피한다. Storage 직접 변경 route도 별도 audit row를 쓴다.
+관리자 콘텐츠 변경은 trigger로 `admin_audit_logs`에 남는다. 문의·제보·지원서의 audit은 status와 관리자 메모처럼 제한된 필드만 기록해 원문 개인정보 복제를 피한다. R2 객체를 바꾸는 서버 route도 별도 audit row를 쓴다.
 
 하지 말아야 할 것:
 
@@ -172,10 +172,12 @@ preview 진입은 다음을 모두 요구한다.
 | `NEXT_PUBLIC_SUPABASE_URL` | 예 | Supabase origin |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 예 | RLS 적용 공개 key |
 | `NEXT_PUBLIC_SUPABASE_PROJECT_REF` | 예 | URL 일치 검증 |
-| `NEXT_PUBLIC_SUPABASE_STORAGE_URL` | 예 | public Storage base |
 | `SUPABASE_SERVICE_ROLE_KEY` | 아니오 | 서버 RLS 우회 작업 |
 | `AUTH_RATE_LIMIT_SECRET` | 아니오 | 로그인 identifier HMAC |
 | `SUBMISSION_RATE_LIMIT_SECRET` | 아니오 | 제출 identifier HMAC |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | 아니오 | R2 S3 API 접근 |
+| `R2_PUBLIC_BUCKET`, `R2_PRIVATE_BUCKET` | 아니오 | 물리 R2 bucket 이름 |
+| `NEXT_PUBLIC_R2_PUBLIC_URL` | 예 | 공개 R2 CDN base |
 | `VERCEL_TOKEN` | 아니오 | 서버의 Vercel Web Analytics API 인증 |
 | `VERCEL_PROJECT_ID` | 아니오 | 조회할 Vercel 프로젝트 식별자 |
 | `VERCEL_TEAM_ID` | 아니오 | 팀 소속 프로젝트일 때의 선택 식별자 |

@@ -7,7 +7,7 @@ src/app  ───────▶  src/public ──┐
    │                            ├──▶ src/core
    └───────────▶  src/admin  ───┘
 
-Supabase/Postgres/Storage ◀── repository, server module, API route
+Supabase/Postgres/Auth + Cloudflare R2 ◀── repository, server module, API route
 ```
 
 - `core`는 인증, Supabase client, HTTP 안전장치, i18n, preview, 공용 UI·유틸을 소유한다.
@@ -128,7 +128,8 @@ Vercel 설정이 없으면 endpoint는 빈 통계와 `configured: false`를 반�
 | `auth/` | browser auth facade, server login/verify/OAuth, role helpers |
 | `supabase/` | browser/server/service/proxy client와 guide sandbox |
 | `http/` | same-origin, client IP, 요청 크기, URL, rate limit |
-| `uploads/` | magic-byte 검증, Storage path 안전성, service client export |
+| `uploads/` | magic-byte 검증, 객체 path 안전성, Supabase service client export |
+| `storage/` | R2 S3 client, 공개 URL, 서명 URL, 객체 삭제, asset proxy |
 | `i18n/` | locale 판별·fallback·메시지·서버 cookie |
 | `preview/` | draft preview token/envelope/entry/exit/provider |
 | `providers/` | theme와 locale context |
@@ -165,7 +166,7 @@ Browser
   → DB 기반 rate limit
   → Zod/명시적 값 검증
   → magic-byte + extension + allowlist 검증
-  → service-role DB/Storage 작업
+  → service-role DB 작업 + R2 객체 작업
   → 실패 시 생성 자원 정리
   → no-store 응답
 ```

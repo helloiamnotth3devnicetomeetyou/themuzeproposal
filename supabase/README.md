@@ -3,7 +3,7 @@
 The production project (`knbingxnnkutnukjyucw`, since 2026-08-12) is the source of truth for the
 current production schema. It was cloned from the prior project (`kjsqwfhqjvekahacvfnc`, kept only
 as a cold backup after it hit the free plan's cached egress limit) via `supabase db push` replaying
-every file in `migrations/`, plus a full data + storage object copy.
+every file in `migrations/`, plus a full data copy. Runtime file objects now live in Cloudflare R2; the historical Supabase Storage copy is retained only with the old project backup.
 
 `db:status` / `db:push` / `db:dump` run through `scripts/db.mjs`, which passes `--db-url
 $SUPABASE_DB_URL` instead of `--linked`, because the project isn't reachable via `supabase link`
@@ -15,8 +15,7 @@ under the CLI account used for the original project. Set `SUPABASE_DB_URL` in `.
 - `seed.sql` is the idempotent development seed. It runs only on a local `supabase db reset`.
 - Add every future production change as a new timestamped file in `migrations/` with `npx supabase migration new <name>`.
 - Review pending work with `npm run db:status`, then apply it with `npm run db:push`.
-- `track-assets` storage bucket's `file_size_limit` is 50MB on the new project (down from 500MB on
-  the old one) — the free plan caps upload size. Raise it from the dashboard if the plan is upgraded.
+- Supabase Storage buckets are no longer used by the runtime. Configure object limits and CORS in R2; in particular, the public bucket must allow `PUT` and `Content-Type` from the site origin for direct hero-video uploads.
 
 ## Establishing the baseline on an existing production database
 

@@ -87,7 +87,7 @@ npm run db:test
 - avatar asset/profile 연계
 - 전반적인 public/admin/user RLS boundary
 
-policy, grant, security-definer function, role, Storage ownership을 변경하면 허용과 거부를 SQL 테스트에 함께 추가한다. 앱 mock test만으로 RLS를 검증했다고 보지 않는다.
+policy, grant, security-definer function, role을 변경하면 허용과 거부를 SQL 테스트에 함께 추가한다. R2 객체 접근은 SQL RLS 대상이 아니므로 route/unit test와 배포 전 R2 권한 점검으로 검증한다.
 
 ## coverage
 
@@ -124,10 +124,10 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 
 검사 내용:
 
-- 필수 변수 8개 존재
-- site/Supabase/Storage URL 형식
+- 필수 Supabase/R2 변수 존재
+- site/Supabase/R2 공개 URL 형식
 - Supabase URL hostname과 project ref 일치
-- Storage origin과 Supabase origin 일치
+- R2 공개 URL이 absolute URL인지
 - 두 HMAC secret 32자 이상
 
 `VERCEL_TOKEN`과 `VERCEL_PROJECT_ID`를 설정하면 관리자 대시보드와 `/admin/analytics`에서 Vercel Web Analytics를 조회한다. 두 값이 없으면 해당 화면은 빈 통계로 표시되며 앱 빌드를 막지 않는다. API는 7일·30일·12주·12개월 범위를 지원하고, Vercel 요금제의 기간 제한은 정상 `200` 응답의 제한 상태로 화면에 안내한다. 상세 설정과 API 계약은 [08-admin-analytics.md](./08-admin-analytics.md)를 본다.
@@ -141,10 +141,10 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 - DB 변경은 migration status와 DB test 통과
 - migration이 app보다 먼저/나중에 적용돼야 하는지 순서 명시
 - production Supabase Auth redirect URL과 Google provider callback 확인
-- public site URL/canonical/Storage URL이 production origin과 일치
+- public site URL/canonical/R2 CDN URL이 production 설정과 일치
 - service key와 HMAC secret이 production secret store에 설정
 - 관리자 계정과 최소 한 명의 super_admin 존재
-- 새 remote image/storage origin이 Next config/CSP와 맞음
+- 새 R2 CDN origin이 Next config/CSP와 맞음
 - 공개 저장 후 cache invalidation 확인
 - mobile/keyboard/reduced-motion smoke test
 
@@ -174,7 +174,7 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 ### 페이지가 전체 실패
 
 1. deployment build log와 env validation
-2. Supabase URL/project ref/storage origin
+2. Supabase URL/project ref와 R2 CDN origin
 3. root layout의 env import와 `connection()`
 4. CSP violation/network error
 5. Supabase status와 anon query/RLS
@@ -202,7 +202,7 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 3. 실제 magic byte와 extension
 4. safe path와 bucket allowlist
 5. service role env
-6. Storage policy/용량
+6. R2 API token 권한, bucket 이름, CORS(직접 hero upload), 객체 용량
 7. DB 실패 후 orphan object 존재 여부
 
 ### rate limit이 모두에게 걸림

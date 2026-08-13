@@ -52,7 +52,8 @@ npm run db:test
 | --- | --- | --- |
 | GitHub | 저장소 read/write, Actions 로그 읽기 | 기본 브랜치 보호 규칙, 배포 workflow 상태 |
 | Vercel | 프로젝트·배포 로그·환경 변수 읽기, 필요 시 배포 | production/preview 프로젝트, 연결된 Git repository, 환경 변수 소유자 |
-| Supabase | 프로젝트·Auth·Storage·SQL·로그 접근 | production/preview project ref, Database password·service key 보관 위치, Auth redirect URL |
+| Supabase | 프로젝트·Auth·SQL·로그 접근 | production/preview project ref, Database password·service key 보관 위치, Auth redirect URL |
+| Cloudflare R2 | public/private bucket, API token, CDN·CORS 설정 접근 | bucket 이름, token rotation 위치, 공개 CDN domain, hero upload CORS |
 | Google OAuth·메일 provider | 설정을 조회하거나 담당자에게 요청할 수 있는 권한 | OAuth redirect URL, client secret 갱신 절차, 메일 발송 책임자 |
 | 도메인/DNS | 설정을 확인하거나 담당자에게 요청할 수 있는 권한 | canonical origin, DNS·TLS 갱신 담당자 |
 
@@ -74,7 +75,7 @@ DB를 건드리는 인수나 변경이라면 Docker를 실행한 뒤 `npx supaba
 production과 preview 각각에 대해 다음을 확인한다.
 
 - `NEXT_PUBLIC_SITE_URL`이 실제 canonical URL과 일치하는지
-- Supabase URL, project ref, Storage URL이 같은 프로젝트를 가리키는지
+- Supabase URL과 project ref가 일치하고 R2 공개 CDN URL이 올바른지
 - service role key와 두 rate-limit HMAC secret이 서버 환경 변수에만 있는지
 - Supabase Auth의 Site URL과 Google OAuth callback/redirect allowlist가 실제 도메인과 일치하는지
 - `VERCEL_TOKEN`과 `VERCEL_PROJECT_ID`가 설정된 경우 `/admin/analytics`가 동작하는지
@@ -88,7 +89,7 @@ production과 preview 각각에 대해 다음을 확인한다.
 | --- | --- |
 | [01-project-overview.md](./01-project-overview.md) | 이 제품은 무엇이고 어떤 화면과 기능이 있는가? |
 | [02-architecture.md](./02-architecture.md) | 요청이 어느 계층을 지나고 새 코드는 어디에 두는가? |
-| [03-data-and-supabase.md](./03-data-and-supabase.md) | 테이블, RLS, Storage, 마이그레이션은 어떻게 연결되는가? |
+| [03-data-and-supabase.md](./03-data-and-supabase.md) | 테이블, RLS, R2 객체 저장소, 마이그레이션은 어떻게 연결되는가? |
 | [04-security.md](./04-security.md) | 인증·권한·입력·업로드 보안 경계는 무엇인가? |
 | [05-frontend-and-design.md](./05-frontend-and-design.md) | 디자인 언어, CSS, 반응형, 접근성, 다국어 규칙은 무엇인가? |
 | [06-code-style-and-workflows.md](./06-code-style-and-workflows.md) | 코드 스타일과 기능별 구현 절차는 무엇인가? |
@@ -121,7 +122,8 @@ production과 preview 각각에 대해 다음을 확인한다.
 | 영역 | 코드로 관리하는 것 | 운영에서 결정·관리할 것 |
 | --- | --- | --- |
 | 애플리케이션 | Next route, 권한 확인, 입력 검증, cache invalidation | Vercel 배포 권한, 로그 보존, rollback 승인 |
-| Supabase | migration, RLS, RPC, Storage 경로와 검증 | project 접근권한, Auth provider 설정, DB backup/복구 정책 |
+| Supabase | migration, RLS, RPC | project 접근권한, Auth provider 설정, DB backup/복구 정책 |
+| Cloudflare R2 | 객체 path·서명 URL·파일 검증 | bucket 접근권한, API token rotation, CDN/CORS, 객체 보존 정책 |
 | 콘텐츠 | 관리자 편집 UI, 발행 상태, 감사 로그 | 콘텐츠 승인 주체, 공개 일정, 개인정보 보존 기준 |
 | 외부 연동 | OAuth callback 처리, Vercel Analytics API 호출 | Google/OAuth client 소유자, token rotation, 플랜·비용 |
 | 보안 | CSP, same-origin, rate limit, 파일 시그니처 검증 | incident 연락망, secret rotation, 법무·보존 정책 |
@@ -143,7 +145,7 @@ production과 preview 각각에 대해 다음을 확인한다.
 ```md
 ## 변경 요약
 - 사용자 흐름 / URL:
-- 영향 범위: 공개 | 관리자 | API | DB | Storage | 외부 연동
+- 영향 범위: 공개 | 관리자 | API | DB | R2 | 외부 연동
 
 ## 배포 순서
 1.
@@ -166,7 +168,7 @@ production과 preview 각각에 대해 다음을 확인한다.
 2. 최근 Vercel deployment·GitHub Actions·Supabase 상태와 환경 변수 변경 이력을 확인한다.
 3. 재현 가능한 URL, 시간, 계정 역할, 응답 status를 남긴다. token·개인정보·원본 첨부파일은 남기지 않는다.
 4. 공개 페이지 문제는 [07-testing-and-operations.md](./07-testing-and-operations.md)의 페이지 실패 절차를, 권한·제출 문제는 [04-security.md](./04-security.md)를 따른다.
-5. DB 또는 Storage에 영향을 주는 임시 조치는 migration·백업·복구 계획 없이 실행하지 않는다.
+5. DB 또는 R2 객체에 영향을 주는 임시 조치는 migration·백업·복구 계획 없이 실행하지 않는다.
 
 장애 종료 후에는 원인, 영향 시간, 임시 조치, 영구 수정, 필요한 문서·테스트 보완을 배포 기록에 남긴다.
 

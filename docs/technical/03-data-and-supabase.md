@@ -9,13 +9,13 @@
 | `supabase` (`core/supabase/client.ts`) | anon + browser session | Client Component, 일반 사용자·관리자 RLS 작업 |
 | `createSupabaseServerClient()` | anon + request cookie | Server Component/Route Handler의 사용자 세션·RLS 작업 |
 | 공개 server/repository client | anon, session 비저장 | 공개 캐시 가능한 조회 |
-| `createServiceRoleClient()` | service role, RLS 우회 | 검증된 서버 route의 제한된 관리·제출·Storage 작업 |
+| `createServiceRoleClient()` | service role, RLS 우회 | 검증된 서버 route의 제한된 DB 관리·제출 작업 |
 
 Service role client가 `null`일 수 있으므로 route는 `503 SERVICE_UNAVAILABLE`로 실패해야 한다. 클라이언트 bundle에 service key가 들어가는 import 구조는 금지한다.
 
 ## 외부 운영 데이터
 
-관리자 페이지 통계는 Supabase 테이블이나 Storage에 원본 방문 데이터를 복제하지 않는다. 인증된 관리자가 `/api/admin/page-stats`를 요청할 때만 Vercel Web Analytics API를 조회해 화면용 집계 DTO로 변환한다.
+관리자 페이지 통계는 Supabase 테이블이나 R2에 원본 방문 데이터를 복제하지 않는다. 인증된 관리자가 `/api/admin/page-stats`를 요청할 때만 Vercel Web Analytics API를 조회해 화면용 집계 DTO로 변환한다.
 
 - 방문자 식별자, 원본 IP, 개별 이벤트는 이 저장소의 DB에 저장하지 않는다.
 - API token과 Vercel project ID는 서버 환경 변수로만 읽고, 브라우저나 Supabase 설정에 저장하지 않는다.
@@ -63,7 +63,7 @@ private.submission_rate_limits
 
 - auth user 생성 trigger가 `profiles` row를 만든다. role 기본값은 `null`이다.
 - `contact_inquiries`는 비로그인 제출을 허용하지만 서버 route와 RLS가 consent·user_id 형태를 제한한다.
-- `protect_reports`는 로그인 사용자 소유이며 attachments는 private Storage path를 참조한다.
+- `protect_reports`는 로그인 사용자 소유이며 attachments는 private R2 object path를 참조한다.
 - `admin_audit_logs`는 일반 콘텐츠는 변경값을, 문의·제보·지원서는 안전한 운영 필드만 기록한다.
 - rate-limit identifier는 원문 이메일/IP/user id가 아니라 HMAC hash로 저장한다.
 
@@ -138,9 +138,11 @@ private.submission_rate_limits
 | `save_avatar_assets()` | admin editor | avatar asset 정렬·삭제 저장 |
 | `reorder_albums()` | admin editor | 아티스트 앨범 순서 변경 |
 
-## Storage
+## Cloudflare R2 객체 저장소
 
-코드에서 확인되는 bucket 책임:
+논리 bucket은 R2의 두 물리 bucket 안에서 prefix로 분리된다. 공개 객체는 `R2_PUBLIC_BUCKET/<logical-bucket>/<path>`, 비공개 객체는 `R2_PRIVATE_BUCKET/<logical-bucket>/<path>`에 저장된다. DB는 URL 또는 object path만 보관하고, R2 접근 키는 서버에만 둔다.
+
+코드에서 확인되는 논리 bucket 책임:
 
 | bucket | 공개 여부/용도 | route 제한 |
 | --- | --- | --- |
@@ -152,7 +154,9 @@ private.submission_rate_limits
 | `protect-evidence` | 비공개 제보 증빙 | 이미지/GIF/PDF |
 | `audition-attachments` | 비공개 지원 첨부 | 로그인 제출 API, 관리자 읽기 |
 
-DB Storage policy만 믿고 browser에서 직접 임의 path를 업로드하지 않는다. 서버 route가 bucket, path, 크기, signature, extension을 검증한다. 저장 파일명은 사용자 입력 대신 UUID와 검증된 extension을 사용하고 원래 이름은 metadata/DB에만 제한 길이로 저장한다.
+Supabase Storage policy는 R2 객체 접근에 적용되지 않는다. browser에서 임의 path로 직접 업로드하지 않고 서버 route가 bucket, path, 크기, signature, extension을 검증한다. 저장 파일명은 사용자 입력 대신 UUID와 검증된 extension을 사용하고 원래 이름은 metadata/DB에만 제한 길이로 저장한다. 예외인 hero video는 서버가 발급한 60초 서명 PUT URL로만 직접 업로드하며, 완료 후 서버가 크기·MIME·파일 시그니처를 다시 검증하고 `pending/` 객체를 공개 `clips/` 경로로 복사한다.
+
+공개 URL은 `NEXT_PUBLIC_R2_PUBLIC_URL/<logical-bucket>/<path>` 형식이다. CSS `mask-image`처럼 R2 CDN CORS에 민감한 SVG는 `/api/asset-proxy?url=...`를 통해 같은 origin에서 읽는다. private object는 관리자 인증 후에만 짧은 만료의 서명 GET URL을 발급한다.
 
 ## RLS 원칙
 

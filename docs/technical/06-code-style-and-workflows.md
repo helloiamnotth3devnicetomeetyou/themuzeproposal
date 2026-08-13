@@ -94,7 +94,7 @@
 2. 인접 `*-editor-model.ts`와 `useAdminEntityEditor`를 재사용한다.
 3. draft ↔ payload 변환과 필수값 검증을 model에 둔다.
 4. 저장 성공 후 snapshot/backup을 commit한다.
-5. 삭제는 confirmation과 FK/Storage 정리 순서를 명시한다.
+5. 삭제는 confirmation과 FK/R2 객체 정리 순서를 명시한다.
 6. 공개 영향이 있으면 cache tag를 무효화한다.
 7. guide sandbox에서 실제 write가 발생하지 않는지 확인한다.
 
@@ -123,7 +123,7 @@
 
 1. 정말 새 MIME이 필요한지 확인한다.
 2. `ValidatedFileType`, extension, detection, profile allowlist를 최소 변경한다.
-3. route body/file/bucket limit와 Storage limit를 맞춘다.
+3. route body/file/bucket limit와 R2 객체 제한을 맞춘다.
 4. 사용자 파일명 대신 안전한 path를 생성한다.
 5. DB 작업 실패 시 object cleanup을 추가한다.
 6. valid signature, spoofed MIME, wrong extension, oversized, unauthorized 테스트를 만든다.

@@ -17,7 +17,7 @@ THE MUZE 엔터테인먼트의 공식 웹사이트와 콘텐츠 관리 스튜디
 | 런타임 | Node.js 22 |
 | 웹 | Next.js 16 App Router, React 19, TypeScript strict |
 | 스타일 | Tailwind CSS 4 + 전역 CSS + CSS Modules |
-| 데이터·인증·파일 | Supabase Postgres/Auth/Storage, `@supabase/ssr` |
+| 데이터·인증·파일 | Supabase Postgres/Auth, Cloudflare R2, `@supabase/ssr`, AWS S3 SDK |
 | 검증 | Zod 4, 수동 trust-boundary 검증 |
 | 이미지 | Next Image, Sharp |
 | HTML/SVG 정화 | isomorphic-dompurify, Sharp |
@@ -73,7 +73,8 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 | `/api/contact-inquiries` | 공개 제출, body/file 검증, rate limit |
 | `/api/protect-reports` | 로그인 필수, 증빙 업로드와 실패 시 정리 |
 | `/api/audition/submit` | 로그인·확정 이메일·동적 schema·중복·파일 검증 |
-| `/api/uploads/admin-asset`, `/api/uploads/artist-logo` | 관리자, allowlist bucket/path/type |
+| `/api/uploads/admin-asset`, `/api/uploads/artist-logo` | 관리자, allowlist bucket/path/type; hero video는 짧은 만료의 R2 서명 PUT URL 사용 |
+| `/api/asset-proxy` | R2 공개 SVG를 same-origin으로 중계해 CSS mask CORS 제약 해소 |
 | `/api/admin/accounts` | super_admin 전용 역할 관리 |
 | `/api/admin/page-stats` | 관리자 전용 Vercel Web Analytics 조회 |
 | `/api/admin/revalidate` | 관리자, 허용된 cache tag만 무효화 |
@@ -91,7 +92,7 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 
 ### 민감 제출
 
-브라우저는 multipart 또는 JSON을 같은 origin API에 전송한다. Route Handler가 크기 제한, 서버 세션, rate limit, 값과 파일의 실제 형식을 확인한다. Storage와 다중 테이블 작업이 중간 실패하면 업로드 파일과 생성 row를 명시적으로 정리한다.
+브라우저는 multipart 또는 JSON을 같은 origin API에 전송한다. Route Handler가 크기 제한, 서버 세션, rate limit, 값과 파일의 실제 형식을 확인한 뒤 R2에 저장한다. hero video만 검증된 경로에 대한 짧은 만료의 서명 PUT URL로 직접 업로드하고, 완료 시 서버가 객체를 다시 확인한다. R2와 다중 테이블 작업이 중간 실패하면 업로드 파일과 생성 row를 명시적으로 정리한다.
 
 ## 저장소 최상위
 
