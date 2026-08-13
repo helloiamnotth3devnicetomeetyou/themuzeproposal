@@ -62,7 +62,7 @@ export default function HomeSlide({
       poster={isVideoFrameReady ? undefined : slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
-      muted defaultMuted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
+      muted playsInline autoPlay={isActive} controls={false} disablePictureInPicture preload={isActive || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
       onLoadedData={(event) => { onVideoReady(slide.id); if (isActive) void event.currentTarget.play().catch(() => undefined); }}
       onPlaying={() => setIsVideoFrameReady(true)}
       onCanPlay={(event) => { if (isActive && event.currentTarget.paused) void event.currentTarget.play().catch(() => undefined); }}
