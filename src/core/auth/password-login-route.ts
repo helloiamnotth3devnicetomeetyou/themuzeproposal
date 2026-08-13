@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
   const { error: authError } = await authClient.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken: turnstileToken },
   });
 
   if (authError) {

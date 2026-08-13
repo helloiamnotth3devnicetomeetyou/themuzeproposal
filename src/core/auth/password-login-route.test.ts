@@ -169,6 +169,11 @@ describe("POST /api/auth/login", () => {
     await POST(request({ email: "user@example.com", password: "password" }));
 
     expect(order).toEqual(["captcha", "rate-limit", "sign-in"]);
+    expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+      email: "user@example.com",
+      password: "password",
+      options: { captchaToken: "test-turnstile-token" },
+    });
   });
 
   it("fails closed before creating an account-wide limiter key when client IP is unavailable", async () => {
