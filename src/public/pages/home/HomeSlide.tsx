@@ -60,12 +60,13 @@ export default function HomeSlide({
     {shouldLoadMedia && slide.videoUrl && <video
       className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
       src={slide.videoUrl}
+      poster={slide.imageUrl || undefined}
       data-slide-index={index}
       data-start-time={videoStartTime(slide.videoUrl)}
       muted playsInline autoPlay={index === 0} preload={index === 0 || shouldPreload ? "auto" : "metadata"} aria-hidden="true"
       onCanPlay={() => onVideoReady(slide.id)}
       onError={() => onVideoFailure(slide.id)}
-      style={{ opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
+      style={slide.imageUrl ? undefined : { opacity: readyVideoSlideIds.has(slide.id) ? 1 : 0, transition: "opacity 600ms ease" }}
     />}
     {shouldLoadMedia && slide.imageUrl && (index !== 0 || !slide.videoUrl || failedVideoSlideIds.has(slide.id)) && <Image
       src={slide.imageUrl} alt={`${slide.artistName} ${slide.title}`} fill sizes="100vw" preload={isActive}
