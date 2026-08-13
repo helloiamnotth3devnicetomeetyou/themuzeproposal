@@ -51,7 +51,6 @@ interface UseLoginFormOptions {
   redirectTo: string;
   oauthFailed: boolean;
   locale: LocaleKey;
-  resetTurnstile?: () => void;
 }
 
 export interface LoginFormState {
@@ -65,11 +64,9 @@ export interface LoginFormState {
   loading: boolean;
   currentSlide: number;
   t: LoginTranslations;
-  turnstileToken: string;
   setEmail: (v: string) => void;
   setPassword: (v: string) => void;
   setName: (v: string) => void;
-  setTurnstileToken: (v: string | null) => void;
   switchMode: (next: Mode) => void;
   previousSignupStep: () => void;
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -81,7 +78,6 @@ export function useLoginForm({
   redirectTo,
   oauthFailed,
   locale,
-  resetTurnstile,
 }: UseLoginFormOptions): LoginFormState {
   const router = useRouter();
   const t = localT[locale] ?? localT.ko;
@@ -95,9 +91,6 @@ export function useLoginForm({
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [turnstileToken, setTurnstileTokenState] = useState("");
-  const setTurnstileToken = (v: string | null) =>
-    setTurnstileTokenState(v ?? "");
 
   // Autoplay slideshow
   useEffect(() => {
@@ -114,8 +107,6 @@ export function useLoginForm({
     setError("");
     setNotice("");
     setSignupStep(1);
-    setTurnstileTokenState("");
-    resetTurnstile?.();
   };
 
   const switchMode = (next: Mode) => {
@@ -126,20 +117,14 @@ export function useLoginForm({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!turnstileToken) {
-      setError(t.captchaRequired);
-      return;
-    }
     setLoading(true);
 
     try {
-      await signIn(email, password, turnstileToken);
+      await signIn(email, password);
       router.push(redirectTo);
       setTimeout(() => window.location.reload(), 100);
     } catch (err: unknown) {
       setError(loginErrorMessage(err, t));
-      setTurnstileTokenState("");
-      resetTurnstile?.();
     } finally {
       setLoading(false);
     }
@@ -170,14 +155,8 @@ export function useLoginForm({
       return;
     }
 
-    if (!turnstileToken) {
-      setError(t.captchaRequired);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const data = await signUp(email, password, turnstileToken, name);
+      const data = await signUp(email, password, name);
       if (!data.session) {
         setNotice(t.confirmEmail);
         setMode("login");
@@ -189,8 +168,6 @@ export function useLoginForm({
       setTimeout(() => window.location.reload(), 100);
     } catch (error: unknown) {
       setError(signupErrorMessage(error, t, locale));
-      setTurnstileTokenState("");
-      resetTurnstile?.();
     } finally {
       setLoading(false);
     }
@@ -219,11 +196,9 @@ export function useLoginForm({
     loading,
     currentSlide,
     t,
-    turnstileToken,
     setEmail,
     setPassword,
     setName,
-    setTurnstileToken,
     switchMode,
     previousSignupStep: () => {
       setSignupStep(1);

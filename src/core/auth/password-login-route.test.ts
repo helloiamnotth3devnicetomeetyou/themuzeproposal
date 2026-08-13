@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   createServiceClient: vi.fn(),
   createServerClient: vi.fn(),
-  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/core/config/public-env", () => ({
@@ -19,9 +18,6 @@ vi.mock("@/core/supabase/service", () => ({
 }));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: mocks.createServerClient,
-}));
-vi.mock("@/core/http/turnstile", () => ({
-  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 
 import { POST } from "./password-login-route";
@@ -35,7 +31,7 @@ const request = (body: Record<string, unknown>, headers: HeadersInit = {}) =>
       "x-test-client-ip": "203.0.113.10",
       ...headers,
     },
-    body: JSON.stringify({ turnstileToken: "test-turnstile-token", ...body }),
+    body: JSON.stringify(body),
   });
 
 describe("POST /api/auth/login", () => {
@@ -43,7 +39,6 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
     process.env.AUTH_RATE_LIMIT_SECRET = "test-secret";
     process.env.TRUSTED_CLIENT_IP_HEADER = "x-test-client-ip";
-    mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.getConfig.mockReturnValue({
       url: "https://project.supabase.co",
       anonKey: "anon",
@@ -140,23 +135,8 @@ describe("POST /api/auth/login", () => {
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
-  it("does not consume the login budget for a rejected CAPTCHA", async () => {
-    mocks.verifyTurnstileToken.mockResolvedValueOnce(false);
-    const response = await POST(
-      request({ email: "USER@example.com", password: "password" }),
-    );
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
-    expect(mocks.rpc).not.toHaveBeenCalled();
-    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
-  });
-
-  it("validates CAPTCHA and applies the limiter before authentication", async () => {
+  it("applies the limiter before authentication without Turnstile", async () => {
     const order: string[] = [];
-    mocks.verifyTurnstileToken.mockImplementationOnce(async () => {
-      order.push("captcha");
-      return true;
-    });
     mocks.rpc.mockImplementationOnce(async () => {
       order.push("rate-limit");
       return { data: [{ is_allowed: true }], error: null };
@@ -168,7 +148,7 @@ describe("POST /api/auth/login", () => {
 
     await POST(request({ email: "user@example.com", password: "password" }));
 
-    expect(order).toEqual(["captcha", "rate-limit", "sign-in"]);
+    expect(order).toEqual(["rate-limit", "sign-in"]);
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "user@example.com",
       password: "password",
@@ -188,7 +168,6 @@ describe("POST /api/auth/login", () => {
         body: JSON.stringify({
           email: "victim@example.com",
           password: "password",
-          turnstileToken: "test-turnstile-token",
         }),
       }),
     );

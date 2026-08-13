@@ -1,19 +1,14 @@
 "use client";
 
-import type { RefObject } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "@/core/providers/LocaleContext";
-import TurnstileWidget, {
-  type TurnstileWidgetHandle,
-} from "@/core/components/form/TurnstileWidget";
 import { type LoginFormState } from "../hooks";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginFormPanelProps extends LoginFormState {
   isDark: boolean;
   showLoginRequired: boolean;
-  turnstileRef: RefObject<TurnstileWidgetHandle | null>;
 }
 
 function Input({
@@ -72,11 +67,9 @@ export default function LoginFormPanel({
   t,
   isDark,
   showLoginRequired,
-  turnstileRef,
   setEmail,
   setPassword,
   setName,
-  setTurnstileToken,
   switchMode,
   previousSignupStep,
   handleLogin,
@@ -268,13 +261,6 @@ export default function LoginFormPanel({
               onChange={setPassword}
               placeholder={t.passwordPlaceholder}
               autoComplete={isSignup ? "new-password" : "current-password"}
-            />
-          )}
-          {(!isSignup || signupStep === 2) && (
-            <TurnstileWidget
-              ref={turnstileRef}
-              onToken={setTurnstileToken}
-              action={isSignup ? "signup" : "login"}
             />
           )}
           <button

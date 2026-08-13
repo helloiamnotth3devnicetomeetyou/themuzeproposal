@@ -41,20 +41,15 @@ describe("useLoginForm", () => {
     act(() => {
       result.current.setEmail("user@example.com");
       result.current.setPassword("secret");
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleLogin({ preventDefault: vi.fn() } as never);
     });
-    expect(auth.signIn).toHaveBeenCalledWith(
-      "user@example.com",
-      "secret",
-      "captcha-token",
-    );
+    expect(auth.signIn).toHaveBeenCalledWith("user@example.com", "secret");
     expect(push).toHaveBeenCalledWith("/protect");
   });
 
-  it("blocks sign-in until the security check is completed", async () => {
+  it("signs in without a Turnstile token", async () => {
     const { result } = renderHook(() =>
       useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }),
     );
@@ -65,8 +60,7 @@ describe("useLoginForm", () => {
     await act(async () => {
       await result.current.handleLogin({ preventDefault: vi.fn() } as never);
     });
-    expect(auth.signIn).not.toHaveBeenCalled();
-    expect(result.current.error).toBe(result.current.t.captchaRequired);
+    expect(auth.signIn).toHaveBeenCalledWith("user@example.com", "secret");
   });
 
   it("shows the remaining rate-limit wait in minutes", async () => {
@@ -75,7 +69,6 @@ describe("useLoginForm", () => {
       useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }),
     );
     act(() => {
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleLogin({ preventDefault: vi.fn() } as never);
@@ -89,16 +82,12 @@ describe("useLoginForm", () => {
       useLoginForm({ redirectTo: "/", oauthFailed: false, locale: "ko" }),
     );
     act(() => {
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleLogin({ preventDefault: vi.fn() } as never);
     });
     expect(result.current.error).toBe(result.current.t.invalidCredentials);
 
-    act(() => {
-      result.current.setTurnstileToken("captcha-token-2");
-    });
     auth.signIn.mockRejectedValueOnce(new AuthUserError("SERVICE_UNAVAILABLE"));
     await act(async () => {
       await result.current.handleLogin({ preventDefault: vi.fn() } as never);
@@ -165,7 +154,6 @@ describe("useLoginForm", () => {
     });
     act(() => {
       result.current.setPassword("ValidPass123!");
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleSignup({ preventDefault: vi.fn() } as never);
@@ -173,7 +161,6 @@ describe("useLoginForm", () => {
     expect(auth.signUp).toHaveBeenCalledWith(
       "user@example.com",
       "ValidPass123!",
-      "captcha-token",
       "User",
     );
     expect(push).toHaveBeenCalledWith("/protect");
@@ -198,7 +185,6 @@ describe("useLoginForm", () => {
     });
     act(() => {
       result.current.setPassword("ValidPass123!");
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleSignup({ preventDefault: vi.fn() } as never);
@@ -217,7 +203,6 @@ describe("useLoginForm", () => {
     act(() => {
       result.current.switchMode("signup");
       result.current.setPassword("ValidPass123!");
-      result.current.setTurnstileToken("captcha-token");
     });
     await act(async () => {
       await result.current.handleSignup({ preventDefault: vi.fn() } as never);

@@ -23,12 +23,11 @@ export class AuthUserError extends Error {
 export async function signIn(
   email: string,
   password: string,
-  turnstileToken: string,
 ) {
   const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, turnstileToken }),
+    body: JSON.stringify({ email, password }),
   });
   const payload = (await response.json().catch(() => ({}))) as {
     code?: AuthErrorCode;
@@ -67,7 +66,6 @@ export async function signInWithGoogle(redirectTo = "/", loginHint?: string) {
 export async function signUp(
   email: string,
   password: string,
-  turnstileToken: string,
   name?: string,
 ) {
   const { data, error } = await supabase.auth.signUp({
@@ -77,7 +75,6 @@ export async function signUp(
       data: {
         name: name || "",
       },
-      captchaToken: turnstileToken,
     },
   });
   if (error)
