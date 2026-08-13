@@ -11,6 +11,10 @@ export async function notifyArtistsChanged() {
       "artist-scene-data",
       "public-artist-title",
       "public-member-title",
+      "public-discography",
+      "public-artist-schedule",
+      "public-notices",
+      "public-notice-title",
     );
   }
 }

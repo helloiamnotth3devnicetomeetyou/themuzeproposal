@@ -54,6 +54,18 @@ const normalizeSocial = (
   );
 };
 
+const stringFields = (
+  value: unknown,
+  keys: readonly string[],
+): Record<string, string> => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const candidate = value as Record<string, unknown>;
+  return keys.reduce<Record<string, string>>((result, key) => {
+    if (typeof candidate[key] === "string") result[key] = candidate[key];
+    return result;
+  }, {});
+};
+
 export function normalizeSiteSettings(
   rows: Array<{ key: string; value: unknown }> | null | undefined,
 ): SiteSettingsPreviewPayload {
@@ -67,14 +79,14 @@ export function normalizeSiteSettings(
     ) {
       next.company = {
         ...next.company,
-        ...(item.value as Partial<typeof next.company>),
+        ...stringFields(item.value, Object.keys(next.company)),
       };
     }
     if (item.key === "history") next.history = normalizeHistory(item.value);
     if (item.key === "footer" && item.value && typeof item.value === "object") {
       next.footer = {
         ...next.footer,
-        ...(item.value as Partial<typeof next.footer>),
+        ...stringFields(item.value, Object.keys(next.footer)),
       };
     }
     if (item.key === "social") next.social = normalizeSocial(item.value);

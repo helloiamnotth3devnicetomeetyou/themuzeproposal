@@ -3,13 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createSupabaseServerClient: vi.fn(),
   getAll: vi.fn(),
+  publicClientFrom: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock("next/headers", () => ({ cookies: () => ({ getAll: mocks.getAll }) }));
 vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => ({ from: vi.fn() })),
+  createClient: vi.fn(() => ({ from: mocks.publicClientFrom })),
 }));
 vi.mock("@/core/config/public-env", () => ({
   getPublicSupabaseConfig: () => ({
@@ -26,7 +27,11 @@ vi.mock("@/core/storage/public-url", () => ({
     `https://cdn.example/${bucket}/${path}`,
 }));
 
-import { getNavigationAccount } from "./server";
+import {
+  getCachedNavigationArtists,
+  getCachedSiteSettings,
+  getNavigationAccount,
+} from "./server";
 
 function query(data: unknown) {
   const builder = {
@@ -43,6 +48,29 @@ describe("getNavigationAccount", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAll.mockReturnValue([]);
+    mocks.publicClientFrom.mockReset();
+  });
+
+  it("does not cache a failed navigation query as an empty list", async () => {
+    const error = new Error("temporary database failure");
+    mocks.publicClientFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: null, error }),
+        }),
+      }),
+    });
+
+    await expect(getCachedNavigationArtists()).rejects.toBe(error);
+  });
+
+  it("does not cache failed settings reads as empty settings", async () => {
+    const error = new Error("temporary database failure");
+    mocks.publicClientFrom.mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: null, error }),
+    });
+
+    await expect(getCachedSiteSettings()).rejects.toBe(error);
   });
 
   it("does not query profile data for anonymous visitors", async () => {

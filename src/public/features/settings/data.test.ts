@@ -25,6 +25,19 @@ describe("normalizeSiteSettings", () => {
     expect(result.footer.copyright).toBe("© 2026 THE MUZE");
   });
 
+  it("ignores malformed non-string display settings", () => {
+    const result = normalizeSiteSettings([
+      {
+        key: "company",
+        value: { name_en: { toString: () => "unsafe" }, address_en: 42 },
+      },
+      { key: "footer", value: { copyright: { toString: () => "unsafe" } } },
+    ]);
+    expect(result.company.name_en).toBe("");
+    expect(result.company.address_en).toBe("");
+    expect(result.footer.copyright).toBe("");
+  });
+
   it("normalizes social as array of objects", () => {
     const result = normalizeSiteSettings([
       {

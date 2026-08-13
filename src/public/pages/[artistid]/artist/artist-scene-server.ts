@@ -15,7 +15,7 @@ const sceneSelect =
 
 export const getArtistSceneData = unstable_cache(
   async (artistSlug: string): Promise<ArtistSceneData | null> => {
-    const { data } = await client
+    const { data, error } = await client
       .from("artists")
       .select(
         `id,slug,name,eng_name,name_ko,name_en,name_ja,image_url,logo_url,color,description_ko,description_en,description_ja,artist_members(${memberSelect}),artist_scenes(${sceneSelect})`,
@@ -23,6 +23,7 @@ export const getArtistSceneData = unstable_cache(
       .eq("slug", artistSlug)
       .eq("is_active", true)
       .maybeSingle();
+    if (error) throw error;
     const fetched = data as
       | (Artist & { artist_members: Member[]; artist_scenes: ArtistScene[] })
       | null;

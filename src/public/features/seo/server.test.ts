@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { displayName, noticeDisplayTitle, pageTypeLabel } from "./server";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+
+const publicClient = vi.hoisted(() => ({ from: vi.fn() }));
 
 // These pure functions don't use DB/server-only – they only depend on localizeText
 // We must mock server-only and supabase imports to prevent import errors in test env.
-import { vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => ({ from: vi.fn() })),
+  createClient: vi.fn(() => publicClient),
 }));
 vi.mock("@/core/config/public-env", () => ({
   getPublicSupabaseConfig: () => ({
@@ -15,6 +15,53 @@ vi.mock("@/core/config/public-env", () => ({
     anonKey: "test-key",
   }),
 }));
+
+import {
+  displayName,
+  getPublicArtistTitle,
+  getPublicMemberTitle,
+  getPublicNoticeTitle,
+  noticeDisplayTitle,
+  pageTypeLabel,
+} from "./server";
+
+function failedQuery(error: Error) {
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error }),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  return query;
+}
+
+describe("cached public reads", () => {
+  beforeEach(() => publicClient.from.mockReset());
+
+  it("does not cache artist title query failures as not found", async () => {
+    const error = new Error("temporary database failure");
+    publicClient.from.mockReturnValue(failedQuery(error));
+
+    await expect(getPublicArtistTitle("artist")).rejects.toBe(error);
+  });
+
+  it("does not cache member title query failures as not found", async () => {
+    const error = new Error("temporary database failure");
+    publicClient.from.mockReturnValue(failedQuery(error));
+
+    await expect(getPublicMemberTitle("artist", "member")).rejects.toBe(
+      error,
+    );
+  });
+
+  it("does not cache notice title query failures as not found", async () => {
+    const error = new Error("temporary database failure");
+    publicClient.from.mockReturnValue(failedQuery(error));
+
+    await expect(getPublicNoticeTitle("notice")).rejects.toBe(error);
+  });
+});
 
 describe("seo/server pure functions", () => {
   describe("displayName", () => {

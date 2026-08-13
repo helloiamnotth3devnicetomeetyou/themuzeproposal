@@ -11,10 +11,7 @@ import type {
   NavigationAccount,
 } from "@/public/components/layout/navbar-types";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
-import {
-  EMPTY_SETTINGS,
-  normalizeSiteSettings,
-} from "@/public/features/settings/data";
+import { normalizeSiteSettings } from "@/public/features/settings/data";
 
 const { url, anonKey, projectRef } = getPublicSupabaseConfig();
 
@@ -33,7 +30,7 @@ export const getCachedNavigationArtists = unstable_cache(
       .eq("is_active", true)
       .order("name", { ascending: true });
 
-    if (result.error) return [];
+    if (result.error) throw result.error;
     return (result.data ?? []) as ArtistNavigationItem[];
   },
   ["public-navigation-artists"],
@@ -46,7 +43,7 @@ export const getCachedSiteSettings = unstable_cache(
       .from("site_settings")
       .select("key,value");
 
-    if (error) return EMPTY_SETTINGS;
+    if (error) throw error;
     return normalizeSiteSettings(data);
   },
   ["public-site-settings"],

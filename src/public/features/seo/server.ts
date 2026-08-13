@@ -37,6 +37,7 @@ export const getPublicArtistTitle = unstable_cache(
       .eq("slug", slug)
       .eq("is_active", true)
       .maybeSingle();
+    if (result.error) throw result.error;
     return result.data as ArtistTitle | null;
   },
   ["public-artist-title"],
@@ -57,6 +58,7 @@ export const getPublicMemberTitle = unstable_cache(
       .eq("artist.slug", artistSlug)
       .eq("artist.is_active", true)
       .maybeSingle();
+    if (result.error) throw result.error;
     return result.data as MemberTitle | null;
   },
   ["public-member-title"],
@@ -71,6 +73,7 @@ export const getPublicNoticeTitle = unstable_cache(
       .eq("id", id)
       .eq("is_published", true)
       .maybeSingle();
+    if (result.error) throw result.error;
     return result.data as NoticeTitle | null;
   },
   ["public-notice-title"],

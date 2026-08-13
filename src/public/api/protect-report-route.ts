@@ -18,6 +18,8 @@ import { verifyTurnstileToken } from "@/core/http/turnstile";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 3;
 const MAX_POST_URL_LENGTH = 2048;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REPORT_TYPES = new Set([
   "defamation",
   "harassment",
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
 
   if (
     !artistId ||
+    !UUID_PATTERN.test(artistId) ||
     !REPORT_TYPES.has(reportType) ||
     title.length < 1 ||
     title.length > 120 ||
@@ -142,6 +145,18 @@ export async function POST(request: NextRequest) {
   ) {
     return errorResponse("INVALID_REQUEST", 400);
   }
+
+  const serviceClient = createServiceRoleClient();
+  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
+
+  const { data: artist, error: artistError } = await serviceClient
+    .from("artists")
+    .select("id")
+    .eq("id", artistId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (artistError) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!artist) return errorResponse("INVALID_REQUEST", 400);
 
   if (files.some((file) => file.size > MAX_FILE_BYTES))
     return errorResponse("FILE_TOO_LARGE", 413);
@@ -167,9 +182,6 @@ export async function POST(request: NextRequest) {
   );
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
-
-  const serviceClient = createServiceRoleClient();
-  if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const reportId = crypto.randomUUID();
   const paths: string[] = [];

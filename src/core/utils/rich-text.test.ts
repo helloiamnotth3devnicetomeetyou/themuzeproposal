@@ -51,6 +51,12 @@ describe("Rich Text Utilities", () => {
       const input = "<p>Line 1<br>Line 2</p><p>Line 3</p>";
       expect(richTextToPlainText(input)).toBe("Line 1\nLine 2\nLine 3");
     });
+
+    it("should replace invalid numeric entities without throwing", () => {
+      expect(richTextToPlainText("<p>Safe &#99999999; &#x110000;</p>")).toBe(
+        "Safe � �",
+      );
+    });
   });
 
   describe("plainTextToRichText", () => {

@@ -70,6 +70,19 @@ export function sanitizeRichText(value: string): string {
 }
 
 function decodeTextEntities(value: string): string {
+  const decodeNumericEntity = (code: string, radix: number) => {
+    const codePoint = Number.parseInt(code, radix);
+    if (
+      !Number.isInteger(codePoint) ||
+      codePoint < 0 ||
+      codePoint > 0x10ffff ||
+      (codePoint >= 0xd800 && codePoint <= 0xdfff)
+    ) {
+      return "\ufffd";
+    }
+    return String.fromCodePoint(codePoint);
+  };
+
   return (
     value
       .replace(/&nbsp;/gi, " ")
@@ -77,11 +90,9 @@ function decodeTextEntities(value: string): string {
       .replace(/&gt;/gi, ">")
       .replace(/&quot;/gi, '"')
       .replace(/&#0*39;|&apos;/gi, "'")
-      .replace(/&#(\d+);?/g, (_, code: string) =>
-        String.fromCodePoint(Number(code)),
-      )
+      .replace(/&#(\d+);?/g, (_, code: string) => decodeNumericEntity(code, 10))
       .replace(/&#x([0-9a-f]+);?/gi, (_, code: string) =>
-        String.fromCodePoint(Number.parseInt(code, 16)),
+        decodeNumericEntity(code, 16),
       )
       // &amp; must be decoded last: decoding it first would allow double-encoded
       // entities like &amp;lt; to pass through as < (CodeQL High #7).

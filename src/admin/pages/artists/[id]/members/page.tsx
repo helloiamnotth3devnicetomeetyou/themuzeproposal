@@ -348,7 +348,11 @@ export default function ArtistMembersAdmin() {
       originalDraft ? [originalDraft.imageUrl] : [],
     );
     uploadedAssets.current = [];
-    await revalidatePublicCache("artist-scene-data", "public-member-title");
+    await revalidatePublicCache(
+      "artist-scene-data",
+      "public-member-title",
+      "public-discography",
+    );
     setSaving(false);
   };
 
@@ -380,7 +384,11 @@ export default function ArtistMembersAdmin() {
     uploadedAssets.current = [];
     setDeleteOpen(false);
     setToast("멤버를 삭제했습니다.");
-    await revalidatePublicCache("artist-scene-data", "public-member-title");
+    await revalidatePublicCache(
+      "artist-scene-data",
+      "public-member-title",
+      "public-discography",
+    );
     await loadMembers();
   };
 
@@ -417,7 +425,7 @@ export default function ArtistMembersAdmin() {
     setSorting(false);
     setSortDirty(false);
     setToast("멤버 노출 순서를 저장했습니다.");
-    await revalidatePublicCache("artist-scene-data");
+    await revalidatePublicCache("artist-scene-data", "public-discography");
     await loadMembers(draft?.id || undefined);
   };
 

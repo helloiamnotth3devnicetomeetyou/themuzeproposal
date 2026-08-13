@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   createServiceClient: vi.fn(),
   consumeRateLimit: vi.fn(),
   consumeAttemptRateLimit: vi.fn(),
+  artistSelect: vi.fn(),
+  artistIdEq: vi.fn(),
+  artistActiveEq: vi.fn(),
+  artistMaybeSingle: vi.fn(),
   upload: vi.fn(),
   remove: vi.fn(),
   insert: vi.fn(),
@@ -51,7 +55,7 @@ function validRequest(
   postedAt = "2026-01-01",
 ) {
   const form = new FormData();
-  form.set("artistId", "artist-1");
+  form.set("artistId", "00000000-0000-4000-8000-000000000001");
   form.set("reportType", "defamation");
   form.set("title", "Report title");
   form.set("content", "Report details");
@@ -103,12 +107,25 @@ describe("POST /api/protect-reports", () => {
       remaining: 29,
       retryAfter: 0,
     });
+    mocks.artistSelect.mockReturnValue({ eq: mocks.artistIdEq });
+    mocks.artistIdEq.mockReturnValue({ eq: mocks.artistActiveEq });
+    mocks.artistActiveEq.mockReturnValue({
+      maybeSingle: mocks.artistMaybeSingle,
+    });
+    mocks.artistMaybeSingle.mockResolvedValue({
+      data: { id: "00000000-0000-4000-8000-000000000001" },
+      error: null,
+    });
     mocks.verifyTurnstileToken.mockResolvedValue(true);
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.createServiceClient.mockReturnValue({
-      from: vi.fn(() => ({ insert: mocks.insert })),
+      from: vi.fn((table: string) =>
+        table === "artists"
+          ? { select: mocks.artistSelect }
+          : { insert: mocks.insert },
+      ),
     });
   });
 
@@ -128,6 +145,40 @@ describe("POST /api/protect-reports", () => {
     expect(mocks.insert).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: "user-1", confirmation: true }),
     );
+    expect(mocks.artistIdEq).toHaveBeenCalledWith(
+      "id",
+      "00000000-0000-4000-8000-000000000001",
+    );
+    expect(mocks.artistActiveEq).toHaveBeenCalledWith("is_active", true);
+  });
+
+  it("rejects an invalid artist ID before looking up or consuming quota", async () => {
+    const formRequest = validRequest();
+    const form = await formRequest.formData();
+    form.set("artistId", "not-a-uuid");
+    const request = new NextRequest("http://localhost/api/protect-reports", {
+      method: "POST",
+      headers: { origin: "http://localhost" },
+      body: form,
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(mocks.artistSelect).not.toHaveBeenCalled();
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing or inactive artists before consuming quota or uploading", async () => {
+    mocks.artistMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(400);
+    expect(mocks.artistActiveEq).toHaveBeenCalledWith("is_active", true);
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
 
   it("rejects an oversized post URL", async () => {
