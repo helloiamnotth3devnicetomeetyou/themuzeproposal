@@ -29,6 +29,8 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig {
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   );
   const parsedUrl = parseUrl(url, "NEXT_PUBLIC_SUPABASE_URL");
+  if (process.env.NODE_ENV === "production" && parsedUrl.protocol !== "https:")
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
   const derivedProjectRef = parsedUrl.hostname.split(".")[0];
   const projectRef =
     process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim() || derivedProjectRef;
@@ -42,7 +44,13 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig {
 
 export function getSiteUrl() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) return "http://localhost:3000";
+  if (!configured) {
+    if (process.env.NODE_ENV === "production")
+      throw new Error(
+        "Missing required environment variable: NEXT_PUBLIC_SITE_URL",
+      );
+    return "http://localhost:3000";
+  }
   return parseUrl(configured, "NEXT_PUBLIC_SITE_URL").origin;
 }
 

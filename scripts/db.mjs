@@ -13,9 +13,9 @@ if (!dbUrl) {
 }
 
 const args = process.argv.slice(2);
-const result = spawnSync("npx", ["supabase", ...args, "--db-url", dbUrl], {
+const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+const result = spawnSync(npx, ["--no-install", "supabase", ...args, "--db-url", dbUrl], {
   stdio: "inherit",
-  shell: true,
 });
 
 process.exit(result.status ?? 1);

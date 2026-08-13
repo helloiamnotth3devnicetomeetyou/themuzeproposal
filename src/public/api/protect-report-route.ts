@@ -103,7 +103,9 @@ export async function POST(request: NextRequest) {
   }
 
   const turnstileToken = textField(formData, "turnstileToken");
-  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
+    action: "protect_report",
+  });
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
   const artistId = textField(formData, "artistId");

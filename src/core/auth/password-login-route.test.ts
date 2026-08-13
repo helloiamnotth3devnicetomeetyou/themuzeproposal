@@ -122,17 +122,32 @@ describe("POST /api/auth/login", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("returns rate-limit information without attempting authentication", async () => {
+  it("returns rate-limit information after a failed authentication", async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: [{ is_allowed: false, retry_after_seconds: 32 }],
       error: null,
+    });
+    mocks.signInWithPassword.mockResolvedValueOnce({
+      error: { code: "invalid_credentials", status: 400 },
     });
     const response = await POST(
       request({ email: "USER@example.com", password: "password" }),
     );
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("32");
-    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+    expect(mocks.signInWithPassword).toHaveBeenCalled();
+  });
+
+  it("does not consume the login budget for a rejected CAPTCHA", async () => {
+    mocks.signInWithPassword.mockResolvedValueOnce({
+      error: { code: "captcha_failed", status: 400 },
+    });
+    const response = await POST(
+      request({ email: "USER@example.com", password: "password" }),
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("fails closed before creating an account-wide limiter key when client IP is unavailable", async () => {

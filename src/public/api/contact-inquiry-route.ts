@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
   if (!attempt.allowed)
     return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
 
-  const captchaOk = await verifyTurnstileToken(turnstileToken, request);
+  const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
+    action: "contact_inquiry",
+  });
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
 
   const category = textField(formData, "category");

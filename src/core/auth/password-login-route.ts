@@ -64,24 +64,6 @@ export async function POST(request: NextRequest) {
   const limiterClient = createServiceRoleClient();
   if (!limiterClient) return jsonError("SERVICE_UNAVAILABLE", 503);
 
-  const { data: rateData, error: rateError } = await limiterClient.rpc(
-    "consume_login_rate_limit",
-    {
-      p_identifier_hash: identifierHash,
-      p_ip_hash: ipHash,
-    },
-  );
-  if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
-
-  const rate = Array.isArray(rateData) ? rateData[0] : rateData;
-  if (!rate?.is_allowed) {
-    return jsonError(
-      "RATE_LIMITED",
-      429,
-      Math.max(1, Number(rate?.retry_after_seconds) || 900),
-    );
-  }
-
   const pendingCookies: PendingCookie[] = [];
   const authClient = createServerClient(url, anonKey, {
     cookies: {
@@ -97,8 +79,32 @@ export async function POST(request: NextRequest) {
     password,
     options: { captchaToken: turnstileToken },
   });
-  const succeeded = !authError;
-  if (!succeeded) return jsonError("INVALID_CREDENTIALS", 401);
+
+  // Supabase consumes the single-use CAPTCHA token. Record only an actual
+  // authentication failure so invalid CAPTCHA tokens cannot lock an account.
+  if (authError) {
+    if (authError.code === "captcha_failed")
+      return jsonError("CAPTCHA_FAILED", 400);
+
+    const { data: rateData, error: rateError } = await limiterClient.rpc(
+      "consume_login_rate_limit",
+      {
+        p_identifier_hash: identifierHash,
+        p_ip_hash: ipHash,
+      },
+    );
+    if (rateError) return jsonError("SERVICE_UNAVAILABLE", 503);
+
+    const rate = Array.isArray(rateData) ? rateData[0] : rateData;
+    if (!rate?.is_allowed) {
+      return jsonError(
+        "RATE_LIMITED",
+        429,
+        Math.max(1, Number(rate?.retry_after_seconds) || 900),
+      );
+    }
+    return jsonError("INVALID_CREDENTIALS", 401);
+  }
 
   const { error: resetError } = await limiterClient.rpc(
     "reset_login_rate_limit",

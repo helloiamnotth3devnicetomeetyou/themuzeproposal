@@ -45,6 +45,8 @@ if (strict && process.env.VERCEL !== "1" && !trustedClientIpHeader) {
 if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
   try {
     const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    if (strict && supabaseUrl.protocol !== "https:")
+      problems.push("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim();
     const derivedRef = supabaseUrl.hostname.split(".")[0];
     if (projectRef && derivedRef !== projectRef) {
@@ -59,15 +61,20 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
 
 if (process.env.NEXT_PUBLIC_R2_PUBLIC_URL) {
   try {
-    new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL);
+    const r2Url = new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL);
+    if (strict && r2Url.protocol !== "https:")
+      problems.push("NEXT_PUBLIC_R2_PUBLIC_URL must use HTTPS in production.");
   } catch {
     problems.push("NEXT_PUBLIC_R2_PUBLIC_URL must be an absolute URL.");
   }
 }
 
 try {
-  if (process.env.NEXT_PUBLIC_SITE_URL)
-    new URL(process.env.NEXT_PUBLIC_SITE_URL);
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL);
+    if (strict && siteUrl.protocol !== "https:")
+      problems.push("NEXT_PUBLIC_SITE_URL must use HTTPS in production.");
+  }
 } catch {
   problems.push("NEXT_PUBLIC_SITE_URL must be an absolute URL.");
 }

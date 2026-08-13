@@ -37,6 +37,12 @@ const emptyStats = (configured: boolean, range: Range) => ({
   referrers: [] as Breakdown[],
 });
 
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const headers = new Headers(init?.headers);
+  headers.set("Cache-Control", "private, no-store");
+  return Response.json(body, { ...init, headers });
+}
+
 const readRows = async (response: Response) => {
   if (!response.ok) throw new VercelApiError(response.status);
   const payload = (await response.json()) as { data?: unknown };
@@ -83,7 +89,7 @@ export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
   if (!requestedRange || !(requestedRange in ranges))
-    return Response.json({ error: "invalid range" }, { status: 400 });
+    return jsonNoStore({ error: "invalid range" }, { status: 400 });
   const range = requestedRange as Range;
   const summaryOnly = searchParams.get("summary") === "1";
 
@@ -92,11 +98,11 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await isAdmin(supabase, user.id)))
-    return Response.json({ error: "forbidden" }, { status: 403 });
+    return jsonNoStore({ error: "forbidden" }, { status: 403 });
 
   const token = process.env.VERCEL_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID;
-  if (!token || !projectId) return Response.json(emptyStats(false, range));
+  if (!token || !projectId) return jsonNoStore(emptyStats(false, range));
 
   const todayKey = seoulDateKey(new Date());
   const since = new Date(`${todayKey}T00:00:00.000Z`);
@@ -157,7 +163,7 @@ export async function GET(request: Request) {
       { pageviews: 0, visitors: 0 },
     );
 
-    return Response.json({
+    return jsonNoStore({
       configured: true,
       range,
       granularity: ranges[range].granularity,
@@ -174,7 +180,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof VercelApiError && error.status === 402) {
-      return Response.json({
+      return jsonNoStore({
         ...emptyStats(true, range),
         rangeUnavailable: true,
         error:
@@ -182,7 +188,7 @@ export async function GET(request: Request) {
       });
     }
     console.error("Failed to load Vercel page statistics", error);
-    return Response.json(
+    return jsonNoStore(
       {
         ...emptyStats(true, range),
         error: "페이지 통계를 불러오지 못했습니다.",
