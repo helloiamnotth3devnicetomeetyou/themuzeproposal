@@ -10,6 +10,7 @@ export interface DiscographyData {
 }
 
 export interface DiscographyTrack {
+  id: string;
   title: string;
   titles: LocalizedText;
   isTitle: boolean;
@@ -76,6 +77,7 @@ export interface RawDiscographyAlbum {
   spotify_id: string | null;
   youtube_url: string | null;
   tracks: Array<{
+    id: string;
     title: string;
     title_ko: string | null;
     title_en: string | null;

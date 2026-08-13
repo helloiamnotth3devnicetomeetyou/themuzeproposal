@@ -28,6 +28,7 @@ const makeAlbum = (): DiscographyAlbum => ({
   desc: { ko: "설명", en: "Desc", ja: "説明" },
   tracks: [
     {
+      id: "track-1",
       title: "Superstar",
       titles: { ko: "슈퍼스타", en: "Superstar", ja: "スーパースター" },
       isTitle: true,
@@ -37,6 +38,7 @@ const makeAlbum = (): DiscographyAlbum => ({
       videoUrl: "https://youtube.com/watch?v=mv",
     },
     {
+      id: "track-2",
       title: "Runway",
       titles: { ko: "런웨이", en: "Runway", ja: "ランウェイ" },
       isTitle: false,

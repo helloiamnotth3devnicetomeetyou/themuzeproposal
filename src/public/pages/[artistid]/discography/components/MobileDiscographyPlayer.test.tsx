@@ -42,6 +42,7 @@ const album = (id: string, title: string): DiscographyAlbum => ({
   desc: { ko: "소개", en: "Intro", ja: "紹介" },
   tracks: [
     {
+      id: `${id}-track`,
       title: "Track",
       titles: { ko: "Track", en: "Track", ja: "Track" },
       isTitle: true,

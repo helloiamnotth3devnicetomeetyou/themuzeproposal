@@ -33,7 +33,7 @@ export const TrackList = memo(function TrackList({
 
         return (
           <div
-            key={track.title}
+            key={track.id}
             className="flex items-center rounded-xl group/track relative shrink-0 pr-2"
             style={{
               backgroundColor: isActive

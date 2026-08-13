@@ -17,7 +17,7 @@ import type {
 const { url, anonKey } = getPublicSupabaseConfig();
 const client = createClient(url, anonKey);
 const ALBUM_SELECT =
-  "id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(title,title_ko,title_en,title_ja,track_number,is_title,spotify_url,youtube_url,audio_url,music_video_url)";
+  "id,title,title_ko,title_en,title_ja,type,release_date,cover_url,hero_image_url,typo_logo_url,color,description_ko,description_en,description_ja,spotify_id,youtube_url,tracks(id,title,title_ko,title_en,title_ja,track_number,is_title,spotify_url,youtube_url,audio_url,music_video_url)";
 
 const getCachedDiscography = unstable_cache(
   async (artistSlug: string): Promise<DiscographyData> => {
@@ -79,6 +79,7 @@ const getCachedDiscography = unstable_cache(
         tracks: [...(item.tracks || [])]
           .sort((a, b) => a.track_number - b.track_number)
           .map((track) => ({
+            id: track.id,
             title: track.title,
             titles: {
               ko: track.title_ko ?? track.title,
