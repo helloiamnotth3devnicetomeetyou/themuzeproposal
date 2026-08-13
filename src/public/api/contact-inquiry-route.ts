@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     email.length < 3 ||
     email.length > 254 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    (accountEmail && email !== accountEmail) ||
+    (user && (!accountEmail || email !== accountEmail)) ||
     message.length < 1 ||
     message.length > 5000 ||
     phone.length > 40 ||

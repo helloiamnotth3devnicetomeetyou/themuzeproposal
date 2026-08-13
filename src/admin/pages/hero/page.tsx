@@ -77,6 +77,7 @@ export default function HeroAdminPage() {
   const [storedSlides, setStoredSlides] = useState<HeroSlide[]>([]);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [orderSnapshot, setOrderSnapshot] = useState("[]");
+  const [revision, setRevision] = useState<string | null>(null);
   const [artistId, setArtistId] = useState("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("hero");
@@ -107,6 +108,7 @@ export default function HeroAdminPage() {
       { data: artistData, error: artistError },
       { data: albumData, error: albumError },
       { data: slideData, error: slideError },
+      { data: revisionData, error: revisionError },
     ] = await Promise.all([
       supabase
         .from("artists")
@@ -122,13 +124,15 @@ export default function HeroAdminPage() {
         .from("home_hero_slides")
         .select("id, album_id, sort_order, is_active, video_url")
         .order("sort_order", { ascending: true }),
+      supabase.rpc("get_home_hero_slide_revision"),
     ]);
 
-    if (artistError || albumError || slideError) {
+    if (artistError || albumError || slideError || revisionError) {
       setError(
         artistError?.message ||
           albumError?.message ||
           slideError?.message ||
+          revisionError?.message ||
           "메인 앨범 정보를 불러오지 못했습니다.",
       );
     } else {
@@ -139,6 +143,7 @@ export default function HeroAdminPage() {
       setStoredSlides(nextSlides);
       setSlides(activeSlides);
       setOrderSnapshot(JSON.stringify(activeSlides));
+      setRevision(revisionData);
       setLoadedAt(Date.now());
     }
     if (!silent) setLoading(false);
@@ -235,12 +240,21 @@ export default function HeroAdminPage() {
     const removedIds = previous
       .filter((slide) => !slides.some((item) => item.id === slide.id))
       .map((slide) => slide.id);
-    const { error: saveError } = await supabase.rpc("save_home_hero_slides", {
+    const { data, error: saveError } = await supabase.rpc("save_home_hero_slides_checked", {
       p_slides: slides,
       p_removed_ids: removedIds,
+      p_expected_updated_at: revision,
     });
-    if (saveError) setError(saveError.message);
+    if (saveError) {
+      setError(
+        saveError.code === "P0003"
+          ? "다른 관리자가 먼저 수정했습니다. 최신 내용을 불러온 뒤 다시 저장해 주세요."
+          : saveError.message,
+      );
+      if (saveError.code === "P0003") void load(true);
+    }
     else {
+      setRevision(data);
       setStoredSlides((current) => {
         const next = new Map(
           current

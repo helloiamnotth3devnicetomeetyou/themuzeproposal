@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(9);
 
 insert into auth.users (
   id, email, encrypted_password, aud, role, raw_app_meta_data, raw_user_meta_data,
@@ -34,14 +34,15 @@ select set_config(
 );
 set local role authenticated;
 
-select public.save_artist_gallery(
+select public.save_artist_gallery_checked(
   '40000000-0000-0000-0000-000000000002',
   jsonb_build_array(jsonb_build_object(
     'id', '40000000-0000-0000-0000-000000000008',
     'artist_id', '40000000-0000-0000-0000-000000000002',
     'image_url', 'https://example.com/new-gallery.jpg'
   )),
-  array['40000000-0000-0000-0000-000000000006']::uuid[]
+  array['40000000-0000-0000-0000-000000000006']::uuid[],
+  (select updated_at from public.artists where id = '40000000-0000-0000-0000-000000000002')
 );
 select ok(
   not exists (select 1 from public.artist_gallery where id = '40000000-0000-0000-0000-000000000006')
@@ -52,14 +53,15 @@ select ok(
 do $$
 begin
   begin
-    perform public.save_artist_gallery(
+    perform public.save_artist_gallery_checked(
       '40000000-0000-0000-0000-000000000002',
       jsonb_build_array(jsonb_build_object(
         'id', '40000000-0000-0000-0000-000000000005',
         'artist_id', '40000000-0000-0000-0000-000000000002',
         'image_url', 'https://example.com/foreign-gallery.jpg'
       )),
-      array['40000000-0000-0000-0000-000000000008']::uuid[]
+      array['40000000-0000-0000-0000-000000000008']::uuid[],
+      (select updated_at from public.artists where id = '40000000-0000-0000-0000-000000000002')
     );
     raise exception 'foreign gallery row unexpectedly accepted';
   exception when sqlstate '22023' then
@@ -72,7 +74,7 @@ select ok(
   'gallery failure rolls back its delete'
 );
 
-select public.save_artist_scenes(
+select public.save_artist_scenes_checked(
   '40000000-0000-0000-0000-000000000002',
   jsonb_build_array(jsonb_build_object(
     'id', '40000000-0000-0000-0000-000000000009',
@@ -86,7 +88,8 @@ select public.save_artist_scenes(
     ))
   )),
   array['40000000-0000-0000-0000-000000000007']::uuid[],
-  '{}'::uuid[]
+  '{}'::uuid[],
+  (select updated_at from public.artists where id = '40000000-0000-0000-0000-000000000002')
 );
 select ok(
   not exists (select 1 from public.artist_scenes where id = '40000000-0000-0000-0000-000000000007')
@@ -97,7 +100,7 @@ select ok(
 do $$
 begin
   begin
-    perform public.save_artist_scenes(
+    perform public.save_artist_scenes_checked(
       '40000000-0000-0000-0000-000000000002',
       jsonb_build_array(jsonb_build_object(
         'id', '40000000-0000-0000-0000-00000000000b',
@@ -111,7 +114,8 @@ begin
         ))
       )),
       array['40000000-0000-0000-0000-000000000009']::uuid[],
-      '{}'::uuid[]
+      '{}'::uuid[],
+      (select updated_at from public.artists where id = '40000000-0000-0000-0000-000000000002')
     );
     raise exception 'foreign scene region unexpectedly accepted';
   exception when sqlstate '23514' then
@@ -125,9 +129,23 @@ select ok(
   'scene failure rolls back its delete and insert'
 );
 
-select ok(has_function_privilege('authenticated', 'public.save_artist_gallery(uuid,jsonb,uuid[])', 'execute'), 'admins can call gallery RPC');
-select ok(has_function_privilege('authenticated', 'public.save_artist_scenes(uuid,jsonb,uuid[],uuid[])', 'execute'), 'admins can call scene RPC');
-select ok(not has_function_privilege('anon', 'public.save_artist_gallery(uuid,jsonb,uuid[])', 'execute'), 'anon cannot call gallery RPC');
-select ok(not has_function_privilege('anon', 'public.save_artist_scenes(uuid,jsonb,uuid[],uuid[])', 'execute'), 'anon cannot call scene RPC');
+do $$
+begin
+  begin
+    perform public.save_artist_gallery_checked(
+      '40000000-0000-0000-0000-000000000002', '[]'::jsonb, '{}'::uuid[],
+      (select updated_at - interval '1 microsecond' from public.artists where id = '40000000-0000-0000-0000-000000000002')
+    );
+    raise exception 'stale gallery save unexpectedly accepted';
+  exception when sqlstate 'P0003' then null;
+  end;
+end;
+$$;
+select pass('stale artist content save is rejected');
+
+select ok(has_function_privilege('authenticated', 'public.save_artist_gallery_checked(uuid,jsonb,uuid[],timestamptz)', 'execute'), 'admins can call checked gallery RPC');
+select ok(has_function_privilege('authenticated', 'public.save_artist_scenes_checked(uuid,jsonb,uuid[],uuid[],timestamptz)', 'execute'), 'admins can call checked scene RPC');
+select ok(not has_function_privilege('anon', 'public.save_artist_gallery_checked(uuid,jsonb,uuid[],timestamptz)', 'execute'), 'anon cannot call checked gallery RPC');
+select ok(not has_function_privilege('anon', 'public.save_artist_scenes_checked(uuid,jsonb,uuid[],uuid[],timestamptz)', 'execute'), 'anon cannot call checked scene RPC');
 
 rollback;

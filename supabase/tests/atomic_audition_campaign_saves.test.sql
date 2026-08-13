@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(6);
 
 insert into auth.users (
   id, email, encrypted_password, aud, role, raw_app_meta_data, raw_user_meta_data,
@@ -24,13 +24,14 @@ values
 select set_config('request.jwt.claims', '{"sub":"50000000-0000-0000-0000-000000000001","role":"authenticated"}', true);
 set local role authenticated;
 
-select public.save_audition_campaign(
+select public.save_audition_campaign_checked(
   jsonb_build_object('id', '50000000-0000-0000-0000-000000000002', 'title', 'After'),
   jsonb_build_array(
     jsonb_build_object('id', '50000000-0000-0000-0000-000000000004', 'campaign_id', '50000000-0000-0000-0000-000000000002', 'field_key', 'email', 'label_i18n', '{"ko":"이메일"}'::jsonb, 'field_type', 'short_text', 'is_primary_label', true),
     jsonb_build_object('id', '50000000-0000-0000-0000-000000000007', 'campaign_id', '50000000-0000-0000-0000-000000000002', 'field_key', 'name_new', 'label_i18n', '{"ko":"이름"}'::jsonb, 'field_type', 'short_text')
   ),
-  array['50000000-0000-0000-0000-000000000005']::uuid[]
+  array['50000000-0000-0000-0000-000000000005']::uuid[],
+  (select updated_at from public.audition_campaigns where id = '50000000-0000-0000-0000-000000000002')
 );
 select is((select title from public.audition_campaigns where id = '50000000-0000-0000-0000-000000000002'), 'After', 'campaign update commits');
 select ok(not exists (select 1 from public.audition_form_fields where id = '50000000-0000-0000-0000-000000000005' and is_active), 'removed field is deactivated');
@@ -39,12 +40,13 @@ select ok(exists (select 1 from public.audition_form_fields where id = '50000000
 do $$
 begin
   begin
-    perform public.save_audition_campaign(
+    perform public.save_audition_campaign_checked(
       jsonb_build_object('id', '50000000-0000-0000-0000-000000000002', 'title', 'Must roll back'),
       jsonb_build_array(
         jsonb_build_object('id', '50000000-0000-0000-0000-000000000006', 'campaign_id', '50000000-0000-0000-0000-000000000002', 'field_key', 'email', 'label_i18n', '{"ko":"이메일"}'::jsonb, 'field_type', 'short_text', 'is_primary_label', true)
       ),
-      array['50000000-0000-0000-0000-000000000007']::uuid[]
+      array['50000000-0000-0000-0000-000000000007']::uuid[],
+      (select updated_at from public.audition_campaigns where id = '50000000-0000-0000-0000-000000000002')
     );
     raise exception 'foreign field unexpectedly accepted';
   exception when sqlstate '22023' then null;
@@ -53,5 +55,21 @@ end;
 $$;
 select is((select title from public.audition_campaigns where id = '50000000-0000-0000-0000-000000000002'), 'After', 'failed save rolls back campaign update');
 select ok(exists (select 1 from public.audition_form_fields where id = '50000000-0000-0000-0000-000000000007' and is_active), 'failed save rolls back field deactivation');
+
+do $$
+begin
+  begin
+    perform public.save_audition_campaign_checked(
+      jsonb_build_object('id', '50000000-0000-0000-0000-000000000002', 'title', 'Stale'),
+      jsonb_build_array(jsonb_build_object('id', '50000000-0000-0000-0000-000000000004', 'campaign_id', '50000000-0000-0000-0000-000000000002', 'field_key', 'email', 'label_i18n', '{"ko":"Email"}'::jsonb, 'field_type', 'short_text', 'is_primary_label', true)),
+      '{}'::uuid[],
+      (select updated_at - interval '1 microsecond' from public.audition_campaigns where id = '50000000-0000-0000-0000-000000000002')
+    );
+    raise exception 'stale campaign save unexpectedly accepted';
+  exception when sqlstate 'P0003' then null;
+  end;
+end;
+$$;
+select pass('stale campaign save is rejected');
 
 rollback;

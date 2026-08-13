@@ -166,7 +166,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       is_active: true,
       is_primary_label: field.is_primary_label,
     }));
-    const { error } = await supabase.rpc("save_audition_campaign", {
+    const { data, error } = await supabase.rpc("save_audition_campaign_checked", {
       p_campaign: {
         id: campaignId,
         title: campaign.title.trim(),
@@ -185,9 +185,13 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       },
       p_fields: normalized,
       p_removed_ids: removed,
+      p_expected_updated_at: campaign.updated_at,
     });
     setMessage(error?.message || "저장했습니다.");
     if (!error) {
+      setCampaign((current) =>
+        current ? { ...current, updated_at: data } : current,
+      );
       setFields(normalized);
       setRemoved([]);
     }

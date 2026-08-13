@@ -6,5 +6,5 @@ export default async function ArtistMemberRedirect({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/rescene/artist/${id}`);
+  redirect(`/${id}/artist`);
 }

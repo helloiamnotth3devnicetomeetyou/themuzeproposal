@@ -18,6 +18,7 @@ export function useArtistSceneLoader(
   ) => void,
   setSnapshot: (value: ArtistScene[]) => void,
   setMembers: (value: MemberLookup[]) => void,
+  setArtistUpdatedAt: (value: string | null) => void,
   setSelectedSceneId: (
     value: string | null | ((current: string | null) => string | null),
   ) => void,
@@ -31,7 +32,7 @@ export function useArtistSceneLoader(
         return;
       }
       setLoading(true);
-      const [sceneResult, memberResult] = await Promise.all([
+      const [sceneResult, memberResult, artistResult] = await Promise.all([
         supabase
           .from("artist_scenes")
           .select(sceneSelect)
@@ -44,6 +45,7 @@ export function useArtistSceneLoader(
           .select("id,name,eng_name,color,sort_order")
           .eq("artist_id", artistId)
           .order("sort_order", { ascending: true }),
+        supabase.from("artists").select("updated_at").eq("id", artistId).single(),
       ]);
       setLoading(false);
       if (sceneResult.error) {
@@ -61,6 +63,7 @@ export function useArtistSceneLoader(
       setScenes(nextScenes);
       setSnapshot(nextScenes);
       setMembers((memberResult.data as MemberLookup[] | null) ?? []);
+      setArtistUpdatedAt(artistResult.data?.updated_at ?? null);
       setSelectedSceneId((current) => {
         const candidate = preferredSceneId || current;
         return candidate && nextScenes.some((scene) => scene.id === candidate)
@@ -68,7 +71,7 @@ export function useArtistSceneLoader(
           : (nextScenes[0]?.id ?? null);
       });
     },
-    [artistId, onError, setMembers, setScenes, setSelectedSceneId, setSnapshot],
+    [artistId, onError, setArtistUpdatedAt, setMembers, setScenes, setSelectedSceneId, setSnapshot],
   );
 
   useEffect(() => {

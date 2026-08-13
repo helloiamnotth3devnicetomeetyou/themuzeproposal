@@ -59,18 +59,20 @@ export default function ArtistSceneManager({
   const uploadedAssets = useRef<UploadedImageAsset[]>([]);
   const [scenes, setScenes] = useState<ArtistScene[]>([]);
   const [snapshot, setSnapshot] = useState<ArtistScene[]>([]);
+  const [artistUpdatedAt, setArtistUpdatedAt] = useState<string | null>(null);
   const [members, setMembers] = useState<MemberLookup[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [draftOutline, setDraftOutline] = useState<ScenePoint[]>([]);
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { loading, schemaMissing } = useArtistSceneLoader(
+  const { load, loading, schemaMissing } = useArtistSceneLoader(
     artistId,
     onError,
     setScenes,
     setSnapshot,
     setMembers,
+    setArtistUpdatedAt,
     setSelectedSceneId,
   );
 
@@ -311,7 +313,7 @@ export default function ArtistSceneManager({
       return current && current.mask_url !== region.mask_url;
     });
     const removedRegionIds = removedRegions.map((region) => region.id);
-    const { error } = await supabase.rpc("save_artist_scenes", {
+    const { data, error } = await supabase.rpc("save_artist_scenes_checked", {
       p_artist_id: artistId,
       p_scenes: scenes.map((scene) => ({
         id: scene.id,
@@ -338,11 +340,14 @@ export default function ArtistSceneManager({
       })),
       p_removed_scene_ids: removedScenes.map((scene) => scene.id),
       p_removed_region_ids: removedRegionIds,
+      p_expected_updated_at: artistUpdatedAt,
     });
     if (error) {
+      if (error.code === "P0003") await load();
       onError(adminDbError(error));
       throw error;
     }
+    setArtistUpdatedAt(data);
     await finalizeDraftImageAssets(
       supabase,
       uploadedAssets.current,
@@ -364,7 +369,7 @@ export default function ArtistSceneManager({
     discardBackup();
     await revalidateArtistSceneData();
     onToast("장면과 외곽선 변경사항을 저장했습니다.");
-  }, [artistId, discardBackup, onError, onToast, scenes, snapshot]);
+  }, [artistId, artistUpdatedAt, discardBackup, load, onError, onToast, scenes, snapshot]);
 
   useEffect(() => {
     if (!dirty || !artistId) return;

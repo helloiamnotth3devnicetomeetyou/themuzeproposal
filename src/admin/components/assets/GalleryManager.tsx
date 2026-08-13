@@ -67,6 +67,7 @@ export default function GalleryManager({
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [snapshot, setSnapshot] = useState<GalleryItem[]>([]);
+  const [artistUpdatedAt, setArtistUpdatedAt] = useState<string | null>(null);
   const uploadedAssets = useRef<
     { bucket: "artist-assets"; path: string; url: string }[]
   >([]);
@@ -88,7 +89,7 @@ export default function GalleryManager({
       return;
     }
     setLoading(true);
-    const [albumResult, memberResult] = await Promise.all([
+    const [albumResult, memberResult, artistResult] = await Promise.all([
       supabase
         .from("albums")
         .select("id,title")
@@ -99,6 +100,7 @@ export default function GalleryManager({
         .select("id,name")
         .eq("artist_id", artistId)
         .order("sort_order", { ascending: true }),
+      supabase.from("artists").select("updated_at").eq("id", artistId).single(),
     ]);
     setAlbums(
       (albumResult.data ?? []).map((album) => ({
@@ -112,6 +114,7 @@ export default function GalleryManager({
         name: member.name,
       })),
     );
+    setArtistUpdatedAt(artistResult.data?.updated_at ?? null);
 
     let query = supabase
       .from("artist_gallery")
@@ -198,7 +201,7 @@ export default function GalleryManager({
         const removed = snapshot.filter(
           (item) => !items.some((current) => current.id === item.id),
         );
-        const { error } = await supabase.rpc("save_artist_gallery", {
+        const { data, error } = await supabase.rpc("save_artist_gallery_checked", {
           p_artist_id: artistId,
           p_items: items.map((item) => ({
             id: item.id,
@@ -211,8 +214,13 @@ export default function GalleryManager({
             is_published: item.is_published,
           })),
           p_removed_ids: removed.map((item) => item.id),
+          p_expected_updated_at: artistUpdatedAt,
         });
-        if (error) throw error;
+        if (error) {
+          if (error.code === "P0003") await loadGallery();
+          throw error;
+        }
+        setArtistUpdatedAt(data);
         await finalizeDraftImageAssets(
           supabase,
           uploadedAssets.current,
@@ -225,7 +233,7 @@ export default function GalleryManager({
         onToast("갤러리 변경사항을 저장했습니다.");
       },
     });
-  }, [artistId, backupKey, dirty, discardBackup, items, onToast, snapshot]);
+  }, [artistId, artistUpdatedAt, backupKey, dirty, discardBackup, items, loadGallery, onToast, snapshot]);
 
   const patchItem = (id: string, patch: Partial<GalleryItem>) => {
     setItems((current) =>

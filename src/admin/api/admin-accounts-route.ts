@@ -127,7 +127,10 @@ export async function POST(request: NextRequest) {
     invitation.user.id,
     role,
   );
-  if (changeError) return response({ code: "INVITATION_FAILED" }, 422);
+  if (changeError) {
+    await adminClient.auth.admin.deleteUser(invitation.user.id);
+    return response({ code: "INVITATION_FAILED" }, 422);
+  }
 
   return response({ invited: true }, 201);
 }
