@@ -1,7 +1,7 @@
 ﻿/**
  * convert-to-webp.mjs
  *
- * Supabase Storage의 이미지 에셋을 WebP로 변환하고,
+ * R2의 이미지 에셋을 WebP로 변환하고,
  * DB의 URL 컬럼도 새 WebP URL로 일괄 업데이트합니다.
  *
  * 대상 버킷:
@@ -19,6 +19,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -46,11 +47,14 @@ loadEnv(resolve(__dirname, "../.env.local"));
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const STORAGE_URL = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL
-  ?? `${SUPABASE_URL}/storage/v1/object/public`;
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "");
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_PUBLIC_BUCKET = process.env.R2_PUBLIC_BUCKET;
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error("❌  NEXT_PUBLIC_SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY 환경 변수가 없습니다.");
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !R2_PUBLIC_URL || !R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_PUBLIC_BUCKET) {
+  console.error("❌  Supabase DB 또는 R2 환경 변수가 없습니다.");
   process.exit(1);
 }
 
@@ -98,6 +102,11 @@ const BUCKET_DB_TARGETS = {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY },
+});
 
 // ── 유틸 ──────────────────────────────────────────────────────────────────────
 function extOf(name) {
@@ -112,7 +121,7 @@ function toWebpPath(storagePath) {
 }
 
 function storageUrl(bucket, path) {
-  return `${STORAGE_URL}/${bucket}/${path}`;
+  return `${R2_PUBLIC_URL}/${bucket}/${path}`;
 }
 
 function formatBytes(bytes) {
@@ -123,23 +132,13 @@ function formatBytes(bytes) {
 
 // ── 파일 목록 재귀 조회 ────────────────────────────────────────────────────────
 async function listAllFiles(bucket, prefix = "") {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000, sortBy: { column: "name", order: "asc" } });
-
-  if (error) throw new Error(`list 실패 [${bucket}/${prefix}]: ${error.message}`);
-  if (!data) return [];
-
   const files = [];
-  for (const item of data) {
-    if (item.id === null) {
-      // 가상 폴더
-      const sub = await listAllFiles(bucket, prefix ? `${prefix}/${item.name}` : item.name);
-      files.push(...sub);
-    } else {
-      files.push({ path: prefix ? `${prefix}/${item.name}` : item.name });
-    }
-  }
+  let token;
+  do {
+    const page = await r2.send(new ListObjectsV2Command({ Bucket: R2_PUBLIC_BUCKET, Prefix: `${bucket}/${prefix}`, ContinuationToken: token }));
+    files.push(...(page.Contents ?? []).map(({ Key }) => ({ path: Key.slice(`${bucket}/`.length) })));
+    token = page.NextContinuationToken;
+  } while (token);
   return files;
 }
 
@@ -174,15 +173,9 @@ async function updateDbUrls(bucket, oldPath, newPath) {
 // ── 단일 파일 변환 ─────────────────────────────────────────────────────────────
 async function convertFile(bucket, filePath) {
   // 1) 다운로드
-  const { data: blob, error: dlErr } = await supabase.storage
-    .from(bucket)
-    .download(filePath);
-
-  if (dlErr || !blob) {
-    throw new Error(`다운로드 실패: ${dlErr?.message ?? "빈 응답"}`);
-  }
-
-  const inputBuffer = Buffer.from(await blob.arrayBuffer());
+  const downloaded = await r2.send(new GetObjectCommand({ Bucket: R2_PUBLIC_BUCKET, Key: `${bucket}/${filePath}` }));
+  if (!downloaded.Body) throw new Error("다운로드 실패: 빈 응답");
+  const inputBuffer = Buffer.from(await downloaded.Body.transformToByteArray());
 
   // 2) WebP 변환
   const outputBuffer = await sharp(inputBuffer).webp(WEBP_OPTIONS).toBuffer();
@@ -190,24 +183,14 @@ async function convertFile(bucket, filePath) {
   const webpPath = toWebpPath(filePath);
 
   // 3) 업로드
-  const { error: upErr } = await supabase.storage
-    .from(bucket)
-    .upload(webpPath, outputBuffer, {
-      contentType: "image/webp",
-      upsert: true,
-    });
-
-  if (upErr) throw new Error(`업로드 실패: ${upErr.message}`);
+  await r2.send(new PutObjectCommand({ Bucket: R2_PUBLIC_BUCKET, Key: `${bucket}/${webpPath}`, Body: outputBuffer, ContentType: "image/webp", CacheControl: "public, max-age=31536000, immutable" }));
 
   // 4) DB URL 업데이트
   await updateDbUrls(bucket, filePath, webpPath);
 
   // 5) 원본 파일 삭제 (경로가 달라진 경우만)
   if (webpPath !== filePath) {
-    const { error: rmErr } = await supabase.storage
-      .from(bucket)
-      .remove([filePath]);
-    if (rmErr) throw new Error(`원본 삭제 실패: ${rmErr.message}`);
+    await r2.send(new DeleteObjectCommand({ Bucket: R2_PUBLIC_BUCKET, Key: `${bucket}/${filePath}` }));
   }
 
   return {
@@ -222,10 +205,10 @@ async function main() {
   const buckets = BUCKET_FILTER ? [BUCKET_FILTER] : IMAGE_BUCKETS;
 
   console.log("=".repeat(62));
-  console.log("  Supabase 이미지 → WebP 변환 + DB URL 업데이트");
+  console.log("  R2 이미지 → WebP 변환 + DB URL 업데이트");
   console.log("=".repeat(62));
   console.log(`  대상 버킷: ${buckets.join(", ")}`);
-  console.log(`  Storage : ${STORAGE_URL}`);
+  console.log(`  Storage : ${R2_PUBLIC_URL}`);
   console.log(`  모드     : ${DRY_RUN ? "🔍 DRY RUN (변경 없음)" : "🚀 실제 변환"}`);
   console.log("=".repeat(62));
   console.log();

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
 const APPLY = process.argv.includes("--apply");
@@ -69,10 +70,16 @@ function envFile(source) {
 const env = { ...envFile(await readFile(path.join(ROOT, ".env.local"), "utf8")), ...process.env };
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const key = env.SUPABASE_SERVICE_ROLE_KEY;
-assert(url && key, "NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
+const r2PublicUrl = env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "");
+assert(url && key && env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_PUBLIC_BUCKET && r2PublicUrl, "Supabase and R2 configuration are required");
 assert.equal(new Set(SOURCES.map(({ albumKey, memberSlug }) => `${albumKey}:${memberSlug}`)).size, SOURCES.length);
 
 const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
+});
 const { data: artist, error: artistError } = await supabase.from("artists").select("id").eq("slug", "rescene").single();
 if (artistError) throw artistError;
 
@@ -97,18 +104,18 @@ for (const source of selectedSources) {
   const converted = await sharp(original).rotate().webp({ quality: 88 }).toBuffer();
   const storagePath = `${artist.id}/gallery/themuze/${source.albumKey}-${source.memberSlug}.webp`;
   if (APPLY) {
-    const { error } = await supabase.storage.from("artist-assets").upload(storagePath, converted, {
-      contentType: "image/webp",
-      cacheControl: "31536000",
-      upsert: true,
-    });
-    if (error) throw error;
+    await r2.send(new PutObjectCommand({
+      Bucket: env.R2_PUBLIC_BUCKET,
+      Key: `artist-assets/${storagePath}`,
+      Body: converted,
+      ContentType: "image/webp",
+      CacheControl: "public, max-age=31536000, immutable",
+    }));
   }
-  const { data: publicUrl } = supabase.storage.from("artist-assets").getPublicUrl(storagePath);
   manifest.push({
     ...source,
     storagePath,
-    publicUrl: publicUrl.publicUrl,
+    publicUrl: `${r2PublicUrl}/artist-assets/${storagePath}`,
     sourceSha256: createHash("sha256").update(original).digest("hex"),
     storedSha256: createHash("sha256").update(converted).digest("hex"),
     sourceBytes: original.length,

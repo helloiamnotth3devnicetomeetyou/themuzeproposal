@@ -85,21 +85,20 @@ function r2BucketFor(supabaseBucket) {
 }
 
 async function listAllFiles(bucket, prefix = "") {
-  const { data, error } = await supabase.storage.from(bucket).list(prefix, {
-    limit: 1000,
-    sortBy: { column: "name", order: "asc" },
-  });
-  if (error) throw new Error(`list failed [${bucket}/${prefix}]: ${error.message}`);
-  if (!data) return [];
-
   const files = [];
-  for (const item of data) {
-    const itemPath = prefix ? `${prefix}/${item.name}` : item.name;
-    if (item.id === null) {
-      files.push(...await listAllFiles(bucket, itemPath));
-    } else {
-      files.push({ path: itemPath, size: item.metadata?.size ?? 0, contentType: item.metadata?.mimetype });
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.storage.from(bucket).list(prefix, {
+      limit: 1000,
+      offset,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) throw new Error(`list failed [${bucket}/${prefix}]: ${error.message}`);
+    for (const item of data ?? []) {
+      const itemPath = prefix ? `${prefix}/${item.name}` : item.name;
+      if (item.id === null) files.push(...await listAllFiles(bucket, itemPath));
+      else files.push({ path: itemPath, size: item.metadata?.size ?? 0, contentType: item.metadata?.mimetype });
     }
+    if (!data || data.length < 1000) break;
   }
   return files;
 }
