@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, Headphones } from "lucide-react";
 import {
-  useState,
   type CSSProperties,
   type ComponentType,
   type ReactNode,
@@ -57,7 +56,6 @@ export default function HomeSlide({
   onVideoFailure,
   onFirstImageLoaded,
 }: Props) {
-  const [isVideoFrameReady, setIsVideoFrameReady] = useState(false);
   const isActive = index === currentSlide;
   const isLeaving = index === previousSlide;
   const isVisible = isActive || isLeaving;
@@ -93,7 +91,6 @@ export default function HomeSlide({
           <video
             className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
             src={slide.videoUrl}
-            poster={isVideoFrameReady ? undefined : slide.imageUrl || undefined}
             data-slide-index={index}
             data-start-time={videoStartTime(slide.videoUrl)}
             muted
@@ -108,7 +105,6 @@ export default function HomeSlide({
               if (isActive)
                 void event.currentTarget.play().catch(() => undefined);
             }}
-            onPlaying={() => setIsVideoFrameReady(true)}
             onCanPlay={(event) => {
               if (isActive && event.currentTarget.paused)
                 void event.currentTarget.play().catch(() => undefined);
