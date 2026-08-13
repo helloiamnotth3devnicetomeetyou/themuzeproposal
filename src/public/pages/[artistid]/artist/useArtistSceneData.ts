@@ -161,8 +161,18 @@ export function useArtistSceneData({
     setLoading(false);
   }, [artistSlug]);
   useEffect(() => {
-    if (profilePreview || memberPreview || !initialData)
-      void Promise.resolve().then(load);
+    if (!profilePreview && !memberPreview && initialData) {
+      loadedSceneIds.current = new Set(
+        initialData.scenes
+          .filter((scene) => !scene.member_ids?.length)
+          .map((scene) => scene.id),
+      );
+      setData(initialData);
+      setLoading(false);
+      setError("");
+      return;
+    }
+    void Promise.resolve().then(load);
   }, [initialData, load, memberPreview, profilePreview]);
   const loadSceneMembers = useCallback(
     async (sceneId: string) => {
