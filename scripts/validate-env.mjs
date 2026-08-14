@@ -59,6 +59,7 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
       );
     }
     if (
+      !isCiLocalSupabase &&
       projectRef &&
       (derivedRef !== projectRef ||
         supabaseUrl.hostname !== `${projectRef}.supabase.co`)
