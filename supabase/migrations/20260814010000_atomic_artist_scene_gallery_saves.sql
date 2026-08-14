@@ -60,6 +60,14 @@ begin
     ) then
       raise exception 'GALLERY_ROW_DOES_NOT_BELONG_TO_ARTIST' using errcode = '22023';
     end if;
+    if exists (
+      select 1
+      from public.artist_members as member
+      where member.id = v_id
+        and member.artist_id is distinct from p_artist_id
+    ) then
+      raise exception 'GALLERY_ROW_DOES_NOT_BELONG_TO_ARTIST' using errcode = '22023';
+    end if;
     v_album_id := nullif(v_item->>'album_id', '')::uuid;
     v_member_id := nullif(v_item->>'member_id', '')::uuid;
     v_image_url := nullif(btrim(coalesce(v_item->>'image_url', '')), '');

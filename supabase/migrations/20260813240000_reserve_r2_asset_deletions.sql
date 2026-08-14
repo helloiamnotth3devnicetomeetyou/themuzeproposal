@@ -155,7 +155,7 @@ begin
       raise exception 'invalid asset path' using errcode = '22023';
     end if;
     perform pg_advisory_xact_lock(
-      hashtextextended(p_bucket || chr(0) || v_path, 0)
+      hashtextextended(p_bucket || chr(31) || v_path, 0)
     );
     select reserved_by into v_reserved_by
     from public.asset_registry
@@ -263,7 +263,7 @@ begin
         );
         if v_path ~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
           perform pg_advisory_xact_lock(
-            hashtextextended(v_bucket || chr(0) || v_path, 0)
+            hashtextextended(v_bucket || chr(31) || v_path, 0)
           );
           if exists (
             select 1 from public.asset_registry
@@ -302,7 +302,7 @@ begin
           );
           if v_path ~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
             perform pg_advisory_xact_lock(
-              hashtextextended(v_bucket || chr(0) || v_path, 0)
+            hashtextextended(v_bucket || chr(31) || v_path, 0)
             );
             if exists (
               select 1 from public.asset_registry
@@ -318,7 +318,7 @@ begin
     v_path := to_jsonb(new)->>'image_path';
     if v_path is not null then
       perform pg_advisory_xact_lock(
-        hashtextextended('artist-assets' || chr(0) || v_path, 0)
+        hashtextextended('artist-assets' || chr(31) || v_path, 0)
       );
       if exists (
         select 1 from public.asset_registry
@@ -331,7 +331,7 @@ begin
     v_path := to_jsonb(new)->>'attachment_path';
     if v_path is not null then
       perform pg_advisory_xact_lock(
-        hashtextextended('contact-attachments' || chr(0) || v_path, 0)
+        hashtextextended('contact-attachments' || chr(31) || v_path, 0)
       );
       if exists (
         select 1 from public.asset_registry
@@ -344,7 +344,7 @@ begin
     v_path := to_jsonb(new)->>'file_path';
     if v_path is not null then
       perform pg_advisory_xact_lock(
-        hashtextextended('protect-evidence' || chr(0) || v_path, 0)
+        hashtextextended('protect-evidence' || chr(31) || v_path, 0)
       );
       if exists (
         select 1 from public.asset_registry
@@ -362,7 +362,7 @@ begin
         and jsonb_typeof(value->'path') = 'string'
     loop
       perform pg_advisory_xact_lock(
-        hashtextextended('audition-attachments' || chr(0) || v_path, 0)
+        hashtextextended('audition-attachments' || chr(31) || v_path, 0)
       );
       if exists (
         select 1 from public.asset_registry

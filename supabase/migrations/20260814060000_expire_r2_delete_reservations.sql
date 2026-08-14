@@ -41,7 +41,7 @@ begin
     if v_path !~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
       raise exception 'invalid asset path' using errcode = '22023';
     end if;
-    perform pg_advisory_xact_lock(hashtextextended(p_bucket || chr(0) || v_path, 0));
+    perform pg_advisory_xact_lock(hashtextextended(p_bucket || chr(31) || v_path, 0));
     if exists (select 1 from public.asset_registry where bucket = p_bucket and path = v_path) then
       raise exception 'asset deletion already reserved' using errcode = '55P03';
     end if;

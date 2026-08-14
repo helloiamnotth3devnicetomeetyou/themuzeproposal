@@ -253,7 +253,7 @@ select * from public.review_protect_report(
   '00000000-0000-0000-0000-000000000402',
   'reviewing',
   '검토 메모',
-  (select updated_at from public.protect_reports
+  (select updated_at from public.get_admin_protect_reports(null, null)
    where id = '00000000-0000-0000-0000-000000000402')
 );
 
@@ -261,7 +261,7 @@ do $$
 declare
   v_stale timestamptz := (
     select updated_at - interval '1 microsecond'
-    from public.protect_reports
+    from public.get_admin_protect_reports(null, null)
     where id = '00000000-0000-0000-0000-000000000402'
   );
 begin

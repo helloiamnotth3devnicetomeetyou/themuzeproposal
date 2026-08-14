@@ -83,7 +83,7 @@ declare v_path text;
 begin
   v_path := new.attachment_path;
   if v_path is not null and v_path <> '' then
-    perform pg_advisory_xact_lock(hashtextextended('audition-attachments' || chr(0) || v_path, 0));
+    perform pg_advisory_xact_lock(hashtextextended('audition-attachments' || chr(31) || v_path, 0));
     if exists (
       select 1 from public.asset_registry
       where bucket = 'audition-attachments' and path = v_path
