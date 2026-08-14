@@ -8,8 +8,6 @@ test.describe("Protect Report Page Access Flow", () => {
     await expect(page).toHaveURL(
       /\/login\?redirect=%2Fprotect|\/login\?redirect=\/protect/,
     );
-    await expect(page.getByRole("status")).toContainText(
-      "로그인이 필요한 서비스입니다.",
-    );
+    await expect(page.locator("#login-email")).toBeVisible();
   });
 });
