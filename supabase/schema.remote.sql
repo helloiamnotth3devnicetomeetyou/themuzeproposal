@@ -23,6 +23,58 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE OR REPLACE FUNCTION "public"."assert_admin_save_ids"("p_ids" "uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  if cardinality(p_ids) > 500 then
+    raise exception 'ADMIN_SAVE_PAYLOAD_TOO_LARGE' using errcode = '22023';
+  end if;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."assert_admin_save_ids"("p_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."assert_admin_save_payload"("p_value" "jsonb") RETURNS "void"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  if pg_column_size(p_value) > 1048576
+    or (jsonb_typeof(p_value) = 'array' and jsonb_array_length(p_value) > 500) then
+    raise exception 'ADMIN_SAVE_PAYLOAD_TOO_LARGE' using errcode = '22023';
+  end if;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."assert_admin_save_payload"("p_value" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."assert_no_reserved_asset_urls"("p_value" "text", "p_buckets" "text"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare v_bucket text; v_path text;
+begin
+  for v_bucket in select unnest(p_buckets) loop
+    for v_path in select match[1] from regexp_matches(p_value, '/' || v_bucket || '/([a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+)', 'g') as match loop
+      perform pg_advisory_xact_lock(hashtextextended(v_bucket || chr(31) || v_path, 0));
+      if exists (select 1 from public.asset_registry where bucket = v_bucket and path = v_path) then
+        raise exception 'asset is reserved for deletion' using errcode = '55P03';
+      end if;
+    end loop;
+  end loop;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."assert_no_reserved_asset_urls"("p_value" "text", "p_buckets" "text"[]) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."audition_submission_has_attachment"("p_path" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
@@ -396,37 +448,41 @@ $$;
 ALTER FUNCTION "public"."delete_audition_campaign"("p_campaign_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."enforce_artist_gallery_id_ownership"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  if exists (
+    select 1
+    from public.artist_members as member
+    where member.id = new.id
+      and member.artist_id is distinct from new.artist_id
+  ) then
+    raise exception 'GALLERY_ROW_DOES_NOT_BELONG_TO_ARTIST' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."enforce_artist_gallery_id_ownership"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."enforce_artist_gallery_ownership"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
-declare
-  v_album_artist_id uuid;
-  v_member_artist_id uuid;
 begin
-  -- The parent row lock conflicts with an in-flight artist_id UPDATE.  Read
-  -- the artist ID from the same locking query so the validation is performed
-  -- against the version that we actually locked.
-  if new.album_id is not null then
-    select album.artist_id
-      into v_album_artist_id
-    from public.albums as album
-    where album.id = new.album_id
-    for update;
+  if new.album_id is not null and not exists (
+    select 1 from public.albums where id = new.album_id and artist_id = new.artist_id for update
+  ) then
+    raise exception 'ARTIST_CONTENT_REFERENCE_DOES_NOT_BELONG_TO_ARTIST' using errcode = '23514';
   end if;
-  if new.member_id is not null then
-    select member.artist_id
-      into v_member_artist_id
-    from public.artist_members as member
-    where member.id = new.member_id
-    for update;
-  end if;
-
-  if new.album_id is not null and v_album_artist_id is distinct from new.artist_id then
-    raise exception 'gallery album belongs to another artist' using errcode = '23514';
-  end if;
-  if new.member_id is not null and v_member_artist_id is distinct from new.artist_id then
-    raise exception 'gallery member belongs to another artist' using errcode = '23514';
+  if new.member_id is not null and not exists (
+    select 1 from public.artist_members where id = new.member_id and artist_id = new.artist_id for update
+  ) then
+    raise exception 'ARTIST_CONTENT_REFERENCE_DOES_NOT_BELONG_TO_ARTIST' using errcode = '23514';
   end if;
   return new;
 end;
@@ -440,25 +496,14 @@ CREATE OR REPLACE FUNCTION "public"."enforce_artist_scene_member_ownership"() RE
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
-declare
-  v_scene_artist_id uuid;
-  v_member_artist_id uuid;
 begin
-  -- Lock in a fixed order (scene, then member) so concurrent relationship
-  -- writes cannot deadlock while they validate the two parent rows.
-  select scene.artist_id
-    into v_scene_artist_id
-  from public.artist_scenes as scene
-  where scene.id = new.scene_id
-  for update;
-  select member.artist_id
-    into v_member_artist_id
-  from public.artist_members as member
-  where member.id = new.member_id
-  for update;
-
-  if v_scene_artist_id is distinct from v_member_artist_id then
-    raise exception 'scene member belongs to another artist' using errcode = '23514';
+  if not exists (
+    select 1 from public.artist_scenes scene
+    join public.artist_members member on member.id = new.member_id
+    where scene.id = new.scene_id and member.artist_id = scene.artist_id
+    for update of scene, member
+  ) then
+    raise exception 'SCENE_MEMBER_DOES_NOT_BELONG_TO_ARTIST' using errcode = '23514';
   end if;
   return new;
 end;
@@ -778,6 +823,25 @@ $$;
 ALTER FUNCTION "public"."prevent_album_artist_mismatch"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."prevent_artist_content_reference_reassignment"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  if new.artist_id is distinct from old.artist_id and (
+    (tg_table_name = 'albums' and exists (select 1 from public.artist_gallery where album_id = old.id))
+    or (tg_table_name = 'artist_members' and (exists (select 1 from public.artist_gallery where member_id = old.id) or exists (select 1 from public.artist_scene_members where member_id = old.id)))
+  ) then
+    raise exception 'ARTIST_CONTENT_REFERENCE_REASSIGNMENT_FORBIDDEN' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."prevent_artist_content_reference_reassignment"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."prevent_member_artist_mismatch"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
@@ -883,7 +947,7 @@ declare v_path text;
 begin
   v_path := new.attachment_path;
   if v_path is not null and v_path <> '' then
-    perform pg_advisory_xact_lock(hashtextextended('audition-attachments' || chr(0) || v_path, 0));
+    perform pg_advisory_xact_lock(hashtextextended('audition-attachments' || chr(31) || v_path, 0));
     if exists (
       select 1 from public.asset_registry
       where bucket = 'audition-attachments' and path = v_path
@@ -902,148 +966,32 @@ ALTER FUNCTION "public"."reject_reserved_legacy_audition_attachment"() OWNER TO 
 CREATE OR REPLACE FUNCTION "public"."reject_reserved_r2_asset_reference"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
-    AS $_$
-declare
-  v_column text;
-  v_value text;
-  v_bucket text;
-  v_path text;
-  v_marker text;
-  v_position integer;
+    AS $$
+declare v_column text; v_value text;
 begin
-  for v_column, v_value in
-    select key, value from jsonb_each_text(to_jsonb(new))
-  loop
-    if v_value is null or (tg_table_name = 'site_settings' and v_column = 'value') then
-      continue;
+  for v_column, v_value in select key, value from jsonb_each_text(to_jsonb(new)) loop
+    if v_value is not null and not (tg_table_name = 'site_settings' and v_column = 'value') then
+      perform public.assert_no_reserved_asset_urls(v_value, array['artist-assets', 'album-covers', 'track-assets', 'business-assets', 'hero-videos']);
     end if;
-    for v_bucket in
-      select unnest(array[
-        'artist-assets', 'album-covers', 'track-assets',
-        'business-assets', 'hero-videos'
-      ])
-    loop
-      v_marker := '/' || v_bucket || '/';
-      v_position := strpos(v_value, v_marker);
-      if v_position > 0 then
-        v_path := split_part(
-          split_part(substr(v_value, v_position + length(v_marker)), '?', 1),
-          '#', 1
-        );
-        if v_path ~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
-          perform pg_advisory_xact_lock(
-            hashtextextended(v_bucket || chr(0) || v_path, 0)
-          );
-          if exists (
-            select 1 from public.asset_registry
-            where bucket = v_bucket and path = v_path
-          ) then
-            raise exception 'asset is reserved for deletion' using errcode = '55P03';
-          end if;
-        end if;
-      end if;
-    end loop;
   end loop;
-
   if tg_table_name = 'site_settings' then
-    for v_value in
-      select value
-      from jsonb_each_text(
-        coalesce(
-          case
-            when jsonb_typeof(to_jsonb(new)->'value') = 'object'
-              then to_jsonb(new)->'value'
-            else null
-          end,
-          '{}'::jsonb
-        )
-      )
-    loop
-      for v_bucket in
-        select unnest(array['business-assets'])
-      loop
-        v_marker := '/' || v_bucket || '/';
-        v_position := strpos(v_value, v_marker);
-        if v_position > 0 then
-          v_path := split_part(
-            split_part(substr(v_value, v_position + length(v_marker)), '?', 1),
-            '#', 1
-          );
-          if v_path ~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
-            perform pg_advisory_xact_lock(
-              hashtextextended(v_bucket || chr(0) || v_path, 0)
-            );
-            if exists (
-              select 1 from public.asset_registry
-              where bucket = v_bucket and path = v_path
-            ) then
-              raise exception 'asset is reserved for deletion' using errcode = '55P03';
-            end if;
-          end if;
-        end if;
-      end loop;
+    for v_value in select value from jsonb_each_text(case when jsonb_typeof(to_jsonb(new)->'value') = 'object' then to_jsonb(new)->'value' else '{}'::jsonb end) loop
+      perform public.assert_no_reserved_asset_urls(v_value, array['business-assets']);
     end loop;
   elsif tg_table_name = 'avatar_assets' then
-    v_path := to_jsonb(new)->>'image_path';
-    if v_path is not null then
-      perform pg_advisory_xact_lock(
-        hashtextextended('artist-assets' || chr(0) || v_path, 0)
-      );
-      if exists (
-        select 1 from public.asset_registry
-        where bucket = 'artist-assets' and path = v_path
-      ) then
-        raise exception 'asset is reserved for deletion' using errcode = '55P03';
-      end if;
-    end if;
+    perform public.assert_no_reserved_asset_urls(to_jsonb(new)->>'image_path', array['artist-assets']);
   elsif tg_table_name = 'contact_inquiries' then
-    v_path := to_jsonb(new)->>'attachment_path';
-    if v_path is not null then
-      perform pg_advisory_xact_lock(
-        hashtextextended('contact-attachments' || chr(0) || v_path, 0)
-      );
-      if exists (
-        select 1 from public.asset_registry
-        where bucket = 'contact-attachments' and path = v_path
-      ) then
-        raise exception 'asset is reserved for deletion' using errcode = '55P03';
-      end if;
-    end if;
+    perform public.assert_no_reserved_asset_urls(to_jsonb(new)->>'attachment_path', array['contact-attachments']);
   elsif tg_table_name = 'protect_report_attachments' then
-    v_path := to_jsonb(new)->>'file_path';
-    if v_path is not null then
-      perform pg_advisory_xact_lock(
-        hashtextextended('protect-evidence' || chr(0) || v_path, 0)
-      );
-      if exists (
-        select 1 from public.asset_registry
-        where bucket = 'protect-evidence' and path = v_path
-      ) then
-        raise exception 'asset is reserved for deletion' using errcode = '55P03';
-      end if;
-    end if;
-  elsif tg_table_name = 'audition_submissions'
-    and jsonb_typeof(to_jsonb(new)->'answers') = 'object' then
-    for v_path in
-      select value->>'path'
-      from jsonb_each(to_jsonb(new)->'answers')
-      where jsonb_typeof(value) = 'object'
-        and jsonb_typeof(value->'path') = 'string'
-    loop
-      perform pg_advisory_xact_lock(
-        hashtextextended('audition-attachments' || chr(0) || v_path, 0)
-      );
-      if exists (
-        select 1 from public.asset_registry
-        where bucket = 'audition-attachments' and path = v_path
-      ) then
-        raise exception 'asset is reserved for deletion' using errcode = '55P03';
-      end if;
+    perform public.assert_no_reserved_asset_urls(to_jsonb(new)->>'file_path', array['protect-evidence']);
+  elsif tg_table_name = 'audition_submissions' then
+    for v_value in select value from jsonb_each_text(case when jsonb_typeof(to_jsonb(new)->'answers') = 'object' then to_jsonb(new)->'answers' else '{}'::jsonb end) loop
+      perform public.assert_no_reserved_asset_urls(v_value, array['audition-attachments']);
     end loop;
   end if;
   return new;
 end;
-$_$;
+$$;
 
 
 ALTER FUNCTION "public"."reject_reserved_r2_asset_reference"() OWNER TO "postgres";
@@ -1171,7 +1119,7 @@ begin
     if v_path !~ '^[a-zA-Z0-9][a-zA-Z0-9/_-]*\.[a-zA-Z0-9]+$' then
       raise exception 'invalid asset path' using errcode = '22023';
     end if;
-    perform pg_advisory_xact_lock(hashtextextended(p_bucket || chr(0) || v_path, 0));
+    perform pg_advisory_xact_lock(hashtextextended(p_bucket || chr(31) || v_path, 0));
     if exists (select 1 from public.asset_registry where bucket = p_bucket and path = v_path) then
       raise exception 'asset deletion already reserved' using errcode = '55P03';
     end if;
@@ -1289,6 +1237,21 @@ ALTER FUNCTION "public"."review_protect_report"("p_report_id" "uuid", "p_status"
 
 
 CREATE OR REPLACE FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  perform public.assert_admin_save_payload(p_album);
+  perform public.assert_admin_save_payload(p_tracks);
+  return public.save_album_with_tracks_impl(p_album, p_tracks);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_album_with_tracks_impl"("p_album" "jsonb", "p_tracks" "jsonb") RETURNS "uuid"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -1439,10 +1402,68 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") OWNER TO "postgres";
+ALTER FUNCTION "public"."save_album_with_tracks_impl"("p_album" "jsonb", "p_tracks" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_artist_content_checked"("p_artist_id" "uuid", "p_gallery_items" "jsonb", "p_gallery_removed_ids" "uuid"[], "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare v_updated_at timestamptz;
+begin
+  if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
+  select updated_at into v_updated_at from public.artists where id = p_artist_id for update;
+  if not found then raise exception 'NOT_FOUND' using errcode = 'P0002'; end if;
+  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then
+    raise exception 'STALE_WRITE' using errcode = 'P0003';
+  end if;
+  perform public.save_artist_gallery(p_artist_id, p_gallery_items, coalesce(p_gallery_removed_ids, '{}'::uuid[]));
+  perform public.save_artist_scenes(p_artist_id, p_scenes, coalesce(p_removed_scene_ids, '{}'::uuid[]), coalesce(p_removed_region_ids, '{}'::uuid[]));
+  update public.artists set updated_at = clock_timestamp() where id = p_artist_id returning updated_at into v_updated_at;
+  return v_updated_at;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_artist_content_checked"("p_artist_id" "uuid", "p_gallery_items" "jsonb", "p_gallery_removed_ids" "uuid"[], "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."save_artist_gallery"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  perform public.assert_admin_save_payload(p_items);
+  perform public.assert_admin_save_ids(coalesce(p_removed_ids, '{}'::uuid[]));
+  perform public.save_artist_gallery_impl(p_artist_id, p_items, p_removed_ids);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_artist_gallery"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_artist_gallery_checked"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare v_updated_at timestamptz;
+begin
+  if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
+  select updated_at into v_updated_at from public.artists where id = p_artist_id for update;
+  if not found then raise exception 'NOT_FOUND' using errcode = 'P0002'; end if;
+  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then raise exception 'STALE_WRITE' using errcode = 'P0003'; end if;
+  perform public.save_artist_gallery(p_artist_id, p_items, coalesce(p_removed_ids, '{}'::uuid[]));
+  update public.artists set updated_at = clock_timestamp() where id = p_artist_id returning updated_at into v_updated_at;
+  return v_updated_at;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_artist_gallery_checked"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_artist_gallery_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -1536,10 +1557,26 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_artist_gallery"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_artist_gallery_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."save_artist_gallery_checked"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+CREATE OR REPLACE FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[] DEFAULT '{}'::"uuid"[], "p_removed_region_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  perform public.assert_admin_save_payload(p_scenes);
+  perform public.assert_admin_save_ids(coalesce(p_removed_scene_ids, '{}'::uuid[]));
+  perform public.assert_admin_save_ids(coalesce(p_removed_region_ids, '{}'::uuid[]));
+  perform public.save_artist_scenes_impl(p_artist_id, p_scenes, p_removed_scene_ids, p_removed_region_ids);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -1548,20 +1585,18 @@ begin
   if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
   select updated_at into v_updated_at from public.artists where id = p_artist_id for update;
   if not found then raise exception 'NOT_FOUND' using errcode = 'P0002'; end if;
-  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then
-    raise exception 'STALE_WRITE' using errcode = 'P0003';
-  end if;
-  perform public.save_artist_gallery(p_artist_id, p_items, coalesce(p_removed_ids, '{}'::uuid[]));
+  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then raise exception 'STALE_WRITE' using errcode = 'P0003'; end if;
+  perform public.save_artist_scenes(p_artist_id, p_scenes, coalesce(p_removed_scene_ids, '{}'::uuid[]), coalesce(p_removed_region_ids, '{}'::uuid[]));
   update public.artists set updated_at = clock_timestamp() where id = p_artist_id returning updated_at into v_updated_at;
   return v_updated_at;
 end;
 $$;
 
 
-ALTER FUNCTION "public"."save_artist_gallery_checked"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[] DEFAULT '{}'::"uuid"[], "p_removed_region_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
+CREATE OR REPLACE FUNCTION "public"."save_artist_scenes_impl"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[] DEFAULT '{}'::"uuid"[], "p_removed_region_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -1739,32 +1774,47 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_artist_scenes_impl"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+CREATE OR REPLACE FUNCTION "public"."save_audition_campaign"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
-declare v_updated_at timestamptz;
+begin
+  perform public.assert_admin_save_payload(p_campaign);
+  perform public.assert_admin_save_payload(p_fields);
+  perform public.assert_admin_save_ids(coalesce(p_removed_ids, '{}'::uuid[]));
+  perform public.save_audition_campaign_impl(p_campaign, p_fields, p_removed_ids);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_audition_campaign"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_audition_campaign_checked"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare v_id uuid; v_updated_at timestamptz;
 begin
   if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
-  select updated_at into v_updated_at from public.artists where id = p_artist_id for update;
+  v_id := nullif(p_campaign->>'id', '')::uuid;
+  select updated_at into v_updated_at from public.audition_campaigns where id = v_id for update;
   if not found then raise exception 'NOT_FOUND' using errcode = 'P0002'; end if;
-  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then
-    raise exception 'STALE_WRITE' using errcode = 'P0003';
-  end if;
-  perform public.save_artist_scenes(p_artist_id, p_scenes, coalesce(p_removed_scene_ids, '{}'::uuid[]), coalesce(p_removed_region_ids, '{}'::uuid[]));
-  update public.artists set updated_at = clock_timestamp() where id = p_artist_id returning updated_at into v_updated_at;
+  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then raise exception 'STALE_WRITE' using errcode = 'P0003'; end if;
+  perform public.save_audition_campaign(p_campaign, p_fields, coalesce(p_removed_ids, '{}'::uuid[]));
+  select updated_at into v_updated_at from public.audition_campaigns where id = v_id;
   return v_updated_at;
 end;
 $$;
 
 
-ALTER FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_audition_campaign_checked"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."save_audition_campaign"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
+CREATE OR REPLACE FUNCTION "public"."save_audition_campaign_impl"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -1873,30 +1923,7 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_audition_campaign"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."save_audition_campaign_checked"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'pg_catalog', 'public'
-    AS $$
-declare v_id uuid; v_updated_at timestamptz;
-begin
-  if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
-  v_id := nullif(p_campaign->>'id', '')::uuid;
-  select updated_at into v_updated_at from public.audition_campaigns where id = v_id for update;
-  if not found then raise exception 'NOT_FOUND' using errcode = 'P0002'; end if;
-  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then
-    raise exception 'STALE_WRITE' using errcode = 'P0003';
-  end if;
-  perform public.save_audition_campaign(p_campaign, p_fields, coalesce(p_removed_ids, '{}'::uuid[]));
-  select updated_at into v_updated_at from public.audition_campaigns where id = v_id;
-  return v_updated_at;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."save_audition_campaign_checked"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_audition_campaign_impl"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text", "p_expected_updated_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
@@ -1974,6 +2001,21 @@ CREATE OR REPLACE FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
+begin
+  perform public.assert_admin_save_payload(p_items);
+  perform public.assert_admin_save_ids(coalesce(p_delete_ids, '{}'::uuid[]));
+  perform public.save_avatar_assets_impl(p_artist_id, p_items, p_delete_ids);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_avatar_assets_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[] DEFAULT ARRAY[]::"uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
 declare
   v_item record;
 begin
@@ -2024,10 +2066,44 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_avatar_assets_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."save_home_hero_slides"("p_slides" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+begin
+  perform public.assert_admin_save_payload(p_slides);
+  perform public.assert_admin_save_ids(coalesce(p_removed_ids, '{}'::uuid[]));
+  perform public.save_home_hero_slides_impl(p_slides, p_removed_ids);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_home_hero_slides"("p_slides" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'public'
+    AS $$
+declare v_updated_at timestamptz;
+begin
+  if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
+  select updated_at into v_updated_at from public.home_hero_slide_revisions where id for update;
+  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then raise exception 'STALE_WRITE' using errcode = 'P0003'; end if;
+  perform public.save_home_hero_slides(p_slides, coalesce(p_removed_ids, '{}'::uuid[]));
+  update public.home_hero_slide_revisions set updated_at = clock_timestamp() where id returning updated_at into v_updated_at;
+  return v_updated_at;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."save_home_hero_slides_impl"("p_slides" "jsonb", "p_removed_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -2078,28 +2154,31 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."save_home_hero_slides"("p_slides" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_home_hero_slides_impl"("p_slides" "jsonb", "p_removed_ids" "uuid"[]) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) RETURNS timestamp with time zone
+CREATE OR REPLACE FUNCTION "public"."save_site_settings_checked"("p_updates" "jsonb", "p_expected_updated_at" "jsonb") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
-declare v_updated_at timestamptz;
+declare v_item jsonb; v_key text; v_updated_at timestamptz; v_result jsonb := '{}'::jsonb;
 begin
   if not public.is_admin() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
-  select updated_at into v_updated_at from public.home_hero_slide_revisions where id for update;
-  if p_expected_updated_at is null or v_updated_at is distinct from p_expected_updated_at then
-    raise exception 'STALE_WRITE' using errcode = 'P0003';
-  end if;
-  perform public.save_home_hero_slides(p_slides, coalesce(p_removed_ids, '{}'::uuid[]));
-  update public.home_hero_slide_revisions set updated_at = clock_timestamp() where id returning updated_at into v_updated_at;
-  return v_updated_at;
+  for v_item in select value from jsonb_array_elements(p_updates) loop
+    v_key := v_item->>'key';
+    select updated_at into v_updated_at from public.site_settings where key = v_key for update;
+    if not found or v_updated_at is distinct from (p_expected_updated_at->>v_key)::timestamptz then
+      raise exception 'STALE_WRITE' using errcode = 'P0003';
+    end if;
+    update public.site_settings set value = v_item->'value' where key = v_key returning updated_at into v_updated_at;
+    v_result := v_result || jsonb_build_object(v_key, v_updated_at);
+  end loop;
+  return v_result;
 end;
 $$;
 
 
-ALTER FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) OWNER TO "postgres";
+ALTER FUNCTION "public"."save_site_settings_checked"("p_updates" "jsonb", "p_expected_updated_at" "jsonb") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."set_admin_role"("p_target_id" "uuid", "p_role" "text") RETURNS "void"
@@ -2875,6 +2954,11 @@ ALTER TABLE ONLY "public"."albums"
 
 
 
+ALTER TABLE "public"."albums"
+    ADD CONSTRAINT "albums_color_hex_check" CHECK ((("color" IS NULL) OR ("color" ~ '^#[0-9A-Fa-f]{6}$'::"text"))) NOT VALID;
+
+
+
 ALTER TABLE ONLY "public"."albums"
     ADD CONSTRAINT "albums_pkey" PRIMARY KEY ("id");
 
@@ -2892,6 +2976,11 @@ ALTER TABLE ONLY "public"."artist_gallery"
 
 ALTER TABLE ONLY "public"."artist_members"
     ADD CONSTRAINT "artist_members_artist_id_slug_key" UNIQUE ("artist_id", "slug");
+
+
+
+ALTER TABLE "public"."artist_members"
+    ADD CONSTRAINT "artist_members_color_hex_check" CHECK ((("color" IS NULL) OR ("color" ~ '^#[0-9A-Fa-f]{6}$'::"text"))) NOT VALID;
 
 
 
@@ -2917,6 +3006,11 @@ ALTER TABLE ONLY "public"."artist_scenes"
 
 ALTER TABLE ONLY "public"."artist_schedules"
     ADD CONSTRAINT "artist_schedules_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE "public"."artists"
+    ADD CONSTRAINT "artists_color_hex_check" CHECK ((("color" IS NULL) OR ("color" ~ '^#[0-9A-Fa-f]{6}$'::"text"))) NOT VALID;
 
 
 
@@ -3176,6 +3270,10 @@ CREATE INDEX "tracks_album_order_idx" ON "public"."tracks" USING "btree" ("album
 
 
 
+CREATE OR REPLACE TRIGGER "album_artist_content_reference_reassignment" BEFORE UPDATE OF "artist_id" ON "public"."albums" FOR EACH ROW EXECUTE FUNCTION "public"."prevent_artist_content_reference_reassignment"();
+
+
+
 CREATE OR REPLACE TRIGGER "albums_admin_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."albums" FOR EACH ROW EXECUTE FUNCTION "public"."capture_admin_audit"('id', 'standard');
 
 
@@ -3196,7 +3294,15 @@ CREATE OR REPLACE TRIGGER "artist_gallery_ownership" BEFORE INSERT OR UPDATE OF 
 
 
 
+CREATE OR REPLACE TRIGGER "artist_gallery_reference_owner" BEFORE INSERT OR UPDATE OF "artist_id", "album_id", "member_id" ON "public"."artist_gallery" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_artist_gallery_ownership"();
+
+
+
 CREATE OR REPLACE TRIGGER "artist_gallery_set_updated_at" BEFORE UPDATE ON "public"."artist_gallery" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "artist_member_content_reference_reassignment" BEFORE UPDATE OF "artist_id" ON "public"."artist_members" FOR EACH ROW EXECUTE FUNCTION "public"."prevent_artist_content_reference_reassignment"();
 
 
 
@@ -3213,6 +3319,10 @@ CREATE OR REPLACE TRIGGER "artist_members_set_updated_at" BEFORE UPDATE ON "publ
 
 
 CREATE OR REPLACE TRIGGER "artist_scene_member_ownership" BEFORE INSERT OR UPDATE OF "scene_id", "member_id" ON "public"."artist_scene_members" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_artist_scene_member_ownership"();
+
+
+
+CREATE OR REPLACE TRIGGER "artist_scene_member_reference_owner" BEFORE INSERT OR UPDATE OF "scene_id", "member_id" ON "public"."artist_scene_members" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_artist_scene_member_ownership"();
 
 
 
@@ -3297,6 +3407,10 @@ CREATE OR REPLACE TRIGGER "contact_inquiries_set_attachment_size" BEFORE INSERT 
 
 
 CREATE OR REPLACE TRIGGER "contact_inquiries_set_updated_at" BEFORE UPDATE ON "public"."contact_inquiries" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "enforce_artist_gallery_id_ownership" BEFORE INSERT OR UPDATE ON "public"."artist_gallery" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_artist_gallery_id_ownership"();
 
 
 
@@ -3933,6 +4047,21 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."assert_admin_save_ids"("p_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."assert_admin_save_ids"("p_ids" "uuid"[]) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."assert_admin_save_payload"("p_value" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."assert_admin_save_payload"("p_value" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."assert_no_reserved_asset_urls"("p_value" "text", "p_buckets" "text"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."assert_no_reserved_asset_urls"("p_value" "text", "p_buckets" "text"[]) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."audition_submission_has_attachment"("p_path" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."audition_submission_has_attachment"("p_path" "text") TO "service_role";
 
@@ -3974,6 +4103,11 @@ REVOKE ALL ON FUNCTION "public"."create_profile_for_new_user"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."delete_audition_campaign"("p_campaign_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."delete_audition_campaign"("p_campaign_id" "uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."delete_audition_campaign"("p_campaign_id" "uuid") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."enforce_artist_gallery_id_ownership"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."enforce_artist_gallery_id_ownership"() TO "service_role";
 
 
 
@@ -4091,6 +4225,11 @@ REVOKE ALL ON FUNCTION "public"."prevent_album_artist_mismatch"() FROM PUBLIC;
 
 
 
+REVOKE ALL ON FUNCTION "public"."prevent_artist_content_reference_reassignment"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."prevent_artist_content_reference_reassignment"() TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."prevent_member_artist_mismatch"() FROM PUBLIC;
 
 
@@ -4157,8 +4296,19 @@ GRANT ALL ON FUNCTION "public"."review_protect_report"("p_report_id" "uuid", "p_
 
 
 REVOKE ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") TO "service_role";
+GRANT ALL ON FUNCTION "public"."save_album_with_tracks"("p_album" "jsonb", "p_tracks" "jsonb") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_album_with_tracks_impl"("p_album" "jsonb", "p_tracks" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_album_with_tracks_impl"("p_album" "jsonb", "p_tracks" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_artist_content_checked"("p_artist_id" "uuid", "p_gallery_items" "jsonb", "p_gallery_removed_ids" "uuid"[], "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_artist_content_checked"("p_artist_id" "uuid", "p_gallery_items" "jsonb", "p_gallery_removed_ids" "uuid"[], "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "service_role";
+GRANT ALL ON FUNCTION "public"."save_artist_content_checked"("p_artist_id" "uuid", "p_gallery_items" "jsonb", "p_gallery_removed_ids" "uuid"[], "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "authenticated";
 
 
 
@@ -4173,6 +4323,11 @@ GRANT ALL ON FUNCTION "public"."save_artist_gallery_checked"("p_artist_id" "uuid
 
 
 
+REVOKE ALL ON FUNCTION "public"."save_artist_gallery_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_artist_gallery_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_removed_ids" "uuid"[]) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) TO "service_role";
 
@@ -4181,6 +4336,11 @@ GRANT ALL ON FUNCTION "public"."save_artist_scenes"("p_artist_id" "uuid", "p_sce
 REVOKE ALL ON FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "service_role";
 GRANT ALL ON FUNCTION "public"."save_artist_scenes_checked"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_artist_scenes_impl"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_artist_scenes_impl"("p_artist_id" "uuid", "p_scenes" "jsonb", "p_removed_scene_ids" "uuid"[], "p_removed_region_ids" "uuid"[]) TO "service_role";
 
 
 
@@ -4195,14 +4355,24 @@ GRANT ALL ON FUNCTION "public"."save_audition_campaign_checked"("p_campaign" "js
 
 
 
+REVOKE ALL ON FUNCTION "public"."save_audition_campaign_impl"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_audition_campaign_impl"("p_campaign" "jsonb", "p_fields" "jsonb", "p_removed_ids" "uuid"[]) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text", "p_expected_updated_at" timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."save_audition_submission"("p_submission_id" "uuid", "p_campaign_id" "uuid", "p_user_id" "uuid", "p_name" "text", "p_answers" "jsonb", "p_form_snapshot" "jsonb", "p_applicant_email_hash" "text", "p_expected_updated_at" timestamp with time zone) TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) TO "service_role";
+GRANT ALL ON FUNCTION "public"."save_avatar_assets"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_avatar_assets_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_avatar_assets_impl"("p_artist_id" "uuid", "p_items" "jsonb", "p_delete_ids" "uuid"[]) TO "service_role";
 
 
 
@@ -4214,6 +4384,17 @@ GRANT ALL ON FUNCTION "public"."save_home_hero_slides"("p_slides" "jsonb", "p_re
 REVOKE ALL ON FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "service_role";
 GRANT ALL ON FUNCTION "public"."save_home_hero_slides_checked"("p_slides" "jsonb", "p_removed_ids" "uuid"[], "p_expected_updated_at" timestamp with time zone) TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_home_hero_slides_impl"("p_slides" "jsonb", "p_removed_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_home_hero_slides_impl"("p_slides" "jsonb", "p_removed_ids" "uuid"[]) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."save_site_settings_checked"("p_updates" "jsonb", "p_expected_updated_at" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."save_site_settings_checked"("p_updates" "jsonb", "p_expected_updated_at" "jsonb") TO "service_role";
+GRANT ALL ON FUNCTION "public"."save_site_settings_checked"("p_updates" "jsonb", "p_expected_updated_at" "jsonb") TO "authenticated";
 
 
 
