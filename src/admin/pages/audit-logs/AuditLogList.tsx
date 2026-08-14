@@ -8,13 +8,14 @@ import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import styles from "@/styles/(admin)/pages/audit-logs/audit-logs.module.css";
 import {
   operationLabel,
+  fieldLabel,
   tableLabel,
   type AuditLogGroup,
   type AuditLogRow,
   type AuditOperation,
 } from "./audit-log-model";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
@@ -29,6 +30,15 @@ function operationClass(operation: AuditOperation) {
   if (operation === "INSERT") return styles.operationInsert;
   if (operation === "DELETE") return styles.operationDelete;
   return styles.operationUpdate;
+}
+
+function relativeTime(value: string) {
+  const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000);
+  if (minutes < 1) return "방금";
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  return `${Math.round(hours / 24)}일 전`;
 }
 
 type Props = {
@@ -61,7 +71,7 @@ export default function AuditLogList({
           <History aria-hidden="true" />
           <span>
             <b>변경 기록</b>
-            <small>최신 작업부터 표시</small>
+            <small>최신 작업부터 표시 · 변경 필드를 바로 확인하세요</small>
           </span>
         </div>
         <span>
@@ -72,81 +82,50 @@ export default function AuditLogList({
       {loading ? (
         <AdminSkeleton variant="table" className={styles.loading} rows={5} />
       ) : groupedLogs.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>발생 시각</th>
-                <th>관리자</th>
-                <th>작업</th>
-                <th>대상</th>
-                <th>
-                  <span className="sr-only">상세</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedLogs.map(({ primary: log, entries }) => (
-                <tr
-                  key={log.id}
-                  className={
-                    selected?.id === log.id ? styles.selectedRow : undefined
-                  }
+        <div className={styles.eventList} role="list">
+          {groupedLogs.map(({ primary: log, entries }) => (
+            <button
+              type="button"
+              key={log.id}
+              data-tour-id="audit-open"
+              className={`${styles.eventCard} ${selected?.id === log.id ? styles.selectedEvent : ""}`}
+              onClick={() => onSelect(log)}
+              aria-label={`${log.record_label} 변경 상세 보기`}
+            >
+              <span className={styles.eventTime}>
+                <Clock3 aria-hidden="true" />
+                <b>{relativeTime(log.occurred_at)}</b>
+                <small>{dateTimeFormatter.format(new Date(log.occurred_at))}</small>
+              </span>
+              <span className={styles.eventAction}>
+                <span
+                  className={`${styles.operation} ${operationClass(log.operation)}`}
                 >
-                  <td>
-                    <span className={styles.time}>
-                      <Clock3 aria-hidden="true" />
-                      {dateTimeFormatter.format(new Date(log.occurred_at))}
+                  {operationLabel(log.operation)}
+                </span>
+                <small>{tableLabel(log.table_name)}</small>
+              </span>
+              <span className={styles.eventTarget}>
+                <b>
+                  {log.record_label}
+                  {entries.length > 1 && (
+                    <span className={styles.transactionCount}>
+                      +{entries.length - 1}
                     </span>
-                    <small>LOG #{String(log.id).padStart(6, "0")}</small>
-                  </td>
-                  <td>
-                    <b>{log.actor_email || "시스템 작업"}</b>
-                    <small>
-                      {log.actor_id
-                        ? log.actor_id.slice(0, 8).toUpperCase()
-                        : "SERVICE"}
-                    </small>
-                  </td>
-                  <td>
-                    <span
-                      className={`${styles.operation} ${operationClass(log.operation)}`}
-                    >
-                      {operationLabel(log.operation)}
-                    </span>
-                  </td>
-                  <td>
-                    <b>
-                      {log.record_label}
-                      {entries.length > 1 ? ` 외 ${entries.length - 1}건` : ""}
-                    </b>
-                    <small>
-                      {tableLabel(log.table_name)} · {log.record_id.slice(0, 8)}{" "}
-                      <button
-                        type="button"
-                        className={styles.copyId}
-                        onClick={() =>
-                          void navigator.clipboard.writeText(log.record_id)
-                        }
-                      >
-                        ID 복사
-                      </button>
-                    </small>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      data-tour-id="audit-open"
-                      onClick={() => onSelect(log)}
-                      aria-label={`${log.record_label} 변경 상세 보기`}
-                    >
-                      <ChevronRight aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                </b>
+                <small>
+                  {log.changed_fields.length
+                    ? log.changed_fields.slice(0, 2).map(fieldLabel).join(", ")
+                    : "변경값 보호"}
+                  {log.changed_fields.length > 2
+                    ? ` 외 ${log.changed_fields.length - 2}`
+                    : ""}
+                </small>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+          ))}
         </div>
       ) : (
         <div className={styles.empty}>

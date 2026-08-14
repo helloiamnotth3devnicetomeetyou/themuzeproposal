@@ -72,8 +72,10 @@ export const AUDIT_TABLES = [
   "contact_inquiries",
   "protect_reports",
   "audition_submissions",
+  "auditions",
   "audition_campaigns",
   "audition_form_fields",
+  "avatar_assets",
   "profiles",
   "storage.objects",
 ] as const;
@@ -93,8 +95,10 @@ const TABLE_LABELS: Record<string, string> = {
   contact_inquiries: "문의",
   protect_reports: "권익 보호 신고",
   audition_submissions: "오디션 지원",
+  auditions: "오디션 세션",
   audition_campaigns: "오디션 캠페인",
   audition_form_fields: "오디션 폼 필드",
+  avatar_assets: "사용자 아바타",
   profiles: "관리자 권한",
   "storage.objects": "비즈니스 자료 파일",
 };

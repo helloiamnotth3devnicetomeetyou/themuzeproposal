@@ -13,7 +13,7 @@ import {
   type AuditLogRow,
 } from "./audit-log-model";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 const AUDIT_SELECT = [
   "id",
   "occurred_at",

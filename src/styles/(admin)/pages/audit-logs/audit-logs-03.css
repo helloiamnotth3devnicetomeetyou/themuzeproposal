@@ -45,6 +45,26 @@
     min-height: 44px;
   }
 
+  .eventCard {
+    grid-template-columns: 86px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 12px 8px;
+  }
+
+  .eventTime {
+    grid-row: 1 / 3;
+  }
+
+  .eventAction,
+  .eventTarget {
+    grid-column: 2;
+  }
+
+  .eventCard > svg {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+
   .detailMeta {
     grid-template-columns: minmax(0, 1fr);
   }

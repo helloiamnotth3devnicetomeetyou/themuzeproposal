@@ -92,7 +92,14 @@ export default function ArtistSceneWorkspace({
 }: Props) {
   return (
     <>
-      <div className={styles.toolbar}>
+      <div
+        className={styles.toolbar}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (!busy) void onUploadScenes(event.dataTransfer.files);
+        }}
+      >
         <div>
           <b>Interactive scenes</b>
           <span>
@@ -302,6 +309,12 @@ export default function ArtistSceneWorkspace({
                   data-tour-id="scene-mask"
                   disabled={draftOutline.length < 3 || busy}
                   onClick={() => maskInputRef.current?.click()}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (!busy && event.dataTransfer.files[0])
+                      void onUploadMask(event.dataTransfer.files[0]);
+                  }}
                 >
                   <Upload aria-hidden="true" />
                   정밀 마스크 덮어쓰기
@@ -346,4 +359,3 @@ export default function ArtistSceneWorkspace({
     </>
   );
 }
-

@@ -63,6 +63,25 @@ set local role authenticated;
 insert into public.artists (id, slug, name)
 values ('00000000-0000-0000-0000-000000000201', 'audit-test-artist', '감사 테스트');
 
+set local role postgres;
+insert into public.auditions (id, title)
+values ('00000000-0000-0000-0000-000000000202', 'Audit test audition');
+set local role authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from public.admin_audit_logs
+    where table_name = 'auditions'
+      and record_id = '00000000-0000-0000-0000-000000000202'
+      and operation = 'INSERT'
+  ) then
+    raise exception 'audition insert was not audited';
+  end if;
+end;
+$$;
+
 do $$
 declare
   v_log public.admin_audit_logs%rowtype;

@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { Filter, Search, X } from "lucide-react";
+import CustomSelect from "@/core/components/form/CustomSelect";
 import styles from "@/styles/(admin)/pages/audit-logs/audit-logs.module.css";
 import {
   AUDIT_TABLES,
@@ -65,34 +66,39 @@ export default function AuditLogFilters({
         </label>
         <label>
           <span>대상 테이블</span>
-          <select
+          <CustomSelect
             value={draftFilters.tableName}
-            onChange={(event) => onChange("tableName", event.target.value)}
-          >
-            <option value="">전체 테이블</option>
-            {AUDIT_TABLES.map((table) => (
-              <option key={table} value={table}>
-                {tableLabel(table)}
-              </option>
-            ))}
-          </select>
+            ariaLabel="대상 테이블"
+            className={styles.filterSelect}
+            onChange={(value) => onChange("tableName", value)}
+            options={[
+              { value: "", label: "전체 테이블" },
+              ...AUDIT_TABLES.map((table) => ({
+                value: table,
+                label: tableLabel(table),
+              })),
+            ]}
+          />
         </label>
         <label>
           <span>작업</span>
-          <select
+          <CustomSelect
             value={draftFilters.operation}
-            onChange={(event) =>
+            ariaLabel="작업"
+            className={styles.filterSelect}
+            onChange={(value) =>
               onChange(
                 "operation",
-                event.target.value as AuditLogFiltersState["operation"],
+                value as AuditLogFiltersState["operation"],
               )
             }
-          >
-            <option value="">전체 작업</option>
-            <option value="INSERT">생성</option>
-            <option value="UPDATE">수정</option>
-            <option value="DELETE">삭제</option>
-          </select>
+            options={[
+              { value: "", label: "전체 작업" },
+              { value: "INSERT", label: "생성" },
+              { value: "UPDATE", label: "수정" },
+              { value: "DELETE", label: "삭제" },
+            ]}
+          />
         </label>
         <label>
           <span>레코드 ID</span>

@@ -68,7 +68,7 @@ describe("AuditLogsAdminPage", () => {
 
     expect(await screen.findByText("RESCENE")).toBeInTheDocument();
     expect(mocks.from).toHaveBeenCalledWith("admin_audit_logs");
-    expect(mocks.range).toHaveBeenCalledWith(0, 49);
+    expect(mocks.range).toHaveBeenCalledWith(0, 9);
 
     await user.click(
       screen.getByRole("button", { name: "RESCENE 변경 상세 보기" }),
@@ -87,6 +87,6 @@ describe("AuditLogsAdminPage", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "다음 페이지" }));
-    await waitFor(() => expect(mocks.range).toHaveBeenCalledWith(50, 99));
+    await waitFor(() => expect(mocks.range).toHaveBeenCalledWith(10, 19));
   });
 });

@@ -152,6 +152,20 @@
     box-shadow var(--duration-fast);
 }
 
+.filterSelect,
+.filterSelect button {
+  width: 100%;
+}
+
+.filterSelect button {
+  height: 38px;
+  border-color: var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 10px;
+}
+
 .filterGrid input:focus,
 .filterGrid select:focus {
   border-color: var(--color-brand-pink);
@@ -240,9 +254,9 @@
 .workspace {
   display: grid;
   max-width: 1540px;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  grid-template-columns: minmax(620px, 1fr) minmax(400px, 460px);
   align-items: start;
-  gap: 16px;
+  gap: 20px;
   margin: 0 auto;
 }
 
@@ -250,7 +264,7 @@
 .detailPanel {
   overflow: hidden;
   border: 1px solid var(--border-default);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--bg-card);
 }
 
@@ -287,6 +301,13 @@
   margin-top: 2px;
   color: var(--text-faint);
   font-size: 8px;
+}
+
+.panelHeading small {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tableWrap {
@@ -329,7 +350,7 @@
 }
 
 .table td {
-  height: 64px;
+  height: 72px;
   max-width: 330px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-subtle);

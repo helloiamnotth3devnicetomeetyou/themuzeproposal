@@ -60,6 +60,9 @@ export default function AuditLogDetail({
               <p>
                 {tableLabel(selected.table_name)} · {selected.record_id}
               </p>
+              <span className={styles.changeCount}>
+                변경 필드 {detailFields.length}개
+              </span>
             </div>
             <button type="button" onClick={onClose} aria-label="변경 상세 닫기">
               <X aria-hidden="true" />
