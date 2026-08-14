@@ -29,7 +29,13 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig {
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   );
   const parsedUrl = parseUrl(url, "NEXT_PUBLIC_SUPABASE_URL");
-  if (process.env.NODE_ENV === "production" && parsedUrl.protocol !== "https:")
+  const isCiLocalSupabase =
+    process.env.CI === "true" && parsedUrl.hostname === "127.0.0.1";
+  if (
+    process.env.NODE_ENV === "production" &&
+    parsedUrl.protocol !== "https:" &&
+    !isCiLocalSupabase
+  )
     throw new Error("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
   const derivedProjectRef = parsedUrl.hostname.split(".")[0];
   const projectRef =

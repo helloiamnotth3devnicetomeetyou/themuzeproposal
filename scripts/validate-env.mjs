@@ -46,12 +46,14 @@ if (strict && process.env.VERCEL !== "1" && !trustedClientIpHeader) {
 if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
   try {
     const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
-    if (strict && supabaseUrl.protocol !== "https:")
+    const isCiLocalSupabase =
+      process.env.CI === "true" && supabaseUrl.hostname === "127.0.0.1";
+    if (strict && supabaseUrl.protocol !== "https:" && !isCiLocalSupabase)
       problems.push("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim();
     const derivedRef = supabaseUrl.hostname.split(".")[0];
     const isSupabaseHostname = supabaseUrl.hostname.endsWith(".supabase.co");
-    if (!isSupabaseHostname) {
+    if (!isSupabaseHostname && !isCiLocalSupabase) {
       problems.push(
         "NEXT_PUBLIC_SUPABASE_URL must use a *.supabase.co hostname.",
       );

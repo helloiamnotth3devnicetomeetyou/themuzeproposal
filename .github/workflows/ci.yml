@@ -110,10 +110,6 @@ jobs:
     env:
       NODE_ENV: production
       NEXT_PUBLIC_SITE_URL: https://ci.example.com
-      NEXT_PUBLIC_SUPABASE_URL: https://knbingxnnkutnukjyucw.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-      NEXT_PUBLIC_SUPABASE_PROJECT_REF: knbingxnnkutnukjyucw
-      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ci-placeholder-turnstile-site-key
@@ -134,6 +130,17 @@ jobs:
           cache: npm
 
       - run: npm ci --include=dev
+
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector
+
+      - name: Configure local Supabase for E2E
+        run: |
+          npx supabase status -o env | sed -n \
+            -e 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/p' \
+            -e 's/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/p' \
+            -e 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/p' >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PROJECT_REF=127" >> "$GITHUB_ENV"
 
       - run: npx playwright install --with-deps chromium
 
