@@ -1,4 +1,4 @@
-export type ArtistOption = { id: string; name: string; eng_name: string | null };
+export type ArtistOption = { id: string; name: string; eng_name: string | null; updated_at: string };
 
 export type AvatarAsset = {
   id: string;

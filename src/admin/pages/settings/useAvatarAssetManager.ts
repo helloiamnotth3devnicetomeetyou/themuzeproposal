@@ -128,7 +128,7 @@ export function useAvatarAssetManager({
     let mounted = true;
     void supabase
       .from("artists")
-      .select("id,name,eng_name")
+      .select("id,name,eng_name,updated_at")
       .order("name", { ascending: true })
       .then(({ data, error }) => {
         if (!mounted) return;
@@ -345,15 +345,18 @@ export function useAvatarAssetManager({
       sort_order: index + 1,
       is_active: item.is_active,
     }));
-    const { error } = await supabase.rpc("save_avatar_assets", {
+    const revision = artists.find((artist) => artist.id === artistId)?.updated_at;
+    const { data, error } = await supabase.rpc("save_avatar_assets_checked", {
       p_artist_id: artistId,
       p_items: payload,
       p_delete_ids: removed.map((item) => item.id),
+      p_expected_updated_at: revision,
     });
     if (error) {
       onError(error.message);
       throw error;
     }
+    setArtists((current) => current.map((artist) => artist.id === artistId ? { ...artist, updated_at: data as string } : artist));
 
     if (removed.length)
       await deleteAdminAssets(
@@ -375,6 +378,7 @@ export function useAvatarAssetManager({
     onToast("사용자 아바타 설정을 저장했습니다.");
   }, [
     artistId,
+    artists,
     dirty,
     discardBackup,
     items,

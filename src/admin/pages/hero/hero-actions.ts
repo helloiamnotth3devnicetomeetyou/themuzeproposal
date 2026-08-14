@@ -77,11 +77,13 @@ export async function saveHeroSlides({
 export async function saveHeroSlideVideo(
   slideId: string,
   videoUrl: string | null,
+  revision: string | null,
 ) {
-  const { error } = await supabase
-    .from("home_hero_slides")
-    .update({ video_url: videoUrl })
-    .eq("id", slideId);
-  if (error) throw error;
-  await revalidatePublicCache("public-home-slides");
+  const result = await supabase.rpc("save_home_hero_slide_video_checked", {
+    p_slide_id: slideId,
+    p_video_url: videoUrl,
+    p_expected_updated_at: revision,
+  });
+  if (!result.error) await revalidatePublicCache("public-home-slides");
+  return result;
 }

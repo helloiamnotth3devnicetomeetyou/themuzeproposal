@@ -216,7 +216,17 @@ export default function HeroAdminPage() {
   const saveSlideVideo = async (slideId: string, videoUrl: string | null) => {
     setSavingId(slideId);
     try {
-      await saveHeroSlideVideo(slideId, videoUrl);
+      const { data, error: saveError } = await saveHeroSlideVideo(
+        slideId,
+        videoUrl,
+        revision,
+      );
+      if (saveError) {
+        setError(saveError.message);
+        if (saveError.code === "P0003") void load(true);
+        return;
+      }
+      setRevision(data as string);
       const updateVideo = (slide: HeroSlide) =>
         slide.id === slideId ? { ...slide, video_url: videoUrl } : slide;
       setSlides((current) => current.map(updateVideo));

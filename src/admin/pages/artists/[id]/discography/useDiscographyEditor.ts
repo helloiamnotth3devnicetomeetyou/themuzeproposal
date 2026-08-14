@@ -43,6 +43,7 @@ export function useDiscographyEditor({
   const [artistId, setArtistId] = useState("");
   const [artistName, setArtistName] = useState("");
   const [artistSlug, setArtistSlug] = useState("");
+  const [artistRevision, setArtistRevision] = useState<string | null>(null);
   const [albums, setAlbums] = useState<AlbumEditorDraft[]>([]);
   const [tab, setTab] = useState<EditorTab>("basic");
   const [language, setLanguage] = useState<DiscographyLanguage>("ko");
@@ -122,7 +123,7 @@ export function useDiscographyEditor({
       setError("");
       const { data: artist, error: artistError } = await supabase
         .from("artists")
-        .select("id,name,slug")
+        .select("id,name,slug,updated_at")
         .eq("id", routeArtistId)
         .maybeSingle();
       if (artistError || !artist) {
@@ -180,6 +181,7 @@ export function useDiscographyEditor({
       setArtistId(artist.id);
       setArtistName(artist.name || "");
       setArtistSlug(artist.slug || "");
+      setArtistRevision(artist.updated_at);
       setAlbums(nextAlbums);
       const params = new URLSearchParams(window.location.search);
       const requestedId =
@@ -335,16 +337,18 @@ export function useDiscographyEditor({
       title_ja: track.title_ja.trim() || null,
     }));
     const { data, error: saveError } = await supabase.rpc(
-      "save_album_with_tracks",
-      { p_album: albumPayload, p_tracks: localizedTracks },
+      "save_album_with_tracks_checked",
+      { p_album: albumPayload, p_tracks: localizedTracks, p_expected_updated_at: artistRevision },
     );
     if (saveError) {
+      if (saveError.code === "P0003") void loadAlbums(draft.id);
       setSaving(false);
       setError(adminDbError(saveError, "앨범을 저장하지 못했습니다."));
       return;
     }
 
-    const savedAlbumId = String(data ?? draft.id);
+    setArtistRevision(data as string);
+    const savedAlbumId = draft.id;
     const referenced = collectAssetUrls(draft);
     const stale = original
       ? [...collectAssetUrls(original)]
@@ -406,11 +410,16 @@ export function useDiscographyEditor({
     );
   };
   const saveOrder = async () => {
-    const { error: orderError } = await supabase.rpc("reorder_albums", {
+    const { data, error: orderError } = await supabase.rpc("reorder_albums_checked", {
       p_artist_id: artistId,
       p_album_ids: albums.map((album) => album.id),
+      p_expected_updated_at: artistRevision,
     });
-    if (orderError) return setError(orderError.message);
+    if (orderError) {
+      if (orderError.code === "P0003") void loadAlbums();
+      return setError(orderError.message);
+    }
+    setArtistRevision(data as string);
     setSortDirty(false);
     setSorting(false);
     setToast("앨범 순서를 저장했습니다.");

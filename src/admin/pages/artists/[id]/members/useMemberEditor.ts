@@ -42,6 +42,7 @@ export function useMemberEditor({
   const [artistId, setArtistId] = useState("");
   const [artistName, setArtistName] = useState("");
   const [artistSlug, setArtistSlug] = useState("");
+  const [artistRevision, setArtistRevision] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [tab, setTab] = useState<MemberTab>("basic");
   const [sorting, setSorting] = useState(false);
@@ -149,7 +150,7 @@ export function useMemberEditor({
       setError("");
       const { data: artist, error: artistError } = await supabase
         .from("artists")
-        .select("id,name,slug")
+        .select("id,name,slug,updated_at")
         .eq("id", routeArtistId)
         .single();
       if (artistError || !artist) {
@@ -177,6 +178,7 @@ export function useMemberEditor({
       setArtistId(artist.id);
       setArtistName(artist.name || "아티스트");
       setArtistSlug(artist.slug || "");
+      setArtistRevision(artist.updated_at);
       setMembers(nextMembers);
       setNewMemberId(null);
       setPendingDelete(false);
@@ -389,18 +391,21 @@ export function useMemberEditor({
 
   const saveOrder = async () => {
     setSaving(true);
-    const { error: reorderError } = await supabase.rpc(
-      "reorder_artist_members",
+    const { data, error: reorderError } = await supabase.rpc(
+      "reorder_artist_members_checked",
       {
         p_artist_id: artistId,
         p_member_ids: members.map((member) => member.id),
+        p_expected_updated_at: artistRevision,
       },
     );
     setSaving(false);
     if (reorderError) {
+      if (reorderError.code === "P0003") void loadMembers();
       setError(reorderError.message);
       return;
     }
+    setArtistRevision(data as string);
     setSorting(false);
     setSortDirty(false);
     setToast("멤버 노출 순서를 저장했습니다.");
