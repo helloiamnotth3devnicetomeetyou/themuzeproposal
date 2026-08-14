@@ -1,5 +1,6 @@
 .manager {
   display: grid;
+  min-width: 0;
   gap: 14px;
 }
 .manager button {
@@ -154,6 +155,7 @@
 
 .sceneSettings {
   display: grid;
+  min-width: 0;
   grid-template-columns: minmax(180px, 1fr) auto auto auto auto;
   align-items: end;
   gap: 8px;
@@ -534,7 +536,11 @@
     flex-basis: 100%;
   }
   .sceneSettings {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sceneSettings > * {
+    min-width: 0;
+    max-width: 100%;
   }
   .sceneSettings > label:first-child {
     grid-column: 1;

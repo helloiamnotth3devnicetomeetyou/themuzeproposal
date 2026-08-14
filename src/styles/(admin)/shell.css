@@ -337,8 +337,11 @@
 }
 
 @media (max-width: 767px) {
+  .admin-mobile-topbar {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
   .admin-mobile-menu-button {
-    visibility: hidden;
+    display: none;
   }
 
   .admin-mobile-bottom-nav {

@@ -1264,7 +1264,7 @@
   }
   .content-workbench-stage {
     height: auto;
-    min-height: 100dvh;
+    min-height: 0;
     overflow: visible;
   }
   .content-workbench-header {

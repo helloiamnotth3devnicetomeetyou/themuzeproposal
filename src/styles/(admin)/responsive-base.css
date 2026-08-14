@@ -105,7 +105,8 @@
 
   .content-workbench-rail
     :is(.content-library-list, .music-album-list, .settings-rail-nav) {
-    padding: 8px var(--page-gutter) calc(16px + env(safe-area-inset-bottom));
+    padding: 8px var(--page-gutter)
+      calc(84px + var(--admin-mobile-nav-clearance, 64px));
   }
 
   .content-workbench-rail
@@ -145,33 +146,62 @@
     padding: 24px var(--page-gutter) calc(88px + env(safe-area-inset-bottom));
   }
 
-  .content-workbench-header,
+  .content-workbench .content-workbench-header,
   .music-editor-header {
     position: sticky;
     top: 0;
     z-index: 15;
+    display: grid;
     min-height: 0;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-    padding: 18px var(--page-gutter);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px var(--page-gutter);
   }
 
-  .content-workbench-actions,
-  .music-header-actions {
-    position: sticky;
-    z-index: 20;
-    bottom: 0;
+  .content-workbench-header .content-identity-art {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .content-workbench .content-workbench-actions {
+    position: static;
     width: 100%;
-    justify-content: flex-end;
-    padding: 8px 0;
-    background: linear-gradient(180deg, transparent, var(--bg-card) 28%);
-    flex-wrap: wrap;
+    margin: 0;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
   }
 
-  .content-workbench-actions .draft-save-button,
+  .content-workbench .content-workbench-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .content-workbench .content-workbench-actions > *,
+  .music-header-actions {
+    flex: 0 0 auto;
+  }
+
+  .music-header-actions {
+    position: static;
+    display: flex;
+    width: max-content;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    flex-wrap: nowrap;
+  }
+
+  .content-workbench .content-workbench-actions .draft-save-button,
   .music-header-actions .draft-save-button {
-    flex: 1 0 132px;
+    flex: 0 0 auto;
   }
 
   .content-workbench-tabs,

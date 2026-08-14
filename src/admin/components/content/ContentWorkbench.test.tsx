@@ -4,6 +4,31 @@ import { describe, expect, it } from "vitest";
 import ContentWorkbench from "./ContentWorkbench";
 
 describe("ContentWorkbench mobile rail", () => {
+  it("locks the real admin scroll container while the rail is open", () => {
+    const { container } = render(
+      <main className="cms-content">
+        <ContentWorkbench
+          rail={<div>Items</div>}
+          railLabel="Choose item"
+          identity={<div>Selected item</div>}
+          tabs={[{ id: "basic", label: "Basic" }]}
+          activeTab="basic"
+          onTabChange={() => {}}
+        >
+          <div>Editor</div>
+        </ContentWorkbench>
+      </main>,
+    );
+
+    const scrollContainer =
+      container.querySelector<HTMLElement>(".cms-content")!;
+    fireEvent.click(screen.getByRole("button", { name: "Choose item" }));
+    expect(scrollContainer.style.overflow).toBe("hidden");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(scrollContainer.style.overflow).toBe("");
+  });
+
   it("opens the compact item rail and returns focus when it closes", () => {
     const { container } = render(
       <ContentWorkbench

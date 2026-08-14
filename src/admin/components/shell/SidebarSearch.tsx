@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
@@ -22,6 +16,7 @@ interface SidebarSearchProps {
   artists: Artist[];
   content: SidebarSearchContent;
   canNavigate: () => boolean;
+  onNavigate?: () => void;
 }
 type ResultsPosition = {
   top: number;
@@ -34,6 +29,7 @@ export default function SidebarSearch({
   artists,
   content,
   canNavigate,
+  onNavigate,
 }: SidebarSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -163,6 +159,7 @@ export default function SidebarSearch({
         return;
       }
       router.push(url);
+      onNavigate?.();
       if (url.includes("settings?tab="))
         window.dispatchEvent(
           new CustomEvent("admin-settings-tab-change", {
@@ -179,7 +176,7 @@ export default function SidebarSearch({
       setIsOpen(false);
       setActiveIndex(-1);
     },
-    [canNavigate, pathname, router],
+    [canNavigate, onNavigate, pathname, router],
   );
 
   useEffect(() => {

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type MouseEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
@@ -23,6 +29,7 @@ interface ArtistNavGroupProps {
   pathname: string;
   artistLinks: ArtistLink[];
   isCollapsed?: boolean;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export default function ArtistNavGroup({
@@ -32,6 +39,7 @@ export default function ArtistNavGroup({
   pathname,
   artistLinks,
   isCollapsed = false,
+  onNavigate,
 }: ArtistNavGroupProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
@@ -119,6 +127,7 @@ export default function ArtistNavGroup({
                     ? "is-active"
                     : ""
                 }`}
+                onClick={onNavigate}
               >
                 {item.label}
               </Link>
@@ -153,7 +162,10 @@ export default function ArtistNavGroup({
                       ? "is-active"
                       : ""
                   }`}
-                  onClick={() => setIsHovered(false)}
+                  onClick={(event) => {
+                    setIsHovered(false);
+                    onNavigate?.(event);
+                  }}
                 >
                   {item.label}
                 </Link>

@@ -61,12 +61,17 @@ export default function ContentWorkbench<T extends string>({
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setRailOpen(false);
     };
+    const scrollContainer = document.querySelector<HTMLElement>(".cms-content");
     const originalOverflow = document.body.style.overflow;
+    const originalScrollOverflow = scrollContainer?.style.overflow;
     document.addEventListener("keydown", closeOnEscape);
     document.body.style.overflow = "hidden";
+    if (scrollContainer) scrollContainer.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", closeOnEscape);
       document.body.style.overflow = originalOverflow;
+      if (scrollContainer)
+        scrollContainer.style.overflow = originalScrollOverflow ?? "";
       railTrigger?.focus();
     };
   }, [railOpen]);

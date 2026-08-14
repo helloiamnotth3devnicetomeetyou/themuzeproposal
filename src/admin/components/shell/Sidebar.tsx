@@ -2,13 +2,8 @@
 
 import NextImage from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  X,
-} from "lucide-react";
+import { type MouseEventHandler, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
@@ -228,6 +223,12 @@ export default function Sidebar({
     window.location.assign("/login");
   };
 
+  const closeAfterNavigation: MouseEventHandler<HTMLAnchorElement> = (
+    event,
+  ) => {
+    if (!event.defaultPrevented) onClose?.();
+  };
+
   return (
     <aside
       id="admin-navigation"
@@ -241,6 +242,7 @@ export default function Sidebar({
               artists={artists}
               content={searchContent}
               canNavigate={canNavigate}
+              onNavigate={onClose}
             />
           </div>
         )}
@@ -279,6 +281,7 @@ export default function Sidebar({
         onArtistToggle={(artistId, isExpanded) =>
           setExpandedArtist(isExpanded ? "" : artistId)
         }
+        onNavigate={closeAfterNavigation}
       />
       <AdminOnboarding
         userId={profile?.id}

@@ -1,3 +1,4 @@
+import type { MouseEventHandler } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -91,6 +92,7 @@ type SidebarNavigationProps = {
   toggleGroup: (groupKey: string) => void;
   expandedArtist: string | null;
   onArtistToggle: (artistId: string, isExpanded: boolean) => void;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement>;
 };
 
 export default function SidebarNavigation({
@@ -103,6 +105,7 @@ export default function SidebarNavigation({
   toggleGroup,
   expandedArtist,
   onArtistToggle,
+  onNavigate,
 }: SidebarNavigationProps) {
   const isActive = (href: string) =>
     href === "/admin" ? pathname === href : pathname.startsWith(href);
@@ -116,6 +119,7 @@ export default function SidebarNavigation({
           href={item.href}
           title={item.label}
           className={`cms-nav-item ${isActive(item.href) ? "is-active" : ""}`}
+          onClick={onNavigate}
         >
           <span className="cms-nav-icon">
             <Icon aria-hidden="true" />
@@ -164,13 +168,17 @@ export default function SidebarNavigation({
                 href={item.href}
                 title={item.label}
                 className={`cms-nav-item ${isActive(item.href) ? "is-active" : ""}`}
+                onClick={onNavigate}
               >
                 <span className="cms-nav-icon">
                   <Icon aria-hidden="true" />
                 </span>
                 <span>{item.label}</span>
                 {count > 0 && (
-                  <span className="cms-nav-count" aria-label={`미확인 ${count}건`}>
+                  <span
+                    className="cms-nav-count"
+                    aria-label={`미확인 ${count}건`}
+                  >
                     {count > 99 ? "99+" : count}
                   </span>
                 )}
@@ -221,12 +229,16 @@ export default function SidebarNavigation({
             aria-expanded={!collapsedGroups.artist}
           >
             <p className="cms-nav-label">아티스트</p>
-            <ChevronDown className="cms-group-toggle-arrow" aria-hidden="true" />
+            <ChevronDown
+              className="cms-group-toggle-arrow"
+              aria-hidden="true"
+            />
           </button>
           {!isCollapsed && !collapsedGroups.artist && (
             <Link
               href="/admin/artists/new/profile"
               className="cms-add-artist"
+              onClick={onNavigate}
               aria-label="아티스트 추가"
             >
               <Plus aria-hidden="true" />
@@ -248,6 +260,7 @@ export default function SidebarNavigation({
                 pathname={pathname}
                 artistLinks={artistLinks}
                 isCollapsed={isCollapsed}
+                onNavigate={onNavigate}
               />
             );
           })}
@@ -255,6 +268,7 @@ export default function SidebarNavigation({
             <Link
               href="/admin/artists/new/profile"
               className="cms-empty-artist"
+              onClick={onNavigate}
             >
               첫 아티스트 추가하기
             </Link>
