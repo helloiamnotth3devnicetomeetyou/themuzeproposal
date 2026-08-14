@@ -22,7 +22,7 @@ export default async function LoginPage({
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (user) redirect(redirectTo);
 
   return (
