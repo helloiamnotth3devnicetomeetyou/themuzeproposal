@@ -20,6 +20,11 @@ insert into auth.users (id, email, encrypted_password, aud, role, raw_app_meta_d
 values ('70000000-0000-0000-0000-000000000001', 'audit-concurrency-admin@example.com', '', 'authenticated', 'authenticated', '{}'::jsonb, '{}'::jsonb, now(), now());
 update public.profiles set role = 'super_admin' where id = '70000000-0000-0000-0000-000000000001';
 select set_config('request.jwt.claims', '{"sub":"70000000-0000-0000-0000-000000000001","role":"authenticated"}', true);
+select set_config(
+  'test.home_hero_revision_updated_at',
+  (select updated_at::text from public.home_hero_slide_revisions where id),
+  true
+);
 set local role authenticated;
 
 do $$
@@ -27,7 +32,7 @@ begin
   begin
     perform public.save_home_hero_slide_video_checked(
       gen_random_uuid(), null,
-      (select updated_at - interval '1 microsecond' from public.home_hero_slide_revisions where id)
+      current_setting('test.home_hero_revision_updated_at')::timestamptz - interval '1 microsecond'
     );
     raise exception 'stale hero video save was accepted';
   exception when sqlstate 'P0003' then null;

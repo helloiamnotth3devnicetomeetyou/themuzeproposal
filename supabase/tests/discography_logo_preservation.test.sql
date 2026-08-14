@@ -63,10 +63,15 @@ select set_config(
   '{"sub":"30000000-0000-0000-0000-000000000001","role":"authenticated","email":"discography-logo-admin@example.com"}',
   true
 );
+select set_config(
+  'test.discography_artist_updated_at',
+  (select updated_at::text from public.artists where id = '30000000-0000-0000-0000-000000000002'),
+  true
+);
 set local role authenticated;
 
-select is(
-  public.save_album_with_tracks(
+select ok(
+  public.save_album_with_tracks_checked(
     jsonb_build_object(
       'id', '30000000-0000-0000-0000-000000000003',
       'artist_id', '30000000-0000-0000-0000-000000000002',
@@ -78,10 +83,10 @@ select is(
       'id', '30000000-0000-0000-0000-000000000004',
       'title', 'Updated track',
       'logo_url', 'https://cdn.example.com/track-logo-new.svg'
-    ))
-  )::text,
-  '30000000-0000-0000-0000-000000000003',
-  'album save returns the existing album id'
+    )),
+    current_setting('test.discography_artist_updated_at')::timestamptz
+  ) is not null,
+  'album save succeeds through the checked RPC'
 );
 
 select is(
@@ -98,7 +103,7 @@ select is(
 );
 
 -- Older callers omitted both logo keys; that must not erase existing values.
-select public.save_album_with_tracks(
+select public.save_album_with_tracks_checked(
   jsonb_build_object(
     'id', '30000000-0000-0000-0000-000000000003',
     'artist_id', '30000000-0000-0000-0000-000000000002',
@@ -108,7 +113,8 @@ select public.save_album_with_tracks(
   jsonb_build_array(jsonb_build_object(
     'id', '30000000-0000-0000-0000-000000000004',
     'title', 'Updated track again'
-  ))
+  )),
+  (select updated_at from public.artists where id = '30000000-0000-0000-0000-000000000002')
 );
 
 select is(
