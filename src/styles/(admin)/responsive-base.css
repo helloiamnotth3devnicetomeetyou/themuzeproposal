@@ -56,32 +56,77 @@
     overflow: visible;
   }
 
-  .content-workbench-rail,
-  .music-library {
-    width: 100%;
-    height: auto;
-    max-height: 244px;
-    flex: 0 0 auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--border-default);
-  }
-
-  .content-library-list,
-  .music-album-list {
-    min-height: 94px;
-    max-height: 136px;
-  }
-
-  .music-editor-shell > .content-workbench-rail {
-    height: auto;
+  .content-workbench > .content-workbench-rail {
+    position: fixed;
+    z-index: 320;
+    inset: 0;
+    display: flex;
+    width: 100vw;
+    height: 100dvh;
     max-height: none;
-    flex-basis: auto;
+    padding-top: calc(56px + env(safe-area-inset-top));
+    border: 0;
+    border-radius: 0;
+    background: var(--bg-elevated);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease,
+      visibility 0s linear 160ms;
   }
 
-  .music-album-list,
-  .notice-library-list {
-    min-height: 220px;
-    max-height: min(42dvh, 360px);
+  .content-workbench.is-rail-open > .content-workbench-rail {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+  }
+
+  .content-workbench.is-rail-open
+    :is(.content-library-list, .music-album-list, .settings-rail-nav) {
+    min-height: 0;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .content-workbench-rail :is(.content-rail-heading, .music-library-heading) {
+    align-items: center;
+    padding: 12px var(--page-gutter);
+  }
+
+  .content-workbench-rail :is(.content-rail-tools, .music-library-tools) {
+    padding: 0 var(--page-gutter) 12px;
+  }
+
+  .content-workbench-rail
+    :is(.content-library-list, .music-album-list, .settings-rail-nav) {
+    padding: 8px var(--page-gutter) calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .content-workbench-rail
+    :is(.content-library-item, .music-album-item, .settings-rail-nav button) {
+    min-height: 68px;
+  }
+
+  .settings-workbench .settings-rail-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .settings-workbench .settings-rail-nav button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    justify-content: initial;
+  }
+
+  .settings-workbench .settings-rail-nav button > div {
+    display: block;
   }
 
   .content-workbench-stage,

@@ -118,7 +118,7 @@ export default function DiscographyAdmin() {
     },
   ];
 
-  const rail = (
+  const rail = (closeRail: () => void) => (
     <DiscographyContextRail
       albums={albums}
       draft={draft}
@@ -127,16 +127,29 @@ export default function DiscographyAdmin() {
       filter={filter}
       sorting={sorting}
       sortDirty={sortDirty}
-      onAddAlbum={addAlbum}
+      onAddAlbum={() =>
+        void addAlbum().then((created) => {
+          if (created) closeRail();
+        })
+      }
       onSearchChange={setSearch}
       onFilterChange={setFilter}
       onToggleSorting={() => {
         setSorting((value) => !value);
-        setSortDirty(false);
+        if (!sorting) setSortDirty(false);
       }}
       onDragAlbum={setDragAlbum}
       onReorderAlbum={reorderAlbum}
-      onSelectAlbum={selectAlbum}
+      onSaveOrder={() =>
+        void saveOrder().then((saved) => {
+          if (saved) closeRail();
+        })
+      }
+      onSelectAlbum={(album) =>
+        void selectAlbum(album).then((selected) => {
+          if (selected) closeRail();
+        })
+      }
     />
   );
 

@@ -66,7 +66,7 @@ export default function NoticeManager({
   if (loading)
     return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
-  const rail = (
+  const rail = (closeRail: () => void) => (
     <NoticeManagerRail
       scopeArtistId={scopeArtistId}
       scopeName={scopeName}
@@ -74,10 +74,18 @@ export default function NoticeManager({
       draft={draft}
       search={search}
       filter={filter}
-      onAdd={() => void addNotice()}
+      onAdd={() =>
+        void addNotice().then((created) => {
+          if (created) closeRail();
+        })
+      }
       onSearchChange={setSearch}
       onFilterChange={setFilter}
-      onSelect={(notice) => void selectNotice(notice)}
+      onSelect={(notice) =>
+        void selectNotice(notice).then((selected) => {
+          if (selected) closeRail();
+        })
+      }
     />
   );
 

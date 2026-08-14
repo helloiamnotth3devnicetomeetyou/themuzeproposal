@@ -98,9 +98,9 @@ export default function useNoticeManager({
   });
   const canSave = Boolean(
     draft?.titleKo.trim() &&
-      hasRichTextContent(draft.contentKo) &&
-      draft.categoryKo.trim() &&
-      draft.date,
+    hasRichTextContent(draft.contentKo) &&
+    draft.categoryKo.trim() &&
+    draft.date,
   );
   const categoryOptions = useMemo(
     () => [
@@ -271,13 +271,14 @@ export default function useNoticeManager({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     const nextDraft = fromNotice(notice);
     setDraft(nextDraft);
     setPendingDelete(false);
     setSnapshot(JSON.stringify(nextDraft));
     setTab("content");
     setError("");
+    return true;
   };
 
   const addNotice = async () => {
@@ -291,13 +292,14 @@ export default function useNoticeManager({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     const nextDraft = emptyNotice();
     setDraft(nextDraft);
     setPendingDelete(false);
     setSnapshot(JSON.stringify(nextDraft));
     setTab("content");
     setError("");
+    return true;
   };
 
   const saveNotice = async () => {
@@ -355,7 +357,10 @@ export default function useNoticeManager({
           .from("notices")
           .update(payload)
           .eq("id", draft.id)
-          .eq("updated_at", notices.find((notice) => notice.id === draft.id)?.updated_at ?? "")
+          .eq(
+            "updated_at",
+            notices.find((notice) => notice.id === draft.id)?.updated_at ?? "",
+          )
           .select("id")
           .single()
       : await supabase.from("notices").insert(payload).select("id").single();

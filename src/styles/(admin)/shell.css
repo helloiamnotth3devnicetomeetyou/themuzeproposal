@@ -337,6 +337,10 @@
 }
 
 @media (max-width: 767px) {
+  .admin-mobile-menu-button {
+    visibility: hidden;
+  }
+
   .admin-mobile-bottom-nav {
     position: fixed;
     z-index: 60;

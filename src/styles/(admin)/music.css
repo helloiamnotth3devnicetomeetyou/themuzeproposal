@@ -129,6 +129,13 @@
   text-align: left;
   cursor: pointer;
 }
+.music-album-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.music-album-move-controls {
+  display: none;
+}
 .music-album-item:hover {
   background: var(--bg-subtle);
 }
@@ -196,6 +203,47 @@
   justify-content: flex-end;
   padding: 12px;
   border-top: 1px solid var(--border-default);
+}
+.music-order-footer .admin-btn {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .music-album-row.is-sorting {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 6px;
+  }
+  .music-album-item.is-sorting {
+    grid-template-columns: 20px 42px minmax(0, 1fr);
+  }
+  .music-album-item.is-sorting .cms-status {
+    display: none;
+  }
+  .music-album-move-controls {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 4px;
+  }
+  .music-album-move-controls button {
+    display: grid;
+    min-height: 32px;
+    place-items: center;
+    border: 1px solid var(--border-default);
+    border-radius: 7px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+  }
+  .music-album-move-controls button:disabled {
+    opacity: 0.28;
+  }
+  .music-album-move-controls svg {
+    width: 16px;
+    height: 16px;
+  }
+  .music-order-footer {
+    padding: 10px var(--page-gutter) calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg-elevated);
+  }
 }
 .music-empty {
   display: flex;

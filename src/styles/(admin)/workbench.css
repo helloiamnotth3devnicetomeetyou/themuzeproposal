@@ -1224,6 +1224,44 @@
     transform: translateY(0);
     transition-delay: 0s;
   }
+  .notice-workbench > .content-workbench-rail {
+    top: 0;
+    height: 100dvh;
+    padding-top: 60px;
+    border-radius: 0;
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease,
+      visibility 0s linear 160ms;
+  }
+  .notice-workbench.is-rail-open > .content-workbench-rail {
+    position: fixed;
+    z-index: 320;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    padding-top: calc(60px + env(safe-area-inset-top));
+    border-radius: 0;
+    overflow: hidden;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+  .notice-workbench.is-rail-open .notice-library-list {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
   .content-workbench-stage {
     height: auto;
     min-height: 100dvh;
@@ -1250,7 +1288,7 @@
   .content-mobile-rail-close {
     position: absolute;
     z-index: 1;
-    top: 8px;
+    top: calc(8px + env(safe-area-inset-top));
     right: var(--page-gutter);
     display: grid;
     width: 40px;
@@ -1343,4 +1381,148 @@
   color: var(--palette-17241b);
   font: inherit;
   cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .notice-workbench .content-workbench-header {
+    display: grid;
+    position: static;
+    min-height: 66px;
+    grid-template-areas:
+      "identity selector"
+      "actions actions";
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px var(--page-gutter);
+  }
+
+  .notice-workbench .content-workbench-identity {
+    grid-area: identity;
+  }
+
+  .notice-workbench .notice-identity-date {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .notice-workbench .notice-identity-date b {
+    font-size: 14px;
+  }
+
+  .notice-workbench .content-identity-copy h2 {
+    margin-top: 4px;
+    font-size: 15px;
+  }
+
+  .notice-workbench .content-mobile-rail-trigger {
+    grid-area: selector;
+    min-height: 42px;
+  }
+
+  .notice-workbench .content-workbench-actions {
+    position: static;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 0 2px;
+    flex-wrap: nowrap;
+    grid-area: actions;
+    scrollbar-width: none;
+  }
+
+  .notice-workbench .content-workbench-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notice-workbench .content-workbench-actions :where(button, a) {
+    flex: 0 0 auto;
+  }
+
+  .notice-workbench .content-workbench-actions .draft-save-button {
+    order: -1;
+  }
+
+  .notice-workbench .content-workbench-body {
+    padding-bottom: calc(24px + var(--admin-mobile-nav-clearance, 64px));
+  }
+
+  .notice-workbench .content-workbench-tabs {
+    position: static;
+    background: var(--bg-card);
+  }
+
+  .notice-workbench > .content-workbench-rail {
+    padding-top: calc(56px + env(safe-area-inset-top));
+  }
+
+  .notice-workbench .content-rail-heading {
+    align-items: center;
+    padding: 12px var(--page-gutter);
+  }
+
+  .notice-workbench .content-rail-tools {
+    padding: 0 var(--page-gutter) 12px;
+  }
+
+  .notice-workbench .notice-library-list {
+    padding: 8px var(--page-gutter) calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .notice-workbench .notice-library-item {
+    min-height: 68px;
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
+  }
+
+  .notice-workbench .notice-library-item.is-selected {
+    border-color: var(--border-default);
+    border-radius: 8px;
+  }
+
+  .notice-workbench .content-editor-stack {
+    gap: 16px;
+  }
+
+  .notice-workbench .content-section-heading {
+    gap: 2px;
+  }
+
+  .notice-workbench .content-section-heading h3 {
+    font-size: 15px;
+  }
+
+  .notice-workbench .content-section-heading > span {
+    display: none;
+  }
+
+  .notice-workbench .music-field,
+  .notice-workbench .desk-translatable-field {
+    gap: 5px;
+  }
+
+  .notice-workbench .content-field-short {
+    max-width: 168px;
+  }
+
+  .notice-workbench .rich-text-field {
+    gap: 6px;
+  }
+
+  .notice-workbench .rich-text-toolbar {
+    min-height: 42px;
+    padding-inline: 7px;
+  }
+
+  .notice-workbench .rich-text-toolbar button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .notice-workbench .rich-text-editor {
+    min-height: 180px;
+    padding: 14px;
+  }
 }

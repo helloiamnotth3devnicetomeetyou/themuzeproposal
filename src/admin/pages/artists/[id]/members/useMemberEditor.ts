@@ -78,10 +78,10 @@ export function useMemberEditor({
 
   const canSave = Boolean(
     draft?.name.trim() &&
-      draft.engName.trim() &&
-      toMemberSlug(draft.engName) &&
-      /^#[0-9a-f]{6}$/i.test(draft.color) &&
-      !hasInvalidSocialLinks(draft.socialLinks),
+    draft.engName.trim() &&
+    toMemberSlug(draft.engName) &&
+    /^#[0-9a-f]{6}$/i.test(draft.color) &&
+    !hasInvalidSocialLinks(draft.socialLinks),
   );
   const previewMemberSlug = draft ? toMemberSlug(draft.engName) : "";
   const previewMemberId = draft?.id || newMemberId || "";
@@ -215,7 +215,7 @@ export function useMemberEditor({
   }, [dirty, sortDirty]);
 
   const selectMember = async (member: Member) => {
-    if (sorting) return;
+    if (sorting) return false;
     if (
       (dirty || pendingDelete) &&
       !(await requestConfirm({
@@ -226,7 +226,7 @@ export function useMemberEditor({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     const nextDraft = memberToDraft(member);
     await discardQueuedUploads();
     setNewMemberId(null);
@@ -235,6 +235,7 @@ export function useMemberEditor({
     setSnapshot(JSON.stringify(nextDraft));
     setTab("basic");
     setError("");
+    return true;
   };
 
   const addMember = async () => {
@@ -248,7 +249,7 @@ export function useMemberEditor({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     setNewMemberId(crypto.randomUUID());
     await discardQueuedUploads();
     setDraft({ ...EMPTY_MEMBER });
@@ -258,6 +259,7 @@ export function useMemberEditor({
     setError("");
     setSorting(false);
     setSortDirty(false);
+    return true;
   };
 
   const saveMember = async () => {
@@ -296,7 +298,10 @@ export function useMemberEditor({
           .from("artist_members")
           .update(payload)
           .eq("id", draft.id)
-          .eq("updated_at", members.find((member) => member.id === draft.id)?.updated_at ?? "")
+          .eq(
+            "updated_at",
+            members.find((member) => member.id === draft.id)?.updated_at ?? "",
+          )
           .select("id")
           .single()
       : await supabase
@@ -324,7 +329,9 @@ export function useMemberEditor({
       setSaving(false);
       return;
     }
-    setToast(draft.id ? "멤버 정보를 저장했습니다." : "새 멤버를 추가했습니다.");
+    setToast(
+      draft.id ? "멤버 정보를 저장했습니다." : "새 멤버를 추가했습니다.",
+    );
     discardDraftBackup();
     await loadMembers(result.data.id);
     await finalizeDraftImageAssets(

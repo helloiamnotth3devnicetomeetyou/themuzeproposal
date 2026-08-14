@@ -197,7 +197,7 @@ export default function ArtistScheduleAdminPage() {
         confirmLabel: "전환",
       }))
     )
-      return;
+      return false;
     const next = scheduleToDraft(item);
     setPendingDelete(false);
     setDraft(next);
@@ -205,6 +205,7 @@ export default function ArtistScheduleAdminPage() {
     setCalendarMonth(monthFromDateKey(item.event_date));
     setTab("details");
     setError("");
+    return true;
   };
   const moveMonth = (offset: number) =>
     setCalendarMonth(
@@ -315,7 +316,10 @@ export default function ArtistScheduleAdminPage() {
           .from("artist_schedules")
           .update(payload)
           .eq("id", draft.id)
-          .eq("updated_at", items.find((item) => item.id === draft.id)?.updated_at ?? "")
+          .eq(
+            "updated_at",
+            items.find((item) => item.id === draft.id)?.updated_at ?? "",
+          )
           .select("id")
           .single()
       : await supabase
@@ -382,14 +386,21 @@ export default function ArtistScheduleAdminPage() {
   if (loading)
     return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
-  const rail = (
+  const rail = (closeRail: () => void) => (
     <ScheduleLibraryRail
       artistName={artistName}
       calendarTitle={calendarTitle}
       monthItems={monthItems}
       draft={draft}
-      onAdd={() => add()}
-      onSelect={select}
+      onAdd={() => {
+        add();
+        closeRail();
+      }}
+      onSelect={(item) =>
+        void select(item).then((selected) => {
+          if (selected) closeRail();
+        })
+      }
     />
   );
   const identity = <ScheduleIdentity artistName={artistName} draft={draft} />;

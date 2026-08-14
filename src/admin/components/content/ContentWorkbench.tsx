@@ -13,7 +13,7 @@ export type WorkbenchTab<T extends string = string> = {
 };
 
 type ContentWorkbenchProps<T extends string> = {
-  rail: ReactNode;
+  rail: ReactNode | ((closeRail: () => void) => ReactNode);
   identity: ReactNode;
   actions?: ReactNode;
   toolbar?: ReactNode;
@@ -71,6 +71,9 @@ export default function ContentWorkbench<T extends string>({
     };
   }, [railOpen]);
 
+  const railContent =
+    typeof rail === "function" ? rail(() => setRailOpen(false)) : rail;
+
   return (
     <div
       className={`content-workbench ${className}${railOpen ? " is-rail-open" : ""}`.trim()}
@@ -94,7 +97,7 @@ export default function ContentWorkbench<T extends string>({
             <X aria-hidden="true" />
           </button>
         )}
-        {rail}
+        {railContent}
       </aside>
       <section className="content-workbench-stage">
         {recovery && (

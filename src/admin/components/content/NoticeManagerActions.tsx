@@ -1,8 +1,7 @@
 "use client";
 
-import { Copy } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
-import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import PreviewButton from "@/admin/components/content/PreviewButton";
 import type { NoticeDraft } from "./notice-editor-model";
 
@@ -60,10 +59,15 @@ export default function NoticeManagerActions({
         </button>
       )}
       {draft.id && (
-        <OverflowDeleteMenu
-          onDelete={onDelete}
-          deleteLabel={pendingDelete ? "삭제 취소" : "삭제"}
-        />
+        <button
+          type="button"
+          data-tour-id="entity-delete"
+          className="admin-btn admin-btn-secondary notice-delete-button"
+          onClick={onDelete}
+        >
+          <Trash2 aria-hidden="true" />
+          {pendingDelete ? "삭제 취소" : "삭제"}
+        </button>
       )}
       <DraftSaveButton
         snapshot={snapshot}

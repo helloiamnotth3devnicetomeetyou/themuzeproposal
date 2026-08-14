@@ -258,7 +258,7 @@ export function useDiscographyEditor({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     await discardQueuedUploads();
     setPendingDelete(false);
     setDraft(album);
@@ -267,10 +267,11 @@ export function useDiscographyEditor({
     setError("");
     setExpandedTrack(null);
     syncUrl(album.id, "basic");
+    return true;
   };
 
   const addAlbum = async () => {
-    if (!artistId) return;
+    if (!artistId) return false;
     if (
       (dirty || pendingDelete) &&
       !(await requestConfirm({
@@ -281,7 +282,7 @@ export function useDiscographyEditor({
         tone: "danger",
       }))
     )
-      return;
+      return false;
     await discardQueuedUploads();
     const next = createAlbumDraft(
       artistId,
@@ -293,6 +294,7 @@ export function useDiscographyEditor({
     setTab("basic");
     setExpandedTrack(null);
     syncUrl(next.id, "basic");
+    return true;
   };
 
   const changeTab = (next: EditorTab) => {
@@ -338,7 +340,11 @@ export function useDiscographyEditor({
     }));
     const { data, error: saveError } = await supabase.rpc(
       "save_album_with_tracks_checked",
-      { p_album: albumPayload, p_tracks: localizedTracks, p_expected_updated_at: artistRevision },
+      {
+        p_album: albumPayload,
+        p_tracks: localizedTracks,
+        p_expected_updated_at: artistRevision,
+      },
     );
     if (saveError) {
       if (saveError.code === "P0003") void loadAlbums(draft.id);
@@ -393,11 +399,11 @@ export function useDiscographyEditor({
     await loadAlbums();
   };
 
-  const reorderAlbum = (targetId: string) => {
-    if (!dragAlbum || dragAlbum === targetId) return;
+  const reorderAlbum = (targetId: string, sourceId = dragAlbum) => {
+    if (!sourceId || sourceId === targetId) return;
     setAlbums((current) => {
       const next = [...current];
-      const from = next.findIndex((album) => album.id === dragAlbum);
+      const from = next.findIndex((album) => album.id === sourceId);
       const to = next.findIndex((album) => album.id === targetId);
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved);
@@ -410,14 +416,18 @@ export function useDiscographyEditor({
     );
   };
   const saveOrder = async () => {
-    const { data, error: orderError } = await supabase.rpc("reorder_albums_checked", {
-      p_artist_id: artistId,
-      p_album_ids: albums.map((album) => album.id),
-      p_expected_updated_at: artistRevision,
-    });
+    const { data, error: orderError } = await supabase.rpc(
+      "reorder_albums_checked",
+      {
+        p_artist_id: artistId,
+        p_album_ids: albums.map((album) => album.id),
+        p_expected_updated_at: artistRevision,
+      },
+    );
     if (orderError) {
       if (orderError.code === "P0003") void loadAlbums();
-      return setError(orderError.message);
+      setError(orderError.message);
+      return false;
     }
     setArtistRevision(data as string);
     setSortDirty(false);
@@ -425,6 +435,7 @@ export function useDiscographyEditor({
     setToast("앨범 순서를 저장했습니다.");
     await revalidatePublicCache("public-home-slides", "public-discography");
     await loadAlbums(draft?.id);
+    return true;
   };
   const reorderTrack = (targetId: string) => {
     if (!draft || !dragTrack || dragTrack === targetId) return;

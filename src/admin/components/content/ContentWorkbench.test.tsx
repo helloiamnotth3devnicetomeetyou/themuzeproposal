@@ -27,4 +27,27 @@ describe("ContentWorkbench mobile rail", () => {
     expect(container.firstElementChild).not.toHaveClass("is-rail-open");
     expect(document.activeElement).toBe(trigger);
   });
+
+  it("lets a selected rail item close the mobile rail", () => {
+    const { container } = render(
+      <ContentWorkbench
+        rail={(closeRail) => (
+          <button type="button" onClick={closeRail}>
+            Select item
+          </button>
+        )}
+        railLabel="Item list"
+        identity={<div>Selected item</div>}
+        tabs={[{ id: "basic", label: "Basic" }]}
+        activeTab="basic"
+        onTabChange={() => {}}
+      >
+        <div>Editor</div>
+      </ContentWorkbench>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Item list" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select item" }));
+    expect(container.firstElementChild).not.toHaveClass("is-rail-open");
+  });
 });

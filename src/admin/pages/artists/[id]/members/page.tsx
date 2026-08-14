@@ -82,21 +82,29 @@ export default function ArtistMembersAdmin() {
   return (
     <>
       <ContentWorkbench
-        rail={
+        rail={(closeRail) => (
           <MemberLibraryRail
             draft={draft}
             members={members}
             sorting={sorting}
             sortDirty={sortDirty}
-            onAdd={() => void addMember()}
-            onSelect={(member) => void selectMember(member)}
+            onAdd={() =>
+              void addMember().then((created) => {
+                if (created) closeRail();
+              })
+            }
+            onSelect={(member) =>
+              void selectMember(member).then((selected) => {
+                if (selected) closeRail();
+              })
+            }
             onReorder={reorderMembers}
             onToggleSorting={() => {
               setSorting((value) => !value);
               setSortDirty(false);
             }}
           />
-        }
+        )}
         railLabel="멤버 선택"
         identity={<MemberIdentity draft={draft} artistName={artistName} />}
         actions={

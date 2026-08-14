@@ -51,9 +51,9 @@ export default function SettingsAdmin({
 
   const companyReady = Boolean(
     company.email.trim() ||
-      company.address_ko.trim() ||
-      company.address_en.trim() ||
-      company.address_ja.trim(),
+    company.address_ko.trim() ||
+    company.address_en.trim() ||
+    company.address_ja.trim(),
   );
   const footerReady = Boolean(footer.copyright.trim());
   const businessReady = Boolean(business.pressKitUrl || business.profilePdfUrl);
@@ -72,10 +72,13 @@ export default function SettingsAdmin({
 
   return (
     <ContentWorkbench
-      rail={
+      rail={(closeRail) => (
         <SettingsRail
           tab={tab}
-          onTabChange={setTab}
+          onTabChange={(nextTab) => {
+            setTab(nextTab);
+            closeRail();
+          }}
           dirty={dirty}
           companyReady={companyReady}
           historyCount={history.length}
@@ -86,7 +89,7 @@ export default function SettingsAdmin({
           avatarDirty={avatarDirty}
           isSuperAdmin={isSuperAdmin}
         />
-      }
+      )}
       railLabel="설정 선택"
       identity={
         <>
