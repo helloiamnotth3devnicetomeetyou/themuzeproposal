@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "");
@@ -62,6 +63,12 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 80, 85, 90],
     remotePatterns: imageRemotePatterns,
+  },
+  webpack: (config) => {
+    // ponytail: proxy.ts / root error.tsx / not-found don't reliably inherit
+    // tsconfig `paths` on `next build --webpack` (Next 16, vercel/next.js#85513).
+    config.resolve.alias["@"] = path.resolve(__dirname, "src");
+    return config;
   },
 };
 
