@@ -146,7 +146,7 @@ describe("DiscographyAdmin", () => {
     fireEvent.click(save);
     await vi.waitFor(() =>
       expect(mocks.rpc).toHaveBeenCalledWith(
-        "save_album_with_tracks",
+        "save_album_with_tracks_checked",
         expect.any(Object),
       ),
     );
