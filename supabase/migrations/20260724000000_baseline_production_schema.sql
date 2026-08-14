@@ -73,20 +73,6 @@ $$;
 ALTER FUNCTION "public"."create_profile_for_new_user"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, is_admin)
-  VALUES (NEW.id, NEW.email, TRUE); -- Set TRUE to make signups admin by default for development. Change to FALSE if needed.
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."is_admin"() RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1215,9 +1201,6 @@ GRANT ALL ON FUNCTION "public"."create_profile_for_new_user"() TO "service_role"
 
 
 
-GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
-GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 
 

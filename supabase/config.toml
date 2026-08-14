@@ -70,6 +70,8 @@ enabled = true
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed.sql"]
 
+# LOCAL DEVELOPMENT ONLY. Do not reuse this file for production:
+# the local defaults below intentionally allow every IP.
 [db.network_restrictions]
 # Enable management of network restrictions.
 enabled = false
