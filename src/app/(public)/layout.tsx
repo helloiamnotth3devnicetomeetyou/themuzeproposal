@@ -2,7 +2,7 @@ import MainLayout from "@/public/components/layout/SiteLayout";
 import {
   getCachedNavigationArtists,
   getCachedSiteSettings,
-  getNavigationAccount,
+  anonymousNavigationAccount,
 } from "@/public/features/layout/server";
 
 export default async function PublicLayout({
@@ -10,17 +10,16 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [initialArtists, initialSettings, initialAccount] = await Promise.all([
+  const [initialArtists, initialSettings] = await Promise.all([
     getCachedNavigationArtists(),
     getCachedSiteSettings(),
-    getNavigationAccount(),
   ]);
 
   return (
     <MainLayout
       initialArtists={initialArtists}
       initialSettings={initialSettings}
-      initialAccount={initialAccount}
+      initialAccount={anonymousNavigationAccount}
     >
       {children}
     </MainLayout>

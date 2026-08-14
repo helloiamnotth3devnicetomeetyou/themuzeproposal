@@ -15,6 +15,14 @@ import { normalizeSiteSettings } from "@/public/features/settings/data";
 
 const { url, anonKey, projectRef } = getPublicSupabaseConfig();
 
+export const anonymousNavigationAccount: NavigationAccount = {
+  isLoggedIn: false,
+  isAdmin: false,
+  avatarUrl: null,
+  initial: "A",
+  name: "관리자",
+};
+
 function createPublicClient() {
   return createClient(url, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -54,27 +62,13 @@ export async function getNavigationAccount(): Promise<NavigationAccount> {
   const hasAuthCookie = (await cookies())
     .getAll()
     .some(({ name }) => name.startsWith(`sb-${projectRef}-auth-token`));
-  if (!hasAuthCookie)
-    return {
-      isLoggedIn: false,
-      isAdmin: false,
-      avatarUrl: null,
-      initial: "A",
-      name: "관리자",
-    };
+  if (!hasAuthCookie) return anonymousNavigationAccount;
 
   const client = await createSupabaseServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();
-  if (!user)
-    return {
-      isLoggedIn: false,
-      isAdmin: false,
-      avatarUrl: null,
-      initial: "A",
-      name: "관리자",
-    };
+  if (!user) return anonymousNavigationAccount;
 
   const fallbackName =
     user.user_metadata?.name?.trim() || user.email?.split("@")[0] || "관리자";

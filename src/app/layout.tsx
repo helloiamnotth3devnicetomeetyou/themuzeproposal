@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
-import { cookies } from "next/headers";
+import Script from "next/script";
 import "@/styles/(core)/globals.css";
-import { LocaleProvider, type Locale } from "@/core/providers/LocaleContext";
-import { ThemeProvider, type Theme } from "@/core/providers/ThemeContext";
+import { LocaleProvider } from "@/core/providers/LocaleContext";
+import { ThemeProvider } from "@/core/providers/ThemeContext";
 import { getSiteUrl } from "@/core/config/public-env";
 import { getPublicAssetOrigin } from "@/core/storage/public-url";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/core/seo/metadata";
@@ -27,27 +26,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  await connection();
-  const cookieStore = await cookies();
-  const cookieLocale = cookieStore.get("muze-locale")?.value;
-  const cookieTheme = cookieStore.get("muze-theme")?.value;
-  const initialLocale: Locale =
-    cookieLocale === "ko" || cookieLocale === "en" || cookieLocale === "ja"
-      ? cookieLocale
-      : "ko";
-  const initialTheme: Theme =
-    cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "dark";
-
   return (
     <html
-      lang={initialLocale}
-      data-theme={initialTheme}
+      lang="ko"
+      data-theme="dark"
       className="h-full antialiased"
+      suppressHydrationWarning
     >
       <head>
+        <Script src="/theme-bootstrap.js" strategy="beforeInteractive" />
         <link
           rel="preconnect"
           href={getPublicAssetOrigin()}
@@ -77,8 +67,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider initialTheme={initialTheme}>
-          <LocaleProvider initialLocale={initialLocale}>
+        <ThemeProvider initialTheme="dark">
+          <LocaleProvider initialLocale="ko">
             <SkipLink />
             {false && <DisclaimerBanner />}
             {children}

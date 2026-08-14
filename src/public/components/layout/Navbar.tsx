@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { localizeText } from "@/core/i18n/localized";
 import { useTheme } from "@/core/providers/ThemeContext";
@@ -20,12 +20,13 @@ export default function Navbar({
   const { locale, t } = useLocale();
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
-  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
   const [mobileOpenArtist, setMobileOpenArtist] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileNav, setIsMobileNav] = useState(false);
+  const [account, setAccount] = useState(initialAccount);
+  const [authReady, setAuthReady] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isDark = theme === "dark";
@@ -48,14 +49,27 @@ export default function Navbar({
     return () => media.removeEventListener("change", sync);
   }, []);
   useEffect(() => {
-    const refreshAccount = () => router.refresh();
+    let active = true;
+    const refreshAccount = async () => {
+      setAuthReady(false);
+      try {
+        const response = await fetch("/api/navigation/account", {
+          cache: "no-store",
+        });
+        if (response.ok && active) setAccount(await response.json());
+      } finally {
+        if (active) setAuthReady(true);
+      }
+    };
+    void refreshAccount();
     window.addEventListener("account-avatar-changed", refreshAccount);
     window.addEventListener("account-profile-changed", refreshAccount);
     return () => {
+      active = false;
       window.removeEventListener("account-avatar-changed", refreshAccount);
       window.removeEventListener("account-profile-changed", refreshAccount);
     };
-  }, [router]);
+  }, []);
   useEffect(() => {
     if (!isMobileMenuOpen) return;
     const previousOverflow = document.body.style.overflow;
@@ -132,12 +146,12 @@ export default function Navbar({
   const shared = {
     artists: localizedArtists,
     pathname,
-    isAdmin: initialAccount.isAdmin,
-    isLoggedIn: initialAccount.isLoggedIn,
-    authReady: true,
-    accountAvatarUrl: initialAccount.avatarUrl,
-    accountInitial: initialAccount.initial,
-    accountName: initialAccount.name,
+    isAdmin: account.isAdmin,
+    isLoggedIn: account.isLoggedIn,
+    authReady,
+    accountAvatarUrl: account.avatarUrl,
+    accountInitial: account.initial,
+    accountName: account.name,
     isDark,
     t,
     onToggleTheme: toggleTheme,
