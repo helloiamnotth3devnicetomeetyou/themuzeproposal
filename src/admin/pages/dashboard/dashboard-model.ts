@@ -9,6 +9,30 @@ export type RecentItem = {
   published?: boolean;
 };
 
+export type DashboardStats = {
+  albums: number;
+  notices: number;
+  auditionPending: number;
+  contactPending: number;
+  protectActive: number;
+  albumsPublished: number;
+  albumsDraft: number;
+  noticesPublished: number;
+  noticesDraft: number;
+};
+
+export const emptyDashboardStats: DashboardStats = {
+  albums: 0,
+  notices: 0,
+  auditionPending: 0,
+  contactPending: 0,
+  protectActive: 0,
+  albumsPublished: 0,
+  albumsDraft: 0,
+  noticesPublished: 0,
+  noticesDraft: 0,
+};
+
 export type PageStatPoint = {
   timestamp: string;
   pageviews: number;

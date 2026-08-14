@@ -1,50 +1,26 @@
 "use client";
 
-import { SCHEDULE_CATEGORY_COLORS } from "@/core/utils/design-tokens";
-
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import type { IconType } from "react-icons";
-import {
-  Cake,
-  CalendarPlus,
-  ChevronLeft,
-  ChevronRight,
-  Disc3,
-  PartyPopper,
-  Radio,
-} from "lucide-react";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { localizeText, localeTags } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
 import { supabase } from "@/core/supabase/client";
-import { safeHref } from "@/core/http/safe-href";
-import styles from "@/styles/(public)/pages/artist-schedule.module.css";
 import type {
   Category,
   PublicScheduleData,
   ScheduleRow,
 } from "./schedule-types";
+import { ScheduleCalendar, ScheduleList } from "./schedule-view";
+import { dateAtLocalMidnight } from "./schedule-utils";
+import styles from "@/styles/(public)/pages/artist-schedule.module.css";
 
-const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
-  show: { icon: Radio, color: SCHEDULE_CATEGORY_COLORS.show },
-  release: { icon: Disc3, color: SCHEDULE_CATEGORY_COLORS.release },
-  anniversary: { icon: Cake, color: SCHEDULE_CATEGORY_COLORS.anniversary },
-  event: { icon: PartyPopper, color: SCHEDULE_CATEGORY_COLORS.event },
-  etc: { icon: CalendarPlus, color: SCHEDULE_CATEGORY_COLORS.etc },
-};
+export { daysUntil } from "./schedule-utils";
+
 const PAGE_SIZE = 5;
-const dateAtLocalMidnight = (value: string) => new Date(`${value}T00:00:00`);
-export const daysUntil = (value: string, referenceDate = new Date()) => {
-  const today = new Date(referenceDate);
-  today.setHours(0, 0, 0, 0);
-  return Math.round(
-    (dateAtLocalMidnight(value).getTime() - today.getTime()) / 86_400_000,
-  );
-};
 
 export default function ArtistSchedulePage({
   initialData = null,
@@ -61,7 +37,11 @@ export default function ArtistSchedulePage({
 
   const [today, setToday] = useState(() => {
     const current = new Date();
-    return new Date(current.getFullYear(), current.getMonth(), current.getDate());
+    return new Date(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate(),
+    );
   });
   const [cursor, setCursor] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -336,14 +316,15 @@ export default function ArtistSchedulePage({
     );
     setPage(0);
   };
-  const moveYear = (amount: number) =>
-    changeCursor(new Date(cursor.getFullYear() + amount, cursor.getMonth(), 1));
   const goToday = () =>
     changeCursor(new Date(today.getFullYear(), today.getMonth(), 1));
-  const eventsOnDay = (day: number) =>
-    monthEvents.filter(
-      (event) => dateAtLocalMidnight(event.event_date).getDate() === day,
-    );
+  const selectEvent = (id: string) =>
+    setSelectedEventId((current) => (current === id ? null : id));
+  const selectDate = (dateKey: string) => {
+    setSelectedDate((current) => (current === dateKey ? null : dateKey));
+    setPage(0);
+    setSelectedEventId(null);
+  };
 
   if (loading)
     return (
@@ -358,257 +339,42 @@ export default function ArtistSchedulePage({
       style={{ "--artist-color": artistColor } as CSSProperties}
     >
       <div className={styles.layout}>
-        <section className={styles.listPanel} aria-labelledby="schedule-title">
-          <h1 id="schedule-title" className={styles.heading}>
-            SCHEDULE
-          </h1>
-          {error && (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          )}
-          <div
-            className={`${styles.list} ${selectedDate ? styles.listFiltered : ""}`}
-            aria-live="polite"
-          >
-            {visibleEvents.map((event) => {
-              const date = dateAtLocalMidnight(event.event_date);
-              const remaining = daysUntil(event.event_date, today);
-              const category = CATEGORIES[event.category] || CATEGORIES.etc;
-              const CategoryIcon = category.icon;
-              const eventStyle = {
-                "--event-color": category.color,
-              } as CSSProperties;
-              const isPast = remaining < 0;
-              const href = safeHref(event.link_url);
-              const isSelected = selectedEventId === event.id;
-              return (
-                <article
-                  key={event.id}
-                  id={`schedule-event-${event.id}`}
-                  className={`${styles.event} ${isPast ? styles.eventPast : ""} ${isSelected ? styles.eventSelected : ""}`}
-                  style={eventStyle}
-                >
-                  <button
-                    type="button"
-                    className={styles.eventMain}
-                    onClick={() =>
-                      setSelectedEventId((id) =>
-                        id === event.id ? null : event.id,
-                      )
-                    }
-                    aria-expanded={isSelected}
-                  >
-                    <div className={styles.eventDate}>
-                      <strong>{date.getDate()}</strong>
-                      <span>{weekdays[date.getDay()]}</span>
-                    </div>
-                    <p className={styles.eventTitle}>
-                      {localized(event, "title")}
-                    </p>
-                  </button>
-                  <div className={styles.eventMeta}>
-                    <button
-                      type="button"
-                      className={styles.eventType}
-                      aria-pressed={categoryFilters.includes(event.category)}
-                      onClick={() => toggleCategory(event.category)}
-                    >
-                      <i>
-                        <CategoryIcon aria-hidden="true" />
-                      </i>
-                      {t.schedule.categories[event.category] ??
-                        t.schedule.categories.etc}
-                    </button>
-                    {remaining >= 0 && (
-                      <span className={styles.eventCountdown}>
-                        {remaining ? `D-${remaining}` : "D-DAY"}
-                      </span>
-                    )}
-                    {event.start_time && <b>{event.start_time.slice(0, 5)}</b>}
-                    {localizedLocation(event) && (
-                      <b>{localizedLocation(event)}</b>
-                    )}
-                  </div>
-                  {isSelected && (
-                    <div className={styles.eventDetail}>
-                      {localized(event, "description") && (
-                        <p>{localized(event, "description")}</p>
-                      )}
-                      {href && (
-                        <a href={href} target="_blank" rel="noreferrer">
-                          {t.schedule.categories[event.category] ??
-                            t.schedule.categories.etc}{" "}
-                          {"→"}
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-            {!visibleEvents.length && !error && (
-              <div className={styles.empty}>{t.schedule.empty}</div>
-            )}
-          </div>
-          {filteredMonthEvents.length > PAGE_SIZE && (
-            <div className={styles.pager} aria-label={t.schedule.pageLabel}>
-              <button
-                type="button"
-                onClick={() => setPage((value) => Math.max(0, value - 1))}
-                disabled={page === 0}
-                aria-label={t.schedule.previous}
-              >
-                <ChevronLeft aria-hidden="true" />
-              </button>
-              <span>
-                {page + 1} / {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  setPage((value) => Math.min(totalPages - 1, value + 1))
-                }
-                disabled={page >= totalPages - 1}
-                aria-label={t.schedule.next}
-              >
-                <ChevronRight aria-hidden="true" />
-              </button>
-            </div>
-          )}
-        </section>
-
-        <section
-          className={styles.calendarPanel}
-          aria-label={t.schedule.calendarLabel(
-            cursor.getFullYear(),
-            cursor.getMonth() + 1,
-          )}
-        >
-          <div className={styles.calendarTop}>
-            <div className={styles.yearControl}>
-              <button
-                type="button"
-                onClick={() => moveYear(-1)}
-                aria-label={t.schedule.previousYear}
-              >
-                <ChevronLeft aria-hidden="true" />
-              </button>
-              <strong>{cursor.getFullYear()}</strong>
-              <button
-                type="button"
-                onClick={() => moveYear(1)}
-                aria-label={t.schedule.nextYear}
-              >
-                <ChevronRight aria-hidden="true" />
-              </button>
-            </div>
-            <button
-              className={styles.todayButton}
-              type="button"
-              onClick={goToday}
-            >
-              {t.schedule.today}
-            </button>
-          </div>
-          <nav className={styles.months} aria-label={t.schedule.monthSelect}>
-            {months.map((month, index) => (
-              <button
-                key={`${month}-${index}`}
-                type="button"
-                aria-current={cursor.getMonth() === index}
-                onClick={() =>
-                  changeCursor(new Date(cursor.getFullYear(), index, 1))
-                }
-              >
-                {month}
-              </button>
-            ))}
-          </nav>
-          <div className={styles.weekdays}>
-            {weekdays.map((day, index) => (
-              <span key={`${day}-${index}`}>{day}</span>
-            ))}
-          </div>
-          <div className={styles.days}>
-            {calendarCells.map((day, index) => {
-              if (!day)
-                return <span key={`empty-${index}`} aria-hidden="true" />;
-              const dayEvents = eventsOnDay(day).filter(
-                (event) =>
-                  !categoryFilters.length ||
-                  categoryFilters.includes(event.category),
-              );
-              const dateKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const isSelectedDate = selectedDate === dateKey;
-              const isPastDate = daysUntil(dateKey, today) < 0;
-              const isToday =
-                day === today.getDate() &&
-                cursor.getMonth() === today.getMonth() &&
-                cursor.getFullYear() === today.getFullYear();
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  className={`${styles.day} ${index % 7 === 0 ? styles.sunday : ""} ${dayEvents.length ? styles.hasEvents : ""} ${isPastDate ? styles.pastDate : ""} ${isSelectedDate ? styles.selectedDate : ""} ${isToday ? styles.isToday : ""}`}
-                  disabled={!dayEvents.length}
-                  aria-pressed={isSelectedDate}
-                  aria-label={t.schedule.dayLabel(
-                    cursor.getMonth() + 1,
-                    day,
-                    dayEvents.length,
-                  )}
-                  onClick={() => {
-                    setSelectedDate((current) =>
-                      current === dateKey ? null : dateKey,
-                    );
-                    setPage(0);
-                    setSelectedEventId(null);
-                  }}
-                >
-                  <span className={styles.dayNumber}>{day}</span>
-                  {!!dayEvents.length && (
-                    <span className={styles.dots}>
-                      {[...new Set(dayEvents.map((event) => event.category))]
-                        .slice(0, 3)
-                        .map((category) => (
-                          <i
-                            key={category}
-                            style={
-                              {
-                                "--dot-color": CATEGORIES[category].color,
-                              } as CSSProperties
-                            }
-                          />
-                        ))}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <div className={styles.legend} aria-label={t.schedule.eventTypes}>
-            {(Object.keys(CATEGORIES) as Category[]).map((key) => {
-              const CategoryIcon = CATEGORIES[key].icon;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={categoryFilters.includes(key)}
-                  onClick={() => toggleCategory(key)}
-                  style={
-                    { "--event-color": CATEGORIES[key].color } as CSSProperties
-                  }
-                >
-                  <i>
-                    <CategoryIcon aria-hidden="true" />
-                  </i>
-                  {t.schedule.categories[key]}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <ScheduleList
+          error={error}
+          visibleEvents={visibleEvents}
+          selectedDate={selectedDate}
+          today={today}
+          weekdays={weekdays}
+          categoryFilters={categoryFilters}
+          selectedEventId={selectedEventId}
+          onSelectEvent={selectEvent}
+          onToggleCategory={toggleCategory}
+          localize={localized}
+          localizeLocation={localizedLocation}
+          t={t.schedule}
+          page={page}
+          totalPages={totalPages}
+          hasMultiplePages={filteredMonthEvents.length > PAGE_SIZE}
+          onPreviousPage={() => setPage((value) => Math.max(0, value - 1))}
+          onNextPage={() =>
+            setPage((value) => Math.min(totalPages - 1, value + 1))
+          }
+        />
+        <ScheduleCalendar
+          cursor={cursor}
+          today={today}
+          months={months}
+          weekdays={weekdays}
+          calendarCells={calendarCells}
+          monthEvents={monthEvents}
+          categoryFilters={categoryFilters}
+          selectedDate={selectedDate}
+          onChangeCursor={changeCursor}
+          onGoToday={goToday}
+          onToggleCategory={toggleCategory}
+          onSelectDate={selectDate}
+          t={t.schedule}
+        />
       </div>
     </main>
   );

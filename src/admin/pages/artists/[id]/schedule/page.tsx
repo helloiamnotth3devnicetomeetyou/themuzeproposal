@@ -1,36 +1,26 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { CalendarDays, Copy, Plus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
-import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
-import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
-import PreviewButton from "@/admin/components/content/PreviewButton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
-import FormField from "@/admin/components/content/FormField";
 import AdminLanguageTabs, {
   type AdminLanguage,
 } from "@/admin/components/content/AdminLanguageTabs";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
-import CustomSelect from "@/core/components/form/CustomSelect";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
 import { supabase } from "@/core/supabase/client";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import { revalidatePublicCache } from "@/core/utils/public-cache";
 import ScheduleCalendar from "./ScheduleCalendar";
-import styles from "@/styles/(admin)/pages/artist-schedule/schedule-admin.module.css";
+import ScheduleActions from "./ScheduleActions";
+import ScheduleEditorSections from "./ScheduleEditorSections";
+import ScheduleIdentity from "./ScheduleIdentity";
+import ScheduleLibraryRail from "./ScheduleLibraryRail";
 import {
-  CATEGORY,
   emptyScheduleDraft,
   duplicateScheduleDraft,
   monthFromDateKey,
@@ -41,7 +31,6 @@ import {
   type ScheduleDraft,
   type ScheduleRow,
   type ScheduleTab,
-  type Category,
 } from "./schedule-editor-model";
 
 export default function ArtistScheduleAdminPage() {
@@ -393,151 +382,32 @@ export default function ArtistScheduleAdminPage() {
     return <AdminSkeleton variant="workbench" className="min-h-[420px]" />;
 
   const rail = (
-    <>
-      <div className="content-rail-heading" data-tour-id="schedule-add">
-        <div>
-          <h2>일정 캘린더</h2>
-        </div>
-        <button type="button" onClick={() => add()} aria-label="일정 추가">
-          <Plus aria-hidden="true" />
-        </button>
-      </div>
-      <div className="content-rail-sort">
-        <span>
-          {calendarTitle} · {monthItems.length}개
-        </span>
-        <small>{artistName}</small>
-      </div>
-      <div className="content-library-list">
-        {draft && !draft.id && (
-          <button
-            type="button"
-            className={`content-library-item is-selected ${styles.railItem}`}
-          >
-            <span className={styles.railDate}>
-              <b>NEW</b>
-              <small>DATE</small>
-            </span>
-            <span className="content-library-copy">
-              <b>{draft.titleKo || "새 일정"}</b>
-              <small>{draft.eventDate}</small>
-            </span>
-            <i className="content-library-dot" />
-          </button>
-        )}
-        {monthItems.map((item) => {
-          const date = new Date(`${item.event_date}T00:00:00`);
-          return (
-            <button
-              key={item.id}
-              type="button"
-              data-tour-id="entity-list-item"
-              onClick={() => select(item)}
-              className={`content-library-item ${draft?.id === item.id ? "is-selected" : ""} ${styles.railItem}`}
-            >
-              <span className={styles.railDate}>
-                <b>{String(date.getDate()).padStart(2, "0")}</b>
-                <small>
-                  {date.toLocaleString("en", { month: "short" }).toUpperCase()}
-                </small>
-              </span>
-              <span className="content-library-copy">
-                <b>{item.title_ko}</b>
-                <small>
-                  {CATEGORY[item.category].label}
-                  {item.start_time ? ` · ${item.start_time.slice(0, 5)}` : ""}
-                </small>
-              </span>
-              <i
-                className={`content-library-dot ${item.is_published ? "is-live" : ""}`}
-              />
-            </button>
-          );
-        })}
-        {!monthItems.length && !(draft && !draft.id) && (
-          <div className="content-library-empty">
-            <b>이 달의 일정이 없습니다.</b>
-            <span>달력에서 날짜를 골라 새 일정을 추가하세요.</span>
-          </div>
-        )}
-      </div>
-    </>
+    <ScheduleLibraryRail
+      artistName={artistName}
+      calendarTitle={calendarTitle}
+      monthItems={monthItems}
+      draft={draft}
+      onAdd={() => add()}
+      onSelect={select}
+    />
   );
-  const identity = draft ? (
-    <>
-      <span className={styles.dateArt}>
-        <b>{draft.eventDate ? draft.eventDate.slice(8, 10) : "--"}</b>
-        <small>{draft.eventDate ? draft.eventDate.slice(5, 7) : "DATE"}</small>
-      </span>
-      <div className="content-identity-copy">
-        <p>
-          <span className={`cms-status ${draft.isPublished ? "is-live" : ""}`}>
-            {draft.isPublished ? "공개" : "비공개"}
-          </span>
-        </p>
-        <h2>{draft.titleKo || "이름 없는 일정"}</h2>
-        <small>{artistName}</small>
-      </div>
-    </>
-  ) : (
-    <div className="content-identity-copy">
-      <p>
-        <span className="cms-status">선택 안 됨</span>
-      </p>
-      <h2>일정을 선택하세요</h2>
-      <small>{artistName}</small>
-    </div>
-  );
-  const actions = draft ? (
-    <>
-      <PreviewButton onClick={openPreview} disabled={!previewPayload} />
-      {draft.id && (
-        <button
-          type="button"
-          data-tour-id="entity-duplicate"
-          className="admin-btn admin-btn-secondary"
-          onClick={() => void duplicate()}
-        >
-          <Copy aria-hidden="true" />
-          복제
-        </button>
-      )}
-      {draft.id && (
-        <OverflowDeleteMenu
-          onDelete={() =>
-            pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)
-          }
-          deleteLabel={pendingDelete ? "삭제 취소" : "삭제"}
-        />
-      )}
-      <DraftSaveButton
-        snapshot={snapshot}
-        draft={draft}
-        dirty={dirty || pendingDelete}
-        saving={saving}
-        onSave={() => (pendingDelete ? remove() : save())}
-        extraDiff={
-          pendingDelete
-            ? [
-                {
-                  kind: "delete",
-                  field: "일정",
-                  before: draft.titleKo,
-                  after: "삭제",
-                },
-              ]
-            : []
-        }
-      />
-    </>
-  ) : (
-    <button
-      type="button"
-      className="admin-btn admin-btn-primary"
-      onClick={() => add()}
-    >
-      일정 추가
-    </button>
+  const identity = <ScheduleIdentity artistName={artistName} draft={draft} />;
+  const actions = (
+    <ScheduleActions
+      draft={draft}
+      previewAvailable={Boolean(previewPayload)}
+      pendingDelete={pendingDelete}
+      snapshot={snapshot}
+      dirty={dirty}
+      saving={saving}
+      onPreview={openPreview}
+      onDuplicate={() => void duplicate()}
+      onDelete={() =>
+        pendingDelete ? setPendingDelete(false) : setDeleteOpen(true)
+      }
+      onSave={() => (pendingDelete ? remove() : save())}
+      onAdd={() => add()}
+    />
   );
 
   return (
@@ -628,218 +498,14 @@ export default function ArtistScheduleAdminPage() {
             </button>
           </div>
         ) : (
-          <div className="content-editor-stack">
-            {tab === "details" && (
-              <div ref={detailsRef}>
-                <div className="content-section-heading">
-                  <h3>일정 기본 정보</h3>
-                  <span>
-                    공개 캘린더에서 날짜순으로 표시할 일정의 핵심 정보입니다.
-                  </span>
-                </div>
-                <FormField
-                  label="일정명"
-                  activeLang={language}
-                  error={fieldErrors.titleKo}
-                  valueKo={draft.titleKo}
-                  valueEn={draft.titleEn}
-                  valueJa={draft.titleJa}
-                  onChangeKo={(titleKo) => patch({ titleKo })}
-                  onChangeEn={(titleEn) => patch({ titleEn })}
-                  onChangeJa={(titleJa) => patch({ titleJa })}
-                  required
-                />
-                <div className="music-field-grid two">
-                  <label className="music-field">
-                    <span>
-                      날짜 <b>*</b>
-                    </span>
-                    <input
-                      name="eventDate"
-                      type="date"
-                      className="admin-input"
-                      value={draft.eventDate}
-                      onChange={(event) =>
-                        patch({ eventDate: event.target.value })
-                      }
-                      aria-invalid={Boolean(fieldErrors.eventDate)}
-                      aria-describedby={
-                        fieldErrors.eventDate
-                          ? "schedule-date-error"
-                          : undefined
-                      }
-                    />
-                    {fieldErrors.eventDate && (
-                      <p
-                        id="schedule-date-error"
-                        className="admin-field-error"
-                        role="alert"
-                      >
-                        {fieldErrors.eventDate}
-                      </p>
-                    )}
-                  </label>
-                  <label className="music-field">
-                    <span>시작 시간</span>
-                    <input
-                      type="time"
-                      className="admin-input"
-                      value={draft.startTime}
-                      onChange={(event) =>
-                        patch({ startTime: event.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="music-field-grid two">
-                  <div className="music-field">
-                    <span>
-                      일정 유형 <b>*</b>
-                    </span>
-                    <CustomSelect
-                      ariaLabel="일정 유형"
-                      value={draft.category}
-                      onChange={(category) =>
-                        patch({ category: category as Category })
-                      }
-                      options={(Object.keys(CATEGORY) as Category[]).map(
-                        (key) => ({ value: key, label: CATEGORY[key].label }),
-                      )}
-                    />
-                  </div>
-                  <div className="music-field">
-                    <span>캘린더 표시</span>
-                    <div
-                      className={styles.categoryPreview}
-                      style={
-                        {
-                          "--category-color": CATEGORY[draft.category].color,
-                        } as CSSProperties
-                      }
-                    >
-                      {(() => {
-                        const CategoryIcon = CATEGORY[draft.category].icon;
-                        return (
-                          <i>
-                            <CategoryIcon aria-hidden="true" />
-                          </i>
-                        );
-                      })()}
-                      {CATEGORY[draft.category].label}
-                    </div>
-                  </div>
-                </div>
-                <FormField
-                  label="장소"
-                  activeLang={language}
-                  valueKo={draft.location}
-                  valueEn={draft.locationEn}
-                  valueJa={draft.locationJa}
-                  onChangeKo={(location) => patch({ location })}
-                  onChangeEn={(locationEn) => patch({ locationEn })}
-                  onChangeJa={(locationJa) => patch({ locationJa })}
-                />
-                <label className="music-field content-field-short">
-                  <span>연결 링크</span>
-                  <input
-                    name="linkUrl"
-                    type="url"
-                    className="admin-input"
-                    value={draft.linkUrl}
-                    onChange={(event) => patch({ linkUrl: event.target.value })}
-                    placeholder="https://"
-                    aria-invalid={Boolean(fieldErrors.linkUrl)}
-                    aria-describedby={
-                      fieldErrors.linkUrl ? "schedule-link-error" : undefined
-                    }
-                  />
-                  {fieldErrors.linkUrl && (
-                    <p
-                      id="schedule-link-error"
-                      className="admin-field-error"
-                      role="alert"
-                    >
-                      {fieldErrors.linkUrl}
-                    </p>
-                  )}
-                </label>
-                <div className={styles.sectionDivider} />
-                <div className="content-section-heading">
-                  <h3>일정 설명</h3>
-                  <span>
-                    언어 탭을 전환해 같은 폼에서 설명을 작성합니다. 번역이
-                    없으면 공개 페이지에서 한국어가 대신 표시됩니다.
-                  </span>
-                </div>
-                <FormField
-                  label="일정 설명"
-                  type="textarea"
-                  activeLang={language}
-                  valueKo={draft.descriptionKo}
-                  valueEn={draft.descriptionEn}
-                  valueJa={draft.descriptionJa}
-                  onChangeKo={(descriptionKo) => patch({ descriptionKo })}
-                  onChangeEn={(descriptionEn) => patch({ descriptionEn })}
-                  onChangeJa={(descriptionJa) => patch({ descriptionJa })}
-                />
-              </div>
-            )}
-            {tab === "publish" && (
-              <>
-                <div className="content-section-heading">
-                  <h3>공개 설정</h3>
-                  <span>
-                    저장 즉시 아티스트 공개 일정 페이지에 반영할지 선택합니다.
-                  </span>
-                </div>
-                <div className="content-publish-summary">
-                  <div>
-                    <span>일정</span>
-                    <strong>{draft.titleKo || "미입력"}</strong>
-                  </div>
-                  <div>
-                    <span>날짜 · 시간</span>
-                    <strong>
-                      {draft.eventDate || "미입력"}
-                      {draft.startTime ? ` · ${draft.startTime}` : ""}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>유형</span>
-                    <strong>{CATEGORY[draft.category].label}</strong>
-                  </div>
-                  <div>
-                    <span>장소</span>
-                    <strong>{draft.location || "미설정"}</strong>
-                  </div>
-                </div>
-                <div className="content-choice-grid">
-                  <label className="content-choice">
-                    <input
-                      type="radio"
-                      checked={draft.isPublished}
-                      onChange={() => patch({ isPublished: true })}
-                    />
-                    <span>
-                      <b>바로 공개</b>
-                      <small>공개 일정 페이지와 달력에 표시합니다.</small>
-                    </span>
-                  </label>
-                  <label className="content-choice">
-                    <input
-                      type="radio"
-                      checked={!draft.isPublished}
-                      onChange={() => patch({ isPublished: false })}
-                    />
-                    <span>
-                      <b>비공개로 저장</b>
-                      <small>관리자만 확인할 수 있는 상태로 보관합니다.</small>
-                    </span>
-                  </label>
-                </div>
-              </>
-            )}
-          </div>
+          <ScheduleEditorSections
+            draft={draft}
+            tab={tab}
+            language={language}
+            fieldErrors={fieldErrors}
+            detailsRef={detailsRef}
+            patch={patch}
+          />
         )}
       </ContentWorkbench>
       {deleteOpen && draft?.id && (

@@ -2,27 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, GripVertical, Plus, Save, Trash2 } from "lucide-react";
-import FormField from "@/admin/components/content/FormField";
-import AdminLanguageTabs, {
-  type AdminLanguage,
-} from "@/admin/components/content/AdminLanguageTabs";
+import { ArrowLeft, Save } from "lucide-react";
+import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
-import { supabase } from "@/core/supabase/client";
 import {
-  campaignDescription,
   type AuditionCampaign,
   type AuditionFormField,
 } from "@/core/auditions/types";
-import {
-  ALL_FILE_TYPES,
-  FIELD_TYPES,
-  FILE_PRESETS,
-  FieldPreview,
-  blankField,
-  localDateTime,
-} from "./CampaignAdminShared";
+import { supabase } from "@/core/supabase/client";
+import { ALL_FILE_TYPES, blankField } from "./CampaignAdminShared";
+import CampaignBuilderPreview from "./CampaignBuilderPreview";
+import CampaignBuilderSettings from "./CampaignBuilderSettings";
+import CampaignQuestionEditor from "./CampaignQuestionEditor";
+import CampaignQuestionList from "./CampaignQuestionList";
 
 export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
   const requestConfirm = useAdminConfirm();
@@ -34,6 +27,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
   const [language, setLanguage] = useState<AdminLanguage>("ko");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+
   useEffect(() => {
     void Promise.all([
       supabase
@@ -61,6 +55,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       );
     });
   }, [campaignId]);
+
   const selectedField =
     fields.find((field) => field.id === selectedFieldId) ?? fields[0] ?? null;
   const patchCampaign = (patch: Partial<AuditionCampaign>) =>
@@ -83,6 +78,13 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       current.map((field) =>
         field.id === id ? { ...field, ...patch } : field,
       ),
+    );
+  const setPrimaryLabel = (id: string, checked: boolean) =>
+    setFields((current) =>
+      current.map((field) => ({
+        ...field,
+        is_primary_label: field.id === id ? checked : false,
+      })),
     );
   const toggleFilePreset = (types: readonly string[], checked: boolean) => {
     if (!selectedField) return;
@@ -166,27 +168,30 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       is_active: true,
       is_primary_label: field.is_primary_label,
     }));
-    const { data, error } = await supabase.rpc("save_audition_campaign_checked", {
-      p_campaign: {
-        id: campaignId,
-        title: campaign.title.trim(),
-        description:
-          campaign.description_i18n?.ko?.trim() || campaign.description,
-        description_i18n: campaign.description_i18n ?? {
-          ko: campaign.description,
+    const { data, error } = await supabase.rpc(
+      "save_audition_campaign_checked",
+      {
+        p_campaign: {
+          id: campaignId,
+          title: campaign.title.trim(),
+          description:
+            campaign.description_i18n?.ko?.trim() || campaign.description,
+          description_i18n: campaign.description_i18n ?? {
+            ko: campaign.description,
+          },
+          is_active: campaign.is_active,
+          starts_at: campaign.starts_at
+            ? new Date(campaign.starts_at).toISOString()
+            : null,
+          ends_at: campaign.ends_at
+            ? new Date(campaign.ends_at).toISOString()
+            : null,
         },
-        is_active: campaign.is_active,
-        starts_at: campaign.starts_at
-          ? new Date(campaign.starts_at).toISOString()
-          : null,
-        ends_at: campaign.ends_at
-          ? new Date(campaign.ends_at).toISOString()
-          : null,
+        p_fields: normalized,
+        p_removed_ids: removed,
+        p_expected_updated_at: campaign.updated_at,
       },
-      p_fields: normalized,
-      p_removed_ids: removed,
-      p_expected_updated_at: campaign.updated_at,
-    });
+    );
     setMessage(error?.message || "저장했습니다.");
     if (!error) {
       setCampaign((current) =>
@@ -197,6 +202,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
     }
     setSaving(false);
   };
+
   if (!campaign)
     return message ? (
       <div className="audition-campaign-page">
@@ -214,6 +220,7 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
     ) : (
       <AdminSkeleton variant="workbench" className="min-h-[420px]" />
     );
+
   return (
     <div className="audition-campaign-page">
       <header className="audition-campaign-heading">
@@ -249,386 +256,42 @@ export function CampaignBuilderAdmin({ campaignId }: { campaignId: string }) {
       )}
       <div className="audition-builder-layout">
         <section className="audition-builder-editor">
-          <AdminLanguageTabs
-            activeLang={language}
-            onChange={setLanguage}
-            values={{
-              ko: campaign.description_i18n?.ko ?? campaign.description,
-              en: campaign.description_i18n?.en,
-              ja: campaign.description_i18n?.ja,
-            }}
+          <CampaignBuilderSettings
+            campaign={campaign}
+            language={language}
+            onLanguageChange={setLanguage}
+            onPatchCampaign={patchCampaign}
+            onSetActive={setCampaignActive}
           />
-          <div className="audition-builder-settings">
-            <label>
-              캠페인 제목
-              <input
-                className="admin-input"
-                value={campaign.title}
-                onChange={(event) =>
-                  patchCampaign({ title: event.target.value })
-                }
-              />
-            </label>
-            <div className="audition-campaign-description">
-              <FormField
-                activeLang={language}
-                label="소개"
-                type="textarea"
-                valueKo={campaign.description_i18n?.ko ?? campaign.description}
-                valueEn={campaign.description_i18n?.en ?? ""}
-                valueJa={campaign.description_i18n?.ja ?? ""}
-                onChangeKo={(value) =>
-                  patchCampaign({
-                    description: value,
-                    description_i18n: {
-                      ...campaign.description_i18n,
-                      ko: value,
-                    },
-                  })
-                }
-                onChangeEn={(value) =>
-                  patchCampaign({
-                    description_i18n: {
-                      ...campaign.description_i18n,
-                      en: value,
-                    },
-                  })
-                }
-                onChangeJa={(value) =>
-                  patchCampaign({
-                    description_i18n: {
-                      ...campaign.description_i18n,
-                      ja: value,
-                    },
-                  })
-                }
-              />
-            </div>
-            <label>
-              시작일
-              <input
-                className="admin-input"
-                type="datetime-local"
-                value={localDateTime(campaign.starts_at)}
-                onChange={(event) =>
-                  patchCampaign({ starts_at: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              마감일
-              <input
-                className="admin-input"
-                type="datetime-local"
-                value={localDateTime(campaign.ends_at)}
-                onChange={(event) =>
-                  patchCampaign({ ends_at: event.target.value })
-                }
-              />
-            </label>
-            <label className="audition-builder-check">
-              <input
-                type="checkbox"
-                checked={campaign.is_active}
-                onChange={(event) =>
-                  void setCampaignActive(event.target.checked)
-                }
-              />{" "}
-              공개 활성화
-            </label>
-          </div>
           <div className="audition-question-workbench">
-            <aside className="audition-question-list">
-              <header>
-                <b>질문 목록</b>
-                <span>{fields.length}</span>
-              </header>
-              {fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  data-tour-id="audition-question-sort"
-                  className={`audition-question-item ${selectedField?.id === field.id ? "is-active" : ""}`}
-                  draggable
-                  onDragStart={() => setDragging(field.id)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => moveTo(field.id)}
-                >
-                  <GripVertical aria-hidden="true" />
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFieldId(field.id)}
-                  >
-                    <span>{index + 1}</span>
-                    <b>
-                      {field.label_i18n.ko ||
-                        field.label_i18n.en ||
-                        field.label_i18n.ja ||
-                        field.field_key}
-                    </b>
-                  </button>
-                  <button
-                    type="button"
-                    data-tour-id="audition-question-delete"
-                    onClick={() => remove(field.id)}
-                    aria-label="질문 삭제"
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </button>
-                </div>
-              ))}
-              <button
-                className="audition-add-field-btn"
-                data-tour-id="audition-question-add"
-                type="button"
-                onClick={() => {
-                  const field = blankField(campaignId, fields.length);
-                  setFields((current) => [...current, field]);
-                  setSelectedFieldId(field.id);
-                }}
-              >
-                <Plus aria-hidden="true" />{" "}
-                <span data-tour-id="audition-builder-prerequisite">
-                  질문 추가
-                </span>
-              </button>
-            </aside>
-            <div className="audition-question-form">
-              {selectedField ? (
-                <>
-                  <header>
-                    <div>
-                      <h2>{selectedField.label_i18n.ko || "질문 설정"}</h2>
-                      <p>언어 탭을 바꿔 각 언어의 질문을 입력하세요.</p>
-                    </div>
-                  </header>
-                  <div className="audition-question-form-grid">
-                    <div
-                      className="audition-question-wide"
-                      data-tour-id="audition-question-type"
-                    >
-                      <span className="audition-control-label">질문 유형</span>
-                      <div className="audition-type-picker">
-                        {FIELD_TYPES.map((type) => (
-                          <button
-                            type="button"
-                            className={
-                              selectedField.field_type === type.value
-                                ? "is-active"
-                                : ""
-                            }
-                            key={type.value}
-                            onClick={() =>
-                              patchField(selectedField.id, {
-                                field_type: type.value,
-                              })
-                            }
-                          >
-                            {type.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="audition-question-label">
-                      <FormField
-                        activeLang={language}
-                        label="질문"
-                        valueKo={selectedField.label_i18n.ko ?? ""}
-                        valueEn={selectedField.label_i18n.en ?? ""}
-                        valueJa={selectedField.label_i18n.ja ?? ""}
-                        onChangeKo={(value) =>
-                          patchField(selectedField.id, {
-                            label_i18n: {
-                              ...selectedField.label_i18n,
-                              ko: value,
-                            },
-                          })
-                        }
-                        onChangeEn={(value) =>
-                          patchField(selectedField.id, {
-                            label_i18n: {
-                              ...selectedField.label_i18n,
-                              en: value,
-                            },
-                          })
-                        }
-                        onChangeJa={(value) =>
-                          patchField(selectedField.id, {
-                            label_i18n: {
-                              ...selectedField.label_i18n,
-                              ja: value,
-                            },
-                          })
-                        }
-                      />
-                    </div>
-                    <label className="audition-question-wide">
-                      {selectedField.field_type === "consent"
-                        ? "동의 문구 또는 약관 링크"
-                        : "도움말"}
-                      <input
-                        className="admin-input"
-                        value={selectedField.help_text ?? ""}
-                        onChange={(event) =>
-                          patchField(selectedField.id, {
-                            help_text: event.target.value || null,
-                          })
-                        }
-                      />
-                    </label>
-                    {(["select", "radio", "checkbox"] as string[]).includes(
-                      selectedField.field_type,
-                    ) && (
-                      <label className="audition-question-wide">
-                        선택지 (줄바꿈)
-                        <textarea
-                          className="admin-input"
-                          value={selectedField.options.join("\n")}
-                          onChange={(event) =>
-                            patchField(selectedField.id, {
-                              options: event.target.value
-                                .split("\n")
-                                .map((item) => item.trim())
-                                .filter(Boolean),
-                            })
-                          }
-                        />
-                      </label>
-                    )}
-                    {(selectedField.field_type === "short_text" ||
-                      selectedField.field_type === "long_text") && (
-                      <label>
-                        최대 글자 수
-                        <input
-                          className="admin-input"
-                          type="number"
-                          min="1"
-                          max="10000"
-                          value={selectedField.max_length ?? ""}
-                          onChange={(event) =>
-                            patchField(selectedField.id, {
-                              max_length: Number(event.target.value) || null,
-                            })
-                          }
-                        />
-                      </label>
-                    )}
-                    {selectedField.field_type === "file" && (
-                      <>
-                        <label>
-                          파일당 최대 용량
-                          <input
-                            className="admin-input"
-                            type="number"
-                            min="1"
-                            max="30"
-                            value={selectedField.max_file_size_mb ?? 20}
-                            onChange={(event) =>
-                              patchField(selectedField.id, {
-                                max_file_size_mb: Math.min(
-                                  30,
-                                  Number(event.target.value) || 20,
-                                ),
-                              })
-                            }
-                          />
-                          <span>1~30MB 사이로 설정할 수 있습니다.</span>
-                        </label>
-                        <div className="audition-question-wide">
-                          <span className="audition-control-label">
-                            허용 파일 종류
-                          </span>
-                          <div className="audition-file-preset-chips">
-                            {FILE_PRESETS.map((preset) => {
-                              const checked = preset.types.every(
-                                (type) =>
-                                  !selectedField.accepted_file_types.length ||
-                                  selectedField.accepted_file_types.includes(
-                                    type,
-                                  ),
-                              );
-                              return (
-                                <label
-                                  className={`audition-file-preset-chip ${checked ? "is-active" : ""}`}
-                                  key={preset.label}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(event) =>
-                                      toggleFilePreset(
-                                        preset.types,
-                                        event.target.checked,
-                                      )
-                                    }
-                                  />
-                                  <b>{preset.label}</b>
-                                  <span>{preset.hint}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    <label className="audition-builder-check">
-                      <input
-                        type="checkbox"
-                        checked={selectedField.required}
-                        onChange={(event) =>
-                          patchField(selectedField.id, {
-                            required: event.target.checked,
-                          })
-                        }
-                      />{" "}
-                      필수
-                    </label>
-                    <label className="audition-builder-check">
-                      <input
-                        type="checkbox"
-                        checked={selectedField.is_primary_label}
-                        onChange={(event) =>
-                          setFields((current) =>
-                            current.map((item) => ({
-                              ...item,
-                              is_primary_label:
-                                item.id === selectedField.id
-                                  ? event.target.checked
-                                  : false,
-                            })),
-                          )
-                        }
-                      />{" "}
-                      대표 라벨
-                    </label>
-                  </div>
-                </>
-              ) : (
-                <p>질문을 추가해 주세요.</p>
-              )}
-            </div>
+            <CampaignQuestionList
+              fields={fields}
+              selectedFieldId={selectedField?.id ?? ""}
+              dragging={dragging}
+              onDragStart={setDragging}
+              onMoveTo={moveTo}
+              onSelectField={setSelectedFieldId}
+              onRemoveField={remove}
+              onAddField={() => {
+                const field = blankField(campaignId, fields.length);
+                setFields((current) => [...current, field]);
+                setSelectedFieldId(field.id);
+              }}
+            />
+            <CampaignQuestionEditor
+              selectedField={selectedField}
+              language={language}
+              onPatchField={patchField}
+              onSetPrimaryLabel={setPrimaryLabel}
+              onToggleFilePreset={toggleFilePreset}
+            />
           </div>
         </section>
-        <aside className="audition-builder-preview">
-          <div className="audition-preview-toolbar">
-            <b>지원서 미리보기</b>
-          </div>
-          <div className="audition-preview-paper">
-            <header>
-              <h2>{campaign.title}</h2>
-              <p>{campaignDescription(campaign, language)}</p>
-            </header>
-            <div className="audition-preview-fields">
-              {fields.map((field) => (
-                <div className="audition-preview-select" key={field.id}>
-                  <FieldPreview field={field} locale={language} />
-                </div>
-              ))}
-            </div>
-            <button type="button" disabled>
-              제출 내용 검토
-            </button>
-          </div>
-        </aside>
+        <CampaignBuilderPreview
+          campaign={campaign}
+          fields={fields}
+          language={language}
+        />
       </div>
     </div>
   );

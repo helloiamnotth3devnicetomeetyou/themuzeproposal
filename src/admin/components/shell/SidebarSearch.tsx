@@ -6,68 +6,18 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
-import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  BarChart3,
-  Building2,
-  CalendarDays,
-  FileText,
-  History,
-  Image,
-  Inbox,
-  LayoutDashboard,
-  Mail,
-  Music2,
-  Search,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  UsersRound,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Search, X } from "lucide-react";
 import styles from "@/styles/(admin)/components/shell/SidebarSearch.module.css";
-
-interface Artist {
-  id: string;
-  name: string;
-}
-interface SearchItem {
-  id: string;
-  categoryLabel: string;
-  title: string;
-  url: string;
-  artistName?: string;
-}
-export type SidebarSearchContent = {
-  albums: Array<{
-    id: string;
-    artistId: string;
-    artistName: string;
-    title: string;
-  }>;
-  members: Array<{
-    id: string;
-    artistId: string;
-    artistName: string;
-    name: string;
-  }>;
-  schedules: Array<{
-    id: string;
-    artistId: string;
-    artistName: string;
-    title: string;
-  }>;
-  notices: Array<{
-    id: string;
-    artistId: string | null;
-    artistName: string | null;
-    title: string;
-  }>;
-};
+import SidebarSearchResults from "./SidebarSearchResults";
+import {
+  buildSearchItems,
+  type Artist,
+  type SearchItem,
+  type SidebarSearchContent,
+} from "./sidebar-search-data";
+export type { SidebarSearchContent } from "./sidebar-search-data";
 interface SidebarSearchProps {
   artists: Artist[];
   content: SidebarSearchContent;
@@ -78,24 +28,6 @@ type ResultsPosition = {
   left: number;
   width: number;
   maxHeight: number;
-};
-
-const getSearchIcon = (id: string): LucideIcon => {
-  if (id === "dashboard") return LayoutDashboard;
-  if (id === "analytics") return BarChart3;
-  if (id === "hero") return Image;
-  if (id === "notices" || id.endsWith("-notices")) return FileText;
-  if (id === "audit-logs" || id === "history") return History;
-  if (id === "protect") return ShieldCheck;
-  if (id === "contact") return Mail;
-  if (id === "auditions") return Inbox;
-  if (id === "settings") return Settings;
-  if (id === "company") return Building2;
-  if (id.includes("members")) return UsersRound;
-  if (id.includes("discography")) return Music2;
-  if (id.includes("schedule")) return CalendarDays;
-  if (id.includes("profile")) return UserRound;
-  return Search;
 };
 
 export default function SidebarSearch({
@@ -179,215 +111,8 @@ export default function SidebarSearch({
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  const items = useMemo<SearchItem[]>(
-    () => [
-      {
-        id: "dashboard",
-        categoryLabel: "워크스페이스",
-        title: "대시보드",
-        url: "/admin",
-      },
-      {
-        id: "analytics",
-        categoryLabel: "워크스페이스",
-        title: "페이지 통계",
-        url: "/admin/analytics",
-      },
-      {
-        id: "hero",
-        categoryLabel: "워크스페이스",
-        title: "메인 히어로",
-        url: "/admin/hero",
-      },
-      {
-        id: "notices",
-        categoryLabel: "워크스페이스",
-        title: "전체 공지",
-        url: "/admin/notices",
-      },
-      {
-        id: "audit-logs",
-        categoryLabel: "워크스페이스",
-        title: "관리자 변경 이력",
-        url: "/admin/audit-logs",
-      },
-      {
-        id: "protect",
-        categoryLabel: "워크스페이스",
-        title: "권익 보호 신고",
-        url: "/admin/protect",
-      },
-      {
-        id: "contact",
-        categoryLabel: "워크스페이스",
-        title: "문의 관리",
-        url: "/admin/contact",
-      },
-      {
-        id: "auditions",
-        categoryLabel: "워크스페이스",
-        title: "오디션 캠페인",
-        url: "/admin/auditions/campaigns",
-      },
-      {
-        id: "settings",
-        categoryLabel: "사이트 설정",
-        title: "사이트 설정",
-        url: "/admin/settings",
-      },
-      {
-        id: "new-artist",
-        categoryLabel: "워크스페이스",
-        title: "새 아티스트 추가",
-        url: "/admin/artists/new/profile",
-      },
-      {
-        id: "company",
-        categoryLabel: "사이트 설정",
-        title: "회사 정보",
-        url: "/admin/settings?tab=company",
-      },
-      {
-        id: "history",
-        categoryLabel: "사이트 설정",
-        title: "연혁",
-        url: "/admin/settings?tab=history",
-      },
-      {
-        id: "footer",
-        categoryLabel: "사이트 설정",
-        title: "푸터 문구",
-        url: "/admin/settings?tab=footer",
-      },
-      {
-        id: "social",
-        categoryLabel: "사이트 설정",
-        title: "소셜 링크",
-        url: "/admin/settings?tab=social",
-      },
-      {
-        id: "avatars",
-        categoryLabel: "사이트 설정",
-        title: "사용자 아바타",
-        url: "/admin/settings?tab=avatars",
-      },
-      ...artists.flatMap((artist) => [
-        {
-          id: `${artist.id}-profile`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필",
-          url: `/admin/artists/${artist.id}/profile`,
-        },
-        {
-          id: `${artist.id}-profile-basic`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 기본 정보",
-          url: `/admin/artists/${artist.id}/profile?tab=basic`,
-        },
-        {
-          id: `${artist.id}-profile-visual`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 대표 비주얼",
-          url: `/admin/artists/${artist.id}/profile?tab=visual`,
-        },
-        {
-          id: `${artist.id}-profile-content`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 아티스트 소개",
-          url: `/admin/artists/${artist.id}/profile?tab=content`,
-        },
-        {
-          id: `${artist.id}-profile-social`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 공식 계정",
-          url: `/admin/artists/${artist.id}/profile?tab=social`,
-        },
-        {
-          id: `${artist.id}-profile-scenes`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 인터랙티브 장면",
-          url: `/admin/artists/${artist.id}/profile?tab=scenes`,
-        },
-        {
-          id: `${artist.id}-profile-gallery`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 통합 갤러리",
-          url: `/admin/artists/${artist.id}/profile?tab=gallery`,
-        },
-        {
-          id: `${artist.id}-profile-publish`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "프로필 - 공개 설정",
-          url: `/admin/artists/${artist.id}/profile?tab=publish`,
-        },
-        {
-          id: `${artist.id}-members`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "멤버",
-          url: `/admin/artists/${artist.id}/members`,
-        },
-        {
-          id: `${artist.id}-discography`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "음악 · 디스코그래피",
-          url: `/admin/artists/${artist.id}/discography`,
-        },
-        {
-          id: `${artist.id}-schedule`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "일정",
-          url: `/admin/artists/${artist.id}/schedule`,
-        },
-        {
-          id: `${artist.id}-notices`,
-          categoryLabel: "아티스트",
-          artistName: artist.name,
-          title: "공지",
-          url: `/admin/artists/${artist.id}/notices`,
-        },
-      ]),
-      ...content.albums.map((album) => ({
-        id: `album-${album.id}`,
-        categoryLabel: "앨범",
-        artistName: album.artistName,
-        title: album.title,
-        url: `/admin/artists/${album.artistId}/discography?album=${album.id}`,
-      })),
-      ...content.members.map((member) => ({
-        id: `member-${member.id}`,
-        categoryLabel: "멤버",
-        artistName: member.artistName,
-        title: member.name,
-        url: `/admin/artists/${member.artistId}/members?member=${member.id}`,
-      })),
-      ...content.schedules.map((schedule) => ({
-        id: `schedule-${schedule.id}`,
-        categoryLabel: "일정",
-        artistName: schedule.artistName,
-        title: schedule.title,
-        url: `/admin/artists/${schedule.artistId}/schedule?schedule=${schedule.id}`,
-      })),
-      ...content.notices.map((notice) => ({
-        id: `notice-${notice.id}`,
-        categoryLabel: notice.artistName ? "아티스트 공지" : "전체 공지",
-        artistName: notice.artistName ?? undefined,
-        title: notice.title,
-        url: notice.artistId
-          ? `/admin/artists/${notice.artistId}/notices?notice=${notice.id}`
-          : `/admin/notices?notice=${notice.id}`,
-      })),
-    ],
+  const items = useMemo(
+    () => buildSearchItems(artists, content),
     [artists, content],
   );
 
@@ -541,83 +266,22 @@ export default function SidebarSearch({
           </kbd>
         )}
       </div>
-      {isOpen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <button
-            type="button"
-            className={styles.backdrop}
-            aria-label="검색 닫기"
-            onClick={() => {
-              setIsOpen(false);
-              setActiveIndex(-1);
-            }}
-          />,
-          document.body,
-        )}
-      {isShowingResults &&
-        resultsPosition &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            id="admin-search-results"
-            className={`${styles.results} ${!query.trim() ? styles.resultsDefault : ""}`}
-            ref={resultsRef}
-            data-tour-id="admin-search-result"
-            style={
-              {
-                top: resultsPosition.top,
-                left: resultsPosition.left,
-                width: resultsPosition.width,
-                maxHeight: resultsPosition.maxHeight,
-              } as CSSProperties
-            }
-            role="listbox"
-            aria-label="검색 결과"
-          >
-            {Object.entries(groups).map(([label, group]) => (
-              <section
-                className={styles.group}
-                key={label}
-                role="group"
-                aria-label={label}
-              >
-                <p className={styles.groupLabel}>{label}</p>
-                {group.map((item) => {
-                  const index = results.indexOf(item);
-                  const selected = activeIndex === index;
-                  const current = pathname === item.url;
-                  const Icon = getSearchIcon(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      id={`admin-search-result-${index}`}
-                      type="button"
-                      role="option"
-                      data-search-result
-                      aria-selected={selected}
-                      className={`${styles.result} ${selected ? styles.resultSelected : ""} ${current ? styles.resultCurrent : ""}`}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => select(item.url)}
-                    >
-                      <Icon className={styles.resultIcon} aria-hidden="true" />
-                      <span>
-                        {(item.artistName || query.trim()) && (
-                          <small>{item.artistName ?? item.categoryLabel}</small>
-                        )}
-                        <b>{item.title}</b>
-                      </span>
-                    </button>
-                  );
-                })}
-              </section>
-            ))}
-            {!results.length && (
-              <p className={styles.empty}>일치하는 메뉴가 없습니다.</p>
-            )}
-          </div>,
-          document.body,
-        )}
+      <SidebarSearchResults
+        isOpen={isShowingResults}
+        resultsPosition={resultsPosition}
+        query={query}
+        groups={groups}
+        results={results}
+        activeIndex={activeIndex}
+        pathname={pathname}
+        resultsRef={resultsRef}
+        setActiveIndex={setActiveIndex}
+        select={select}
+        close={() => {
+          setIsOpen(false);
+          setActiveIndex(-1);
+        }}
+      />
     </div>
   );
 }

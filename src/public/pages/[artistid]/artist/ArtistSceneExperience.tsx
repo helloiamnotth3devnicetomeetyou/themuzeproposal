@@ -5,22 +5,18 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import dynamic from "next/dynamic";
-import Image, { getImageProps } from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { localizeText } from "@/core/i18n/localized";
-import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import { preloadImages } from "@/core/utils/image-preload";
 import { outlineCentroid } from "@/core/utils/artist-scenes";
-import { sanitizeRichText } from "@/core/utils/rich-text";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
-import SceneCanvas from "./SceneCanvas";
-import SceneDock from "./SceneDock";
 import { useArtistSceneData } from "./useArtistSceneData";
+import DesktopArtistScene from "./DesktopArtistScene";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 import type { ArtistSceneData, Member } from "./artist-scene-types";
@@ -28,7 +24,6 @@ import type { ArtistScene } from "@/core/utils/artist-scenes";
 
 const EMPTY_MEMBERS: Member[] = [];
 const EMPTY_SCENES: ArtistScene[] = [];
-const MemberDetailOverlay = dynamic(() => import("./MemberDetailOverlay"));
 const MobileArtistScene = dynamic(() => import("./MobileArtistScene"));
 
 function sceneImageCandidates(scene: ArtistScene) {
@@ -314,7 +309,6 @@ export default function ArtistSceneExperience({
       activeScene.title,
     ),
   };
-  const centroid = selectedRegionCentroid;
   if (isMobileExperience)
     return (
       <MobileArtistScene
@@ -335,104 +329,36 @@ export default function ArtistSceneExperience({
       />
     );
   return (
-    <main
-      className={`${styles.experience} ${selectedMember || groupFocused ? styles.hasSelection : ""}`}
-      style={
-        {
-          "--artist-accent":
-            selectedMember?.color || artist.color || BRAND_PINK_HEX,
-        } as CSSProperties
-      }
-    >
-      {!selectedMember && !groupFocused && (
-        <div className={styles.clickHint}>{copy.clickHint}</div>
+    <DesktopArtistScene
+      artist={artist}
+      artistName={artistName}
+      activeScene={activeScene}
+      localizedScene={localizedScene}
+      members={members}
+      memberScenes={memberScenes}
+      selectedMember={selectedMember}
+      memberBio={memberBio || ""}
+      groupFocused={groupFocused}
+      focusMemberId={focusMemberId}
+      selectedRegionCentroid={selectedRegionCentroid}
+      groupBio={groupBio}
+      copy={copy}
+      showReset={Boolean(
+        selectedMember || groupFocused || activeScene.id !== scenes[0]?.id,
       )}
-      <SceneCanvas
-        scene={localizedScene}
-        members={members}
-        artistName={artistName}
-        sceneLabel={copy.scene}
-        focusMemberId={focusMemberId}
-        groupFocused={groupFocused}
-        selectedMember={Boolean(selectedMember)}
-        cameraOffset={{
-          x: (50 - centroid.x) * 0.14,
-          y: (50 - centroid.y) * 0.1,
-        }}
-        onClose={() => {
-          if (selectedMember || groupFocused) closeMember();
-        }}
-        onHover={setHoveredMemberId}
-        onSelect={selectMember}
-      />
-      {!selectedMember && (
-        <div
-          className={`${styles.artistIdentity} ${groupFocused ? styles.artistIdentityFocused : ""}`}
-        >
-          <button
-            type="button"
-            className={styles.artistWordmark}
-            onClick={(event) => {
-              event.stopPropagation();
-              setHoveredMemberId(null);
-              setSelectedMemberId(null);
-              setGroupFocused((current) => !current);
-            }}
-            aria-label={`${artistName} ${copy.profile}`}
-            aria-expanded={groupFocused}
-            aria-controls={groupBio ? "group-artist-bio" : undefined}
-          >
-            {artist.logo_url && (
-              <Image
-                src={artist.logo_url}
-                alt={`${artistName} logo`}
-                width={240}
-                height={80}
-              />
-            )}
-            <h1>{artistName}</h1>
-            <span className={styles.artistProfileToggle} aria-hidden="true" />
-          </button>
-          {groupBio && (
-            <div
-              id="group-artist-bio"
-              className={styles.artistBioReveal}
-              aria-hidden={!groupFocused}
-            >
-              <div
-                dangerouslySetInnerHTML={{ __html: sanitizeRichText(groupBio) }}
-              />
-            </div>
-          )}
-        </div>
-      )}
-      {selectedMember && (
-        <MemberDetailOverlay
-          member={selectedMember}
-          memberBio={memberBio || ""}
-          panelLeft={selectedRegionCentroid.x > 56}
-          copy={copy}
-          onClose={closeMember}
-          onNavigate={navigate}
-        />
-      )}
-      <SceneDock
-        artist={artist}
-        member={selectedMember}
-        scenes={memberScenes}
-        activeSceneId={activeScene.id}
-        copy={copy}
-        showReset={Boolean(
-          selectedMember || groupFocused || activeScene.id !== scenes[0]?.id,
-        )}
-        onChangeScene={requestSceneChange}
-        onReset={reset}
-      />
-      <div
-        className={styles.sceneSweep}
-        key={`sweep-${activeScene.id}`}
-        aria-hidden="true"
-      />
-    </main>
+      onClose={() => {
+        if (selectedMember || groupFocused) closeMember();
+      }}
+      onHover={setHoveredMemberId}
+      onSelect={selectMember}
+      onToggleGroup={() => {
+        setHoveredMemberId(null);
+        setSelectedMemberId(null);
+        setGroupFocused((current) => !current);
+      }}
+      onNavigate={navigate}
+      onChangeScene={requestSceneChange}
+      onReset={reset}
+    />
   );
 }

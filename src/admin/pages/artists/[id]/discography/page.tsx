@@ -1,53 +1,23 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Check, CircleAlert, Disc3, GripVertical, Plus } from "lucide-react";
-import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
-import { spotifyAlbumId } from "@/core/http/spotify";
+import { Disc3 } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
-import {
-  CoverAssetField,
-  HeroAssetField,
-  TrackAssetField,
-} from "@/admin/components/assets/MusicAssetFields";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
-import GalleryManager from "@/admin/components/assets/GalleryManager";
-import PreviewButton from "@/admin/components/content/PreviewButton";
-import FormField from "@/admin/components/content/FormField";
 import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
-import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
-import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
 import ContentWorkbench, {
   type WorkbenchTab,
 } from "@/admin/components/content/ContentWorkbench";
+import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
+import OverflowDeleteMenu from "@/admin/components/content/OverflowDeleteMenu";
+import PreviewButton from "@/admin/components/content/PreviewButton";
+import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
-import CustomSelect from "@/core/components/form/CustomSelect";
-import {
-  ALBUM_TYPES,
-  type AlbumEditorDraft,
-  type EditorTab,
-} from "@/core/utils/music-editor";
-import {
-  useDiscographyEditor,
-  type DiscographyFilter,
-} from "./useDiscographyEditor";
-import DiscographyTrackSection from "./DiscographyTrackSection";
-
-type Filter = DiscographyFilter;
-
-function AssetBadge({
-  active,
-  children,
-}: {
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className={`music-asset-badge ${active ? "is-ready" : ""}`}>
-      {children}
-    </span>
-  );
-}
+import type { EditorTab } from "@/core/utils/music-editor";
+import DiscographyBulkModal from "./DiscographyBulkModal";
+import DiscographyContextRail from "./DiscographyContextRail";
+import DiscographyEditorSections from "./DiscographyEditorSections";
+import { useDiscographyEditor } from "./useDiscographyEditor";
 
 export default function DiscographyAdmin() {
   const routeArtistId = useParams<{ id: string }>()?.id;
@@ -101,7 +71,6 @@ export default function DiscographyAdmin() {
     selectAlbum,
     addAlbum,
     changeTab,
-    handleTitle,
     registerUpload,
     save,
     removeAlbum,
@@ -148,106 +117,29 @@ export default function DiscographyAdmin() {
       missing: validation?.publishIssues.length || 0,
     },
   ];
+
   const rail = (
-    <>
-      <div className="music-library-heading" data-tour-id="entity-create">
-        <div>
-          <h2>앨범 라이브러리</h2>
-        </div>
-        <button
-          type="button"
-          onClick={() => void addAlbum()}
-          aria-label="새 앨범"
-        >
-          <Plus aria-hidden="true" />
-        </button>
-      </div>
-      <div className="music-library-tools">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="앨범 검색"
-          aria-label="앨범 검색"
-        />
-        <div className="music-filter-row">
-          {(["all", "published", "draft"] as Filter[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={filter === item ? "is-active" : ""}
-              onClick={() => setFilter(item)}
-            >
-              {item === "all" ? "전체" : item === "published" ? "공개" : "초안"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="music-sort-row" data-tour-id="album-sort">
-        <span>{visibleAlbums.length}개 앨범</span>
-        <button
-          type="button"
-          onClick={() => {
-            setSorting((value) => !value);
-            setSortDirty(false);
-          }}
-        >
-          {sorting ? "정렬 취소" : "순서 변경"}
-        </button>
-      </div>
-      <div className="music-album-list">
-        {visibleAlbums.map((album) => (
-          <button
-            key={album.id}
-            type="button"
-            data-tour-id="entity-list-item"
-            draggable={sorting}
-            onDragStart={() => setDragAlbum(album.id)}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={() => reorderAlbum(album.id)}
-            onClick={() => !sorting && void selectAlbum(album)}
-            className={`music-album-item ${draft?.id === album.id ? "is-selected" : ""} ${sorting ? "is-sorting" : ""}`}
-          >
-            <span className="music-album-grip">
-              {sorting ? (
-                <GripVertical aria-hidden="true" />
-              ) : (
-                String(albums.indexOf(album) + 1).padStart(2, "0")
-              )}
-            </span>
-            <span className="music-album-cover">
-              {album.cover_url ? (
-                <AdminAssetImage src={album.cover_url} alt="" sizes="56px" />
-              ) : (
-                <i />
-              )}
-            </span>
-            <span className="music-album-copy">
-              <b>{album.title}</b>
-              <small>
-                {album.type} · {album.tracks.length}곡
-              </small>
-            </span>
-            <span
-              className={`cms-status ${album.is_published ? "is-live" : ""}`}
-            >
-              {album.is_published ? "공개" : "초안"}
-            </span>
-          </button>
-        ))}
-        {!visibleAlbums.length && (
-          <div className="music-empty">
-            <b>표시할 앨범이 없습니다.</b>
-            <span>검색 조건을 바꾸거나 새 앨범을 추가해 보세요.</span>
-          </div>
-        )}
-      </div>
-      {sorting && sortDirty && (
-        <div className="music-order-footer">
-          변경한 순서는 상단 저장 버튼으로 반영됩니다.
-        </div>
-      )}
-    </>
+    <DiscographyContextRail
+      albums={albums}
+      draft={draft}
+      visibleAlbums={visibleAlbums}
+      search={search}
+      filter={filter}
+      sorting={sorting}
+      sortDirty={sortDirty}
+      onAddAlbum={addAlbum}
+      onSearchChange={setSearch}
+      onFilterChange={setFilter}
+      onToggleSorting={() => {
+        setSorting((value) => !value);
+        setSortDirty(false);
+      }}
+      onDragAlbum={setDragAlbum}
+      onReorderAlbum={reorderAlbum}
+      onSelectAlbum={selectAlbum}
+    />
   );
+
   const identity = draft ? (
     <>
       <span className="music-header-cover">
@@ -276,6 +168,7 @@ export default function DiscographyAdmin() {
       <small>{artistName}</small>
     </div>
   );
+
   const actions = draft ? (
     <div className="music-header-actions">
       <PreviewButton onClick={openPreview} disabled={!previewPayload} />
@@ -389,382 +282,42 @@ export default function DiscographyAdmin() {
             </button>
           </div>
         ) : (
-          <div className="music-editor-body">
-            {tab === "basic" && (
-              <div className="music-section-stack music-basic-section">
-                <div className="content-section-heading">
-                  <h3>앨범 기본 정보</h3>
-                  <span>
-                    공개 페이지에 표시되는 정보와 앨범 고유 ID를 설정합니다.
-                  </span>
-                </div>
-                <div className="music-field-grid two">
-                  <label className="music-field">
-                    <span>
-                      앨범 제목 <b>*</b>
-                    </span>
-                    <input
-                      className="admin-input"
-                      value={draft.title}
-                      onChange={(event) => handleTitle(event.target.value)}
-                      autoFocus
-                    />
-                  </label>
-                  <div className="music-field">
-                    <span>
-                      앨범 종류 <b>*</b>
-                    </span>
-                    <CustomSelect
-                      ariaLabel="앨범 종류"
-                      value={draft.type}
-                      onChange={(type) => patchDraft({ type })}
-                      options={ALBUM_TYPES.map((type) => ({
-                        value: type,
-                        label: type,
-                      }))}
-                    />
-                  </div>
-                </div>
-                <FormField
-                  activeLang={language}
-                  label="표시 제목"
-                  valueKo={draft.title_ko}
-                  valueEn={draft.title_en}
-                  valueJa={draft.title_ja}
-                  onChangeKo={(value) => patchDraft({ title_ko: value })}
-                  onChangeEn={(value) => patchDraft({ title_en: value })}
-                  onChangeJa={(value) => patchDraft({ title_ja: value })}
-                />
-                <label className="music-field music-date-field">
-                  <span>발매일</span>
-                  <input
-                    type="date"
-                    className="admin-input"
-                    value={draft.release_date}
-                    onChange={(event) =>
-                      patchDraft({ release_date: event.target.value })
-                    }
-                  />
-                </label>
-                <div className="music-divider" />
-                <CoverAssetField
-                  artistId={artistId}
-                  albumId={draft.id}
-                  value={draft.cover_url}
-                  onError={setError}
-                  onUploaded={(asset, color) => {
-                    registerUpload(asset);
-                    patchDraft({ cover_url: asset.url, color });
-                  }}
-                />
-                <HeroAssetField
-                  artistId={artistId}
-                  albumId={draft.id}
-                  value={draft.hero_image_url}
-                  onError={setError}
-                  onUploaded={(asset) => {
-                    registerUpload(asset);
-                    patchDraft({ hero_image_url: asset.url });
-                  }}
-                  onClear={() => patchDraft({ hero_image_url: "" })}
-                />
-                <TrackAssetField
-                  label="앨범 타이포 로고"
-                  hint="SVG 파일을 끌어놓거나 선택하세요 · 테마 색상 자동 적용 · 최대 10MB"
-                  accept="image/svg+xml,.svg"
-                  maxBytes={10 * 1024 * 1024}
-                  artistId={artistId}
-                  albumId={draft.id}
-                  trackId="album"
-                  kind="logo"
-                  secureSvg
-                  value={draft.typo_logo_url}
-                  onError={setError}
-                  onClear={() => patchDraft({ typo_logo_url: "" })}
-                  onUploaded={(asset) => {
-                    registerUpload(asset);
-                    patchDraft({ typo_logo_url: asset.url });
-                  }}
-                />
-                <label className="music-field music-color-field">
-                  <span>테마 컬러</span>
-                  <div>
-                    <input
-                      type="color"
-                      value={draft.color}
-                      onChange={(event) =>
-                        patchDraft({ color: event.target.value.toUpperCase() })
-                      }
-                    />
-                    <input
-                      className="admin-input"
-                      value={draft.color}
-                      onChange={(event) =>
-                        patchDraft({ color: event.target.value.toUpperCase() })
-                      }
-                    />
-                  </div>
-                  <small>
-                    커버 업로드 시 자동으로 추천되며 직접 조정할 수 있습니다.
-                  </small>
-                </label>
-              </div>
-            )}
-
-            {tab === "content" && (
-              <div className="music-section-stack">
-                <div className="content-section-heading">
-                  <h3>앨범 소개와 외부 링크</h3>
-                  <span>
-                    언어별 소개를 작성하고 앨범 단위 스트리밍 링크를 연결합니다.
-                  </span>
-                </div>
-                <label className="music-field">
-                  <span>
-                    {language === "ko"
-                      ? "한국어"
-                      : language === "en"
-                        ? "영어"
-                        : "일본어"}{" "}
-                    앨범 소개
-                  </span>
-                  <textarea
-                    className="admin-input"
-                    rows={9}
-                    value={draft[`description_${language}`]}
-                    onChange={(event) =>
-                      patchDraft({
-                        [`description_${language}`]: event.target.value,
-                      } as Partial<AlbumEditorDraft>)
-                    }
-                    placeholder="앨범의 콘셉트와 이야기를 입력하세요."
-                  />
-                </label>
-                <div className="music-field-grid two">
-                  <label className="music-field">
-                    <span>Spotify 앨범 ID 또는 URL</span>
-                    <input
-                      className="admin-input"
-                      value={draft.spotify_id}
-                      onChange={(event) =>
-                        patchDraft({ spotify_id: event.target.value })
-                      }
-                      onBlur={() =>
-                        patchDraft({
-                          spotify_id: spotifyAlbumId(draft.spotify_id) || "",
-                        })
-                      }
-                      placeholder="Spotify 앨범 ID 또는 URL"
-                    />
-                  </label>
-                  <label className="music-field">
-                    <span>YouTube Music URL</span>
-                    <input
-                      type="url"
-                      className="admin-input"
-                      value={draft.youtube_url}
-                      onChange={(event) =>
-                        patchDraft({ youtube_url: event.target.value })
-                      }
-                      placeholder="https://music.youtube.com/…"
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {tab === "tracks" && (
-              <DiscographyTrackSection
-                artistId={artistId}
-                draft={draft}
-                language={language}
-                expandedTrack={expandedTrack}
-                onOpenBulk={() => setBulkOpen(true)}
-                onAddTrack={(track) => {
-                  patchDraft({ tracks: [...draft.tracks, track] });
-                  setExpandedTrack(track.id);
-                }}
-                onToggleTrack={(trackId) =>
-                  setExpandedTrack(expandedTrack === trackId ? null : trackId)
-                }
-                onDragStart={setDragTrack}
-                onReorder={reorderTrack}
-                patchDraft={patchDraft}
-                patchTrack={patchTrack}
-                registerUpload={registerUpload}
-                onError={setError}
-              />
-            )}
-
-            {tab === "gallery" && (
-              <div className="music-section-stack music-gallery-section">
-                <div className="content-section-heading">
-                  <h3>앨범 갤러리</h3>
-                  <span>
-                    이 앨범의 이미지를 모으고, 이미지에 등장하는 멤버를 함께
-                    지정합니다.
-                  </span>
-                </div>
-                <GalleryManager
-                  artistId={artistId || null}
-                  scope="album"
-                  albumId={
-                    albums.some((album) => album.id === draft.id)
-                      ? draft.id
-                      : null
-                  }
-                  onError={setError}
-                  onToast={setToast}
-                />
-              </div>
-            )}
-
-            {tab === "publish" && (
-              <div className="music-section-stack">
-                <div className="content-section-heading">
-                  <h3>공개 설정</h3>
-                  <span>
-                    공개 전 필수 정보를 확인하고,
-                    <br />
-                    연결된 미디어를 마지막으로 점검합니다.
-                  </span>
-                </div>
-                <div className="music-publish-summary">
-                  <div className="music-publish-cover">
-                    {draft.cover_url ? (
-                      <AdminAssetImage
-                        src={draft.cover_url}
-                        alt=""
-                        sizes="120px"
-                      />
-                    ) : (
-                      <span>커버 없음</span>
-                    )}
-                  </div>
-                  <div>
-                    <p>{draft.type}</p>
-                    <h4>{draft.title || "제목 없음"}</h4>
-                    <span>
-                      {draft.release_date || "발매일 미설정"} ·{" "}
-                      {draft.tracks.length}곡
-                    </span>
-                    <div className="music-summary-badges">
-                      <AssetBadge
-                        active={draft.tracks.some((track) =>
-                          Boolean(track.audio_url),
-                        )}
-                      >
-                        MP3{" "}
-                        {draft.tracks.filter((track) => track.audio_url).length}
-                      </AssetBadge>
-                      <AssetBadge
-                        active={draft.tracks.some((track) =>
-                          Boolean(track.youtube_url),
-                        )}
-                      >
-                        YouTube{" "}
-                        {
-                          draft.tracks.filter((track) => track.youtube_url)
-                            .length
-                        }
-                      </AssetBadge>
-                      <AssetBadge active={Boolean(draft.typo_logo_url)}>
-                        Typo
-                      </AssetBadge>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className={`music-publish-check ${validation?.canPublish ? "is-ready" : ""}`}
-                >
-                  <span>
-                    {validation?.canPublish ? (
-                      <Check aria-hidden="true" />
-                    ) : (
-                      <CircleAlert aria-hidden="true" />
-                    )}
-                  </span>
-                  <div>
-                    <b>
-                      {validation?.canPublish
-                        ? "공개할 준비가 되었습니다."
-                        : "공개 전 확인이 필요합니다."}
-                    </b>
-                    <p>
-                      {validation?.canPublish
-                        ? "필수 정보가 모두 입력되었습니다."
-                        : validation?.publishIssues.join(" · ")}
-                    </p>
-                  </div>
-                </div>
-                <label className="music-publish-toggle">
-                  <span>
-                    <b>웹사이트에 공개</b>
-                    <small>
-                      공개하면 디스코그래피에서 앨범과 업로드한 음원을 볼 수
-                      있습니다.
-                    </small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={draft.is_published}
-                    onChange={(event) => {
-                      if (event.target.checked && !validation?.canPublish) {
-                        setError(
-                          `공개 전 확인: ${validation?.publishIssues.join(", ")}`,
-                        );
-                        return;
-                      }
-                      patchDraft({ is_published: event.target.checked });
-                    }}
-                  />
-                </label>
-              </div>
-            )}
-          </div>
+          <DiscographyEditorSections
+            artistId={artistId}
+            albums={albums}
+            draft={draft}
+            tab={tab}
+            language={language}
+            expandedTrack={expandedTrack}
+            validation={validation}
+            patchDraft={patchDraft}
+            patchTrack={patchTrack}
+            registerUpload={registerUpload}
+            onError={setError}
+            onToast={setToast}
+            onOpenBulk={() => setBulkOpen(true)}
+            onAddTrack={(track) => {
+              patchDraft({ tracks: [...draft.tracks, track] });
+              setExpandedTrack(track.id);
+            }}
+            onToggleTrack={(trackId) =>
+              setExpandedTrack(expandedTrack === trackId ? null : trackId)
+            }
+            onDragStart={setDragTrack}
+            onReorderTrack={reorderTrack}
+          />
         )}
       </ContentWorkbench>
 
       {bulkOpen && (
-        <div
-          className="music-crop-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-label="여러 트랙 붙여넣기"
-        >
-          <div className="music-bulk-card">
-            <h3>여러 곡 붙여넣기</h3>
-            <p>
-              한 줄에 한 곡씩 입력하세요. 앞의 트랙 번호는 자동으로 제거합니다.
-            </p>
-            <pre>01. Lucky You{"\n"}02. Glow Up</pre>
-            <textarea
-              className="admin-input"
-              rows={10}
-              value={bulkValue}
-              onChange={(event) => setBulkValue(event.target.value)}
-              autoFocus
-              placeholder="한 줄에 한 곡씩 입력"
-            />
-            <div>
-              <button
-                type="button"
-                className="admin-btn admin-btn-secondary"
-                onClick={() => setBulkOpen(false)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className="admin-btn admin-btn-primary"
-                onClick={applyBulk}
-              >
-                트랙 추가
-              </button>
-            </div>
-          </div>
-        </div>
+        <DiscographyBulkModal
+          value={bulkValue}
+          onChange={setBulkValue}
+          onClose={() => setBulkOpen(false)}
+          onApply={applyBulk}
+        />
       )}
+
       {deleteOpen && draft && (
         <DeleteConfirmDialog
           title="앨범을 삭제할까요?"

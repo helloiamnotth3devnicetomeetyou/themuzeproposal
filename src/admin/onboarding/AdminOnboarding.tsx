@@ -5,10 +5,8 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type CSSProperties,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, ChevronRight, Play } from "lucide-react";
 import {
   isGuideSandboxActive,
   startGuideSandbox,
@@ -28,6 +26,7 @@ import { useGuidePopoverInteractions } from "./useGuidePopoverInteractions";
 import { useGuideDerivedState } from "./useGuideDerivedState";
 import { useGuideModalInteractions } from "./useGuideModalInteractions";
 import { useAdminOnboardingProgress } from "./useAdminOnboardingProgress";
+import { AdminOnboardingLauncher } from "./AdminOnboardingLauncher";
 
 type Artist = { id: string; name: string };
 type ChapterIntro = GuideRun;
@@ -415,11 +414,14 @@ export default function AdminOnboarding({
 
   return (
     <>
-      <button
-        ref={launcherRef}
-        type="button"
-        className={`admin-guide-launcher${isCollapsed ? " is-collapsed" : ""}${pausedRun ? " is-paused" : ""}`}
-        onClick={() => {
+      <AdminOnboardingLauncher
+        launcherRef={launcherRef}
+        isCollapsed={isCollapsed}
+        pausedRun={pausedRun}
+        progress={progress}
+        reachedSteps={reachedSteps}
+        totalSteps={totalSteps}
+        onOpen={() => {
           if (pausedRun) {
             setRun(null);
             setWelcomeOpen(false);
@@ -431,46 +433,7 @@ export default function AdminOnboarding({
           if (Object.keys(progressRows).length === 0) setWelcomeOpen(true);
           else setTocOpen(true);
         }}
-        aria-label={
-          pausedRun
-            ? "중단된 관리자 가이드 이어보기"
-            : `관리자 가이드, ${progress}% 확인`
-        }
-        title={
-          isCollapsed
-            ? pausedRun
-              ? "가이드 이어보기"
-              : `관리자 가이드 · ${progress}%`
-            : undefined
-        }
-      >
-        <span
-          className="admin-guide-launcher-ring"
-          style={
-            { "--guide-progress": `${progress * 3.6}deg` } as CSSProperties
-          }
-        >
-          {pausedRun ? (
-            <Play aria-hidden="true" />
-          ) : (
-            <BookOpen aria-hidden="true" />
-          )}
-        </span>
-        {!isCollapsed && (
-          <span>
-            <b>{pausedRun ? "가이드 이어보기" : "관리자 업무 가이드"}</b>
-            <small>
-              {pausedRun
-                ? `연습 모드 · ${GUIDE_CHAPTERS.find((chapter) => chapter.id === pausedRun.chapterId)?.title ?? "이전 단계"}`
-                : `${reachedSteps}/${totalSteps} 스텝 · ${progress}%`}
-            </small>
-            <i>
-              <em style={{ width: `${progress}%` }} />
-            </i>
-          </span>
-        )}
-        {!isCollapsed && <ChevronRight aria-hidden="true" />}
-      </button>
+      />
       {portal}
     </>
   );
