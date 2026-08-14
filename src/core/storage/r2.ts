@@ -153,21 +153,24 @@ export async function deleteObjects(
   if (!s3 || !location || !paths.length)
     return { error: !s3 || !location };
   const keys = paths.map((path) => `${bucket}/${path.replace(/^\/+/, "")}`);
-  try {
-    for (let i = 0; i < keys.length; i += DELETE_CHUNK_SIZE) {
-      const chunk = keys.slice(i, i + DELETE_CHUNK_SIZE);
+  for (let i = 0; i < keys.length; i += DELETE_CHUNK_SIZE) {
+    const chunk = keys.slice(i, i + DELETE_CHUNK_SIZE);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
       const response = await s3.send(
         new DeleteObjectsCommand({
           Bucket: location.r2Bucket,
           Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
         }),
       );
-      if (response.Errors?.length) return { error: true };
+        if (!response.Errors?.length) break;
+      } catch {
+        // Retry the common transient R2 failure once; callers still receive an error.
+      }
+      if (attempt === 1) return { error: true };
     }
-    return { error: false };
-  } catch {
-    return { error: true };
   }
+  return { error: false };
 }
 
 export async function createSignedDownloadUrl(

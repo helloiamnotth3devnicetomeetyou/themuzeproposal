@@ -294,6 +294,7 @@ export function useMemberEditor({
           .from("artist_members")
           .update(payload)
           .eq("id", draft.id)
+          .eq("updated_at", members.find((member) => member.id === draft.id)?.updated_at ?? "")
           .select("id")
           .single()
       : await supabase

@@ -25,6 +25,7 @@ export type Member = {
   bio_ja: string | null;
   social_links: unknown;
   sort_order: number;
+  updated_at: string;
 };
 
 export type MemberDraft = {

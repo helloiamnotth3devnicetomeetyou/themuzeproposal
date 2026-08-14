@@ -45,6 +45,7 @@ export function useArtistProfileLoader(
         descJa: data.description_ja || "",
         socialLinks: normalizeSocialLinks(data.social_links),
         isActive: data.is_active ?? true,
+        updatedAt: data.updated_at,
       };
       setArtistId(data.id);
       setDraft(draft);

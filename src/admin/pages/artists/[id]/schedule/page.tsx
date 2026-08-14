@@ -315,6 +315,7 @@ export default function ArtistScheduleAdminPage() {
           .from("artist_schedules")
           .update(payload)
           .eq("id", draft.id)
+          .eq("updated_at", items.find((item) => item.id === draft.id)?.updated_at ?? "")
           .select("id")
           .single()
       : await supabase

@@ -21,12 +21,12 @@ type ProfileActionProps = {
   artistId: string | null;
   draft: ProfileDraft | null;
   snapshot: string;
-  serializedDraft: string;
   isNew: boolean;
   routeId: string | undefined;
   saveIssues: string[];
   uploadedAssetsRef: MutableRefObject<UploadedImageAsset[]>;
   setArtistId: Dispatch<SetStateAction<string | null>>;
+  setDraft: Dispatch<SetStateAction<ProfileDraft | null>>;
   setSnapshot: Dispatch<SetStateAction<string>>;
   setSaving: Dispatch<SetStateAction<boolean>>;
   setDeleting: Dispatch<SetStateAction<boolean>>;
@@ -40,12 +40,12 @@ export function useArtistProfileActions({
   artistId,
   draft,
   snapshot,
-  serializedDraft,
   isNew,
   routeId,
   saveIssues,
   uploadedAssetsRef,
   setArtistId,
+  setDraft,
   setSnapshot,
   setSaving,
   setDeleting,
@@ -79,13 +79,14 @@ export function useArtistProfileActions({
       ? await supabase
           .from("artists")
           .insert({ id: artistId, ...payload })
-          .select("id")
+          .select("id,updated_at")
           .single()
       : await supabase
           .from("artists")
           .update(payload)
           .eq("id", artistId)
-          .select("id")
+          .eq("updated_at", draft.updatedAt ?? "")
+          .select("id,updated_at")
           .single();
     if (result.error) {
       setError(
@@ -108,7 +109,9 @@ export function useArtistProfileActions({
       return;
     }
     setArtistId(result.data.id);
-    setSnapshot(serializedDraft);
+    const savedDraft = { ...draft, updatedAt: result.data.updated_at };
+    setDraft(savedDraft);
+    setSnapshot(JSON.stringify(savedDraft));
     discardDraftBackup();
     await finalizeDraftImageAssets(
       supabase,

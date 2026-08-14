@@ -12,6 +12,7 @@ export type Notice = {
   date: string;
   is_published: boolean;
   published_at: string | null;
+  updated_at: string;
 };
 
 export type NoticeTab = "content" | "publish";

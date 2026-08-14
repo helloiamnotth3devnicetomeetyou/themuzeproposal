@@ -118,16 +118,19 @@ export function CampaignListAdmin() {
       }))
     )
       return;
-    const { error: updateError } = await supabase
+    const { data, error: updateError } = await supabase
       .from("audition_campaigns")
       .update({ is_active: !campaign.is_active })
-      .eq("id", campaign.id);
-    if (updateError) setError(updateError.message);
+      .eq("id", campaign.id)
+      .eq("updated_at", campaign.updated_at)
+      .select("updated_at")
+      .maybeSingle();
+    if (updateError || !data) setError(updateError?.message || "다른 관리자가 이미 수정했습니다. 새로고침 후 다시 시도하세요.");
     else
       setCampaigns((current) =>
         current.map((item) =>
           item.id === campaign.id
-            ? { ...item, is_active: !item.is_active }
+            ? { ...item, is_active: !item.is_active, updated_at: data.updated_at }
             : item,
         ),
       );

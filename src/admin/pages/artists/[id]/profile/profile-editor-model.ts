@@ -19,6 +19,7 @@ export type ProfileDraft = {
   descJa: string;
   socialLinks: SocialLink[];
   isActive: boolean;
+  updatedAt?: string;
 };
 
 export const EMPTY_PROFILE: ProfileDraft = {

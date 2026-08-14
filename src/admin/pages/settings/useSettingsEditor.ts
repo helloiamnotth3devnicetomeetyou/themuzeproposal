@@ -46,6 +46,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
   const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [updatedAt, setUpdatedAt] = useState<Record<string, string>>({});
   const isSuperAdmin = canManageAdminAccounts;
 
   const showToast = useCallback((message: string) => {
@@ -109,6 +110,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       const nextDraft = parseSettingsRows(
         data as Array<{ key: string; value: unknown }> | null,
       );
+      setUpdatedAt(Object.fromEntries((data ?? []).map((row) => [row.key, row.updated_at])));
       setCompany(nextDraft.company);
       setHistory(nextDraft.history);
       setFooter(nextDraft.footer);
@@ -234,14 +236,16 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       { key: "social", value: social },
       { key: "business_assets", value: business },
     ];
-    const { error: saveError } = await supabase
-      .from("site_settings")
-      .upsert(updates as never[]);
+    const { data: saved, error: saveError } = await supabase.rpc(
+      "save_site_settings_checked",
+      { p_updates: updates, p_expected_updated_at: updatedAt },
+    );
     setSaving(false);
     if (saveError) {
       setError(adminDbError(saveError, "사이트 설정을 저장하지 못했습니다."));
       return;
     }
+    setUpdatedAt(saved as Record<string, string>);
     setSnapshot(serializedDraft);
     discardBackup();
     await revalidatePublicCache("public-site-settings");

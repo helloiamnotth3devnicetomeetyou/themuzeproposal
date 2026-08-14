@@ -175,13 +175,13 @@ export default function useNoticeManager({
           ? supabase
               .from("notices")
               .select(
-                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at",
+                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at,updated_at",
               )
               .eq("artist_id", scopeArtistId)
           : supabase
               .from("notices")
               .select(
-                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at",
+                "id,title_ko,title_en,title_ja,content_ko,content_en,content_ja,category_ko,category_en,category_ja,date,is_published,published_at,updated_at",
               )
               .is("artist_id", null)
       ).order("date", { ascending: false });
@@ -355,6 +355,7 @@ export default function useNoticeManager({
           .from("notices")
           .update(payload)
           .eq("id", draft.id)
+          .eq("updated_at", notices.find((notice) => notice.id === draft.id)?.updated_at ?? "")
           .select("id")
           .single()
       : await supabase.from("notices").insert(payload).select("id").single();

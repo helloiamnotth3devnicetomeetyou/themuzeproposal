@@ -24,6 +24,7 @@ export type ScheduleRow = {
   link_url: string | null;
   is_published: boolean;
   sort_order: number;
+  updated_at: string;
 };
 
 export type ScheduleDraft = {
