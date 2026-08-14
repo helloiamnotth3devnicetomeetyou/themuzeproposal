@@ -99,6 +99,10 @@ jobs:
 
       - run: npm ci
 
+      - run: npm ls @tailwindcss/postcss
+
+      - run: node -p "require.resolve('@tailwindcss/postcss')"
+
       - run: npm run build
 
   e2e:
@@ -117,7 +121,7 @@ jobs:
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ci-placeholder-turnstile-site-key
-      TURNSTILE_SECRET_KEY: ci-placeholder-turnstile-secret-key
+      TURNSTILE_SECRET_KEY: ci-placeholder-secret-key
       TRUSTED_CLIENT_IP_HEADER: x-forwarded-for
       R2_ACCOUNT_ID: ci-placeholder-account-id
       R2_ACCESS_KEY_ID: ci-placeholder-access-key-id
@@ -134,7 +138,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm ls @tailwindcss/postcss
+
       - run: npx playwright install --with-deps chromium
 
       - run: npm run build
