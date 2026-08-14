@@ -401,6 +401,9 @@ export function useDiscographyEditor({
     });
     setSortDirty(true);
     setDragAlbum(null);
+    window.dispatchEvent(
+      new CustomEvent("admin-guide-practice", { detail: "2-album-sort" }),
+    );
   };
   const saveOrder = async () => {
     const { error: orderError } = await supabase.rpc("reorder_albums", {

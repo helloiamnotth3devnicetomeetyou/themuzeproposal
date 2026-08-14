@@ -1,6 +1,6 @@
 export type GuideRole = "super_admin" | "editor";
 export type GuideRequirement = "artist" | "artist_scenes" | "artist_gallery";
-export type GuidePracticeEvent = "click" | "input" | "change" | "pointerup";
+export type GuidePracticeEvent = "click" | "input" | "change" | "pointerup" | "admin-guide-practice";
 export type GuidePractice = {
   instruction: string;
   event: GuidePracticeEvent;
@@ -1580,6 +1580,10 @@ const GUIDE_PRACTICES: Partial<Record<string, GuidePractice>> = {
   "2-album-create": {
     instruction: "새 앨범 버튼을 눌러 앨범 기본 정보 초안을 열어 보세요.",
     event: "click",
+  },
+  "2-album-sort": {
+    instruction: "앨범 한 장을 뒤로 한 칸 옮겨 보세요.",
+    event: "admin-guide-practice",
   },
   "2-track-bulk": {
     instruction: "‘여러 곡 붙여넣기’를 눌러 일괄 입력 창을 열어 보세요.",

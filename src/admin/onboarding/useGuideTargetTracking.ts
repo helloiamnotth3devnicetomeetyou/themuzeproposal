@@ -212,8 +212,16 @@ export function useGuideTargetTracking({
       practiceDone = true;
       setPracticeComplete(true);
       void saveStepProgress(step.chapterId, step.id);
+      practiceTimer = window.setTimeout(() => void finishOrAdvance(), 400);
     };
     const completePractice = (event: Event) => {
+      if (
+        event.type === "admin-guide-practice" &&
+        (event as CustomEvent<string>).detail === step.id
+      ) {
+        markPracticeComplete();
+        return;
+      }
       const practiceTourId = step.practice?.target ?? step.target;
       if (
         !event
