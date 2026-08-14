@@ -76,6 +76,26 @@
 
 알려진 한계 때문에 단순 구현을 택했다면 `ponytail:` 주석으로 ceiling과 upgrade trigger를 기록한다. 예: 현재 multi-editor batch는 cross-table atomic rollback이 필요할 때 RPC로 바꾼다.
 
+## Git 커밋
+
+모든 커밋 제목은 [Conventional Commits 1.0.0](https://www.conventionalcommits.org/ko/v1.0.0/)의 `<type>[optional scope]: <description>` 형식을 사용한다.
+
+- 기능 추가는 `feat:`, 버그 수정은 `fix:`를 사용한다.
+- 그 외에는 변경 의도에 맞춰 `docs:`, `test:`, `refactor:`, `perf:`, `style:`, `build:`, `ci:`, `chore:`, `revert:`를 사용한다.
+- scope는 선택 사항이며 `feat(discography): ...`처럼 코드 영역을 나타내는 명사로 작성한다.
+- 설명은 콜론과 공백 바로 뒤에 짧게 작성한다.
+- 호환성을 깨는 변경은 type 뒤에 `!`를 붙이거나 본문 아래 `BREAKING CHANGE: ...` footer로 명시한다.
+- 여러 의도가 섞이면 가능한 한 커밋을 분리한다.
+- merge 전 아직 공개되지 않은 잘못된 메시지는 rebase/amend로 바로잡는다. 공유된 기록을 수정할 때는 날짜와 순서를 보존하고 `--force-with-lease`를 사용한다.
+
+예시:
+
+```text
+feat(admin): add mobile album sorting controls
+fix(auth): prevent stale login redirects
+docs: document commit message convention
+```
+
 ## 기능별 작업 절차
 
 ### 새 공개 읽기 화면
