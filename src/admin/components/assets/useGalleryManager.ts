@@ -87,8 +87,10 @@ export function useGalleryManager({
   const [dragging, setDragging] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteItem, setDeleteItem] = useState<GalleryItem | null>(null);
+  const loadVersion = useRef(0);
 
   const loadGallery = useCallback(async () => {
+    const version = ++loadVersion.current;
     if (!artistId) {
       setItems([]);
       setLoading(false);
@@ -108,6 +110,7 @@ export function useGalleryManager({
         .order("sort_order", { ascending: true }),
       supabase.from("artists").select("updated_at").eq("id", artistId).single(),
     ]);
+    if (version !== loadVersion.current) return;
     setAlbums(
       (albumResult.data ?? []).map((album) => ({
         id: album.id,
@@ -131,6 +134,7 @@ export function useGalleryManager({
     if (scope === "album" && albumId) query = query.eq("album_id", albumId);
     if (scope === "member" && memberId) query = query.eq("member_id", memberId);
     const { data, error } = await query;
+    if (version !== loadVersion.current) return;
     setLoading(false);
     if (error) {
       setSchemaMissing(
@@ -240,6 +244,41 @@ export function useGalleryManager({
         setSnapshot(items);
         discardBackup();
         onToast("갤러리 변경사항을 저장했습니다.");
+      },
+      artistContent: {
+        artistId,
+        expectedUpdatedAt: artistUpdatedAt,
+        gallery: {
+          items: items.map((item) => ({
+            id: item.id,
+            artist_id: item.artist_id,
+            album_id: item.album_id,
+            member_id: item.member_id,
+            image_url: item.image_url,
+            caption: item.caption,
+            sort_order: item.sort_order,
+            is_published: item.is_published,
+          })),
+          removedIds: snapshot
+            .filter((item) => !items.some((current) => current.id === item.id))
+            .map((item) => item.id),
+        },
+        committed: async (updatedAt) => {
+          const removed = snapshot.filter(
+            (item) => !items.some((current) => current.id === item.id),
+          );
+          setArtistUpdatedAt(updatedAt);
+          await finalizeDraftImageAssets(
+            supabase,
+            uploadedAssets.current,
+            items.map((item) => item.image_url),
+            removed.map((item) => item.image_url),
+          );
+          uploadedAssets.current = [];
+          setSnapshot(items);
+          discardBackup();
+          onToast("Gallery changes saved.");
+        },
       },
     });
   }, [

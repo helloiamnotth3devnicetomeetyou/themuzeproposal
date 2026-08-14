@@ -285,8 +285,8 @@ export default function ArtistProfileAdmin() {
   );
   const saveAll = async () => {
     if (pendingDelete) return handleDelete();
-    if (dirty) await handleSave();
     await nestedDrafts.commit();
+    if (dirty) await handleSave();
   };
 
   return (

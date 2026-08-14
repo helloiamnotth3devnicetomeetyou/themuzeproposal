@@ -8,7 +8,10 @@ import styles from "@/styles/(admin)/components/scenes/ArtistSceneManager.module
 import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import { registerPageDraft } from "@/admin/hooks/usePageDrafts";
 import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
+import { finalizeDraftImageAssets } from "@/admin/utils/draft-assets";
 import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
+import { supabase } from "@/core/supabase/client";
+import { revalidateArtistSceneData } from "@/core/utils/artist-events";
 import type { MemberLookup } from "./artist-scene-editor-model";
 import { useArtistSceneLoader } from "./useArtistSceneLoader";
 import { useArtistSceneActions } from "./useArtistSceneActions";
@@ -141,6 +144,92 @@ export default function ArtistSceneManager({
         },
       ],
       commit: commitScenes,
+      artistContent: {
+        artistId,
+        expectedUpdatedAt: artistUpdatedAt,
+        scenes: {
+          items: scenes.map((scene) => ({
+            id: scene.id,
+            artist_id: scene.artist_id,
+            title: scene.title.trim(),
+            title_ko: scene.title_ko?.trim() || scene.title.trim(),
+            title_en: scene.title_en?.trim() || null,
+            title_ja: scene.title_ja?.trim() || null,
+            link_url: scene.link_url?.trim() || null,
+            image_url: scene.image_url,
+            image_width: scene.image_width,
+            image_height: scene.image_height,
+            is_hero: scene.is_hero,
+            is_published: scene.is_published,
+            sort_order: scene.sort_order,
+            artist_scene_members: scene.artist_scene_members.map((region) => ({
+              id: region.id,
+              scene_id: scene.id,
+              member_id: region.member_id,
+              outline: region.outline,
+              mask_url: region.mask_url,
+              sort_order: region.sort_order,
+            })),
+          })),
+          removedSceneIds: snapshot
+            .filter((scene) => !scenes.some((item) => item.id === scene.id))
+            .map((scene) => scene.id),
+          removedRegionIds: snapshot
+            .flatMap((scene) => scene.artist_scene_members)
+            .filter(
+              (region) =>
+                !scenes
+                  .flatMap((scene) => scene.artist_scene_members)
+                  .some((item) => item.id === region.id),
+            )
+            .map((region) => region.id),
+        },
+        committed: async (updatedAt) => {
+          const removedScenes = snapshot.filter(
+            (scene) => !scenes.some((item) => item.id === scene.id),
+          );
+          const previousRegions = snapshot.flatMap(
+            (scene) => scene.artist_scene_members,
+          );
+          const currentRegions = scenes.flatMap(
+            (scene) => scene.artist_scene_members,
+          );
+          const removedRegions = previousRegions.filter(
+            (region) => !currentRegions.some((item) => item.id === region.id),
+          );
+          const replacedRegions = previousRegions.filter(
+            (region) =>
+              currentRegions.find((item) => item.id === region.id)?.mask_url !==
+              region.mask_url,
+          );
+          setArtistUpdatedAt(updatedAt);
+          await finalizeDraftImageAssets(
+            supabase,
+            uploadedAssets.current,
+            scenes.flatMap((scene) => [
+              scene.image_url,
+              ...scene.artist_scene_members.map(
+                (region) => region.mask_url || "",
+              ),
+            ]),
+            [
+              ...removedScenes.flatMap((scene) => [
+                scene.image_url,
+                ...scene.artist_scene_members.map(
+                  (region) => region.mask_url || "",
+                ),
+              ]),
+              ...removedRegions.map((region) => region.mask_url || ""),
+              ...replacedRegions.map((region) => region.mask_url || ""),
+            ],
+          );
+          uploadedAssets.current = [];
+          setSnapshot(scenes);
+          discardBackup();
+          await revalidateArtistSceneData();
+          onToast("Scene changes saved.");
+        },
+      },
     });
   }, [
     artistId,
