@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import { Image as LucideImage, Maximize2 } from "lucide-react";
+import { useState } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { DISCOGRAPHY_GALLERY_SIZES } from "../lib/cover-preload";
 import type {
@@ -32,6 +35,28 @@ type Props = {
   showMember: boolean;
   onOpen: (index: number) => void;
 };
+
+function GalleryImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <>
+      {!loaded && (
+        <span className="absolute inset-0 z-10 grid place-items-center bg-black/65 grayscale">
+          <i className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        </span>
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        onLoad={() => setLoaded(true)}
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
+        sizes={DISCOGRAPHY_GALLERY_SIZES}
+      />
+    </>
+  );
+}
 
 export function MemberGalleryGrid({
   album,
@@ -75,12 +100,9 @@ export function MemberGalleryGrid({
               borderColor: `${albumColor}25`,
             }}
           >
-            <Image
+            <GalleryImage
               src={item.imageUrl}
               alt={item.caption || album.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes={DISCOGRAPHY_GALLERY_SIZES}
             />
             <div
               className="absolute inset-0 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
