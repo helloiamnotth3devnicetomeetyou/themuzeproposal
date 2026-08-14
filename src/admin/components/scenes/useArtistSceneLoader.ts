@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/core/supabase/client";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import {
@@ -25,8 +25,10 @@ export function useArtistSceneLoader(
 ) {
   const [loading, setLoading] = useState(Boolean(artistId));
   const [schemaMissing, setSchemaMissing] = useState(false);
+  const loadVersion = useRef(0);
   const load = useCallback(
     async (preferredSceneId?: string) => {
+      const version = ++loadVersion.current;
       if (!artistId) {
         setLoading(false);
         return;
@@ -45,8 +47,13 @@ export function useArtistSceneLoader(
           .select("id,name,eng_name,color,sort_order")
           .eq("artist_id", artistId)
           .order("sort_order", { ascending: true }),
-        supabase.from("artists").select("updated_at").eq("id", artistId).single(),
+        supabase
+          .from("artists")
+          .select("updated_at")
+          .eq("id", artistId)
+          .single(),
       ]);
+      if (version !== loadVersion.current) return;
       setLoading(false);
       if (sceneResult.error) {
         const missing = sceneResult.error.message.includes("artist_scenes");
@@ -71,7 +78,15 @@ export function useArtistSceneLoader(
           : (nextScenes[0]?.id ?? null);
       });
     },
-    [artistId, onError, setArtistUpdatedAt, setMembers, setScenes, setSelectedSceneId, setSnapshot],
+    [
+      artistId,
+      onError,
+      setArtistUpdatedAt,
+      setMembers,
+      setScenes,
+      setSelectedSceneId,
+      setSnapshot,
+    ],
   );
 
   useEffect(() => {

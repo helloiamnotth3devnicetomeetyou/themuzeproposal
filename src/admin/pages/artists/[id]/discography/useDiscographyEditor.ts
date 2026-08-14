@@ -57,6 +57,7 @@ export function useDiscographyEditor({
   const [dragTrack, setDragTrack] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState(false);
   const uploadedAssets = useRef<UploadedAsset[]>([]);
+  const loadVersion = useRef(0);
 
   const editor = useAdminEntityEditor<AlbumEditorDraft>({
     initialDraft: null,
@@ -116,6 +117,7 @@ export function useDiscographyEditor({
 
   const loadAlbums = useCallback(
     async (preferredId?: string) => {
+      const version = ++loadVersion.current;
       setLoading(true);
       setError("");
       const { data: artist, error: artistError } = await supabase
@@ -124,6 +126,7 @@ export function useDiscographyEditor({
         .eq("id", routeArtistId)
         .maybeSingle();
       if (artistError || !artist) {
+        if (version !== loadVersion.current) return;
         setError("아티스트 정보를 불러오지 못했습니다.");
         setLoading(false);
         return;
@@ -163,6 +166,7 @@ export function useDiscographyEditor({
         albumError = legacyResult.error;
       }
       if (albumError) {
+        if (version !== loadVersion.current) return;
         setError(
           albumError.message.includes("spotify_url")
             ? "음악 편집 DB 마이그레이션(003_music_editor.sql)을 먼저 적용해 주세요."
@@ -171,6 +175,7 @@ export function useDiscographyEditor({
         setLoading(false);
         return;
       }
+      if (version !== loadVersion.current) return;
       const nextAlbums = (albumRows ?? []).map(albumToDraft);
       setArtistId(artist.id);
       setArtistName(artist.name || "");
