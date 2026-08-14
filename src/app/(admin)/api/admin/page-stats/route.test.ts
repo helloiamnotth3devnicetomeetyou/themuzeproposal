@@ -39,6 +39,16 @@ describe("GET /api/admin/page-stats", () => {
     expect(response.status).toBe(403);
   });
 
+  it("accepts browser same-origin fetches without an Origin header", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ data: [] })));
+    const response = await GET(
+      new Request("https://themuze.kr/api/admin/page-stats", {
+        headers: { "sec-fetch-site": "same-origin" },
+      }),
+    );
+    expect(response.status).toBe(200);
+  });
+
   it.each(["__proto__", "constructor", "toString"])(
     "rejects inherited range %s",
     async (range) => {

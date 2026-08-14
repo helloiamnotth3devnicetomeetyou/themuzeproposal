@@ -87,7 +87,10 @@ const parseBreakdown = (rows: unknown[], dimension: string) =>
     .sort((a, b) => b.pageviews - a.pageviews);
 
 export async function GET(request: Request) {
-  if (!isSameOriginRequest(request))
+  const sameOrigin =
+    isSameOriginRequest(request) ||
+    request.headers.get("sec-fetch-site") === "same-origin";
+  if (!sameOrigin)
     return jsonNoStore({ error: "forbidden" }, { status: 403 });
   const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
