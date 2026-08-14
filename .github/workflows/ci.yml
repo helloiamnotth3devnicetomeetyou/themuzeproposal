@@ -134,7 +134,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-
+      - run: npm ls @tailwindcss/postcss
       - run: npx playwright install --with-deps chromium
 
       - run: npm run build
