@@ -32,6 +32,7 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig {
   const isCiLocalSupabase =
     process.env.CI === "true" && parsedUrl.hostname === "127.0.0.1";
   if (
+    typeof window === "undefined" &&
     process.env.NODE_ENV === "production" &&
     parsedUrl.protocol !== "https:" &&
     !isCiLocalSupabase
