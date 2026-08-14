@@ -97,11 +97,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
-
-      - run: npm ls @tailwindcss/postcss
-
-      - run: node -p "require.resolve('@tailwindcss/postcss')"
+      - run: npm ci --include=dev
 
       - run: npm run build
 
@@ -137,7 +133,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --include=dev
 
       - run: npx playwright install --with-deps chromium
 
