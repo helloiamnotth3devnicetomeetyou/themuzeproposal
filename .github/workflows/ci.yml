@@ -74,9 +74,9 @@ jobs:
     env:
       NODE_ENV: production
       NEXT_PUBLIC_SITE_URL: https://ci.example.com
-      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_URL: https://knbingxnnkutnukjyucw.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-      NEXT_PUBLIC_SUPABASE_PROJECT_REF: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_PROJECT_REF: knbingxnnkutnukjyucw
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
@@ -110,9 +110,9 @@ jobs:
     env:
       NODE_ENV: production
       NEXT_PUBLIC_SITE_URL: https://ci.example.com
-      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_URL: https://knbingxnnkutnukjyucw.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-      NEXT_PUBLIC_SUPABASE_PROJECT_REF: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_PROJECT_REF: knbingxnnkutnukjyucw
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
       AUTH_RATE_LIMIT_SECRET: ci-placeholder-rate-limit-secret-min-32chars
       SUBMISSION_RATE_LIMIT_SECRET: ci-placeholder-submission-secret-min-32chars
