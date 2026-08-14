@@ -92,7 +92,6 @@ export default function ArtistProfileAdmin() {
     void cleanupAbandonedDraftImageAssets(supabase);
   }, []);
 
-  const serializedDraft = draft ? JSON.stringify(draft) : "";
   const saveIssues = useMemo(() => {
     if (!draft) return [];
     const issues: string[] = [];
@@ -189,12 +188,12 @@ export default function ArtistProfileAdmin() {
       artistId,
       draft,
       snapshot,
-      serializedDraft,
       isNew,
       routeId,
       saveIssues,
       uploadedAssetsRef: uploadedAssets,
       setArtistId,
+      setDraft,
       setSnapshot,
       setSaving,
       setDeleting,
