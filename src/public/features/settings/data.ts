@@ -92,9 +92,12 @@ export function normalizeSiteSettings(
     }
     if (item.key === "social") next.social = normalizeSocial(item.value);
     if (item.key === "business_assets") {
+      const assets = stringFields(item.value, ["pressKitUrl", "profilePdfUrl"]);
       next.businessAssets = {
-        ...next.businessAssets,
-        ...stringFields(item.value, ["pressKitUrl", "profilePdfUrl"]),
+        pressKitUrl:
+          assets.pressKitUrl ?? next.businessAssets?.pressKitUrl ?? "",
+        profilePdfUrl:
+          assets.profilePdfUrl ?? next.businessAssets?.profilePdfUrl ?? "",
       };
     }
   });
