@@ -170,10 +170,6 @@ export type SiteSettingsPreviewPayload = {
     copyright: string;
   };
   social: PreviewSocialLink[];
-  businessAssets?: {
-    pressKitUrl: string;
-    profilePdfUrl: string;
-  };
 };
 
 export type PreviewPayloadByKind = {

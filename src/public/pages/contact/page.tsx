@@ -7,7 +7,6 @@ import { safeHref } from "@/core/http/safe-href";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { createSupabaseServerClient } from "@/core/supabase/server";
-import { getCachedSiteSettings } from "@/public/features/layout/server";
 import ContactClient from "./ContactClient";
 
 export const metadata: Metadata = createPageMetadata(
@@ -21,6 +20,7 @@ export default async function ContactPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  let businessAssets = { pressKitUrl: "", profilePdfUrl: "" };
   const [profileResult, businessRowResult, remaining] = await Promise.all([
     user
       ? supabase
@@ -29,12 +29,17 @@ export default async function ContactPage() {
           .eq("id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    getCachedSiteSettings(),
+    supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "business_assets")
+      .maybeSingle(),
     user
       ? getSubmissionRemaining("contact_inquiry", user.id)
       : Promise.resolve(DAILY_SUBMISSION_LIMIT),
   ]);
   const profile = profileResult.data;
+  const businessRow = businessRowResult.data;
   const { data: avatar } = profile?.avatar_asset_id
     ? await supabase
         .from("avatar_assets")
@@ -46,10 +51,13 @@ export default async function ContactPage() {
   const avatarUrl = avatar?.image_path
     ? getPublicAssetUrl("artist-assets", avatar.image_path)
     : "";
-  const businessAssets = {
-    pressKitUrl: safeHref(businessRowResult.businessAssets?.pressKitUrl) ?? "",
-    profilePdfUrl: safeHref(businessRowResult.businessAssets?.profilePdfUrl) ?? "",
-  };
+  if (businessRow?.value && typeof businessRow.value === "object") {
+    const assets = businessRow.value as Partial<typeof businessAssets>;
+    businessAssets = {
+      pressKitUrl: safeHref(assets.pressKitUrl) ?? "",
+      profilePdfUrl: safeHref(assets.profilePdfUrl) ?? "",
+    };
+  }
 
   return (
     <ContactClient

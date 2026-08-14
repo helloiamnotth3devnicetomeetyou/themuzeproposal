@@ -15,7 +15,6 @@ export const EMPTY_SETTINGS: SiteSettingsPreviewPayload = {
   history: DEFAULT_HISTORY,
   footer: { copyright: "" },
   social: [],
-  businessAssets: { pressKitUrl: "", profilePdfUrl: "" },
 };
 
 const normalizeSocial = (
@@ -91,12 +90,6 @@ export function normalizeSiteSettings(
       };
     }
     if (item.key === "social") next.social = normalizeSocial(item.value);
-    if (item.key === "business_assets") {
-      next.businessAssets = {
-        ...next.businessAssets,
-        ...stringFields(item.value, ["pressKitUrl", "profilePdfUrl"]),
-      };
-    }
   });
 
   return next;
