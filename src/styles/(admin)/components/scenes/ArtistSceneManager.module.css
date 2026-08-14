@@ -527,6 +527,11 @@
 }
 
 @media (max-width: 768px) {
+  .toolbar > button,
+  .sceneSettings > button,
+  .outlineTools > button {
+    min-height: 44px;
+  }
   .toolbar {
     align-items: stretch;
     flex-wrap: wrap;

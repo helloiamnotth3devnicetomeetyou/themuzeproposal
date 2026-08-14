@@ -201,6 +201,7 @@
 
   .content-workbench .content-workbench-actions .draft-save-button,
   .music-header-actions .draft-save-button {
+    order: -1;
     flex: 0 0 auto;
   }
 

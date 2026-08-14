@@ -156,6 +156,7 @@ export default function SidebarSearch({
       if (!canNavigate()) return;
       if (url === pathname) {
         setIsOpen(false);
+        onNavigate?.();
         return;
       }
       router.push(url);

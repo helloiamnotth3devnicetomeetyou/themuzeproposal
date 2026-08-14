@@ -10,6 +10,22 @@ vi.mock("next/navigation", () => ({
 import SidebarSearch from "./SidebarSearch";
 
 describe("SidebarSearch", () => {
+  it("closes the mobile navigation when the current page is selected", () => {
+    const onNavigate = vi.fn();
+    render(
+      <SidebarSearch
+        artists={[]}
+        content={{ albums: [], members: [], schedules: [], notices: [] }}
+        canNavigate={() => true}
+        onNavigate={onNavigate}
+      />,
+    );
+
+    fireEvent.focus(screen.getByRole("combobox"));
+    fireEvent.click(screen.getAllByRole("option")[0]);
+    expect(onNavigate).toHaveBeenCalledOnce();
+  });
+
   it("reopens results when typing after Escape", () => {
     render(
       <SidebarSearch
