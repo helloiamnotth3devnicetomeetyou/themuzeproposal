@@ -70,6 +70,7 @@ Repository가 client를 인자로 받으므로 실제 Supabase 없이 단위 테
 - state, effect, event handler, browser storage, audio/drag UI만 `"use client"`를 붙인다.
 - Server Component에서 직렬화 가능한 DTO만 Client Component에 전달한다.
 - 공개 조회용 server client는 session을 저장하지 않는 anon client다. 사용자별 조회는 cookie 기반 `createSupabaseServerClient()`를 사용한다.
+- 공개 layout은 캐시 가능한 아티스트·사이트 설정만 서버에서 준비한다. navbar의 사용자 상태는 초기 익명 DTO로 시작하고, hydration 뒤 `GET /api/navigation/account`를 `private, no-store`로 조회한다. 로그인·프로필 변경 이벤트도 이 endpoint를 다시 조회한다.
 
 ## `src/admin`: 관리 스튜디오
 
@@ -145,7 +146,7 @@ Vercel 설정이 없으면 endpoint는 빈 통계와 `configured: false`를 반�
 ```text
 Browser
   → proxy.ts (CSP nonce, 보호 경로 session refresh/redirect)
-  → root layout (theme, locale, analytics)
+  → root layout (정적 기본 `ko`/dark, theme bootstrap, analytics)
   → public/admin layout
   → app page adapter
   → server/repository
@@ -154,7 +155,7 @@ Browser
   → DTO + React response
 ```
 
-`RootLayout`은 `connection()`을 await하므로 현재 앱 루트는 요청 시점 렌더링 경계를 가진다. 정적화나 캐시 전략을 바꿀 때 이 호출과 locale/theme 초기화, CSP nonce를 함께 검토한다.
+`RootLayout`은 요청 cookie를 읽지 않는다. 기본 `ko`/dark HTML을 정적으로 렌더링하고, `theme-bootstrap.js`가 hydration 전 `muze-theme` cookie를 적용한다. locale과 theme provider는 hydration 뒤 cookie/localStorage 값을 적용한다. 이를 요청별 렌더링으로 되돌릴 때는 공개 캐시와 초기 theme/locale 동작을 함께 검토한다.
 
 ### 서버 쓰기 요청
 

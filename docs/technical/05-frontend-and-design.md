@@ -152,7 +152,7 @@
 
 ## 다국어
 
-지원 locale은 `ko`, `en`, `ja`다. `muze-locale` cookie와 localStorage를 함께 사용하고 기본은 한국어다.
+지원 locale은 `ko`, `en`, `ja`다. `muze-locale` cookie와 localStorage를 함께 사용하고 기본은 한국어다. root HTML은 정적 기본값으로 시작하며 locale provider가 hydration 뒤 저장된 값을 적용한다.
 
 콘텐츠 fallback 순서:
 

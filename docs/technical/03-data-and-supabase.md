@@ -45,7 +45,7 @@ site_settings (key/value JSON)
 - `home_hero_slides`는 album을 참조하고 최대 7개를 sort order로 노출한다.
 - `tracks.is_title`이 유일한 타이틀곡 flag다. 폐기된 `is_title_track`을 되살리지 않는다.
 - 다국어 필드는 `_ko`, `_en`, `_ja` 또는 `*_i18n` JSON을 사용한다. canonical legacy 필드가 남아 있는 entity는 repository에서 fallback한다.
-- `site_settings`는 `key text → value jsonb` 구조이며 `normalizeSiteSettings`가 런타임 형태를 만든다.
+- `site_settings`는 `key text → value jsonb` 구조이며 `normalizeSiteSettings`가 런타임 형태를 만든다. `business_assets` 값은 문의 화면의 `pressKitUrl`, `profilePdfUrl`을 제공하며 화면에서 안전한 URL인지 다시 확인한다.
 
 ### 사용자와 민감 데이터
 

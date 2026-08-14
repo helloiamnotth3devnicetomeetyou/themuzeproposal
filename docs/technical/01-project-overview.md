@@ -70,6 +70,7 @@ Route Group `(public)`, `(admin)`, `(core)`는 URL에 나타나지 않는다.
 | 경로                                                   | 핵심 경계                                                                         |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
 | `/api/auth/login`, `/api/auth/verify-password`         | same-origin, body limit, DB rate limit                                            |
+| `/api/navigation/account`                              | 현재 세션의 navbar 계정 DTO, private `no-store`                                   |
 | `/api/contact-inquiries`                               | 공개 제출, body/file 검증, rate limit                                             |
 | `/api/protect-reports`                                 | 로그인 필수, 증빙 업로드와 실패 시 정리                                           |
 | `/api/audition/submit`                                 | 로그인·확정 이메일·동적 schema·중복·파일 검증                                     |
