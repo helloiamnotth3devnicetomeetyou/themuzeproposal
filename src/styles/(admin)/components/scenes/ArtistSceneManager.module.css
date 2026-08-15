@@ -3,7 +3,6 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow: hidden;
   gap: 14px;
 }
 .manager > * {
@@ -222,8 +221,15 @@
 
 .editor {
   display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr) 205px;
   gap: 12px;
+}
+.editor > * {
+  min-width: 0;
+  max-width: 100%;
 }
 .memberPicker {
   grid-column: 1/-1;
@@ -558,10 +564,17 @@
     grid-column: 1;
   }
   .memberPicker {
+    width: 100%;
     align-items: flex-start;
     flex-direction: column;
   }
   .memberPicker > div {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+  }
+  .canvasWrap,
+  .outlineTools {
     width: 100%;
   }
   .outlineTools {
