@@ -70,6 +70,11 @@ export const TrackList = memo(function TrackList({
               >
                 {track.title}
               </span>
+              {track.isTitle && (
+                <span className="shrink-0 font-display text-[9px] font-medium tracking-[0.08em] text-[var(--palette-9ca3af)]">
+                  TITLE
+                </span>
+              )}
             </button>
             <div className="flex items-center gap-1.5 shrink-0">
               {spotifyHref && (

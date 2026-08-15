@@ -287,7 +287,7 @@ export default function ReportFormFields({
         type="button"
         disabled={submitting}
         onPointerDown={(event) => {
-          if (event.button !== 0) return;
+          if (event.pointerType === "mouse" && event.button !== 0) return;
           event.currentTarget.focus();
           startSubmitHold();
         }}
