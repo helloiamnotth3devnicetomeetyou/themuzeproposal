@@ -79,7 +79,7 @@ production과 preview 각각에 대해 다음을 확인한다.
 - service role key와 두 rate-limit HMAC secret이 서버 환경 변수에만 있는지
 - Supabase Auth의 Site URL과 Google OAuth callback/redirect allowlist가 실제 도메인과 일치하는지
 - `VERCEL_TOKEN`과 `VERCEL_PROJECT_ID`가 설정된 경우 `/admin/analytics`가 동작하는지
-- 비 Vercel production이라면 `TRUSTED_CLIENT_IP_HEADER`와 reverse proxy 설정이 함께 준비됐는지
+- reverse proxy를 사용한다면 `TRUSTED_CLIENT_IP_HEADER`, 원본 우회 차단, proxy의 헤더 덮어쓰기가 함께 준비됐는지
 
 `npm run validate:env`는 production 수준의 필수 환경 값을 검사하지만, Google OAuth dashboard·도메인 DNS·Vercel 권한까지 검증하지는 않는다. 이들은 인수 담당자가 별도로 확인한다.
 

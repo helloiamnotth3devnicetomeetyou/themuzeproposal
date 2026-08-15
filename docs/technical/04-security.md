@@ -123,7 +123,7 @@ rate-limit 저장소나 secret이 없으면 fail-open하지 않고 503으로 실
 
 ### IP 신뢰
 
-`clientIp()`는 `VERCEL=1`일 때 Vercel이 덮어쓰는 `x-vercel-forwarded-for`의 단일 값만 신뢰한다. 비 Vercel 운영 배포는 proxy가 덮어쓰는 `TRUSTED_CLIENT_IP_HEADER`를 반드시 설정하며, 값이 없거나 모호하면 로그인은 503으로 안전하게 실패한다. 임의 `x-forwarded-for` 신뢰는 금지한다.
+`clientIp()`는 기본적으로 `VERCEL=1`일 때 Vercel이 덮어쓰는 `x-vercel-forwarded-for`의 단일 값만 신뢰한다. 검증된 reverse proxy가 앞에 있으면 `TRUSTED_CLIENT_IP_HEADER`가 이 기본값을 대체한다. Cloudflare proxy를 거치는 Vercel 배포에서는 원본 Vercel URL 우회를 차단하거나 trusted proxy를 구성한 뒤에만 `cf-connecting-ip`를 지정한다. 그렇지 않으면 직접 요청이 해당 헤더를 위조할 수 있다. 비 Vercel 운영 배포는 proxy가 덮어쓰는 헤더를 반드시 설정하며, 값이 없거나 모호하면 로그인은 503으로 안전하게 실패한다. 임의 `x-forwarded-for` 신뢰는 금지한다.
 
 ## 응답 보안 헤더와 CSP
 

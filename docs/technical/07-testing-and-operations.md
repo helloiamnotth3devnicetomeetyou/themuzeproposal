@@ -208,10 +208,11 @@ lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `
 ### rate limit이 모두에게 걸림
 
 1. Vercel 환경인지와 `VERCEL=1`
-2. `x-vercel-forwarded-for`가 단일 값인지
-3. 비 Vercel에서 `unknown` bucket 공유 여부
-4. private rate-limit table/RPC migration 적용 여부
-5. HMAC secret 누락/rotation 여부
+2. reverse proxy가 있다면 `TRUSTED_CLIENT_IP_HEADER`가 실제 방문자 IP를 담는지와 원본 우회가 차단됐는지
+3. proxy가 없다면 `x-vercel-forwarded-for`가 단일 값인지
+4. 비 Vercel에서 `unknown` bucket 공유 여부
+5. private rate-limit table/RPC migration 적용 여부
+6. HMAC secret 누락/rotation 여부
 
 ## 운영 데이터 주의
 

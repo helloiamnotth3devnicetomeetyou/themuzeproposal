@@ -23,6 +23,21 @@ describe("clientIp", () => {
     ).toBe("203.0.113.4");
   });
 
+  it("allows a configured trusted proxy to override Vercel's edge IP", () => {
+    process.env.VERCEL = "1";
+    process.env.TRUSTED_CLIENT_IP_HEADER = "cf-connecting-ip";
+    expect(
+      clientIp(
+        new NextRequest("https://themuze.kr", {
+          headers: {
+            "cf-connecting-ip": "203.0.113.8",
+            "x-vercel-forwarded-for": "198.51.100.2",
+          },
+        }),
+      ),
+    ).toBe("203.0.113.8");
+  });
+
   it("does not trust forwarded headers outside Vercel", () => {
     expect(
       clientIp(
