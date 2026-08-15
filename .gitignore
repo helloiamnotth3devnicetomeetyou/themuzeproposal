@@ -62,3 +62,7 @@ output/
 
 # obsidian vault
 /themuzeproposal/*
+
+.agents/
+.claude/
+.playwright-mcp/
