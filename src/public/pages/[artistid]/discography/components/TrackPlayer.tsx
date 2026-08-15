@@ -34,53 +34,59 @@ export function TrackPlayer({
   const { t } = useLocale();
   const audioHref = safeHref(track?.audioUrl);
   const youtubeHref = safeHref(track?.youtubeUrl);
+  const safeProgress = Math.min(100, Math.max(0, progress));
   return (
-    <div
-      className="p-5 sm:p-4 rounded-2xl flex flex-col gap-4 sm:gap-3 shrink-0"
-      style={{
-        backgroundColor: "var(--alpha-ffffff-025)",
-        border: "1px solid var(--alpha-ffffff-05)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
+    <div className="flex shrink-0 flex-col gap-3 border-y border-[var(--alpha-ffffff-1)] py-4">
       <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <span className="text-[8px] text-[var(--palette-4b5563)] font-black tracking-[0.15em] block">
-            {t.discography.nowPlaying}
-          </span>
-          <span className="text-base font-bold text-[var(--color-static-white)] block truncate mt-0.5">
-            {track?.title}
-          </span>
-        </div>
-        <span className="text-[10px] text-[var(--palette-6b7280)] shrink-0">
+        <span className="min-w-0 truncate font-display text-[15px] font-medium tracking-[-0.01em] text-[var(--color-static-white)]">
+          {track?.title}
+        </span>
+        <span className="shrink-0 font-display text-[9px] font-medium tabular-nums tracking-[0.04em] text-[var(--palette-737373)]">
           {time.current} / {time.total}
         </span>
       </div>
 
-      <input
-        type="range"
-        min="0"
-        max="100"
-        step="0.1"
-        value={progress}
-        onChange={(event) => onSeek(Number(event.currentTarget.value))}
-        disabled={!audioHref}
-        aria-label={t.discography.progress}
-        className="h-1.5 w-full cursor-pointer accent-[var(--color-brand-pink)] disabled:cursor-default disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)]"
-        style={{ accentColor: albumColor }}
-      />
+      <div className="group relative h-5 w-full">
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--alpha-ffffff-1)]"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full"
+          style={{ width: `${safeProgress}%`, backgroundColor: albumColor }}
+        />
+        <span
+          aria-hidden="true"
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-[var(--bg-base)] group-focus-within:ring-2 group-focus-within:ring-[var(--color-brand-pink)] group-focus-within:ring-offset-2 group-focus-within:ring-offset-[var(--bg-base)]"
+          style={{ left: `${safeProgress}%`, borderColor: albumColor }}
+        />
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={safeProgress}
+          onChange={(event) => onSeek(Number(event.currentTarget.value))}
+          disabled={!audioHref}
+          aria-label={t.discography.progress}
+          className="absolute inset-0 z-10 h-5 w-full cursor-pointer opacity-0 disabled:cursor-default"
+        />
+      </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center py-1 sm:py-0">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-0.5">
         <span aria-hidden="true" />
         <div className="flex items-center justify-center gap-8 sm:gap-6">
           <button
+            type="button"
             onClick={onPrevious}
-            className="w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-[var(--color-static-white)] hover:bg-[var(--alpha-ffffff-06)] active:scale-95 transition-all duration-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--palette-9ca3af)] transition-colors duration-base hover:text-[var(--color-static-white)] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
             aria-label={t.discography.previousTrack}
           >
-            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
+            type="button"
             onClick={onTogglePlay}
             disabled={!audioHref}
             aria-label={isPlaying ? t.discography.pause : t.discography.play}
@@ -91,32 +97,22 @@ export function TrackPlayer({
                   : t.discography.play
                 : t.discography.noAudio
             }
-            className="w-14 h-14 sm:w-10 sm:h-10 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
-            style={{
-              backgroundColor: albumColor,
-              color: "var(--color-static-black)",
-              transition:
-                "background-color 0.5s, transform var(--duration-base)",
-            }}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--color-static-black)] shadow-[0_6px_16px_var(--alpha-000000-25)] transition-colors duration-base active:translate-y-px disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
+            style={{ backgroundColor: albumColor }}
           >
             {isPlaying ? (
-              <Pause className="w-6 h-6 sm:w-5 sm:h-5" aria-hidden="true" />
+              <Pause className="h-4 w-4" aria-hidden="true" />
             ) : (
-              <Play
-                className="w-6 h-6 sm:w-5 sm:h-5 pl-0.5"
-                aria-hidden="true"
-              />
+              <Play className="h-4 w-4 pl-px" aria-hidden="true" />
             )}
           </button>
           <button
+            type="button"
             onClick={onNext}
-            className="w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[var(--palette-9ca3af)] hover:text-[var(--color-static-white)] hover:bg-[var(--alpha-ffffff-06)] active:scale-95 transition-all duration-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--palette-9ca3af)] transition-colors duration-base hover:text-[var(--color-static-white)] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)] motion-reduce:transform-none motion-reduce:transition-none"
             aria-label={t.discography.nextTrack}
           >
-            <ChevronRight
-              className="w-6 h-6 sm:w-5 sm:h-5"
-              aria-hidden="true"
-            />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
         {youtubeHref ? (

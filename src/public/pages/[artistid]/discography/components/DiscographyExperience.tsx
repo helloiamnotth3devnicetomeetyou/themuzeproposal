@@ -41,7 +41,6 @@ export function DiscographyExperience({
   const preview = usePreviewPayload("album");
   const albumRailRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
-  const [mobileView, setMobileView] = useState<"album" | "tracks">("album");
   const [isMobileExperience, setIsMobileExperience] = useState<boolean | null>(
     null,
   );
@@ -98,19 +97,6 @@ export function DiscographyExperience({
     [discography],
   );
 
-  const changeMobileView = useCallback((view: "album" | "tracks") => {
-    setMobileView(view);
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    requestAnimationFrame(() =>
-      pageRef.current?.scrollTo({
-        top: 0,
-        behavior: reducedMotion ? "auto" : "smooth",
-      }),
-    );
-  }, []);
-
   if (
     discography.loading ||
     !discography.album ||
@@ -163,7 +149,6 @@ export function DiscographyExperience({
             members={discography.members}
             progress={discography.progress}
             time={discography.time}
-            view={mobileView}
             onIntentAlbum={preloadAlbum}
             onNextTrack={discography.nextTrack}
             onPlayTrack={discography.playTrack}
@@ -171,7 +156,6 @@ export function DiscographyExperience({
             onSelectAlbum={discography.switchAlbum}
             onSeek={discography.onSeek}
             onTogglePlay={discography.togglePlay}
-            onViewChange={changeMobileView}
           />
         </div>
       ) : (

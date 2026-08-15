@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogIn, Moon, Sun } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import GlobalPlayer from "@/public/features/player/GlobalPlayer";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
 
@@ -159,7 +160,8 @@ export default function DesktopNav({
           </>
         )}
       </nav>
-      <div className={`${styles.utilityGroup} ml-auto`}>
+      <GlobalPlayer />
+      <div className={styles.utilityGroup}>
         <LanguageSwitcher />
         <button
           type="button"

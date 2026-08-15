@@ -23,7 +23,7 @@ export const TrackList = memo(function TrackList({
   const { t } = useLocale();
   return (
     <div
-      className={`flex flex-col gap-1 pr-1 ${layout === "panel" ? "flex-1 min-h-0 overflow-y-auto scrollbar-none" : "overflow-visible"}`}
+      className={`flex flex-col divide-y divide-[var(--alpha-ffffff-08)] pr-1 ${layout === "panel" ? "flex-1 min-h-0 overflow-y-auto scrollbar-none" : "overflow-visible"}`}
     >
       {album.tracks.map((track, index) => {
         const isActive = currentTrackIndex === index;
@@ -34,34 +34,24 @@ export const TrackList = memo(function TrackList({
         return (
           <div
             key={track.id}
-            className="flex items-center rounded-xl group/track relative shrink-0 pr-2"
+            className="group/track relative flex shrink-0 items-center pr-2"
             style={{
               backgroundColor: isActive
-                ? "var(--alpha-ffffff-06)"
+                ? "color-mix(in srgb, var(--alpha-ffffff-06) 68%, transparent)"
                 : isHovered
-                  ? "var(--alpha-ffffff-04)"
+                  ? "var(--alpha-ffffff-025)"
                   : undefined,
-              border: `1px solid ${
-                isActive
-                  ? `${album.color}50`
-                  : isHovered
-                    ? `${album.color}40`
-                    : "transparent"
-              }`,
-              boxShadow:
-                isHovered && !isActive
-                  ? `0 0 15px ${album.color}20`
-                  : undefined,
-              transition: "all var(--duration-base) ease",
+              boxShadow: isActive ? `inset 2px 0 ${album.color}` : undefined,
+              transition: "background-color var(--duration-base) ease",
             }}
           >
             <button
               type="button"
               onClick={() => onPlayTrack(index)}
-              className="flex flex-1 items-center gap-3 min-w-0 p-2.5 text-left cursor-pointer"
+              className="flex min-w-0 flex-1 items-center gap-4 py-4 pl-3 text-left"
             >
               <span
-                className="text-[10px] shrink-0 transition-colors duration-base"
+                className="shrink-0 font-display text-[10px] tabular-nums transition-colors duration-base"
                 style={{
                   color:
                     isActive || isHovered
@@ -72,7 +62,7 @@ export const TrackList = memo(function TrackList({
                 {(index + 1).toString().padStart(2, "0")}
               </span>
               <span
-                className={`text-sm font-semibold truncate transition-colors duration-base ${
+                className={`truncate font-display text-[15px] font-medium tracking-[-0.01em] transition-colors duration-base ${
                   isActive || isHovered
                     ? "text-[var(--color-static-white)]"
                     : "text-[var(--palette-6b7280)] group-hover/track:text-[var(--palette-d1d5db)]"
@@ -81,13 +71,7 @@ export const TrackList = memo(function TrackList({
                 {track.title}
               </span>
               {track.isTitle && (
-                <span
-                  className="text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded"
-                  style={{
-                    color: album.color,
-                    border: `1px solid ${album.color}45`,
-                  }}
-                >
+                <span className="shrink-0 font-display text-[9px] font-medium tracking-[0.08em] text-[var(--palette-9ca3af)]">
                   TITLE
                 </span>
               )}
@@ -99,7 +83,7 @@ export const TrackList = memo(function TrackList({
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`${track.title} Spotify`}
-                  className="text-[8px] font-bold text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] px-1.5 py-1"
+                  className="px-1.5 py-1 font-display text-[9px] font-medium tracking-[0.08em] text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)]"
                 >
                   SP
                 </a>
@@ -110,7 +94,7 @@ export const TrackList = memo(function TrackList({
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`${track.title} ${t.discography.musicVideo}`}
-                  className="text-[8px] font-bold text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)] px-1.5 py-1"
+                  className="px-1.5 py-1 font-display text-[9px] font-medium tracking-[0.08em] text-[var(--palette-6b7280)] hover:text-[var(--color-static-white)]"
                 >
                   MV
                 </a>

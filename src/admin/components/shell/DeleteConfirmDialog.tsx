@@ -137,10 +137,9 @@ export default function DeleteConfirmDialog({
             className={`admin-btn delete-confirm-button${holding ? " is-holding" : ""}${completed ? " is-complete" : ""}`}
             disabled={!matches || busy || completed}
             onPointerDown={(event) => {
-              if (event.button === 0) {
-                event.currentTarget.focus();
-                startHold();
-              }
+              if (event.pointerType === "mouse" && event.button !== 0) return;
+              event.currentTarget.focus();
+              startHold();
             }}
             onPointerUp={cancelHold}
             onPointerCancel={cancelHold}
