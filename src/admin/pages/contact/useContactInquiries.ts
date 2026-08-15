@@ -42,6 +42,7 @@ const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
 export function useContactInquiries(requestedFilter: ContactStatus | "all") {
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState<ContactCategory>("general");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -57,10 +58,12 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
   const [pendingAiCount, setPendingAiCount] = useState(0);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
+  const loadedRef = useRef(false);
 
   const fetchInquiries = useCallback(async () => {
     requestRef.current?.abort();
-    setLoading(true);
+    if (loadedRef.current) setRefreshing(true);
+    else setLoading(true);
     setError("");
     const controller = new AbortController();
     requestRef.current = controller;
@@ -128,7 +131,9 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
       window.clearTimeout(timeout);
       if (requestRef.current === controller) {
         requestRef.current = null;
+        loadedRef.current = true;
         setLoading(false);
+        setRefreshing(false);
       }
     }
   }, [category, debouncedQuery, filter, page, spamFilter, urgencyFilter]);
@@ -195,6 +200,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     pollPending,
     inquiries,
     loading,
+    refreshing,
     page,
     query,
     setCategory,

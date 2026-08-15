@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminConfirm } from "@/admin/components/shell/AdminDialogProvider";
@@ -61,6 +61,8 @@ export default function ProtectAdminPage() {
   const searchParams = useSearchParams();
   const [reports, setReports] = useState<ProtectReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedRef = useRef(false);
   const [viewing, setViewing] = useState<ProtectReport | null>(null);
   const [readerName, setReaderName] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -90,6 +92,8 @@ export default function ProtectAdminPage() {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [signedUrlFailed, setSignedUrlFailed] = useState(false);
+  const [evidenceVersion, setEvidenceVersion] = useState(0);
   const [error, setError] = useState("");
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const [undoStatus, setUndoStatus] = useState<ReportStatus | null>(null);
@@ -106,7 +110,16 @@ export default function ProtectAdminPage() {
 
   const fetchReports = useCallback(
     async (silent = false) => {
-      if (!silent) setLoading(true);
+      if (!silent) {
+        if (loadedRef.current) setRefreshing(true);
+        else setLoading(true);
+      }
+      const finishLoading = () => {
+        if (silent) return;
+        loadedRef.current = true;
+        setLoading(false);
+        setRefreshing(false);
+      };
       setError("");
       const keyword = searchTerm(debouncedQuery);
       const request = supabase
@@ -164,7 +177,7 @@ export default function ProtectAdminPage() {
               artistResult.error?.message ||
               "신고 정보를 불러오지 못했습니다.",
           );
-          if (!silent) setLoading(false);
+          finishLoading();
           return;
         }
         const attachmentsByReport = new Map<string, ReportAttachment[]>();
@@ -204,7 +217,7 @@ export default function ProtectAdminPage() {
           ]),
         );
       }
-      if (!silent) setLoading(false);
+      finishLoading();
     },
     [debouncedQuery, filter, page, severityFilter],
   );
@@ -271,6 +284,7 @@ export default function ProtectAdminPage() {
   const openReport = (report: ProtectReport) => {
     setNote(report.admin_note || "");
     setSignedUrls({});
+    setSignedUrlFailed(false);
     setReaderName(null);
     setViewing(report);
     void markRead(report);
@@ -343,13 +357,16 @@ export default function ProtectAdminPage() {
           return [file_path, url] as const;
         }),
       );
-      if (active) setSignedUrls(Object.fromEntries(pairs));
+      if (active) {
+        setSignedUrls(Object.fromEntries(pairs));
+        setSignedUrlFailed(pairs.some(([, url]) => !url));
+      }
     };
     void signEvidence();
     return () => {
       active = false;
     };
-  }, [viewing]);
+  }, [evidenceVersion, viewing]);
 
   const updateReport = async (
     changes: Partial<Pick<ProtectReport, "status" | "admin_note">>,
@@ -434,6 +451,7 @@ export default function ProtectAdminPage() {
           viewing.read_by ? avatarUrls[viewing.read_by] : undefined
         }
         signedUrls={signedUrls}
+        signedUrlFailed={signedUrlFailed}
         error={error}
         toast={toast}
         undoStatus={undoStatus}
@@ -453,6 +471,10 @@ export default function ProtectAdminPage() {
           void updateReport({ admin_note: note.trim() || null })
         }
         onChangeStatus={(status) => void changeStatus(status)}
+        onRetryEvidence={() => {
+          setSignedUrlFailed(false);
+          setEvidenceVersion((current) => current + 1);
+        }}
       />
     );
   }
@@ -464,6 +486,7 @@ export default function ProtectAdminPage() {
       statusCounts={statusCounts}
       unclassifiedCount={unclassifiedCount}
       classifying={classifying}
+      refreshing={refreshing}
       query={query}
       filter={filter}
       severityFilter={severityFilter}

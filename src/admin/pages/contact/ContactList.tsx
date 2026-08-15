@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Inbox, Mail, Search } from "lucide-react";
+import { BrainCircuit, Inbox, Search } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import base from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import styles from "@/styles/(admin)/pages/contact/contact-admin.module.css";
@@ -31,6 +31,7 @@ type ContactListProps = {
   spamFilter: ContactSpamFilter;
   pendingAiCount: number;
   classifying: boolean;
+  refreshing: boolean;
   inquiries: ContactInquiry[];
   page: number;
   query: string;
@@ -57,6 +58,7 @@ export default function ContactList({
   spamFilter,
   pendingAiCount,
   classifying,
+  refreshing,
   inquiries,
   page,
   query,
@@ -74,81 +76,50 @@ export default function ContactList({
   const listFailure = error || listError;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  if (listFailure) {
-    return (
-      <div className={`${base.page} ${styles.fullPage}`}>
+  return (
+    <div className={`${base.page} ${styles.fullPage}`}>
+      {listFailure && (
         <div className={`${base.error} ${styles.fullWidth}`} role="alert">
           <b>!</b>
           <span>{listFailure}</span>
-          <button type="button" onClick={() => void fetchInquiries()}>
+          <button
+            type="button"
+            onClick={() => {
+              onClearError();
+              void fetchInquiries();
+            }}
+          >
             다시 시도
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${base.page} ${styles.fullPage}`}>
-      {error && (
-        <div className={`${base.error} ${styles.fullWidth}`} role="alert">
-          <b>!</b>
-          <span>{error}</span>
-          <button type="button" onClick={onClearError}>
-            닫기
           </button>
         </div>
       )}
 
-      <section className={`${base.summary} ${styles.fullWidth}`}>
-        <div>
-          <span className={base.summaryIcon}>
-            <Mail aria-hidden="true" />
-          </span>
-          <p>
-            <small>전체 문의</small>
-            <strong>{categoryCounts.general + categoryCounts.business}</strong>
-          </p>
-        </div>
-        <div
-          className={styles.summaryTabs}
-          data-tour-id="contact-category"
-          role="tablist"
-          aria-label="문의 구분"
-        >
-          {(["general", "business"] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={category === value}
-              className={category === value ? styles.active : ""}
-              onClick={() => onCategoryChange(value)}
-            >
-              <span>{value === "general" ? "일반 문의" : "Business"}</span>
-              <strong>{categoryCounts[value]}</strong>
-            </button>
-          ))}
-        </div>
-        <p>
-          문의는 우선순위와 읽음 상태를 기준으로 정렬됩니다. 미분류 문의는 AI로 처리할 수 있습니다.
-        </p>
-      </section>
-
       <section className={`${base.inbox} ${styles.fullWidth}`}>
         <header className={base.toolbar}>
-          <div>
-            <h1>문의 메일함</h1>
-            <p>{category === "business" ? "Business" : "일반 문의"} · {total}건</p>
+          <div className={base.toolbarTop}>
+            <div className={base.titleBlock}>
+              <h1>문의 메일함</h1>
+              <p>검색 결과 {total}건</p>
+            </div>
+            <div
+              className={base.categoryTabs}
+              data-tour-id="contact-category"
+              aria-label="문의 구분"
+            >
+              {(["general", "business"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={category === value}
+                  className={category === value ? base.active : ""}
+                  onClick={() => onCategoryChange(value)}
+                >
+                  <span>{value === "general" ? "일반 문의" : "Business"}</span>
+                  <strong>{categoryCounts[value]}</strong>
+                </button>
+              ))}
+            </div>
           </div>
-          <button
-            type="button"
-            className={styles.classifyButton}
-            disabled={!pendingAiCount || classifying}
-            onClick={onClassifyPending}
-          >
-            {classifying ? "분류 중…" : `미분류 ${pendingAiCount}건 분류`}
-          </button>
           <div className={base.filters} data-tour-id="contact-filters">
             <label className={base.search} data-tour-id="contact-search">
               <Search aria-hidden="true" />
@@ -185,49 +156,55 @@ export default function ContactList({
                 { value: "spam", label: "스팸" },
               ]}
             />
+            <button
+              type="button"
+              className={base.classifyButton}
+              disabled={!pendingAiCount || classifying}
+              onClick={onClassifyPending}
+            >
+              <BrainCircuit aria-hidden="true" />
+              {classifying
+                ? "분류 중"
+                : `전체 미분류 ${pendingAiCount}건 분류`}
+            </button>
           </div>
         </header>
 
-        <div className={`${base.tableWrap} ${styles.mailList}`}>
-          <div className={styles.mailHeader} aria-hidden="true">
-            <span>접수일</span>
-            <span>{category === "business" ? "회사 / 담당자" : "문의자"}</span>
-            <span>문의 내용</span>
-            <span>이메일</span>
-            <span>우선순위</span>
-            <span>상태</span>
-            <span />
-          </div>
+        <div
+          className={base.tableWrap}
+          aria-busy={refreshing}
+        >
+          {refreshing && <span className={base.refreshBar} aria-hidden="true" />}
           {inquiries.map((inquiry) => (
             <button
               key={inquiry.id}
               type="button"
-              className={`${styles.mailRow} ${!inquiry.read_at ? styles.unread : ""} ${inquiry.is_likely_spam ? styles.spam : ""}`}
+              className={`${base.mailRow} ${!inquiry.read_at ? base.unread : ""} ${inquiry.is_likely_spam ? styles.spam : ""}`}
               aria-label={`${inquiry.contact_name} 문의 열기`}
               data-tour-id="contact-open"
               onClick={() => onOpenInquiry(inquiry)}
             >
-              <span className={styles.mailCell} data-label="접수일">{formatDate(inquiry.created_at)}</span>
-              <span className={styles.mailCell} data-label="문의자">
+              <span className={`${base.mailCell} ${base.mailSender}`}>
                 <b>{inquiry.company_name || inquiry.contact_name}</b>
-                <small>{inquiry.company_name ? inquiry.contact_name : typeLabels[inquiry.inquiry_type]}</small>
+                <small>{inquiry.company_name ? inquiry.contact_name : inquiry.email}</small>
               </span>
-              <span className={styles.mailCell} data-label="문의 내용">
+              <span className={`${base.mailCell} ${base.mailSubject}`}>
                 <b>{typeLabels[inquiry.inquiry_type] || "기타 문의"}</b>
                 <small>{inquiry.message}</small>
               </span>
-              <span className={styles.mailCell} data-label="이메일">{inquiry.email}</span>
-              <span className={styles.mailCell} data-label="우선순위">
+              <span className={`${base.mailCell} ${base.mailMeta}`}>
+                {inquiry.company_name ? inquiry.email : typeLabels[inquiry.inquiry_type]}
+              </span>
+              <span className={`${base.mailCell} ${base.mailBadges}`}>
                 <span className={styles.priority}>
                   {!inquiry.ai_classified_at ? "미분류" : inquiry.urgency === "urgent" || inquiry.urgency === "high" ? "긴급" : "일반"}
                 </span>
                 {inquiry.is_likely_spam && <small className={styles.spamLabel}>스팸 의심</small>}
-              </span>
-              <span className={styles.mailCell} data-label="상태">
                 <span className={`${base.status} ${statusClass(inquiry.status)}`}><i />{statusLabel(inquiry.status)}</span>
-                {!inquiry.read_at && <small className={styles.unreadLabel}>읽지 않음</small>}
               </span>
-              <span className={styles.mailArrow} aria-hidden="true"><ArrowRight /></span>
+              <time className={base.mailDate} dateTime={inquiry.created_at}>
+                {formatDate(inquiry.created_at)}
+              </time>
             </button>
           ))}
           {!inquiries.length && (

@@ -34,6 +34,7 @@ export default function ContactAdminPage() {
     pendingAiCount,
     inquiries,
     loading,
+    refreshing,
     page,
     query,
     setCategory,
@@ -49,6 +50,9 @@ export default function ContactAdminPage() {
   } = useContactInquiries(requestedFilter);
   const [note, setNote] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [attachmentStatus, setAttachmentStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [undo, setUndo] = useState<ContactUndo | null>(null);
@@ -80,6 +84,7 @@ export default function ContactAdminPage() {
   const openInquiry = (inquiry: ContactInquiry) => {
     setNote(inquiry.admin_note || "");
     setAttachmentUrl("");
+    setAttachmentStatus(inquiry.attachment_path ? "loading" : "idle");
     setReaderName(null);
     setViewing(inquiry);
     void markRead(inquiry);
@@ -109,11 +114,20 @@ export default function ContactAdminPage() {
     window.dispatchEvent(new Event("admin-inbox-changed"));
   };
 
+  const loadAttachment = async (path: string) => {
+    setAttachmentStatus("loading");
+    const url = await fetchSignedFileUrl("contact-attachments", path);
+    setAttachmentUrl(url);
+    setAttachmentStatus(url ? "ready" : "error");
+  };
+
   useEffect(() => {
     if (!viewing?.attachment_path) return;
     let active = true;
     void fetchSignedFileUrl("contact-attachments", viewing.attachment_path).then((url) => {
-      if (active) setAttachmentUrl(url);
+      if (!active) return;
+      setAttachmentUrl(url);
+      setAttachmentStatus(url ? "ready" : "error");
     });
     return () => {
       active = false;
@@ -196,6 +210,7 @@ export default function ContactAdminPage() {
         viewing={viewing}
         note={note}
         attachmentUrl={attachmentUrl}
+        attachmentStatus={attachmentStatus}
         readerName={readerName}
         saving={saving}
         error={error}
@@ -207,6 +222,10 @@ export default function ContactAdminPage() {
         onChangeStatus={(status) => void changeStatus(status)}
         onNoteChange={setNote}
         onSaveNote={() => void updateInquiry({ admin_note: note.trim() || null })}
+        onRetryAttachment={() => {
+          if (viewing.attachment_path)
+            void loadAttachment(viewing.attachment_path);
+        }}
       />
     );
   }
@@ -223,6 +242,7 @@ export default function ContactAdminPage() {
       spamFilter={spamFilter}
       pendingAiCount={pendingAiCount}
       classifying={classifying}
+      refreshing={refreshing}
       inquiries={inquiries}
       page={page}
       query={query}

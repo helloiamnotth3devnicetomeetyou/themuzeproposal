@@ -27,6 +27,7 @@ type ProtectReportDetailProps = {
   readerName: string | null;
   readerAvatarUrl?: string;
   signedUrls: Record<string, string>;
+  signedUrlFailed: boolean;
   error: string;
   toast: string;
   undoStatus: ReportStatus | null;
@@ -44,6 +45,7 @@ type ProtectReportDetailProps = {
   onNoteChange: (value: string) => void;
   onSaveNote: () => void;
   onChangeStatus: (status: ReportStatus) => void;
+  onRetryEvidence: () => void;
 };
 
 export default function ProtectReportDetail({
@@ -52,6 +54,7 @@ export default function ProtectReportDetail({
   readerName,
   readerAvatarUrl,
   signedUrls,
+  signedUrlFailed,
   error,
   toast,
   undoStatus,
@@ -69,6 +72,7 @@ export default function ProtectReportDetail({
   onNoteChange,
   onSaveNote,
   onChangeStatus,
+  onRetryEvidence,
 }: ProtectReportDetailProps) {
   return (
     <div className={`${styles.page} ${styles.detailPage}`}>
@@ -119,201 +123,97 @@ export default function ProtectReportDetail({
           </span>
         </header>
 
-        <div className={styles.readMeta}>
-          <span
-            className={`${styles.severity} ${
-              styles[
-                severityClass(
-                  viewing.ai_classified_at ? viewing.severity : "pending",
-                )
-              ]
-            }`}
-          >
-            <BrainCircuit aria-hidden="true" />
-            {viewing.ai_classified_at
-              ? `AI 우선순위 · ${severityLabel(viewing.severity)}`
-              : "AI 분류 대기 중"}
-          </span>
-          <span className={styles.readerInfo}>
-            {readerAvatarUrl && viewing.read_at ? (
-              <AdminAssetImage src={readerAvatarUrl} alt="" sizes="22px" />
-            ) : null}
-            {viewing.read_at
-              ? `${readerName || "관리자가 열람함"} · ${formatDate(viewing.read_at, true)}`
-              : "아직 열람하지 않음"}
-          </span>
-        </div>
-
         <div className={styles.detailBody}>
-          <section>
-            <div className={styles.sectionHeading}>
-              <span>REPORT</span>
-              <h2>제보 내용</h2>
-            </div>
-            <p className={styles.reportContent}>{viewing.content}</p>
-          </section>
+          <div className={styles.readingPane}>
+            <section>
+              <div className={styles.sectionHeading}><h2>제보 내용</h2></div>
+              <p className={styles.reportContent}>{viewing.content}</p>
+            </section>
 
-          <section>
-            <div className={styles.sectionHeading}>
-              <span>SOURCE</span>
-              <h2>게시물 정보</h2>
-            </div>
-            <dl className={styles.infoGrid}>
-              <div>
-                <dt>보호 대상</dt>
-                <dd>{viewing.artists?.name || "-"}</dd>
-              </div>
-              <div>
-                <dt>플랫폼</dt>
-                <dd>{viewing.platform}</dd>
-              </div>
-              <div>
-                <dt>게시 일자</dt>
-                <dd>{formatDate(viewing.posted_at)}</dd>
-              </div>
-              <div>
-                <dt>게시물 작성자</dt>
-                <dd>{viewing.author_name}</dd>
-              </div>
-              <div>
-                <dt>게시물 IP</dt>
-                <dd>{viewing.post_ip || "미입력"}</dd>
-              </div>
-              <div>
-                <dt>제보 계정</dt>
-                <dd>{viewing.reporter_email || "확인 불가"}</dd>
-              </div>
-            </dl>
-            <a
-              className={styles.sourceLink}
-              data-tour-id="protect-source"
-              href={safeHref(viewing.post_url)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Link aria-hidden="true" />
-              <span>
-                <b>원문 게시물 열기</b>
-                <small>{viewing.post_url}</small>
-              </span>
-              <ExternalLink aria-hidden="true" />
-            </a>
-          </section>
+            <section>
+              <div className={styles.sectionHeading}><h2>게시물 정보</h2></div>
+              <dl className={styles.infoGrid}>
+                <div><dt>보호 대상</dt><dd>{viewing.artists?.name || "-"}</dd></div>
+                <div><dt>플랫폼</dt><dd>{viewing.platform}</dd></div>
+                <div><dt>게시 일자</dt><dd>{formatDate(viewing.posted_at)}</dd></div>
+                <div><dt>게시물 작성자</dt><dd>{viewing.author_name}</dd></div>
+                <div><dt>게시물 IP</dt><dd>{viewing.post_ip || "미입력"}</dd></div>
+                <div><dt>제보 계정</dt><dd>{viewing.reporter_email || "확인 불가"}</dd></div>
+              </dl>
+              <a className={styles.sourceLink} data-tour-id="protect-source" href={safeHref(viewing.post_url)} target="_blank" rel="noopener noreferrer">
+                <Link aria-hidden="true" />
+                <span><b>원문 게시물 열기</b><small>{viewing.post_url}</small></span>
+                <ExternalLink aria-hidden="true" />
+              </a>
+            </section>
 
-          <section>
-            <div className={styles.sectionHeading}>
-              <span>AI TRIAGE</span>
-              <h2>우선순위 분류</h2>
-            </div>
-            <dl className={styles.infoGrid}>
-              <div>
-                <dt>심각도</dt>
-                <dd>
-                  {viewing.ai_classified_at
-                    ? severityLabel(viewing.severity)
-                    : "미분류"}
-                </dd>
-              </div>
-              <div>
-                <dt>분류 시각</dt>
-                <dd>
-                  {viewing.ai_classified_at
-                    ? formatDate(viewing.ai_classified_at, true)
-                    : "처리 대기 중"}
-                </dd>
-              </div>
-            </dl>
-            {viewing.ai_reasoning && (
-              <p className={styles.reportContent}>{viewing.ai_reasoning}</p>
-            )}
-          </section>
-
-          <section data-tour-id="protect-evidence">
-            <div className={styles.sectionHeading}>
-              <span>EVIDENCE</span>
-              <h2>첨부 자료</h2>
-            </div>
-            <div className={styles.evidenceGrid}>
-              {viewing.protect_report_attachments.map(
-                ({ file_path, file_name }) => {
+            <section data-tour-id="protect-evidence">
+              <div className={styles.sectionHeading}><h2>첨부 자료</h2></div>
+              {signedUrlFailed && (
+                <div className={styles.fileError} role="status">
+                  <span>일부 보안 링크를 만들지 못했습니다.</span>
+                  <button type="button" onClick={onRetryEvidence}>다시 시도</button>
+                </div>
+              )}
+              <div className={styles.evidenceGrid}>
+                {viewing.protect_report_attachments.map(({ file_path, file_name }) => {
                   const url = signedUrls[file_path];
                   return (
-                    <a
-                      key={file_path}
-                      className={styles.evidenceCard}
-                      href={url || undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-disabled={!url}
-                    >
+                    <a key={file_path} className={styles.evidenceCard} href={url || undefined} target="_blank" rel="noreferrer" aria-disabled={!url}>
                       <span className={styles.evidencePreview}>
-                        {url && isImage(file_name) ? (
-                          <AdminAssetImage src={url} alt="" sizes="96px" />
-                        ) : isImage(file_name) ? (
-                          <FileImage aria-hidden="true" />
-                        ) : (
-                          <Paperclip aria-hidden="true" />
-                        )}
+                        {url && isImage(file_name) ? <AdminAssetImage src={url} alt="" sizes="96px" /> : isImage(file_name) ? <FileImage aria-hidden="true" /> : <Paperclip aria-hidden="true" />}
                       </span>
-                      <span>
-                        <b>{file_name}</b>
-                        <small>
-                          {url ? "새 창에서 원본 열기" : "보안 링크 생성 중…"}
-                        </small>
-                      </span>
+                      <span><b>{file_name}</b><small>{url ? "새 창에서 원본 열기" : signedUrlFailed ? "링크 생성 실패" : "보안 링크 생성 중"}</small></span>
                       <ExternalLink aria-hidden="true" />
                     </a>
                   );
-                },
-              )}
-            </div>
-          </section>
+                })}
+              </div>
+            </section>
+          </div>
 
-          <section data-tour-id="protect-memo">
-            <div className={styles.sectionHeading}>
-              <span>INTERNAL</span>
-              <h2>관리자 메모</h2>
+          <aside className={styles.caseRail} aria-label="제보 처리 도구">
+            <div className={styles.readMeta}>
+              <span className={`${styles.severity} ${styles[severityClass(viewing.ai_classified_at ? viewing.severity : "pending")]}`}>
+                <BrainCircuit aria-hidden="true" />
+                {viewing.ai_classified_at ? `AI 우선순위 / ${severityLabel(viewing.severity)}` : "AI 분류 대기 중"}
+              </span>
+              <span className={styles.readerInfo}>
+                {readerAvatarUrl && viewing.read_at ? <AdminAssetImage src={readerAvatarUrl} alt="" sizes="22px" /> : null}
+                {viewing.read_at ? `${readerName || "관리자가 열람함"} / ${formatDate(viewing.read_at, true)}` : "아직 열람하지 않음"}
+              </span>
             </div>
-            <textarea
-              className={styles.adminNote}
-              rows={5}
-              value={note}
-              onChange={(event) => onNoteChange(event.target.value)}
-              placeholder="검토 내용과 후속 조치를 기록해 주세요."
-            />
-            <div className={styles.noteActions}>
-              <span>관리자만 볼 수 있는 내부 기록입니다.</span>
-              <button
-                type="button"
-                disabled={saving || note === (viewing.admin_note || "")}
-                onClick={onSaveNote}
-              >
-                메모 저장
-              </button>
-            </div>
-          </section>
+
+            <section>
+              <div className={styles.sectionHeading}><h2>우선순위 분류</h2></div>
+              <dl className={styles.infoGrid}>
+                <div><dt>심각도</dt><dd><span className={`${styles.valueBadge} ${!viewing.ai_classified_at ? styles.valueBadgePending : viewing.severity === "critical" ? styles.valueBadgeDanger : viewing.severity === "high" ? styles.valueBadgeWarning : viewing.severity === "low" ? styles.valueBadgeSuccess : ""}`}>{viewing.ai_classified_at ? severityLabel(viewing.severity) : "미분류"}</span></dd></div>
+                <div><dt>분류 시각</dt><dd>{viewing.ai_classified_at ? formatDate(viewing.ai_classified_at, true) : "처리 대기 중"}</dd></div>
+              </dl>
+              {viewing.ai_reasoning && <p className={styles.reportContent}>{viewing.ai_reasoning}</p>}
+            </section>
+
+            <section data-tour-id="protect-memo">
+              <div className={styles.sectionHeading}><h2>관리자 메모</h2></div>
+              <textarea className={styles.adminNote} rows={5} value={note} onChange={(event) => onNoteChange(event.target.value)} placeholder="검토 내용과 후속 조치를 기록해 주세요." />
+              <div className={styles.noteActions}>
+                <span>관리자만 볼 수 있습니다.</span>
+                <button type="button" disabled={saving || note === (viewing.admin_note || "")} onClick={onSaveNote}>메모 저장</button>
+              </div>
+            </section>
+
+            <footer className={styles.statusBar} data-tour-id="protect-status">
+              <div><b>처리 상태</b></div>
+              <div>
+                {statuses.map((status) => (
+                  <button key={status.value} type="button" disabled={saving} className={viewing.status === status.value ? styles.active : ""} onClick={() => void onChangeStatus(status.value)}>
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            </footer>
+          </aside>
         </div>
-
-        <footer className={styles.statusBar} data-tour-id="protect-status">
-          <div>
-            <span>STATUS</span>
-            <b>처리 상태 변경</b>
-            <small>상태와 관리자 메모는 즉시 반영됩니다.</small>
-          </div>
-          <div>
-            {statuses.map((status) => (
-              <button
-                key={status.value}
-                type="button"
-                disabled={saving}
-                className={viewing.status === status.value ? styles.active : ""}
-                onClick={() => void onChangeStatus(status.value)}
-              >
-                {status.label}
-              </button>
-            ))}
-          </div>
-        </footer>
       </article>
     </div>
   );

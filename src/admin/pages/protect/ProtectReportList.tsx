@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  BrainCircuit,
-  Inbox,
-  Search,
-  ShieldCheck,
-} from "lucide-react";
+import { BrainCircuit, Inbox, Search } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import {
@@ -25,6 +19,7 @@ type ProtectReportListProps = {
   statusCounts: { pending: number; reviewing: number };
   unclassifiedCount: number;
   classifying: boolean;
+  refreshing: boolean;
   query: string;
   filter: ReportFilter;
   severityFilter: ReportSeverityFilter;
@@ -51,6 +46,7 @@ export default function ProtectReportList({
   statusCounts,
   unclassifiedCount,
   classifying,
+  refreshing,
   query,
   filter,
   severityFilter,
@@ -83,37 +79,17 @@ export default function ProtectReportList({
           </button>
         </div>
       )}
-      <section className={styles.summary}>
-        <div>
-          <span className={styles.summaryIcon}>
-            <ShieldCheck aria-hidden="true" />
-          </span>
-          <p>
-            <small>전체 제보</small>
-            <strong>{total}</strong>
-          </p>
-        </div>
-        <dl>
-          <div>
-            <dt>새 제보</dt>
-            <dd>{statusCounts.pending}</dd>
-          </div>
-          <div>
-            <dt>검토 중</dt>
-            <dd>{statusCounts.reviewing}</dd>
-          </div>
-        </dl>
-        <p>
-          접수된 권익 침해 내용과 비공개 증거 자료를 확인하고 처리 상태를
-          기록합니다.
-        </p>
-      </section>
-
       <section className={styles.inbox}>
         <header className={styles.toolbar}>
-          <div>
-            <h1>권익 보호 접수함</h1>
-            <p>{total}건의 제보</p>
+          <div className={styles.toolbarTop}>
+            <div className={styles.titleBlock}>
+              <h1>권익 보호 접수함</h1>
+              <p>
+                <span>검색 결과 {total}건</span>
+                <span>새 제보 {statusCounts.pending}건</span>
+                <span>검토 중 {statusCounts.reviewing}건</span>
+              </p>
+            </div>
           </div>
           <div className={styles.filters} data-tour-id="protect-filters">
             <label className={styles.search} data-tour-id="protect-search">
@@ -156,21 +132,15 @@ export default function ProtectReportList({
               onClick={onClassifyPending}
             >
               <BrainCircuit aria-hidden="true" />
-              {classifying ? "분류 중…" : `미분류 ${unclassifiedCount}건 분류`}
+              {classifying
+                ? "분류 중"
+                : `전체 미분류 ${unclassifiedCount}건 분류`}
             </button>
           </div>
         </header>
 
-        <div className={styles.tableWrap}>
-          <div className={styles.mailHeader} aria-hidden="true">
-            <span>접수일</span>
-            <span>보호 대상</span>
-            <span>제보 내용</span>
-            <span>플랫폼</span>
-            <span>우선순위</span>
-            <span>상태</span>
-            <span />
-          </div>
+        <div className={styles.tableWrap} aria-busy={refreshing}>
+          {refreshing && <span className={styles.refreshBar} aria-hidden="true" />}
           <ul className={styles.mailList} aria-label="권익 보호 신고">
             {reports.map((report) => (
               <li key={report.id} className={styles.mailListItem}>
@@ -183,28 +153,18 @@ export default function ProtectReportList({
                   data-tour-id="protect-open"
                   onClick={() => onOpenReport(report)}
                 >
-                  <span className={`${styles.mailCell} ${styles.mailDate}`}>
-                    <span className={styles.mailLabel}>접수일</span>
-                    {formatDate(report.created_at)}
-                  </span>
                   <span className={`${styles.mailCell} ${styles.mailTarget}`}>
-                    <span className={styles.mailLabel}>보호 대상</span>
                     <b>{report.artists?.name || "-"}</b>
-                    <small>
-                      {reportTypeLabels[report.report_type] || "기타"}
-                    </small>
-                  </span>
-                  <span className={`${styles.mailCell} ${styles.mailContent}`}>
-                    <span className={styles.mailLabel}>제보 내용</span>
-                    <b>{report.title}</b>
                     <small>{report.author_name}</small>
                   </span>
-                  <span className={`${styles.mailCell} ${styles.mailPlatform}`}>
-                    <span className={styles.mailLabel}>플랫폼</span>
-                    {report.platform}
+                  <span className={`${styles.mailCell} ${styles.mailContent}`}>
+                    <b>{report.title}</b>
+                    <small>{report.content}</small>
                   </span>
-                  <span className={`${styles.mailCell} ${styles.mailSeverity}`}>
-                    <span className={styles.mailLabel}>우선순위</span>
+                  <span className={`${styles.mailCell} ${styles.mailPlatform}`}>
+                    {reportTypeLabels[report.report_type] || "기타"} / {report.platform}
+                  </span>
+                  <span className={`${styles.mailCell} ${styles.mailBadges}`}>
                     <span
                       className={`${styles.severity} ${
                         styles[
@@ -226,9 +186,6 @@ export default function ProtectReportList({
                         </>
                       )}
                     </span>
-                  </span>
-                  <span className={`${styles.mailCell} ${styles.mailStatus}`}>
-                    <span className={styles.mailLabel}>상태</span>
                     <span
                       className={`${styles.status} ${statusClass(report.status)}`}
                     >
@@ -236,9 +193,9 @@ export default function ProtectReportList({
                       {statusLabel(report.status)}
                     </span>
                   </span>
-                  <span className={styles.mailAction} aria-hidden="true">
-                    <ArrowRight />
-                  </span>
+                  <time className={styles.mailDate} dateTime={report.created_at}>
+                    {formatDate(report.created_at)}
+                  </time>
                 </button>
               </li>
             ))}
