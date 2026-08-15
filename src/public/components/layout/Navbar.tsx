@@ -30,6 +30,7 @@ export default function Navbar({
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isDark = theme === "dark";
+  const isDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 50);
@@ -160,7 +161,7 @@ export default function Navbar({
             onClose={closeMobileMenu}
             mobileOpenArtist={mobileOpenArtist}
             setMobileOpenArtist={setMobileOpenArtist}
-            player={<GlobalPlayer />}
+            player={isDiscography ? null : <GlobalPlayer />}
           />
         ) : (
           <DesktopNav

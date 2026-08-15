@@ -36,8 +36,8 @@ export function TrackPlayer({
   const youtubeHref = safeHref(track?.youtubeUrl);
   const safeProgress = Math.min(100, Math.max(0, progress));
   return (
-    <div className="flex shrink-0 flex-col gap-3 border-y border-[var(--alpha-ffffff-1)] py-4">
-      <div className="flex items-center justify-between">
+    <div className="flex w-full max-w-full min-w-0 shrink-0 flex-col gap-3 border-y border-[var(--alpha-ffffff-1)] py-4">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <span className="min-w-0 truncate font-display text-[15px] font-medium tracking-[-0.01em] text-[var(--color-static-white)]">
           {track?.title}
         </span>
@@ -74,7 +74,7 @@ export function TrackPlayer({
         />
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-0.5">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center pt-0.5">
         <span aria-hidden="true" />
         <div className="flex items-center justify-center gap-8 sm:gap-6">
           <button
