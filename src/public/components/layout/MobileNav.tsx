@@ -5,6 +5,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
 import mobileStyles from "@/styles/(public)/components/layout/Navbar.mobile.module.css";
+import type { ReactNode } from "react";
 
 type Props = {
   menuButtonRef: React.RefObject<HTMLButtonElement | null>;
@@ -25,6 +26,7 @@ type Props = {
   mobileOpenArtist: string | null;
   setMobileOpenArtist: (slug: string | null) => void;
   onToggleTheme: () => void;
+  player: ReactNode;
 };
 
 const links = (slug: string) => [
@@ -53,6 +55,7 @@ export default function MobileNav({
   mobileOpenArtist,
   setMobileOpenArtist,
   onToggleTheme,
+  player,
 }: Props) {
   const mobileLinkClass = (path: string) =>
     `flex min-h-14 items-center border-b border-[var(--border-default)] font-display text-[15px] font-bold tracking-[0.08em] transition-colors ${pathname === path ? "text-brand-pink" : "hover:text-brand-pink"}`;
@@ -130,6 +133,7 @@ export default function MobileNav({
             </Link>
           </>
         )}
+        {player}
         <button
           ref={menuButtonRef}
           type="button"

@@ -1,16 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { ListMusic, Pause, Play } from "lucide-react";
-import {
-  useLayoutEffect,
-  useRef,
-  type MouseEvent,
-  type TouchEvent,
-} from "react";
+import { ListMusic } from "lucide-react";
+import { useLayoutEffect, useRef, type TouchEvent } from "react";
 import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText } from "@/core/i18n/localized";
-import { safeHref } from "@/core/http/safe-href";
 import { useLocale, type Locale } from "@/core/providers/LocaleContext";
 
 import type {
@@ -25,18 +19,11 @@ interface MobileAlbumViewProps {
   albumIndex: number;
   albums: DiscographyAlbum[];
   artistName: string;
-  currentTrackIndex: number;
   gallery: DiscographyGalleryItem[];
-  isPlaying: boolean;
   locale: Locale;
   members: DiscographyMember[];
-  progress: number;
-  time: { current: string; total: string };
   onIntentAlbum: (index: number) => void;
   onSelectAlbum: (index: number) => void;
-  onSeek: (nextProgress: number) => void;
-  onTogglePlay: () => void;
-  onOpenTracks: () => void;
 }
 
 export function MobileAlbumView({
@@ -44,26 +31,17 @@ export function MobileAlbumView({
   albumIndex,
   albums,
   artistName,
-  currentTrackIndex,
   gallery,
-  isPlaying,
   locale,
   members,
-  progress,
-  time,
   onIntentAlbum,
   onSelectAlbum,
-  onSeek,
-  onTogglePlay,
-  onOpenTracks,
 }: MobileAlbumViewProps) {
   const { t } = useLocale();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const albumTrackRef = useRef<HTMLDivElement | null>(null);
   const albumRailRef = useRef<HTMLElement | null>(null);
   const transitioningRef = useRef(false);
-  const track = album.tracks[currentTrackIndex];
-  const canPlay = Boolean(safeHref(track?.audioUrl));
   const previousAlbum = albums[albumIndex - 1];
   const nextAlbum = albums[albumIndex + 1];
 
@@ -113,32 +91,6 @@ export function MobileAlbumView({
     }
     onIntentAlbum(index);
     onSelectAlbum(index);
-  };
-
-  const openTracks = ({ currentTarget }: MouseEvent<HTMLButtonElement>) => {
-    if (
-      typeof currentTarget.animate !== "function" ||
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    ) {
-      onOpenTracks();
-      return;
-    }
-
-    currentTarget.disabled = true;
-    const finish = () => onOpenTracks();
-    currentTarget
-      .animate(
-        [
-          { transform: "scale(1)", opacity: 1 },
-          { transform: "scale(.985)", opacity: 0.35 },
-        ],
-        {
-          duration: 220,
-          easing: "cubic-bezier(.4, 0, .2, 1)",
-          fill: "forwards",
-        },
-      )
-      .finished.then(finish, finish);
   };
 
   /** 드래그 중 커버 컨테이너를 손가락 위치에 따라 이동합니다(rubber-band 적용). */
@@ -239,13 +191,7 @@ export function MobileAlbumView({
             </div>
           </div>
           <div className="w-1/3 shrink-0 px-4">
-            <button
-              type="button"
-              aria-label="TRACKS"
-              onClick={openTracks}
-              className="group relative mx-auto block aspect-square w-full max-w-[390px] touch-manipulation overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)] text-left transition-transform duration-base active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-4"
-              style={{ outlineColor: album.color }}
-            >
+            <div className="group relative mx-auto block aspect-square w-full max-w-[390px] overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)]">
               <Image
                 src={album.cover}
                 alt={album.title}
@@ -265,7 +211,7 @@ export function MobileAlbumView({
                   {String(album.tracks.length).padStart(2, "0")} TRACKS
                 </span>
               </div>
-            </button>
+            </div>
           </div>
           <div className="w-1/3 shrink-0 px-4" aria-hidden="true">
             <div className="relative mx-auto aspect-square w-full max-w-[390px] overflow-hidden rounded-[1.35rem]">
@@ -372,73 +318,7 @@ export function MobileAlbumView({
               {artistName} · {album.releaseDate}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={!canPlay}
-            onClick={onTogglePlay}
-            className="flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full text-[var(--color-static-black)] shadow-lg transition-transform duration-base active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-30"
-            style={{
-              backgroundColor: album.color,
-              outlineColor: album.color,
-            }}
-            aria-label={isPlaying ? t.discography.pause : t.discography.play}
-          >
-            {isPlaying ? (
-              <Pause className="h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Play className="h-6 w-6 pl-0.5" aria-hidden="true" />
-            )}
-          </button>
         </div>
-
-        {track && (
-          <>
-            <button
-              type="button"
-              onClick={onOpenTracks}
-              className="mt-5 flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-lg border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-2.5 text-left transition-transform duration-base active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ outlineColor: album.color }}
-            >
-              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
-                <Image
-                  src={album.cover}
-                  alt=""
-                  fill
-                  sizes="44px"
-                  className="object-cover"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="block font-display text-[8px] font-bold tracking-[0.08em] text-[var(--palette-6b7280)]">
-                  {t.discography.nowPlaying}
-                </span>
-                <strong className="mt-0.5 block truncate text-sm text-[var(--color-static-white)]">
-                  {track.title}
-                </strong>
-              </div>
-              <span className="text-[10px] text-[var(--palette-6b7280)]">
-                {time.current} / {time.total}
-              </span>
-              <ListMusic
-                className="h-4 w-4 shrink-0"
-                style={{ color: album.color }}
-                aria-hidden="true"
-              />
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="0.1"
-              value={progress}
-              onChange={(event) => onSeek(Number(event.currentTarget.value))}
-              disabled={!canPlay}
-              aria-label={t.discography.progress}
-              className="mt-3 h-1.5 w-full cursor-pointer accent-[var(--color-brand-pink)] disabled:cursor-default disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)]"
-              style={{ accentColor: album.color }}
-            />
-          </>
-        )}
       </div>
 
       <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">

@@ -160,6 +160,7 @@ export default function Navbar({
             onClose={closeMobileMenu}
             mobileOpenArtist={mobileOpenArtist}
             setMobileOpenArtist={setMobileOpenArtist}
+            player={<GlobalPlayer />}
           />
         ) : (
           <DesktopNav
@@ -169,7 +170,6 @@ export default function Navbar({
           />
         )}
       </div>
-      <GlobalPlayer />
     </header>
   );
 }

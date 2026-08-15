@@ -70,7 +70,6 @@ function renderPlayer(
     members: [],
     progress: 0,
     time: { current: "0:00", total: "3:00" },
-    view: "album",
     onIntentAlbum: vi.fn(),
     onNextTrack: vi.fn(),
     onPlayTrack: vi.fn(),
@@ -78,7 +77,6 @@ function renderPlayer(
     onSeek: vi.fn(),
     onSelectAlbum: vi.fn(),
     onTogglePlay: vi.fn(),
-    onViewChange: vi.fn(),
     ...overrides,
   };
   render(<MobileDiscographyPlayer {...props} />);
@@ -118,10 +116,10 @@ describe("MobileDiscographyPlayer", () => {
     expect(props.onSelectAlbum).toHaveBeenCalledWith(1);
   });
 
-  it("opens tracks when the album cover is selected", () => {
-    const props = renderPlayer();
-    fireEvent.click(screen.getByRole("button", { name: "TRACKS" }));
-    expect(props.onViewChange).toHaveBeenCalledWith("tracks");
+  it("keeps one playback surface with the track list in the album flow", () => {
+    renderPlayer();
+    expect(screen.getByText("Track player")).toBeInTheDocument();
+    expect(screen.getByText("Track list")).toBeInTheDocument();
   });
 
   it("prefers the album typo logo over its text title", () => {

@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 import {
   ChevronDown,
-  ChevronUp,
   Pause,
   Play,
   SkipBack,
@@ -86,16 +86,8 @@ function SeekBar({
 
 export default function GlobalPlayer() {
   const { t } = useLocale();
-  const pathname = usePathname();
   const player = usePlayer();
-  const {
-    currentTrack: track,
-    isPlaying,
-    currentTime,
-    duration,
-    progress,
-    time,
-  } = player;
+  const { currentTrack: track, isPlaying, duration, progress, time } = player;
   const copy = {
     nowPlaying: t.discography.nowPlaying,
     play: t.discography.play,
@@ -106,34 +98,38 @@ export default function GlobalPlayer() {
     open: t.discography.nowPlaying,
     close: t.common.closeMenu,
   };
-  const hiddenOnDiscography = /^\/[^/]+\/discography\/?$/.test(pathname);
-  const visible = Boolean(track) && !hiddenOnDiscography;
+  const visible = Boolean(track);
+  const [desktopOpen, setDesktopOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const desktopRef = useRef<HTMLDivElement>(null);
+  const desktopTriggerRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLElement>(null);
+  const sheetLayerRef = useRef<HTMLDivElement>(null);
   const sheetTriggerRef = useRef<HTMLButtonElement>(null);
 
+  const closeDesktop = useCallback(() => setDesktopOpen(false), []);
   const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   useEffect(() => {
-    if (!visible && sheetOpen) {
+    if (!visible && (desktopOpen || sheetOpen)) {
       let cancelled = false;
       queueMicrotask(() => {
-        if (!cancelled) closeSheet();
+        if (!cancelled) {
+          closeDesktop();
+          closeSheet();
+        }
       });
       return () => {
         cancelled = true;
       };
     }
-  }, [closeSheet, sheetOpen, visible]);
+  }, [closeDesktop, closeSheet, desktopOpen, sheetOpen, visible]);
 
   useEffect(() => {
     const root = document.documentElement;
     const media = window.matchMedia("(max-width: 1279px)");
     const syncHeight = () =>
-      root.style.setProperty(
-        "--global-player-height",
-        visible ? (media.matches ? "56px" : "64px") : "0px",
-      );
+      root.style.setProperty("--global-player-height", "0px");
     syncHeight();
     media.addEventListener("change", syncHeight);
     return () => {
@@ -141,6 +137,39 @@ export default function GlobalPlayer() {
       root.style.setProperty("--global-player-height", "0px");
     };
   }, [visible]);
+
+  useGSAP(
+    () => {
+      if (!sheetRef.current) return;
+      if (sheetOpen && visible) {
+        gsap.fromTo(
+          sheetRef.current,
+          { yPercent: 8, opacity: 0.7 },
+          { yPercent: 0, opacity: 1, duration: 0.42, ease: "power3.out" },
+        );
+      }
+    },
+    { dependencies: [sheetOpen, visible], scope: sheetLayerRef },
+  );
+
+  useEffect(() => {
+    if (!desktopOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!desktopRef.current?.contains(event.target as Node)) closeDesktop();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeDesktop();
+      desktopTriggerRef.current?.focus();
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeDesktop, desktopOpen]);
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -222,100 +251,118 @@ export default function GlobalPlayer() {
         className={`${styles.playerDock} ${visibilityClass}`}
         aria-hidden={!visible}
       >
-        <div className={styles.playerDesktopBar}>
-          <div className={styles.playerTrackMeta}>
-            <Artwork track={track} size={42} />
-            <div className={styles.playerTrackCopy}>
-              <span className={styles.playerEyebrow}>{copy.nowPlaying}</span>
-              <strong title={title}>{title}</strong>
-              <span title={`${artist}${album ? ` - ${album}` : ""}`}>
-                {artist}
-                {album ? ` - ${album}` : ""}
-              </span>
-            </div>
-          </div>
-          <div className={styles.playerControls}>
-            <button
-              type="button"
-              className={styles.playerIconButton}
-              onClick={previous}
-              aria-label={copy.previous}
-            >
-              <SkipBack aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={`${styles.playerIconButton} ${styles.playerPrimaryButton}`}
-              onClick={toggle}
-              aria-label={isPlaying ? copy.pause : copy.play}
-            >
-              {isPlaying ? (
-                <Pause aria-hidden="true" />
-              ) : (
-                <Play aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="button"
-              className={styles.playerIconButton}
-              onClick={next}
-              aria-label={copy.next}
-            >
-              <SkipForward aria-hidden="true" />
-            </button>
-          </div>
-          <div className={styles.playerTimeline}>
-            <SeekBar
-              duration={duration}
-              progress={progress}
-              onSeek={seek}
-              label={copy.progress}
+        <div className={styles.playerDesktopBar} ref={desktopRef}>
+          <button
+            ref={desktopTriggerRef}
+            type="button"
+            className={styles.playerBadge}
+            onClick={() => setDesktopOpen((open) => !open)}
+            aria-expanded={desktopOpen}
+            aria-controls="global-player-popover"
+            aria-label={`${copy.open}: ${title}`}
+          >
+            <Artwork track={track} size={34} />
+            <span
+              className={styles.playerBadgeProgress}
+              aria-hidden="true"
+              style={
+                {
+                  "--player-progress": `${progress}%`,
+                  "--player-accent": track.albumColor,
+                } as CSSProperties
+              }
             />
-            <div className={styles.playerTime} aria-live="off">
-              <span>{time.current}</span>
-              <span>{time.total}</span>
+          </button>
+
+          <section
+            id="global-player-popover"
+            className={`${styles.playerPopover} ${desktopOpen ? styles.playerPopoverOpen : ""}`}
+            role="dialog"
+            aria-label={`${copy.nowPlaying}: ${title}`}
+            aria-hidden={!desktopOpen}
+          >
+            <div className={styles.playerPopoverHeader}>
+              <Artwork track={track} size={54} />
+              <div className={styles.playerTrackCopy}>
+                <strong title={title}>{title}</strong>
+                <span title={`${artist}${album ? ` - ${album}` : ""}`}>
+                  {artist}
+                  {album ? ` - ${album}` : ""}
+                </span>
+              </div>
             </div>
-          </div>
+
+            <div className={styles.playerPopoverTimeline}>
+              <SeekBar
+                duration={duration}
+                progress={progress}
+                onSeek={seek}
+                label={copy.progress}
+              />
+              <div className={styles.playerTime} aria-live="off">
+                <span>{time.current}</span>
+                <span>{time.total}</span>
+              </div>
+            </div>
+
+            <div className={styles.playerControls}>
+              <button
+                type="button"
+                className={styles.playerIconButton}
+                onClick={previous}
+                aria-label={copy.previous}
+              >
+                <SkipBack aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`${styles.playerIconButton} ${styles.playerPrimaryButton}`}
+                onClick={toggle}
+                aria-label={isPlaying ? copy.pause : copy.play}
+              >
+                {isPlaying ? (
+                  <Pause aria-hidden="true" />
+                ) : (
+                  <Play aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                className={styles.playerIconButton}
+                onClick={next}
+                aria-label={copy.next}
+              >
+                <SkipForward aria-hidden="true" />
+              </button>
+            </div>
+          </section>
         </div>
 
         <div className={styles.playerMobileBar}>
           <button
             type="button"
-            className={styles.playerMobileSummary}
+            className={styles.playerMobileCover}
             onClick={() => setSheetOpen(true)}
             ref={sheetTriggerRef}
-            aria-label={copy.open}
+            aria-label={`${copy.open}: ${title}`}
           >
-            <Artwork track={track} size={38} />
-            <span className={styles.playerTrackCopy}>
-              <strong title={title}>{title}</strong>
-              <span title={artist}>{artist}</span>
-            </span>
-            <ChevronUp aria-hidden="true" className={styles.playerOpenIcon} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.playerIconButton} ${styles.playerMobilePlay}`}
-            onClick={toggle}
-            aria-label={isPlaying ? copy.pause : copy.play}
-          >
-            {isPlaying ? (
-              <Pause aria-hidden="true" />
-            ) : (
-              <Play aria-hidden="true" />
-            )}
-          </button>
-          <div className={styles.playerMobileProgress}>
+            <Artwork track={track} size={36} />
             <span
-              style={{
-                width: duration ? `${(currentTime / duration) * 100}%` : "0%",
-              }}
+              className={styles.playerMobileProgress}
+              aria-hidden="true"
+              style={
+                {
+                  "--player-progress": `${progress}%`,
+                  "--player-accent": track.albumColor,
+                } as CSSProperties
+              }
             />
-          </div>
+          </button>
         </div>
       </div>
 
       <div
+        ref={sheetLayerRef}
         className={`${styles.playerSheetLayer} ${sheetOpen && visible ? styles.playerSheetOpen : ""}`}
         aria-hidden={!sheetOpen || !visible}
       >
@@ -333,6 +380,7 @@ export default function GlobalPlayer() {
           aria-modal="true"
           aria-label={`${copy.nowPlaying}: ${title}`}
           onKeyDown={onSheetKeyDown}
+          style={{ "--player-accent": track.albumColor } as CSSProperties}
         >
           <div className={styles.playerSheetHandle} aria-hidden="true" />
           <button
@@ -349,7 +397,6 @@ export default function GlobalPlayer() {
             className={styles.playerSheetArtwork}
           />
           <div className={styles.playerSheetCopy}>
-            <span className={styles.playerEyebrow}>{copy.nowPlaying}</span>
             <h2>{title}</h2>
             <p>
               {artist}
