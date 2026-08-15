@@ -116,6 +116,7 @@
   min-height: 40px;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px;
   margin: -5px 0 14px;
 }
 .content-delete-action {

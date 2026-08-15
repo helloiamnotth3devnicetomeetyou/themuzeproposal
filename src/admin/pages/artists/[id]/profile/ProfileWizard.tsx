@@ -6,6 +6,7 @@ import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import AdminLanguageTabs, {
   type AdminLanguage,
 } from "@/admin/components/content/AdminLanguageTabs";
+import AdminTranslationButton from "@/admin/components/content/AdminTranslationButton";
 import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import ProfileContextRail from "./ProfileContextRail";
@@ -143,11 +144,38 @@ export default function ProfileWizard({
       identity={identity}
       actions={wizardActions}
       toolbar={
-        <AdminLanguageTabs
-          activeLang={language}
-          onChange={setLanguage}
-          values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }}
-        />
+        <>
+          <AdminLanguageTabs
+            activeLang={language}
+            onChange={setLanguage}
+            values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }}
+          />
+          <AdminTranslationButton
+            documentKind="artist"
+            fields={[
+              {
+                key: "description",
+                label: "아티스트 소개",
+                format: "richtext",
+                ko: draft.descKo,
+                en: draft.descEn,
+                ja: draft.descJa,
+              },
+            ]}
+            onApply={(translations) =>
+              patchDraft({
+                ...(translations.description?.en
+                  ? { descEn: translations.description.en }
+                  : {}),
+                ...(translations.description?.ja
+                  ? { descJa: translations.description.ja }
+                  : {}),
+              })
+            }
+            onError={setError}
+            onSuccess={onToast}
+          />
+        </>
       }
       tabs={newArtistSteps.map((item) => ({
         ...item,

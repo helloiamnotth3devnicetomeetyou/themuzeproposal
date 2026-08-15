@@ -4,6 +4,7 @@ import ContentWorkbench, {
   type WorkbenchTab,
 } from "@/admin/components/content/ContentWorkbench";
 import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
+import AdminTranslationButton from "@/admin/components/content/AdminTranslationButton";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import { hasRichTextContent } from "@/core/utils/rich-text";
@@ -59,6 +60,7 @@ export default function NoticeManager({
     setFilter,
     setSearch,
     setError,
+    setToast,
     setDeleteOpen,
     setPendingDelete,
   } = useNoticeManager({ scopeArtistId });
@@ -144,16 +146,59 @@ export default function NoticeManager({
         actions={actions}
         toolbar={
           draft ? (
-            <AdminLanguageTabs
-              activeLang={language}
-              onChange={setLanguage}
-              values={{
-                ko: draft.titleKo,
-                en: draft.titleEn,
-                ja: draft.titleJa,
-              }}
-              ariaLabel="공지 작성 언어"
-            />
+            <>
+              <AdminLanguageTabs
+                activeLang={language}
+                onChange={setLanguage}
+                values={{
+                  ko: draft.titleKo,
+                  en: draft.titleEn,
+                  ja: draft.titleJa,
+                }}
+                ariaLabel="공지 작성 언어"
+              />
+              <AdminTranslationButton
+                documentKind="notice"
+                fields={[
+                  {
+                    key: "category",
+                    label: "공지 분류",
+                    format: "plain",
+                    ko: draft.categoryKo,
+                    en: draft.categoryEn,
+                    ja: draft.categoryJa,
+                  },
+                  {
+                    key: "title",
+                    label: "공지 제목",
+                    format: "plain",
+                    ko: draft.titleKo,
+                    en: draft.titleEn,
+                    ja: draft.titleJa,
+                  },
+                  {
+                    key: "content",
+                    label: "공지 본문",
+                    format: "richtext",
+                    ko: draft.contentKo,
+                    en: draft.contentEn,
+                    ja: draft.contentJa,
+                  },
+                ]}
+                onApply={(translations) =>
+                  patchDraft({
+                    categoryEn: translations.category?.en ?? draft.categoryEn,
+                    categoryJa: translations.category?.ja ?? draft.categoryJa,
+                    titleEn: translations.title?.en ?? draft.titleEn,
+                    titleJa: translations.title?.ja ?? draft.titleJa,
+                    contentEn: translations.content?.en ?? draft.contentEn,
+                    contentJa: translations.content?.ja ?? draft.contentJa,
+                  })
+                }
+                onError={setError}
+                onSuccess={setToast}
+              />
+            </>
           ) : null
         }
         tabs={tabs.map((item) => ({
