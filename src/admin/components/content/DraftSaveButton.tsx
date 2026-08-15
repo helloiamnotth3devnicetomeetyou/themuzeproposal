@@ -28,7 +28,7 @@ export default function DraftSaveButton({
   extraDiff = [],
   disabled,
   label = "변경사항 저장",
-  requireConfirmation = false,
+  requireConfirmation = true,
 }: Props) {
   const confirm = useAdminConfirm();
   const saveRequested = useRef(false);

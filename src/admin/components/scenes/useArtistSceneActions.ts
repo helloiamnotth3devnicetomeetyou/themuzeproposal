@@ -221,16 +221,6 @@ export function useArtistSceneActions({
     }
   };
 
-  const syncSceneDimensions = (width: number, height: number) => {
-    if (!selectedScene || !width || !height) return;
-    if (
-      selectedScene.image_width === width &&
-      selectedScene.image_height === height
-    )
-      return;
-    patchScene({ image_width: width, image_height: height });
-  };
-
   const applyOutline = () => {
     if (!selectedScene || !selectedMemberId || draftOutline.length < 3) return;
     setScenes((current) =>
@@ -464,7 +454,6 @@ export function useArtistSceneActions({
     patchScene,
     uploadScenes,
     importHero,
-    syncSceneDimensions,
     applyOutline,
     commitScenes,
     deleteScene,

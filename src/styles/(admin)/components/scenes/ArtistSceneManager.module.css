@@ -1,7 +1,14 @@
 .manager {
   display: grid;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  overflow: hidden;
   gap: 14px;
+}
+.manager > * {
+  min-width: 0;
+  max-width: 100%;
 }
 .manager button {
   font: inherit;
@@ -553,6 +560,9 @@
   .memberPicker {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .memberPicker > div {
+    width: 100%;
   }
   .outlineTools {
     grid-template-columns: 1fr;

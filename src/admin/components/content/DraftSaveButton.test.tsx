@@ -71,7 +71,7 @@ describe("DraftSaveButton", () => {
     await vi.waitFor(() => expect(onSave).toHaveBeenCalledOnce());
   });
 
-  it("keeps confirmation available for high-impact changes", async () => {
+  it("confirms changes before saving by default", async () => {
     const onSave = vi.fn();
     render(
       <DraftSaveButton
@@ -79,7 +79,6 @@ describe("DraftSaveButton", () => {
         draft={{ published: true }}
         dirty
         saving={false}
-        requireConfirmation
         onSave={onSave}
       />,
     );

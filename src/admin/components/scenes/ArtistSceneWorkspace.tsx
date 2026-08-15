@@ -49,7 +49,6 @@ type Props = {
   onToggleHero: (sceneId: string, checked: boolean) => void;
   onOpenDelete: () => void;
   onApplySettings: () => void;
-  onSyncSceneDimensions: (width: number, height: number) => void;
   onApplyOutline: () => void;
   onUploadMask: (file: File) => Promise<void>;
   onRemoveOutline: () => void;
@@ -83,7 +82,6 @@ export default function ArtistSceneWorkspace({
   onToggleHero,
   onOpenDelete,
   onApplySettings,
-  onSyncSceneDimensions,
   onApplyOutline,
   onUploadMask,
   onRemoveOutline,
@@ -268,7 +266,6 @@ export default function ArtistSceneWorkspace({
                 draftOutline={draftOutline}
                 setDraftOutline={setDraftOutline}
                 drawingRef={drawingRef}
-                syncSceneDimensions={onSyncSceneDimensions}
                 simplifyOutline={simplifyOutline}
                 sceneRatio={sceneRatio}
               />

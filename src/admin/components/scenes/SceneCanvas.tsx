@@ -16,7 +16,6 @@ interface SceneCanvasProps {
   draftOutline: ScenePoint[];
   setDraftOutline: React.Dispatch<React.SetStateAction<ScenePoint[]>>;
   drawingRef: React.MutableRefObject<boolean>;
-  syncSceneDimensions: (width: number, height: number) => void;
   simplifyOutline: (points: ScenePoint[]) => ScenePoint[];
   sceneRatio: number;
 }
@@ -27,7 +26,6 @@ export default function SceneCanvas({
   draftOutline,
   setDraftOutline,
   drawingRef,
-  syncSceneDimensions,
   simplifyOutline,
   sceneRatio,
 }: SceneCanvasProps) {
@@ -119,12 +117,6 @@ export default function SceneCanvas({
           alt={selectedScene.title}
           sizes="(max-width: 900px) 100vw, 720px"
           draggable={false}
-          onLoad={(event) =>
-            syncSceneDimensions(
-              event.currentTarget.naturalWidth,
-              event.currentTarget.naturalHeight,
-            )
-          }
         />
         <div className={styles.safeArea} aria-hidden="true">
           <span>확대 안전 영역 · 116%</span>

@@ -96,7 +96,6 @@ export default function ArtistSceneManager({
     patchScene,
     uploadScenes,
     importHero,
-    syncSceneDimensions,
     applyOutline,
     commitScenes,
     deleteScene,
@@ -233,11 +232,14 @@ export default function ArtistSceneManager({
     });
   }, [
     artistId,
+    artistUpdatedAt,
     backupKey,
     commitScenes,
+    discardBackup,
     dirty,
-    scenes.length,
-    snapshot.length,
+    onToast,
+    scenes,
+    snapshot,
   ]);
 
   if (!artistId)
@@ -301,7 +303,6 @@ export default function ArtistSceneManager({
         onToggleHero={toggleHero}
         onOpenDelete={() => setDeleteOpen(true)}
         onApplySettings={applySceneSettings}
-        onSyncSceneDimensions={syncSceneDimensions}
         onApplyOutline={applyOutline}
         onUploadMask={uploadMask}
         onRemoveOutline={removeOutline}
