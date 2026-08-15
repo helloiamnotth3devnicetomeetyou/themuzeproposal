@@ -454,6 +454,7 @@ export default function useNoticeManager({
     setFilter,
     setSearch,
     setError,
+    setToast,
     setDeleteOpen,
     setPendingDelete,
   };

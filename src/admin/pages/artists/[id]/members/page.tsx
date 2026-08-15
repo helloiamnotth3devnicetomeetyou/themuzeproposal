@@ -3,6 +3,7 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { UserRound } from "lucide-react";
 import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
+import AdminTranslationButton from "@/admin/components/content/AdminTranslationButton";
 import ContentWorkbench from "@/admin/components/content/ContentWorkbench";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
@@ -128,11 +129,44 @@ export default function ArtistMembersAdmin() {
         }
         toolbar={
           draft ? (
-            <AdminLanguageTabs
-              activeLang={language}
-              onChange={setLanguage}
-              values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }}
-            />
+            <>
+              <AdminLanguageTabs
+                activeLang={language}
+                onChange={setLanguage}
+                values={{ ko: draft.name, en: draft.engName, ja: draft.jaName }}
+              />
+              <AdminTranslationButton
+                documentKind="member"
+                fields={[
+                  {
+                    key: "role",
+                    label: "멤버 역할",
+                    format: "plain",
+                    ko: draft.roleKo,
+                    en: draft.roleEn,
+                    ja: draft.roleJa,
+                  },
+                  {
+                    key: "bio",
+                    label: "멤버 소개",
+                    format: "plain",
+                    ko: draft.bioKo,
+                    en: draft.bioEn,
+                    ja: draft.bioJa,
+                  },
+                ]}
+                onApply={(translations) =>
+                  patchDraft({
+                    roleEn: translations.role?.en ?? draft.roleEn,
+                    roleJa: translations.role?.ja ?? draft.roleJa,
+                    bioEn: translations.bio?.en ?? draft.bioEn,
+                    bioJa: translations.bio?.ja ?? draft.bioJa,
+                  })
+                }
+                onError={setError}
+                onSuccess={editor.setToast}
+              />
+            </>
           ) : null
         }
         tabs={memberTabs.map((item) => ({

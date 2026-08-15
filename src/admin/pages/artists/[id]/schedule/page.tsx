@@ -9,6 +9,7 @@ import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminLanguageTabs, {
   type AdminLanguage,
 } from "@/admin/components/content/AdminLanguageTabs";
+import AdminTranslationButton from "@/admin/components/content/AdminTranslationButton";
 import AdminSkeleton from "@/admin/components/shell/AdminSkeleton";
 import { useAdminEntityEditor } from "@/admin/hooks/useAdminEntityEditor";
 import { useAdminPreview } from "@/admin/hooks/useAdminPreview";
@@ -431,15 +432,50 @@ export default function ArtistScheduleAdminPage() {
         actions={actions}
         toolbar={
           draft ? (
-            <AdminLanguageTabs
-              activeLang={language}
-              onChange={setLanguage}
-              values={{
-                ko: draft.titleKo,
-                en: draft.titleEn,
-                ja: draft.titleJa,
-              }}
-            />
+            <>
+              <AdminLanguageTabs
+                activeLang={language}
+                onChange={setLanguage}
+                values={{
+                  ko: draft.titleKo,
+                  en: draft.titleEn,
+                  ja: draft.titleJa,
+                }}
+              />
+              <AdminTranslationButton
+                documentKind="schedule"
+                fields={[
+                  {
+                    key: "title",
+                    label: "일정 제목",
+                    format: "plain",
+                    ko: draft.titleKo,
+                    en: draft.titleEn,
+                    ja: draft.titleJa,
+                  },
+                  {
+                    key: "description",
+                    label: "일정 설명",
+                    format: "plain",
+                    ko: draft.descriptionKo,
+                    en: draft.descriptionEn,
+                    ja: draft.descriptionJa,
+                  },
+                ]}
+                onApply={(translations) =>
+                  patch({
+                    titleEn: translations.title?.en ?? draft.titleEn,
+                    titleJa: translations.title?.ja ?? draft.titleJa,
+                    descriptionEn:
+                      translations.description?.en ?? draft.descriptionEn,
+                    descriptionJa:
+                      translations.description?.ja ?? draft.descriptionJa,
+                  })
+                }
+                onError={setError}
+                onSuccess={setToast}
+              />
+            </>
           ) : null
         }
         tabs={scheduleTabs.map((item) => ({

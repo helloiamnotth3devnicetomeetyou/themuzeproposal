@@ -5,6 +5,7 @@ import { Disc3 } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import AdminLanguageTabs from "@/admin/components/content/AdminLanguageTabs";
+import AdminTranslationButton from "@/admin/components/content/AdminTranslationButton";
 import ContentWorkbench, {
   type WorkbenchTab,
 } from "@/admin/components/content/ContentWorkbench";
@@ -249,15 +250,40 @@ export default function DiscographyAdmin() {
         actions={actions}
         toolbar={
           draft ? (
-            <AdminLanguageTabs
-              activeLang={language}
-              onChange={setLanguage}
-              values={{
-                ko: draft.description_ko,
-                en: draft.description_en,
-                ja: draft.description_ja,
-              }}
-            />
+            <>
+              <AdminLanguageTabs
+                activeLang={language}
+                onChange={setLanguage}
+                values={{
+                  ko: draft.description_ko,
+                  en: draft.description_en,
+                  ja: draft.description_ja,
+                }}
+              />
+              <AdminTranslationButton
+                documentKind="album"
+                fields={[
+                  {
+                    key: "description",
+                    label: "앨범 소개",
+                    format: "plain",
+                    ko: draft.description_ko,
+                    en: draft.description_en,
+                    ja: draft.description_ja,
+                  },
+                ]}
+                onApply={(translations) =>
+                  patchDraft({
+                    description_en:
+                      translations.description?.en ?? draft.description_en,
+                    description_ja:
+                      translations.description?.ja ?? draft.description_ja,
+                  })
+                }
+                onError={setError}
+                onSuccess={setToast}
+              />
+            </>
           ) : null
         }
         tabs={workbenchTabs}
