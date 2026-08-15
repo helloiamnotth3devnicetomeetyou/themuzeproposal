@@ -9,11 +9,13 @@ interface MobileTracksViewProps {
   currentTrackIndex: number;
   hoveredDisc: number | null;
   isPlaying: boolean;
+  progress: number;
   time: { current: string; total: string };
   track: DiscographyTrack | undefined;
   onNextTrack: () => void;
   onPlayTrack: (index: number) => void;
   onPreviousTrack: () => void;
+  onSeek: (nextProgress: number) => void;
   onTogglePlay: () => void;
 }
 
@@ -22,11 +24,13 @@ export function MobileTracksView({
   currentTrackIndex,
   hoveredDisc,
   isPlaying,
+  progress,
   time,
   track,
   onNextTrack,
   onPlayTrack,
   onPreviousTrack,
+  onSeek,
   onTogglePlay,
 }: MobileTracksViewProps) {
   return (
@@ -44,10 +48,12 @@ export function MobileTracksView({
         <TrackPlayer
           albumColor={album.color}
           isPlaying={isPlaying}
+          progress={progress}
           time={time}
           track={track}
           onNext={onNextTrack}
           onPrevious={onPreviousTrack}
+          onSeek={onSeek}
           onTogglePlay={onTogglePlay}
         />
       </div>

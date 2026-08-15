@@ -7,6 +7,7 @@ import { localizeText } from "@/core/i18n/localized";
 import { useTheme } from "@/core/providers/ThemeContext";
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
+import GlobalPlayer from "@/public/features/player/GlobalPlayer";
 import type { ArtistNavigationItem, NavigationAccount } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
 
@@ -168,6 +169,7 @@ export default function Navbar({
           />
         )}
       </div>
+      <GlobalPlayer />
     </header>
   );
 }

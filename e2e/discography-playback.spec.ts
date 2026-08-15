@@ -6,6 +6,7 @@ test.describe("Discography Playback", () => {
   }) => {
     const response = await request.get("/discography", { maxRedirects: 0 });
     expect(response.status()).toBe(200);
-    await expect(response.text()).resolves.toContain("/rescene/discography");
+    expect(response.headers()["content-type"]).toContain("text/html");
+    expect(await response.text()).toContain("/rescene/discography");
   });
 });

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PreviewProvider } from "@/core/preview/PreviewProvider";
+import { PlayerProvider } from "@/public/features/player/PlayerProvider";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -119,7 +120,7 @@ export default function MainLayout({
 
   return (
     <PreviewProvider draftModeEnabled={draftModeEnabled}>
-      {content}
+      <PlayerProvider>{content}</PlayerProvider>
     </PreviewProvider>
   );
 }

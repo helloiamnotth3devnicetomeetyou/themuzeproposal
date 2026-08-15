@@ -11,6 +11,10 @@ import {
 import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale } from "@/core/providers/LocaleContext";
+import {
+  usePlayer,
+  type PlayerTrack,
+} from "@/public/features/player/PlayerProvider";
 
 import { savePlaybackMemory, syncAlbumQuery } from "../lib/playback-memory";
 import type {
@@ -20,49 +24,39 @@ import type {
   RailPhase,
   SlideDirection,
 } from "../lib/types";
-import { useAudioPlayback } from "./useAudioPlayback";
 import { previewToAlbum } from "./discography-controller-utils";
 import { useDiscographyData } from "./useDiscographyData";
 import { useDiscographyRailSort } from "./useDiscographyRailSort";
 
 const ALBUM_TRANSITION_MS = 220;
 
+function emptyTime() {
+  return { current: "0:00", total: "0:00" };
+}
+
 export function useDiscographyController(
   artistSlug: string,
-  audioRef: RefObject<HTMLAudioElement | null>,
   albumRailRef: RefObject<HTMLDivElement | null>,
   preview: AlbumPreviewPayload | null,
   initialData: DiscographyData | null,
   initialLoadError: string | null,
 ) {
   const { locale } = useLocale();
+  const player = usePlayer();
   const [transitioning, setTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState<SlideDirection>(null);
   const [hoveredDisc, setHoveredDisc] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<DiscographyTab>("intro");
   const [sortBy, setSortBy] = useState<AlbumSort>("date-desc");
   const [railPhase, setRailPhase] = useState<RailPhase>("idle");
+  const [showDiscs, setShowDiscs] = useState(false);
+  const [localTrackIndex, setLocalTrackIndex] = useState(0);
+  const restoreTimeRef = useRef(0);
 
   const albumTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const railTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
-
-  const {
-    isPlaying,
-    audioDuration,
-    showDiscs,
-    currentTrackIndex,
-    time,
-    setIsPlaying,
-    setProgress,
-    setAudioDuration,
-    setShowDiscs,
-    setCurrentTrackIndex,
-    restoreTimeRef,
-    handleLoadedMetadata,
-    handleTimeUpdate: rawHandleTimeUpdate,
-  } = useAudioPlayback(audioRef);
 
   const {
     albumIndex,
@@ -76,7 +70,7 @@ export function useDiscographyController(
     setAlbumIndex,
   } = useDiscographyData(
     artistSlug,
-    setCurrentTrackIndex,
+    setLocalTrackIndex,
     restoreTimeRef,
     initialData,
     initialLoadError,
@@ -136,6 +130,132 @@ export function useDiscographyController(
     [artistSlug],
   );
 
+  const playerQueue = useMemo<PlayerTrack[]>(
+    () =>
+      album
+        ? album.tracks.flatMap((track, albumTrackIndex) =>
+            track.audioUrl
+              ? [
+                  {
+                    id: track.id,
+                    title: track.title,
+                    audioUrl: track.audioUrl,
+                    albumId: album.id,
+                    albumTitle: album.title,
+                    albumCover: album.cover,
+                    albumColor: album.color,
+                    artistSlug,
+                    artistName:
+                      preview?.artist.name ||
+                      localizeText(artistNames || {}, locale, artistName),
+                    albumTrackIndex,
+                    youtubeUrl: track.youtubeUrl,
+                  },
+                ]
+              : [],
+          )
+        : [],
+    [album, artistName, artistNames, artistSlug, locale, preview?.artist.name],
+  );
+
+  const globalTrackMatchesAlbum = Boolean(
+    album &&
+    player.currentTrack?.artistSlug === artistSlug &&
+    player.currentTrack.albumId === album.id,
+  );
+  const globalTrackIndex = globalTrackMatchesAlbum
+    ? (player.currentTrack?.albumTrackIndex ?? -1)
+    : -1;
+  const currentTrackIndex =
+    globalTrackIndex >= 0 ? globalTrackIndex : localTrackIndex;
+  const isPlaying = globalTrackMatchesAlbum && player.isPlaying;
+  const progress = globalTrackMatchesAlbum ? player.progress : 0;
+  const time = globalTrackMatchesAlbum ? player.time : emptyTime();
+
+  useEffect(() => {
+    if (!globalTrackMatchesAlbum) return;
+    const timer = window.setTimeout(() => setShowDiscs(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [globalTrackMatchesAlbum]);
+
+  const seek = useCallback(
+    (nextProgress: number) => {
+      if (globalTrackMatchesAlbum) player.seek(nextProgress);
+    },
+    [globalTrackMatchesAlbum, player],
+  );
+
+  const playTrack = useCallback(
+    (index: number) => {
+      const selected = album?.tracks[index];
+      if (!album || !selected) return;
+      setLocalTrackIndex(index);
+      restoreTimeRef.current = 0;
+      if (!selected.audioUrl) {
+        setShowDiscs(false);
+        if (globalTrackMatchesAlbum) player.clear();
+        return;
+      }
+      const queueIndex = playerQueue.findIndex(
+        (track) => track.albumTrackIndex === index,
+      );
+      if (queueIndex < 0) return;
+      setShowDiscs(true);
+      player.playTrack(playerQueue, queueIndex, 0);
+      savePlayback(album.id, index, 0);
+    },
+    [album, globalTrackMatchesAlbum, player, playerQueue, savePlayback],
+  );
+
+  const togglePlay = useCallback(() => {
+    const selected = album?.tracks[currentTrackIndex];
+    if (!album || !selected?.audioUrl) return;
+    if (globalTrackMatchesAlbum) {
+      if (!player.isPlaying) setShowDiscs(true);
+      player.togglePlay();
+      return;
+    }
+    const queueIndex = playerQueue.findIndex(
+      (track) => track.albumTrackIndex === currentTrackIndex,
+    );
+    if (queueIndex < 0) return;
+    const rememberedTime = restoreTimeRef.current;
+    restoreTimeRef.current = 0;
+    setShowDiscs(true);
+    player.playTrack(
+      playerQueue,
+      queueIndex,
+      rememberedTime > 0 ? rememberedTime : undefined,
+    );
+  }, [album, currentTrackIndex, globalTrackMatchesAlbum, player, playerQueue]);
+
+  const moveTrack = useCallback(
+    (offset: number) => {
+      if (!album?.tracks.length) return;
+      if (globalTrackMatchesAlbum) {
+        if (offset > 0) player.nextTrack();
+        else player.previousTrack();
+        return;
+      }
+      const playable = album.tracks.flatMap((track, index) =>
+        track.audioUrl ? [index] : [],
+      );
+      if (!playable.length) return;
+      const currentPlayableIndex = Math.max(
+        0,
+        playable.indexOf(currentTrackIndex),
+      );
+      const next =
+        playable[
+          (currentPlayableIndex + offset + playable.length) % playable.length
+        ];
+      playTrack(next);
+    },
+    [album, currentTrackIndex, globalTrackMatchesAlbum, playTrack, player],
+  );
+  const nextTrack = useCallback(() => moveTrack(1), [moveTrack]);
+  const previousTrack = useCallback(() => moveTrack(-1), [moveTrack]);
+
   const switchAlbum = useCallback(
     (newIndex: number) => {
       if (newIndex === albumIndex || transitioning) return;
@@ -145,7 +265,8 @@ export function useDiscographyController(
       setSlideDirection(newIndex > albumIndex ? "left" : "right");
       setTransitioning(true);
       setShowDiscs(false);
-      setIsPlaying(false);
+      if (globalTrackMatchesAlbum) player.clear();
+      setLocalTrackIndex(0);
       restoreTimeRef.current = 0;
       savePlayback(nextAlbum.id, 0, 0);
       syncAlbumQuery(nextAlbum.id);
@@ -154,9 +275,7 @@ export function useDiscographyController(
         clearTimeout(albumTransitionTimerRef.current);
       albumTransitionTimerRef.current = setTimeout(() => {
         setAlbumIndex(newIndex);
-        setCurrentTrackIndex(0);
-        setProgress(0);
-        setAudioDuration(0);
+        setLocalTrackIndex(0);
         setSlideDirection(null);
         setActiveTab("intro");
         requestAnimationFrame(() => setTransitioning(false));
@@ -164,20 +283,15 @@ export function useDiscographyController(
     },
     [
       albumIndex,
+      globalTrackMatchesAlbum,
+      player,
       savePlayback,
       sortedAlbums,
       transitioning,
-      setShowDiscs,
-      setIsPlaying,
-      setCurrentTrackIndex,
-      setProgress,
-      setAudioDuration,
-      restoreTimeRef,
       setAlbumIndex,
     ],
   );
 
-  // Scroll album rail to active album
   useEffect(() => {
     const rail = albumRailRef.current;
     const current = rail?.querySelector<HTMLElement>(
@@ -204,7 +318,6 @@ export function useDiscographyController(
     }
   }, [albumIndex, albumRailRef, sortedAlbums.length]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -219,8 +332,7 @@ export function useDiscographyController(
       if (event.key === "ArrowLeft") switchAlbum(Math.max(albumIndex - 1, 0));
       if (event.key === " " && album?.tracks[currentTrackIndex]?.audioUrl) {
         event.preventDefault();
-        if (!isPlaying) setShowDiscs(true);
-        setIsPlaying((playing) => !playing);
+        togglePlay();
       }
     };
     window.addEventListener("keydown", handler);
@@ -229,47 +341,11 @@ export function useDiscographyController(
     album,
     albumIndex,
     currentTrackIndex,
-    isPlaying,
     sortedAlbums.length,
     switchAlbum,
-    setShowDiscs,
-    setIsPlaying,
+    togglePlay,
   ]);
 
-  // Audio src + play/pause
-  useEffect(() => {
-    const audio = audioRef.current;
-    const source = album?.tracks[currentTrackIndex]?.audioUrl;
-    if (!audio) return;
-    if (!source) {
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
-      return;
-    }
-    if (audio.src !== source) {
-      audio.src = source;
-      audio.load();
-    }
-    if (isPlaying) void audio.play().catch(() => setIsPlaying(false));
-    else audio.pause();
-  }, [album, audioRef, currentTrackIndex, isPlaying, setIsPlaying]);
-
-  // Save playback state on pagehide
-  useEffect(() => {
-    const remember = () => {
-      if (!album) return;
-      savePlayback(
-        album.id,
-        currentTrackIndex,
-        audioRef.current?.currentTime || 0,
-      );
-    };
-    window.addEventListener("pagehide", remember);
-    return () => window.removeEventListener("pagehide", remember);
-  }, [album, audioRef, currentTrackIndex, savePlayback]);
-
-  // Cleanup timers
   useEffect(
     () => () => {
       if (albumTransitionTimerRef.current)
@@ -279,65 +355,7 @@ export function useDiscographyController(
     [],
   );
 
-  const playTrack = useCallback(
-    (index: number) => {
-      if (!album?.tracks[index]) return;
-      const canPlay = Boolean(album.tracks[index].audioUrl);
-      restoreTimeRef.current = 0;
-      setCurrentTrackIndex(index);
-      setProgress(0);
-      setAudioDuration(0);
-      if (canPlay) setShowDiscs(true);
-      setIsPlaying(canPlay);
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        if (canPlay && isPlaying) {
-          void audioRef.current.play().catch(() => setIsPlaying(false));
-        }
-      }
-      savePlayback(album.id, index, 0);
-    },
-    [
-      album,
-      audioRef,
-      isPlaying,
-      savePlayback,
-      setCurrentTrackIndex,
-      setProgress,
-      setAudioDuration,
-      setShowDiscs,
-      setIsPlaying,
-      restoreTimeRef,
-    ],
-  );
-
-  const togglePlay = useCallback(() => {
-    if (!album?.tracks[currentTrackIndex]?.audioUrl) return;
-    if (!isPlaying) setShowDiscs(true);
-    setIsPlaying((playing) => !playing);
-  }, [album, currentTrackIndex, isPlaying, setShowDiscs, setIsPlaying]);
-
-  const moveTrack = useCallback(
-    (offset: number) => {
-      if (!album?.tracks.length) return;
-      const next =
-        (currentTrackIndex + offset + album.tracks.length) %
-        album.tracks.length;
-      playTrack(next);
-    },
-    [album, currentTrackIndex, playTrack],
-  );
-  const nextTrack = useCallback(() => moveTrack(1), [moveTrack]);
-  const previousTrack = useCallback(() => moveTrack(-1), [moveTrack]);
-
-  const handleTimeUpdate = useCallback(
-    (event: React.SyntheticEvent<HTMLAudioElement>) => {
-      rawHandleTimeUpdate(event, album?.id, currentTrackIndex, savePlayback);
-    },
-    [rawHandleTimeUpdate, album, currentTrackIndex, savePlayback],
-  );
-
-  const toggleSort = useDiscographyRailSort({
+  const runToggleSort = useDiscographyRailSort({
     railPhase,
     albumCount: sortedAlbums.length,
     railTimersRef,
@@ -345,29 +363,12 @@ export function useDiscographyController(
     setSortBy,
     setAlbumIndex,
   });
-
-  const handleEnded = useCallback(() => {
-    if (!album?.tracks.length) return;
-    const isLastTrack = currentTrackIndex >= album.tracks.length - 1;
-    if (isLastTrack) {
-      setIsPlaying(false);
-      setProgress(0);
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-      }
-      savePlayback(album.id, currentTrackIndex, 0);
-    } else {
-      moveTrack(1);
-    }
-  }, [
-    album,
-    currentTrackIndex,
-    moveTrack,
-    savePlayback,
-    setIsPlaying,
-    setProgress,
-    audioRef,
-  ]);
+  const toggleSort = useCallback(() => {
+    if (railPhase !== "idle") return;
+    if (globalTrackMatchesAlbum) player.clear();
+    setShowDiscs(false);
+    runToggleSort();
+  }, [globalTrackMatchesAlbum, player, railPhase, runToggleSort]);
 
   const contentClass =
     slideDirection === "left"
@@ -385,21 +386,19 @@ export function useDiscographyController(
     artistName:
       preview?.artist.name ||
       localizeText(artistNames || {}, locale, artistName),
-    audioDuration,
     contentClass,
     currentTrackIndex,
-    handleLoadedMetadata,
-    handleTimeUpdate,
-    handleEnded,
+    gallery,
     hoveredDisc,
     isPlaying,
     loading,
     loadError,
     members: localizedMembers,
-    gallery,
     nextTrack,
+    onSeek: seek,
     playTrack,
     previousTrack,
+    progress,
     railPhase,
     setActiveTab,
     setHoveredDisc,

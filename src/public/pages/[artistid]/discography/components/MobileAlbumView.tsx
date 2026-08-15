@@ -30,9 +30,11 @@ interface MobileAlbumViewProps {
   isPlaying: boolean;
   locale: Locale;
   members: DiscographyMember[];
+  progress: number;
   time: { current: string; total: string };
   onIntentAlbum: (index: number) => void;
   onSelectAlbum: (index: number) => void;
+  onSeek: (nextProgress: number) => void;
   onTogglePlay: () => void;
   onOpenTracks: () => void;
 }
@@ -47,9 +49,11 @@ export function MobileAlbumView({
   isPlaying,
   locale,
   members,
+  progress,
   time,
   onIntentAlbum,
   onSelectAlbum,
+  onSeek,
   onTogglePlay,
   onOpenTracks,
 }: MobileAlbumViewProps) {
@@ -388,38 +392,52 @@ export function MobileAlbumView({
         </div>
 
         {track && (
-          <button
-            type="button"
-            onClick={onOpenTracks}
-            className="mt-5 flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-lg border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-2.5 text-left transition-transform duration-base active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ outlineColor: album.color }}
-          >
-            <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
-              <Image
-                src={album.cover}
-                alt=""
-                fill
-                sizes="44px"
-                className="object-cover"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="block font-display text-[8px] font-bold tracking-[0.08em] text-[var(--palette-6b7280)]">
-                {t.discography.nowPlaying}
+          <>
+            <button
+              type="button"
+              onClick={onOpenTracks}
+              className="mt-5 flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-lg border border-[var(--alpha-ffffff-08)] bg-[var(--alpha-ffffff-025)] p-2.5 text-left transition-transform duration-base active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{ outlineColor: album.color }}
+            >
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                <Image
+                  src={album.cover}
+                  alt=""
+                  fill
+                  sizes="44px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block font-display text-[8px] font-bold tracking-[0.08em] text-[var(--palette-6b7280)]">
+                  {t.discography.nowPlaying}
+                </span>
+                <strong className="mt-0.5 block truncate text-sm text-[var(--color-static-white)]">
+                  {track.title}
+                </strong>
+              </div>
+              <span className="text-[10px] text-[var(--palette-6b7280)]">
+                {time.current} / {time.total}
               </span>
-              <strong className="mt-0.5 block truncate text-sm text-[var(--color-static-white)]">
-                {track.title}
-              </strong>
-            </div>
-            <span className="text-[10px] text-[var(--palette-6b7280)]">
-              {time.current} / {time.total}
-            </span>
-            <ListMusic
-              className="h-4 w-4 shrink-0"
-              style={{ color: album.color }}
-              aria-hidden="true"
+              <ListMusic
+                className="h-4 w-4 shrink-0"
+                style={{ color: album.color }}
+                aria-hidden="true"
+              />
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="0.1"
+              value={progress}
+              onChange={(event) => onSeek(Number(event.currentTarget.value))}
+              disabled={!canPlay}
+              aria-label={t.discography.progress}
+              className="mt-3 h-1.5 w-full cursor-pointer accent-[var(--color-brand-pink)] disabled:cursor-default disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)]"
+              style={{ accentColor: album.color }}
             />
-          </button>
+          </>
         )}
       </div>
 

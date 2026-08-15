@@ -8,6 +8,7 @@ import type { DiscographyTrack } from "../lib/types";
 interface TrackPlayerProps {
   albumColor: string;
   isPlaying: boolean;
+  progress: number;
   time: {
     current: string;
     total: string;
@@ -15,16 +16,19 @@ interface TrackPlayerProps {
   track?: DiscographyTrack;
   onNext: () => void;
   onPrevious: () => void;
+  onSeek: (nextProgress: number) => void;
   onTogglePlay: () => void;
 }
 
 export function TrackPlayer({
   albumColor,
   isPlaying,
+  progress,
   time,
   track,
   onNext,
   onPrevious,
+  onSeek,
   onTogglePlay,
 }: TrackPlayerProps) {
   const { t } = useLocale();
@@ -52,6 +56,19 @@ export function TrackPlayer({
           {time.current} / {time.total}
         </span>
       </div>
+
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="0.1"
+        value={progress}
+        onChange={(event) => onSeek(Number(event.currentTarget.value))}
+        disabled={!audioHref}
+        aria-label={t.discography.progress}
+        className="h-1.5 w-full cursor-pointer accent-[var(--color-brand-pink)] disabled:cursor-default disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-pink)]"
+        style={{ accentColor: albumColor }}
+      />
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center py-1 sm:py-0">
         <span aria-hidden="true" />

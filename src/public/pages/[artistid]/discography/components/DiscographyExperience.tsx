@@ -39,7 +39,6 @@ export function DiscographyExperience({
 }) {
   const { locale, t } = useLocale();
   const preview = usePreviewPayload("album");
-  const audioRef = useRef<HTMLAudioElement>(null);
   const albumRailRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
   const [mobileView, setMobileView] = useState<"album" | "tracks">("album");
@@ -48,7 +47,6 @@ export function DiscographyExperience({
   );
   const discography = useDiscographyController(
     artistSlug,
-    audioRef,
     albumRailRef,
     preview,
     initialData,
@@ -148,14 +146,6 @@ export function DiscographyExperience({
       className="h-[100dvh] w-full relative overflow-x-hidden overflow-y-auto overscroll-y-contain scrollbar-none lg:overflow-hidden flex flex-col"
       style={{ backgroundColor: "var(--palette-050505)" }}
     >
-      <audio
-        ref={audioRef}
-        preload="metadata"
-        onLoadedMetadata={discography.handleLoadedMetadata}
-        onTimeUpdate={discography.handleTimeUpdate}
-        onEnded={discography.handleEnded}
-      />
-
       <DiscographyBackground album={album} isPlaying={discography.isPlaying} />
 
       {isMobileExperience ? (
@@ -171,6 +161,7 @@ export function DiscographyExperience({
             isPlaying={discography.isPlaying}
             locale={locale}
             members={discography.members}
+            progress={discography.progress}
             time={discography.time}
             view={mobileView}
             onIntentAlbum={preloadAlbum}
@@ -178,6 +169,7 @@ export function DiscographyExperience({
             onPlayTrack={discography.playTrack}
             onPreviousTrack={discography.previousTrack}
             onSelectAlbum={discography.switchAlbum}
+            onSeek={discography.onSeek}
             onTogglePlay={discography.togglePlay}
             onViewChange={changeMobileView}
           />
@@ -205,11 +197,13 @@ export function DiscographyExperience({
             isPlaying={discography.isPlaying}
             locale={locale}
             members={discography.members}
+            progress={discography.progress}
             gallery={discography.gallery}
             time={discography.time}
             onNextTrack={discography.nextTrack}
             onPlayTrack={discography.playTrack}
             onPreviousTrack={discography.previousTrack}
+            onSeek={discography.onSeek}
             onTabChange={discography.setActiveTab}
             onTogglePlay={discography.togglePlay}
           />

@@ -24,6 +24,7 @@ interface AlbumDetailsProps {
   locale: Locale;
   members?: DiscographyMember[];
   gallery?: DiscographyGalleryItem[];
+  progress: number;
   time: {
     current: string;
     total: string;
@@ -31,6 +32,7 @@ interface AlbumDetailsProps {
   onNextTrack: () => void;
   onPlayTrack: (index: number) => void;
   onPreviousTrack: () => void;
+  onSeek: (nextProgress: number) => void;
   onTabChange: (tab: DiscographyTab) => void;
   onTogglePlay: () => void;
 }
@@ -44,10 +46,12 @@ export function AlbumDetails({
   locale,
   members = [],
   gallery = [],
+  progress,
   time,
   onNextTrack,
   onPlayTrack,
   onPreviousTrack,
+  onSeek,
   onTabChange,
   onTogglePlay,
 }: AlbumDetailsProps) {
@@ -156,10 +160,12 @@ export function AlbumDetails({
             <TrackPlayer
               albumColor={album.color}
               isPlaying={isPlaying}
+              progress={progress}
               time={time}
               track={currentTrack}
               onNext={onNextTrack}
               onPrevious={onPreviousTrack}
+              onSeek={onSeek}
               onTogglePlay={onTogglePlay}
             />
             <TrackList

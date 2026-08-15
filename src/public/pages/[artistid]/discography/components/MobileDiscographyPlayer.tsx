@@ -23,12 +23,14 @@ interface MobileDiscographyPlayerProps {
   isPlaying: boolean;
   locale: Locale;
   members: DiscographyMember[];
+  progress: number;
   time: { current: string; total: string };
   view: MobileView;
   onIntentAlbum: (index: number) => void;
   onNextTrack: () => void;
   onPlayTrack: (index: number) => void;
   onPreviousTrack: () => void;
+  onSeek: (nextProgress: number) => void;
   onSelectAlbum: (index: number) => void;
   onTogglePlay: () => void;
   onViewChange: (view: MobileView) => void;
@@ -45,12 +47,14 @@ export function MobileDiscographyPlayer({
   isPlaying,
   locale,
   members,
+  progress,
   time,
   view,
   onIntentAlbum,
   onNextTrack,
   onPlayTrack,
   onPreviousTrack,
+  onSeek,
   onSelectAlbum,
   onTogglePlay,
   onViewChange,
@@ -108,9 +112,11 @@ export function MobileDiscographyPlayer({
           isPlaying={isPlaying}
           locale={locale}
           members={members}
+          progress={progress}
           time={time}
           onIntentAlbum={onIntentAlbum}
           onSelectAlbum={onSelectAlbum}
+          onSeek={onSeek}
           onTogglePlay={onTogglePlay}
           onOpenTracks={() => onViewChange("tracks")}
         />
@@ -120,11 +126,13 @@ export function MobileDiscographyPlayer({
           currentTrackIndex={currentTrackIndex}
           hoveredDisc={hoveredDisc}
           isPlaying={isPlaying}
+          progress={progress}
           time={time}
           track={album.tracks[currentTrackIndex]}
           onNextTrack={onNextTrack}
           onPlayTrack={onPlayTrack}
           onPreviousTrack={onPreviousTrack}
+          onSeek={onSeek}
           onTogglePlay={onTogglePlay}
         />
       )}
