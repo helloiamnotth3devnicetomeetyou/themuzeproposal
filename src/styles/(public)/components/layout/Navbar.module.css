@@ -796,7 +796,7 @@
     width: auto;
     height: 52px;
     margin: 0;
-    padding: 0 1rem;
+    padding: 0;
     max-height: none;
     overflow: visible;
     transform: translateY(-6px);
@@ -820,12 +820,24 @@
   }
 
   .playerDockCollapsed {
-    height: 16px;
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    z-index: 1;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
     padding: 0;
+    transform: none;
   }
 
   .headerScrolled .playerDock {
     top: calc(var(--banner-height, 0px) + var(--site-header-row-height));
+  }
+
+  .headerScrolled .playerDockCollapsed {
+    top: auto;
   }
 
   .playerDesktopBar {
@@ -840,6 +852,7 @@
     grid-template-columns: 36px minmax(0, 1fr) 30px 36px 30px 24px;
     align-items: center;
     gap: 0.35rem;
+    padding: 0 1rem;
     border-bottom: 1px solid var(--border-default);
     background: var(--nav-bg-scrolled);
     box-shadow: 0 10px 30px var(--alpha-000000-35);
@@ -893,21 +906,46 @@
   }
 
   .playerDockCollapsed .playerMobileBar {
-    height: 16px;
+    width: 38px;
+    height: 38px;
     display: block;
+    padding: 2px;
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    background: var(--nav-bg-scrolled);
+    box-shadow: 0 10px 30px var(--alpha-000000-35);
   }
 
   .playerDockCollapsed
     .playerMobileBar
-    > :not(.playerMobileCollapse):not(.playerMobileProgress) {
+    > :not(.playerMobileArtwork):not(.playerMobileCollapse):not(
+      .playerMobileProgress
+    ) {
     display: none;
+  }
+
+  .playerDockCollapsed .playerMobileArtwork {
+    position: absolute;
+    inset: 2px;
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .playerDockCollapsed .playerMobileCollapse {
     position: absolute;
-    right: 1rem;
-    bottom: 0;
-    height: 16px;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .playerDockCollapsed .playerMobileCollapse svg {
+    display: none;
+  }
+
+  .playerDockCollapsed .playerMobileProgress {
+    height: 1px;
   }
 
   .playerMobileCover {

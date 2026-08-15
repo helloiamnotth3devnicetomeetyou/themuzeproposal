@@ -121,7 +121,7 @@ export default function GlobalPlayer() {
     const syncHeight = () =>
       root.style.setProperty(
         "--global-player-height",
-        media.matches && visible ? (mobileCollapsed ? "16px" : "52px") : "0px",
+        media.matches && visible ? (mobileCollapsed ? "0px" : "52px") : "0px",
       );
     syncHeight();
     media.addEventListener("change", syncHeight);
@@ -271,7 +271,7 @@ export default function GlobalPlayer() {
       >
         <Artwork
           track={track}
-          size={36}
+          size={mobileCollapsed ? 34 : 36}
           className={styles.playerMobileArtwork}
         />
         <div className={styles.playerTrackCopy}>
