@@ -1,4 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import {
+  classify,
+  type ProtectClassification,
+} from "@/core/ai/classify-inquiry";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import {
   consumeSubmissionAttemptRateLimit,
@@ -37,6 +41,33 @@ const PLATFORMS = new Set([
   "community",
   "other",
 ]);
+async function classifyProtectReport(
+  serviceClient: ReturnType<typeof createServiceRoleClient>,
+  reportId: string,
+  reportType: string,
+  title: string,
+  content: string,
+  platform: string,
+) {
+  if (!serviceClient) return;
+  const result: ProtectClassification | null = await classify({
+    domain: "protect",
+    text: `${title}\n\n${content}`,
+    type: reportType,
+    metadata: { platform },
+  });
+  if (!result) return;
+
+  await serviceClient
+    .from("protect_reports")
+    .update({
+      severity: result.severity,
+      ai_reasoning: result.reasoning,
+      ai_classified_at: new Date().toISOString(),
+    })
+    .eq("id", reportId)
+    .is("ai_classified_at", null);
+}
 
 function errorResponse(code: string, status: number, retryAfter?: number) {
   const response = NextResponse.json({ code }, { status });
@@ -236,6 +267,17 @@ export async function POST(request: NextRequest) {
       await serviceClient.from("protect_reports").delete().eq("id", reportId);
     return errorResponse("SUBMISSION_FAILED", 503);
   }
+
+  const classifyAfterInsert = () =>
+    classifyProtectReport(
+      serviceClient,
+      reportId,
+      reportType,
+      title,
+      content,
+      platform,
+    ).catch(() => undefined);
+  after(classifyAfterInsert);
 
   const response = NextResponse.json({
     id: reportId,

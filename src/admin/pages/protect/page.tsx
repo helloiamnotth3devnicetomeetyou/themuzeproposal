@@ -15,6 +15,7 @@ import {
   type ProtectReportRow,
   type ReportAttachment,
   type ReportFilter,
+  type ReportSeverityFilter,
   type ReportStatus,
 } from "./protect-types";
 
@@ -61,18 +62,31 @@ export default function ProtectAdminPage() {
   const [reports, setReports] = useState<ProtectReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<ProtectReport | null>(null);
+  const [readerName, setReaderName] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const requestedFilter: ReportFilter =
     statuses.find((status) => status.value === searchParams.get("status"))
       ?.value ?? "all";
   const [filter, setFilter] = useState<ReportFilter>(requestedFilter);
+  const requestedSeverity: ReportSeverityFilter = [
+    "low",
+    "normal",
+    "high",
+    "critical",
+  ].includes(searchParams.get("severity") || "")
+    ? (searchParams.get("severity") as ReportSeverityFilter)
+    : "all";
+  const [severityFilter, setSeverityFilter] =
+    useState<ReportSeverityFilter>(requestedSeverity);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusCounts, setStatusCounts] = useState({
     pending: 0,
     reviewing: 0,
   });
+  const [unclassifiedCount, setUnclassifiedCount] = useState(0);
+  const [classifying, setClassifying] = useState(false);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
@@ -90,23 +104,29 @@ export default function ProtectAdminPage() {
     return () => window.clearTimeout(timer);
   }, [undoStatus]);
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    const keyword = searchTerm(debouncedQuery);
-    const request = supabase
-      .rpc(
-        "get_admin_protect_reports",
-        {
-          p_status: filter === "all" ? null : filter,
-          p_search: keyword || null,
-        },
-        { count: "exact" },
-      )
-      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
-      .overrideTypes<ProtectReportRow[], { merge: false }>();
-    const [{ data, count, error: fetchError }, pending, reviewing] =
-      await Promise.all([
+  const fetchReports = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError("");
+      const keyword = searchTerm(debouncedQuery);
+      const request = supabase
+        .rpc(
+          "get_admin_protect_reports",
+          {
+            p_status: filter === "all" ? null : filter,
+            p_search: keyword || null,
+            p_severity: severityFilter === "all" ? null : severityFilter,
+          },
+          { count: "exact" },
+        )
+        .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
+        .overrideTypes<ProtectReportRow[], { merge: false }>();
+      const [
+        { data, count, error: fetchError },
+        pending,
+        reviewing,
+        unclassified,
+      ] = await Promise.all([
         request,
         supabase
           .from("protect_reports")
@@ -116,68 +136,78 @@ export default function ProtectAdminPage() {
           .from("protect_reports")
           .select("id", { count: "exact", head: true })
           .eq("status", "reviewing"),
+        supabase.rpc("get_admin_unclassified_counts"),
       ]);
-    if (fetchError) setError(fetchError.message);
-    else {
-      const reportRows = (data ?? []) as unknown as ProtectReportRow[];
-      const reportIds = reportRows.map((report) => report.id);
-      const artistIds = [
-        ...new Set(reportRows.map((report) => report.artist_id)),
-      ];
-      const [attachmentResult, artistResult] = await Promise.all([
-        reportIds.length
-          ? supabase
-              .from("protect_report_attachments")
-              .select("report_id,file_path,file_name")
-              .in("report_id", reportIds)
-          : Promise.resolve({ data: [], error: null }),
-        artistIds.length
-          ? supabase.from("artists").select("id,name").in("id", artistIds)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-      if (attachmentResult.error || artistResult.error) {
-        setError(
-          attachmentResult.error?.message ||
-            artistResult.error?.message ||
-            "신고 정보를 불러오지 못했습니다.",
+      const queryError =
+        fetchError || pending.error || reviewing.error || unclassified.error;
+      if (queryError) setError(queryError.message);
+      else {
+        const reportRows = (data ?? []) as unknown as ProtectReportRow[];
+        const reportIds = reportRows.map((report) => report.id);
+        const artistIds = [
+          ...new Set(reportRows.map((report) => report.artist_id)),
+        ];
+        const [attachmentResult, artistResult] = await Promise.all([
+          reportIds.length
+            ? supabase
+                .from("protect_report_attachments")
+                .select("report_id,file_path,file_name")
+                .in("report_id", reportIds)
+            : Promise.resolve({ data: [], error: null }),
+          artistIds.length
+            ? supabase.from("artists").select("id,name").in("id", artistIds)
+            : Promise.resolve({ data: [], error: null }),
+        ]);
+        if (attachmentResult.error || artistResult.error) {
+          setError(
+            attachmentResult.error?.message ||
+              artistResult.error?.message ||
+              "신고 정보를 불러오지 못했습니다.",
+          );
+          if (!silent) setLoading(false);
+          return;
+        }
+        const attachmentsByReport = new Map<string, ReportAttachment[]>();
+        for (const attachment of attachmentResult.data ?? []) {
+          const current = attachmentsByReport.get(attachment.report_id) ?? [];
+          current.push({
+            file_path: attachment.file_path,
+            file_name: attachment.file_name,
+          });
+          attachmentsByReport.set(attachment.report_id, current);
+        }
+        const artistsById = new Map(
+          (artistResult.data ?? []).map((artist) => [
+            artist.id,
+            { name: artist.name },
+          ]),
         );
-        setLoading(false);
-        return;
-      }
-      const attachmentsByReport = new Map<string, ReportAttachment[]>();
-      for (const attachment of attachmentResult.data ?? []) {
-        const current = attachmentsByReport.get(attachment.report_id) ?? [];
-        current.push({
-          file_path: attachment.file_path,
-          file_name: attachment.file_name,
+        const nextReports = reportRows.map((report) => ({
+          ...report,
+          artists: artistsById.get(report.artist_id) ?? null,
+          protect_report_attachments: attachmentsByReport.get(report.id) ?? [],
+        }));
+        setReports(nextReports);
+        setTotal(count ?? 0);
+        setStatusCounts({
+          pending: pending.count ?? 0,
+          reviewing: reviewing.count ?? 0,
         });
-        attachmentsByReport.set(attachment.report_id, current);
+        const counts = Array.isArray(unclassified.data)
+          ? unclassified.data[0]
+          : unclassified.data;
+        setUnclassifiedCount(Number(counts?.protect_count ?? 0));
+        setAvatarUrls(
+          await loadAccountAvatarUrls([
+            ...nextReports.map((report) => report.user_id),
+            ...nextReports.map((report) => report.read_by),
+          ]),
+        );
       }
-      const artistsById = new Map(
-        (artistResult.data ?? []).map((artist) => [
-          artist.id,
-          { name: artist.name },
-        ]),
-      );
-      const nextReports = reportRows.map((report) => ({
-        ...report,
-        artists: artistsById.get(report.artist_id) ?? null,
-        protect_report_attachments: attachmentsByReport.get(report.id) ?? [],
-      }));
-      setReports(nextReports);
-      setTotal(count ?? 0);
-      setStatusCounts({
-        pending: pending.count ?? 0,
-        reviewing: reviewing.count ?? 0,
-      });
-      setAvatarUrls(
-        await loadAccountAvatarUrls(
-          nextReports.map((report) => report.user_id),
-        ),
-      );
-    }
-    setLoading(false);
-  }, [debouncedQuery, filter, page]);
+      if (!silent) setLoading(false);
+    },
+    [debouncedQuery, filter, page, severityFilter],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -194,10 +224,112 @@ export default function ProtectAdminPage() {
     return () => window.clearTimeout(timer);
   }, [fetchReports]);
 
+  const pollPending = useCallback(async () => {
+    if (document.visibilityState !== "visible") return;
+    const ids = reports
+      .filter((report) => !report.ai_classified_at)
+      .map((report) => report.id);
+    if (!ids.length) return;
+    const [{ data, error: fetchError }, countResult] = await Promise.all([
+      supabase
+        .rpc("get_admin_protect_reports", {
+          p_status: null,
+          p_search: null,
+          p_severity: null,
+        })
+        .in("id", ids)
+        .abortSignal(AbortSignal.timeout(10_000)),
+      supabase.rpc("get_admin_unclassified_counts"),
+    ]);
+    if (fetchError || countResult.error) return;
+    const counts = Array.isArray(countResult.data)
+      ? countResult.data[0]
+      : countResult.data;
+    setUnclassifiedCount(Number(counts?.protect_count ?? 0));
+    const nextRows = (data ?? []) as unknown as ProtectReport[];
+    setReports((current) =>
+      current.map((report) => {
+        const next = nextRows.find((item) => item.id === report.id);
+        return next
+          ? {
+              ...report,
+              ...next,
+              artists: report.artists,
+              protect_report_attachments: report.protect_report_attachments,
+            }
+          : report;
+      }),
+    );
+  }, [reports]);
+
+  useEffect(() => {
+    if (!reports.some((report) => !report.ai_classified_at)) return;
+    const timer = window.setInterval(() => void pollPending(), 5000);
+    return () => window.clearInterval(timer);
+  }, [pollPending, reports]);
+
   const openReport = (report: ProtectReport) => {
     setNote(report.admin_note || "");
     setSignedUrls({});
+    setReaderName(null);
     setViewing(report);
+    void markRead(report);
+  };
+
+  const markRead = async (report: ProtectReport) => {
+    if (!report.read_at) {
+      void supabase
+        .rpc("mark_protect_report_read", { p_report_id: report.id })
+        .then(async ({ data, error: readError }) => {
+          if (readError) return;
+          const patch = (
+            Array.isArray(data) ? data[0] : data
+          ) as Partial<ProtectReport> | null;
+          const updated = {
+            ...report,
+            ...(patch || {}),
+            read_at:
+              patch?.read_at || report.read_at || new Date().toISOString(),
+          };
+          setViewing((current) =>
+            current?.id === report.id ? updated : current,
+          );
+          setReports((current) =>
+            current.map((item) => (item.id === report.id ? updated : item)),
+          );
+          if (updated.read_by) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("name,email")
+              .eq("id", updated.read_by)
+              .maybeSingle();
+            setReaderName(profile?.name || profile?.email || "관리자가 열람함");
+          }
+          window.dispatchEvent(new Event("admin-inbox-changed"));
+        });
+    }
+  };
+
+  const classifyPending = async () => {
+    if (classifying || unclassifiedCount < 1) return;
+    setClassifying(true);
+    setError("");
+    try {
+      const response = await fetch(
+        "/api/admin/protect-reports/classify-pending",
+        { method: "POST", headers: { "content-type": "application/json" } },
+      );
+      if (!response.ok) throw new Error("미분류 신고를 처리하지 못했습니다.");
+    } catch (classificationError) {
+      setError(
+        classificationError instanceof Error
+          ? classificationError.message
+          : "미분류 신고를 처리하지 못했습니다.",
+      );
+    } finally {
+      setClassifying(false);
+      void fetchReports(true);
+    }
   };
 
   useEffect(() => {
@@ -297,6 +429,10 @@ export default function ProtectAdminPage() {
       <ProtectReportDetail
         viewing={viewing}
         avatarUrl={avatarUrls[viewing.user_id]}
+        readerName={readerName}
+        readerAvatarUrl={
+          viewing.read_by ? avatarUrls[viewing.read_by] : undefined
+        }
         signedUrls={signedUrls}
         error={error}
         toast={toast}
@@ -313,7 +449,9 @@ export default function ProtectAdminPage() {
         onClearError={() => setError("")}
         onUndoStatus={() => void undoLastStatus()}
         onNoteChange={setNote}
-        onSaveNote={() => void updateReport({ admin_note: note.trim() || null })}
+        onSaveNote={() =>
+          void updateReport({ admin_note: note.trim() || null })
+        }
         onChangeStatus={(status) => void changeStatus(status)}
       />
     );
@@ -324,8 +462,11 @@ export default function ProtectAdminPage() {
       reports={reports}
       total={total}
       statusCounts={statusCounts}
+      unclassifiedCount={unclassifiedCount}
+      classifying={classifying}
       query={query}
       filter={filter}
+      severityFilter={severityFilter}
       page={page}
       pageSize={PAGE_SIZE}
       error={error}
@@ -339,9 +480,14 @@ export default function ProtectAdminPage() {
         setFilter(value);
         setPage(1);
       }}
+      onSeverityFilterChange={(value) => {
+        setSeverityFilter(value);
+        setPage(1);
+      }}
       onPageChange={setPage}
       onOpenReport={openReport}
       onClearError={() => setError("")}
+      onClassifyPending={() => void classifyPending()}
     />
   );
 }

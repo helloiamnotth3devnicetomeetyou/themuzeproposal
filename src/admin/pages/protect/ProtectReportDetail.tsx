@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  BrainCircuit,
   ExternalLink,
   FileImage,
   Link,
@@ -14,6 +15,8 @@ import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import {
   type ProtectReport,
   type ReportStatus,
+  severityClass,
+  severityLabel,
 } from "./protect-types";
 
 type StatusOption = { value: ReportStatus; label: string };
@@ -21,6 +24,8 @@ type StatusOption = { value: ReportStatus; label: string };
 type ProtectReportDetailProps = {
   viewing: ProtectReport;
   avatarUrl?: string;
+  readerName: string | null;
+  readerAvatarUrl?: string;
   signedUrls: Record<string, string>;
   error: string;
   toast: string;
@@ -44,6 +49,8 @@ type ProtectReportDetailProps = {
 export default function ProtectReportDetail({
   viewing,
   avatarUrl,
+  readerName,
+  readerAvatarUrl,
   signedUrls,
   error,
   toast,
@@ -112,6 +119,31 @@ export default function ProtectReportDetail({
           </span>
         </header>
 
+        <div className={styles.readMeta}>
+          <span
+            className={`${styles.severity} ${
+              styles[
+                severityClass(
+                  viewing.ai_classified_at ? viewing.severity : "pending",
+                )
+              ]
+            }`}
+          >
+            <BrainCircuit aria-hidden="true" />
+            {viewing.ai_classified_at
+              ? `AI 우선순위 · ${severityLabel(viewing.severity)}`
+              : "AI 분류 대기 중"}
+          </span>
+          <span className={styles.readerInfo}>
+            {readerAvatarUrl && viewing.read_at ? (
+              <AdminAssetImage src={readerAvatarUrl} alt="" sizes="22px" />
+            ) : null}
+            {viewing.read_at
+              ? `${readerName || "관리자가 열람함"} · ${formatDate(viewing.read_at, true)}`
+              : "아직 열람하지 않음"}
+          </span>
+        </div>
+
         <div className={styles.detailBody}>
           <section>
             <div className={styles.sectionHeading}>
@@ -166,6 +198,34 @@ export default function ProtectReportDetail({
               </span>
               <ExternalLink aria-hidden="true" />
             </a>
+          </section>
+
+          <section>
+            <div className={styles.sectionHeading}>
+              <span>AI TRIAGE</span>
+              <h2>우선순위 분류</h2>
+            </div>
+            <dl className={styles.infoGrid}>
+              <div>
+                <dt>심각도</dt>
+                <dd>
+                  {viewing.ai_classified_at
+                    ? severityLabel(viewing.severity)
+                    : "미분류"}
+                </dd>
+              </div>
+              <div>
+                <dt>분류 시각</dt>
+                <dd>
+                  {viewing.ai_classified_at
+                    ? formatDate(viewing.ai_classified_at, true)
+                    : "처리 대기 중"}
+                </dd>
+              </div>
+            </dl>
+            {viewing.ai_reasoning && (
+              <p className={styles.reportContent}>{viewing.ai_reasoning}</p>
+            )}
           </section>
 
           <section data-tour-id="protect-evidence">
@@ -246,9 +306,7 @@ export default function ProtectReportDetail({
                 key={status.value}
                 type="button"
                 disabled={saving}
-                className={
-                  viewing.status === status.value ? styles.active : ""
-                }
+                className={viewing.status === status.value ? styles.active : ""}
                 onClick={() => void onChangeStatus(status.value)}
               >
                 {status.label}

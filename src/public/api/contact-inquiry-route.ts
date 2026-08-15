@@ -1,4 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import {
+  classify,
+  type ContactClassification,
+} from "@/core/ai/classify-inquiry";
 import { clientIp } from "@/core/http/client-ip";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
@@ -43,6 +47,51 @@ function errorResponse(code: string, status: number, retryAfter?: number) {
 function textField(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
+}
+
+async function classifyContactInquiry(
+  serviceClient: NonNullable<ReturnType<typeof createServiceRoleClient>>,
+  inquiryId: string,
+  inquiryType: string,
+  category: string,
+  message: string,
+) {
+  const result: ContactClassification | null = await classify({
+    domain: "contact",
+    text: message,
+    type: inquiryType,
+    metadata: { category },
+  });
+  if (!result) return;
+
+  await serviceClient
+    .from("contact_inquiries")
+    .update({
+      urgency: result.urgency,
+      is_likely_spam: result.isLikelySpam,
+      ai_reasoning: result.reasoning ?? null,
+      ai_classified_at: new Date().toISOString(),
+    })
+    .eq("id", inquiryId)
+    .is("ai_classified_at", null);
+}
+
+function scheduleClassification(
+  serviceClient: NonNullable<ReturnType<typeof createServiceRoleClient>>,
+  inquiryId: string,
+  inquiryType: string,
+  category: string,
+  message: string,
+) {
+  const work = () =>
+    classifyContactInquiry(
+      serviceClient,
+      inquiryId,
+      inquiryType,
+      category,
+      message,
+    ).catch(() => undefined);
+  after(work);
 }
 
 export async function POST(request: NextRequest) {
@@ -199,6 +248,14 @@ export async function POST(request: NextRequest) {
     }
     return errorResponse("SUBMISSION_FAILED", 503);
   }
+
+  scheduleClassification(
+    serviceClient,
+    inquiryId,
+    inquiryType,
+    category,
+    message,
+  );
 
   const response = NextResponse.json({
     id: inquiryId,

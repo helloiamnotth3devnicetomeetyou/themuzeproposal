@@ -5,6 +5,9 @@ import { supabase } from "@/core/supabase/client";
 
 export type ContactCategory = "general" | "business";
 export type ContactStatus = "pending" | "reviewing" | "answered" | "closed";
+export type ContactUrgency = "low" | "normal" | "high" | "urgent";
+export type ContactUrgencyFilter = "all" | ContactUrgency;
+export type ContactSpamFilter = "all" | "normal" | "spam";
 export type ContactInquiry = {
   id: string;
   user_id: string | null;
@@ -24,6 +27,13 @@ export type ContactInquiry = {
   updated_at: string;
   answered_at: string | null;
   answered_by: string | null;
+  urgency: ContactUrgency | null;
+  urgency_rank: number | null;
+  is_likely_spam: boolean | null;
+  ai_reasoning: string | null;
+  ai_classified_at: string | null;
+  read_at: string | null;
+  read_by: string | null;
 };
 
 export const PAGE_SIZE = 20;
@@ -36,11 +46,15 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState(requestedFilter);
+  const [urgencyFilter, setUrgencyFilter] =
+    useState<ContactUrgencyFilter>("all");
+  const [spamFilter, setSpamFilter] = useState<ContactSpamFilter>("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<
     Record<ContactCategory, number>
   >({ general: 0, business: 0 });
+  const [pendingAiCount, setPendingAiCount] = useState(0);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
 
@@ -54,19 +68,24 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     let request = supabase
       .from("contact_inquiries")
       .select("*", { count: "exact" })
-      .eq("category", category)
-      .order("created_at", { ascending: false });
+      .eq("category", category);
     if (filter !== "all") request = request.eq("status", filter);
+    if (urgencyFilter === "urgent") request = request.in("urgency", ["high", "urgent"]);
+    if (urgencyFilter === "normal") request = request.in("urgency", ["low", "normal"]);
+    if (spamFilter === "normal") request = request.eq("is_likely_spam", false);
+    if (spamFilter === "spam") request = request.eq("is_likely_spam", true);
     const keyword = searchTerm(debouncedQuery);
     if (keyword)
       request = request.or(
         `contact_name.ilike.%${keyword}%,email.ilike.%${keyword}%,phone.ilike.%${keyword}%,company_name.ilike.%${keyword}%,message.ilike.%${keyword}%`,
       );
     try {
-      const [{ data, count, error: fetchError }, general, business] =
+      const [{ data, count, error: fetchError }, general, business, pending] =
         await Promise.all([
           request
             .abortSignal(controller.signal)
+            .order("urgency_rank", { ascending: false, nullsFirst: false })
+            .order("created_at", { ascending: false })
             .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
             .overrideTypes<ContactInquiry[], { merge: false }>(),
           supabase
@@ -79,8 +98,14 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
             .select("id", { count: "exact", head: true })
             .eq("category", "business")
             .abortSignal(controller.signal),
-      ]);
-      const queryError = fetchError || general.error || business.error;
+          supabase
+            .from("contact_inquiries")
+            .select("id", { count: "exact", head: true })
+            .is("ai_classified_at", null)
+            .abortSignal(controller.signal),
+        ]);
+      const queryError =
+        fetchError || general.error || business.error || pending.error;
       if (queryError) throw queryError;
       if (requestRef.current !== controller) return;
       setInquiries(data ?? []);
@@ -89,6 +114,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
         general: general.count ?? 0,
         business: business.count ?? 0,
       });
+      setPendingAiCount(pending.count ?? 0);
     } catch (fetchError) {
       if (requestRef.current !== controller) return;
       setError(
@@ -105,7 +131,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
         setLoading(false);
       }
     }
-  }, [category, debouncedQuery, filter, page]);
+  }, [category, debouncedQuery, filter, page, spamFilter, urgencyFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -124,12 +150,49 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     };
   }, [fetchInquiries]);
 
+  const pollPending = useCallback(async () => {
+    if (typeof document !== "undefined" && document.visibilityState !== "visible")
+      return;
+    const ids = inquiries
+      .filter((inquiry) => !inquiry.ai_classified_at)
+      .map((inquiry) => inquiry.id);
+    if (!ids.length) return;
+    const [{ data, error: fetchError }, countResult] = await Promise.all([
+      supabase
+        .from("contact_inquiries")
+        .select("*")
+        .in("id", ids)
+        .abortSignal(AbortSignal.timeout(10_000)),
+      supabase
+        .from("contact_inquiries")
+        .select("id", { count: "exact", head: true })
+        .is("ai_classified_at", null),
+    ]);
+    if (fetchError || countResult.error) return;
+    setPendingAiCount(countResult.count ?? 0);
+    if (!data) return;
+    setInquiries((current) =>
+      current.map((inquiry) =>
+        data.find((next) => next.id === inquiry.id) ?? inquiry,
+      ),
+    );
+  }, [inquiries]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!inquiries.some((inquiry) => !inquiry.ai_classified_at)) return;
+    const timer = window.setInterval(() => void pollPending(), 5000);
+    return () => window.clearInterval(timer);
+  }, [inquiries, pollPending]);
+
   return {
     category,
     categoryCounts,
     error,
     fetchInquiries,
     filter,
+    pendingAiCount,
+    pollPending,
     inquiries,
     loading,
     page,
@@ -137,9 +200,13 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     setCategory,
     setError,
     setFilter,
+    setSpamFilter,
+    setUrgencyFilter,
     setPage,
     setQuery,
     setInquiries,
     total,
+    spamFilter,
+    urgencyFilter,
   };
 }

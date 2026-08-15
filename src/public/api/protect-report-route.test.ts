@@ -16,6 +16,15 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
   insert: vi.fn(),
   verifyTurnstileToken: vi.fn(),
+  classify: vi.fn(),
+  update: vi.fn(),
+  updateEq: vi.fn(),
+  updateIs: vi.fn(),
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (callback: () => unknown) => void callback(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({
@@ -45,6 +54,9 @@ vi.mock("@/core/http/submission-rate-limit", () => ({
 }));
 vi.mock("@/core/http/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
+}));
+vi.mock("@/core/ai/classify-inquiry", () => ({
+  classify: mocks.classify,
 }));
 
 import { POST } from "./protect-report-route";
@@ -117,6 +129,12 @@ describe("POST /api/protect-reports", () => {
       error: null,
     });
     mocks.verifyTurnstileToken.mockResolvedValue(true);
+    mocks.classify.mockResolvedValue(null);
+    mocks.update.mockReturnValue({ eq: mocks.updateEq });
+    mocks.updateEq.mockReturnValue({
+      is: mocks.updateIs,
+    });
+    mocks.updateIs.mockResolvedValue({ error: null });
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
@@ -124,7 +142,7 @@ describe("POST /api/protect-reports", () => {
       from: vi.fn((table: string) =>
         table === "artists"
           ? { select: mocks.artistSelect }
-          : { insert: mocks.insert },
+          : { insert: mocks.insert, update: mocks.update },
       ),
     });
   });
@@ -150,6 +168,32 @@ describe("POST /api/protect-reports", () => {
       "00000000-0000-4000-8000-000000000001",
     );
     expect(mocks.artistActiveEq).toHaveBeenCalledWith("is_active", true);
+  });
+
+  it("schedules protect classification after a successful insert", async () => {
+    mocks.classify.mockResolvedValue({
+      severity: "high",
+      reasoning: "credible harm",
+    });
+
+    const response = await POST(validRequest());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(response.status).toBe(200);
+    expect(mocks.classify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: "protect",
+        type: "defamation",
+        text: "Report title\n\nReport details",
+      }),
+    );
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: "high",
+        ai_reasoning: "credible harm",
+        ai_classified_at: expect.any(String),
+      }),
+    );
   });
 
   it("rejects an invalid artist ID before looking up or consuming quota", async () => {

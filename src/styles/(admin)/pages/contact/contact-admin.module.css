@@ -7,6 +7,156 @@
   max-width: none;
 }
 
+.classifyButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-brand-pink);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-brand-pink);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.classifyButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.unread .mailCell {
+  background: color-mix(in srgb, var(--color-brand-pink) 4%, transparent);
+}
+
+.unread .mailCell:first-child::after {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--color-brand-pink);
+  content: "";
+}
+
+.mailList {
+  overflow: hidden;
+}
+
+.mailHeader,
+.mailRow {
+  display: grid;
+  grid-template-columns: 110px minmax(130px, 1fr) minmax(180px, 1.5fr) minmax(160px, 1.1fr) 100px 95px 28px;
+  gap: 0 12px;
+  align-items: center;
+}
+
+.mailHeader {
+  min-height: 37px;
+  padding: 0 15px;
+  background: color-mix(in srgb, var(--bg-surface) 68%, transparent);
+  color: var(--text-faint);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mailRow {
+  width: 100%;
+  min-height: 69px;
+  padding: 9px 15px;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.mailRow:hover {
+  background: var(--bg-subtle);
+}
+
+.mailRow:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: -2px;
+}
+
+.mailCell {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 9px;
+}
+
+.mailCell b,
+.mailCell small {
+  display: block;
+}
+
+.mailCell b {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mailCell small {
+  max-width: 100%;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mailArrow {
+  display: grid;
+  place-items: center;
+  color: var(--color-brand-pink);
+}
+
+.mailArrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.spam {
+  opacity: 0.68;
+}
+
+.priority,
+.spamLabel,
+.unreadLabel {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.priority {
+  color: var(--text-secondary);
+}
+
+.unread .priority {
+  color: var(--color-brand-pink);
+}
+
+.spamLabel {
+  margin-top: 4px;
+  color: var(--palette-df7777);
+}
+
+.unreadLabel {
+  margin-top: 4px;
+  color: var(--color-brand-pink);
+}
+
 .summaryTabs {
   display: flex;
   align-self: stretch;
@@ -104,6 +254,62 @@
 .answerRecord button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+@media (max-width: 768px) {
+  .mailHeader {
+    display: none;
+  }
+
+  .mailRow {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 0 8px;
+    margin: 10px;
+    width: calc(100% - 20px);
+    min-height: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+  }
+
+  .mailCell {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    min-height: 30px;
+    padding: 5px 0;
+    line-height: 1.5;
+  }
+
+  .mailCell::before {
+    color: var(--text-faint);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    content: attr(data-label);
+  }
+
+  .mailCell b,
+  .mailCell small,
+  .mailCell > .status,
+  .mailCell > .priority {
+    grid-column: 2;
+  }
+
+  .mailCell b + small {
+    margin-top: 0;
+  }
+
+  .mailArrow {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 42px;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 600px) {

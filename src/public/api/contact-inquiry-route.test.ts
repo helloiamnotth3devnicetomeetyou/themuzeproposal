@@ -12,6 +12,12 @@ const mocks = vi.hoisted(() => ({
   consumeRateLimit: vi.fn(),
   consumeAttemptRateLimit: vi.fn(),
   verifyTurnstileToken: vi.fn(),
+  classify: vi.fn(),
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (callback: () => unknown) => void callback(),
 }));
 
 vi.mock("@/core/supabase/server", () => ({
@@ -41,6 +47,9 @@ vi.mock("@/core/http/submission-rate-limit", () => ({
 }));
 vi.mock("@/core/http/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
+}));
+vi.mock("@/core/ai/classify-inquiry", () => ({
+  classify: mocks.classify,
 }));
 
 import { POST } from "./contact-inquiry-route";
@@ -94,6 +103,7 @@ describe("POST /api/contact-inquiries", () => {
       retryAfter: 0,
     });
     mocks.verifyTurnstileToken.mockResolvedValue(true);
+    mocks.classify.mockResolvedValue(null);
     mocks.createServiceClient.mockReturnValue({
       from: vi.fn(() => ({ insert: mocks.insert })),
     });
