@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogIn, Moon, Sun } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
-import GlobalPlayer from "@/public/features/player/GlobalPlayer";
 import type { ArtistNavigationItem, NavTranslations } from "./navbar-types";
 import styles from "@/styles/(public)/components/layout/Navbar.module.css";
+import type { ReactNode } from "react";
 
 type Props = {
   artists: ArtistNavigationItem[];
@@ -20,6 +20,7 @@ type Props = {
   expandedArtist: string | null;
   setExpandedArtist: (slug: string | null) => void;
   onToggleTheme: () => void;
+  player: ReactNode;
 };
 const artistLinks = (slug: string) => [
   { href: `/${slug}/artist`, label: "ABOUT" },
@@ -42,6 +43,7 @@ export default function DesktopNav({
   expandedArtist,
   setExpandedArtist,
   onToggleTheme,
+  player,
 }: Props) {
   const linkClass = (path: string) =>
     `${styles.navLink} ${pathname === path ? styles.navLinkActive : ""}`;
@@ -160,7 +162,7 @@ export default function DesktopNav({
           </>
         )}
       </nav>
-      <GlobalPlayer />
+      {player}
       <div className={styles.utilityGroup}>
         <LanguageSwitcher />
         <button

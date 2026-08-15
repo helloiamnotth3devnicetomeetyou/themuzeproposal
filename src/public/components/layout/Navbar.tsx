@@ -168,6 +168,7 @@ export default function Navbar({
             {...shared}
             expandedArtist={expandedArtist}
             setExpandedArtist={setExpandedArtist}
+            player={isDiscography ? null : <GlobalPlayer />}
           />
         )}
       </div>
