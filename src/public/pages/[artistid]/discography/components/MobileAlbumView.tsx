@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { ListMusic } from "lucide-react";
+import { ListMusic, Pause, Play } from "lucide-react";
 import { useLayoutEffect, useRef, type TouchEvent } from "react";
 import TypoLogoMask from "@/core/components/media/TypoLogoMask";
 import { localizeText } from "@/core/i18n/localized";
 import { useLocale, type Locale } from "@/core/providers/LocaleContext";
+import { safeHref } from "@/core/http/safe-href";
 
 import type {
   DiscographyAlbum,
@@ -22,8 +23,10 @@ interface MobileAlbumViewProps {
   gallery: DiscographyGalleryItem[];
   locale: Locale;
   members: DiscographyMember[];
+  isPlaying: boolean;
   onIntentAlbum: (index: number) => void;
   onSelectAlbum: (index: number) => void;
+  onTogglePlay: () => void;
 }
 
 export function MobileAlbumView({
@@ -34,8 +37,10 @@ export function MobileAlbumView({
   gallery,
   locale,
   members,
+  isPlaying,
   onIntentAlbum,
   onSelectAlbum,
+  onTogglePlay,
 }: MobileAlbumViewProps) {
   const { t } = useLocale();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
@@ -44,6 +49,7 @@ export function MobileAlbumView({
   const transitioningRef = useRef(false);
   const previousAlbum = albums[albumIndex - 1];
   const nextAlbum = albums[albumIndex + 1];
+  const canPlay = Boolean(safeHref(album.tracks[0]?.audioUrl));
 
   useLayoutEffect(() => {
     const track = albumTrackRef.current;
@@ -151,7 +157,7 @@ export function MobileAlbumView({
   return (
     <div id="discography-album-panel" role="tabpanel" className="pb-8 pt-4">
       <div
-        className="relative -mx-5 overflow-hidden py-3 touch-pan-y"
+        className="relative -mx-5 overflow-hidden py-3 touch-pan-y md:-mx-8"
         onTouchStart={(event) => {
           const touch = event.touches[0];
           if (touch)
@@ -230,11 +236,11 @@ export function MobileAlbumView({
         </div>
       </div>
 
-      <div className="-mx-5 mt-5">
+      <div className="-mx-5 mt-5 md:-mx-8">
         <nav
           ref={albumRailRef}
           aria-label="Albums"
-          className="overflow-x-auto overscroll-x-contain px-5 pb-1 scrollbar-none touch-pan-x"
+          className="overflow-x-auto overscroll-x-contain px-5 pb-1 scrollbar-none touch-pan-x md:px-8"
         >
           <div className="flex w-max min-w-full items-center justify-center gap-2">
             {albums.map((item, index) => {
@@ -317,6 +323,20 @@ export function MobileAlbumView({
               {artistName} · {album.releaseDate}
             </p>
           </div>
+          <button
+            type="button"
+            disabled={!canPlay}
+            onClick={onTogglePlay}
+            aria-label={isPlaying ? t.discography.pause : t.discography.play}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[var(--color-static-black)] shadow-lg transition-transform duration-base active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-30"
+            style={{ backgroundColor: album.color, outlineColor: album.color }}
+          >
+            {isPlaying ? (
+              <Pause className="h-6 w-6" aria-hidden="true" />
+            ) : (
+              <Play className="h-6 w-6 pl-0.5" aria-hidden="true" />
+            )}
+          </button>
         </div>
       </div>
 

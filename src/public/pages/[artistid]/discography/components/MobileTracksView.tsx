@@ -37,14 +37,9 @@ export function MobileTracksView({
     <div
       id="discography-tracks-panel"
       role="tabpanel"
-      className="animate-page-fade -mx-5 min-h-[calc(100dvh-var(--site-header-height))] pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4"
+      className="animate-page-fade w-full min-w-0 min-h-[calc(100dvh-var(--site-header-height))] pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4"
     >
-      <div
-        className="sticky z-20 -mx-5 border-b border-[var(--alpha-ffffff-08)] bg-[var(--alpha-050505-30)] px-5 pb-4 pt-3 backdrop-blur-md"
-        style={{
-          top: "calc(var(--banner-height, 0px) + var(--site-header-height) + 40px)",
-        }}
-      >
+      <div className="w-full max-w-full border-b border-[var(--alpha-ffffff-08)] pb-4 pt-3">
         <TrackPlayer
           albumColor={album.color}
           isPlaying={isPlaying}
