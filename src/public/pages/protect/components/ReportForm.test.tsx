@@ -121,12 +121,12 @@ describe("ReportForm", () => {
     );
   });
 
-  it("blocks a submission with missing required fields", () => {
+  it("blocks a submission with missing required fields", async () => {
     const { container } = renderForm();
     fireEvent.pointerDown(container.querySelector("button[type='button']")!, {
       button: 0,
     });
-    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(mocks.fetch).not.toHaveBeenCalled();
   });
 

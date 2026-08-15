@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
 
@@ -25,9 +25,9 @@ describe("DeleteConfirmDialog", () => {
     const button = screen.getByRole("button", { name: /1.5초/ });
 
     fireEvent.pointerDown(button, { button: 0 });
-    vi.advanceTimersByTime(1499);
+    act(() => vi.advanceTimersByTime(1499));
     expect(onConfirm).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
+    act(() => vi.advanceTimersByTime(1));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 });
