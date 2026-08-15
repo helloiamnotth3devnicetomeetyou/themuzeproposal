@@ -177,7 +177,7 @@ export function MobileAlbumView({
           className="mobile-album-track flex w-[300%] will-change-transform"
         >
           <div className="w-1/3 shrink-0 px-4" aria-hidden="true">
-            <div className="relative mx-auto aspect-square w-full max-w-[390px] overflow-hidden rounded-[1.35rem]">
+            <div className="relative mx-auto aspect-square w-full max-w-[390px] overflow-hidden">
               {previousAlbum && (
                 <Image
                   src={previousAlbum.cover}
@@ -191,7 +191,7 @@ export function MobileAlbumView({
             </div>
           </div>
           <div className="w-1/3 shrink-0 px-4">
-            <div className="group relative mx-auto block aspect-square w-full max-w-[390px] overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)]">
+            <div className="group relative mx-auto block aspect-square w-full max-w-[390px] overflow-hidden border border-[var(--alpha-ffffff-08)]">
               <Image
                 src={album.cover}
                 alt={album.title}
@@ -214,7 +214,7 @@ export function MobileAlbumView({
             </div>
           </div>
           <div className="w-1/3 shrink-0 px-4" aria-hidden="true">
-            <div className="relative mx-auto aspect-square w-full max-w-[390px] overflow-hidden rounded-[1.35rem]">
+            <div className="relative mx-auto aspect-square w-full max-w-[390px] overflow-hidden">
               {nextAlbum && (
                 <Image
                   src={nextAlbum.cover}
@@ -249,7 +249,7 @@ export function MobileAlbumView({
                   onFocus={() => onIntentAlbum(index)}
                   onTouchStart={() => onIntentAlbum(index)}
                   onClick={() => selectAlbum(index)}
-                  className={`relative size-11 shrink-0 overflow-hidden rounded-lg border transition-transform duration-base active:scale-95 ${current ? "scale-110" : "opacity-55"}`}
+                  className={`relative size-11 shrink-0 overflow-hidden border transition-transform duration-base active:scale-95 ${current ? "scale-110" : "opacity-55"}`}
                   style={{
                     borderColor: current
                       ? album.color
@@ -271,8 +271,7 @@ export function MobileAlbumView({
             })}
           </div>
         </nav>
-        <div className="mt-3 flex items-center gap-3 px-6 text-[9px] font-medium tracking-[0.12em] text-[var(--palette-6b7280)]">
-          <span>ALBUM</span>
+        <div className="mt-5 flex items-center gap-3 px-6 font-display text-[9px] font-medium tracking-[0.12em] text-[var(--palette-6b7280)]">
           <span className="h-px flex-1 bg-[var(--alpha-ffffff-08)]">
             <i
               className="block h-full transition-[width] duration-slow"
@@ -295,7 +294,7 @@ export function MobileAlbumView({
             <p className="text-[10px] font-medium text-[var(--palette-9ca3af)]">
               {album.type} · {album.tracks.length} TRACKS
             </p>
-            <h1 className="mt-1 flex min-h-10 items-center font-display text-3xl font-semibold leading-none tracking-[-0.04em] text-[var(--color-static-white)]">
+            <h1 className="mt-2 flex min-h-10 items-center font-display text-[clamp(2.5rem,11vw,4.25rem)] font-medium leading-[0.88] tracking-[-0.065em] text-[var(--color-static-white)]">
               {album.typoLogoUrl ? (
                 <TypoLogoMask
                   src={album.typoLogoUrl}
@@ -314,28 +313,25 @@ export function MobileAlbumView({
                 album.title
               )}
             </h1>
-            <p className="mt-2 text-[12px] text-[var(--palette-6b7280)]">
+            <p className="mt-3 text-[12px] text-[var(--palette-6b7280)]">
               {artistName} · {album.releaseDate}
             </p>
           </div>
         </div>
       </div>
 
-      <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
-        <h2 className="text-sm font-semibold text-[var(--color-static-white)]">
-          INTRO
-        </h2>
-        <p className="mt-3 text-sm font-light leading-6 text-[var(--palette-9ca3af)]">
+      <section className="mt-12 border-t border-[var(--alpha-ffffff-08)] pt-6">
+        <p className="max-w-[38rem] text-sm font-light leading-7 text-[var(--palette-9ca3af)]">
           {localizeText(album.desc, locale, t.discography.noDescription)}
         </p>
       </section>
 
       {album.titleImage && (
-        <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
-          <h2 className="mb-3 text-sm font-semibold text-[var(--color-static-white)]">
+        <section className="mt-12 border-t border-[var(--alpha-ffffff-08)] pt-6">
+          <h2 className="mb-4 font-display text-sm font-medium tracking-[-0.01em] text-[var(--color-static-white)]">
             {t.discography.tabs.concept}
           </h2>
-          <div className="relative aspect-video overflow-hidden rounded-xl border border-[var(--alpha-ffffff-08)]">
+          <div className="relative aspect-video overflow-hidden border border-[var(--alpha-ffffff-08)]">
             <Image
               src={album.titleImage}
               alt={album.title}
@@ -347,8 +343,8 @@ export function MobileAlbumView({
         </section>
       )}
 
-      <section className="mt-8 border-t border-[var(--alpha-ffffff-08)] pt-6">
-        <h2 className="mb-3 text-sm font-semibold text-[var(--color-static-white)]">
+      <section className="mt-12 border-t border-[var(--alpha-ffffff-08)] pt-6">
+        <h2 className="mb-4 font-display text-sm font-medium tracking-[-0.01em] text-[var(--color-static-white)]">
           {t.discography.tabs.members}
         </h2>
         <MemberGallery

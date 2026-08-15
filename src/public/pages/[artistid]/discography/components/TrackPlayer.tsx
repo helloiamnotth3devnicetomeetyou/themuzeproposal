@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
-import type { CSSProperties } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
 
@@ -35,6 +34,7 @@ export function TrackPlayer({
   const { t } = useLocale();
   const audioHref = safeHref(track?.audioUrl);
   const youtubeHref = safeHref(track?.youtubeUrl);
+  const safeProgress = Math.min(100, Math.max(0, progress));
   return (
     <div className="flex shrink-0 flex-col gap-3 border-y border-[var(--alpha-ffffff-1)] py-4">
       <div className="flex items-center justify-between">
@@ -46,23 +46,33 @@ export function TrackPlayer({
         </span>
       </div>
 
-      <input
-        type="range"
-        min="0"
-        max="100"
-        step="0.1"
-        value={progress}
-        onChange={(event) => onSeek(Number(event.currentTarget.value))}
-        disabled={!audioHref}
-        aria-label={t.discography.progress}
-        className="h-5 w-full min-w-0 cursor-pointer appearance-none border-0 bg-transparent outline-none disabled:cursor-default disabled:opacity-30 [&::-moz-range-thumb]:h-2 [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[color:var(--track-accent)] [&::-moz-range-thumb]:bg-[var(--bg-base)] [&::-moz-range-thumb]:shadow-none [&::-moz-range-track]:h-[2px] [&::-moz-range-track]:rounded-full [&::-moz-range-track]:border-0 [&::-moz-range-track]:bg-[image:var(--track-gradient)] [&::-moz-range-track]:shadow-none [&::-moz-focus-outer]:border-0 [&::-webkit-slider-runnable-track]:h-[2px] [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-[image:var(--track-gradient)] [&::-webkit-slider-runnable-track]:shadow-none [&::-webkit-slider-thumb]:mt-[-4.5px] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[color:var(--track-accent)] [&::-webkit-slider-thumb]:bg-[var(--bg-base)] [&::-webkit-slider-thumb]:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-brand-pink)]"
-        style={
-          {
-            "--track-accent": albumColor,
-            "--track-gradient": `linear-gradient(to right, ${albumColor} 0 ${Math.min(100, Math.max(0, progress))}%, var(--alpha-ffffff-1) ${Math.min(100, Math.max(0, progress))}% 100%)`,
-          } as CSSProperties
-        }
-      />
+      <div className="group relative h-5 w-full">
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--alpha-ffffff-1)]"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full"
+          style={{ width: `${safeProgress}%`, backgroundColor: albumColor }}
+        />
+        <span
+          aria-hidden="true"
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-[var(--bg-base)] group-focus-within:ring-2 group-focus-within:ring-[var(--color-brand-pink)] group-focus-within:ring-offset-2 group-focus-within:ring-offset-[var(--bg-base)]"
+          style={{ left: `${safeProgress}%`, borderColor: albumColor }}
+        />
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={safeProgress}
+          onChange={(event) => onSeek(Number(event.currentTarget.value))}
+          disabled={!audioHref}
+          aria-label={t.discography.progress}
+          className="absolute inset-0 z-10 h-5 w-full cursor-pointer opacity-0 disabled:cursor-default"
+        />
+      </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-0.5">
         <span aria-hidden="true" />
