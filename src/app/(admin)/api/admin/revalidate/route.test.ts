@@ -34,24 +34,32 @@ describe("POST /api/admin/revalidate", () => {
   });
 
   it("rejects cross-origin and non-admin requests", async () => {
-    expect(
-      (
-        await POST(
-          request({ tags: ["public-notices"] }, "https://attacker.example"),
-        )
-      ).status,
-    ).toBe(400);
+    const crossOrigin = await POST(
+      request({ tags: ["public-notices"] }, "https://attacker.example"),
+    );
+    expect(crossOrigin.status).toBe(400);
+    await expect(crossOrigin.json()).resolves.toEqual({
+      code: "INVALID_REQUEST",
+    });
+    expect(crossOrigin.headers.get("Cache-Control")).toBe("no-store");
+    expect(crossOrigin.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(mocks.createClient).not.toHaveBeenCalled();
 
     mocks.isAdmin.mockResolvedValueOnce(false);
-    expect((await POST(request({ tags: ["public-notices"] }))).status).toBe(
-      403,
-    );
+    const forbidden = await POST(request({ tags: ["public-notices"] }));
+    expect(forbidden.status).toBe(403);
+    await expect(forbidden.json()).resolves.toEqual({ code: "FORBIDDEN" });
+    expect(forbidden.headers.get("Cache-Control")).toBe("no-store");
+    expect(forbidden.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
   });
 
   it("only revalidates the explicit tag allowlist", async () => {
-    expect((await POST(request({ tags: ["everything"] }))).status).toBe(400);
+    const invalidTag = await POST(request({ tags: ["everything"] }));
+    expect(invalidTag.status).toBe(400);
+    await expect(invalidTag.json()).resolves.toEqual({ code: "INVALID_TAG" });
+    expect(invalidTag.headers.get("Cache-Control")).toBe("no-store");
+    expect(invalidTag.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
 
     const response = await POST(

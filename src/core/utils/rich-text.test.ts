@@ -31,8 +31,20 @@ describe("Rich Text Utilities", () => {
     it("should add target='_blank' and rel='noopener noreferrer' to links", () => {
       const input = '<a href="https://example.com">Link</a>';
       const sanitized = sanitizeRichText(input);
+      expect(sanitized).toContain('href="https://example.com/"');
       expect(sanitized).toContain('target="_blank"');
       expect(sanitized).toContain('rel="noopener noreferrer"');
+    });
+
+    it.each([
+      "mailto:test@example.com",
+      "ftp://example.com/file.txt",
+      "data:text/html,<script>alert(1)</script>",
+      "javascript:alert(1)",
+      "/relative/path",
+    ])("should remove unsafe href %s", (href) => {
+      const sanitized = sanitizeRichText(`<a href="${href}">Link</a>`);
+      expect(sanitized).toBe("<a>Link</a>");
     });
   });
 

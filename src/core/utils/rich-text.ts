@@ -1,4 +1,5 @@
 import DOMPurify from "isomorphic-dompurify";
+import { safeHref } from "@/core/http/safe-href";
 
 const ALLOWED_TAGS = [
   "p",
@@ -20,13 +21,22 @@ const ALLOWED_TAGS = [
 
 const BLOCK_TAGS = "p|div|h2|h3|blockquote|ul|ol|li";
 
-// Hook to dynamically enforce safe link attributes
+// Hook to dynamically enforce safe link attributes and protocols.
 if (typeof DOMPurify.addHook === "function") {
   DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-    if (node.tagName === "A") {
-      node.setAttribute("target", "_blank");
-      node.setAttribute("rel", "noopener noreferrer");
+    if (node.tagName !== "A") return;
+
+    const href = safeHref(node.getAttribute("href"));
+    if (!href) {
+      node.removeAttribute("href");
+      node.removeAttribute("target");
+      node.removeAttribute("rel");
+      return;
     }
+
+    node.setAttribute("href", href);
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
   });
 }
 

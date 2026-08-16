@@ -16,6 +16,7 @@ import {
   Underline,
   Undo2,
 } from "lucide-react";
+import { safeHref } from "@/core/http/safe-href";
 import { escapeHtml, sanitizeRichText } from "@/core/utils/rich-text";
 
 type RichTextEditorProps = {
@@ -119,7 +120,9 @@ export default function RichTextEditor({
   const addLink = () => {
     const href = window.prompt("연결할 주소를 입력하세요.", "https://");
     if (!href) return;
-    runCommand("createLink", href);
+
+    const safe = safeHref(href);
+    runCommand(safe ? "createLink" : "unlink", safe);
   };
 
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {

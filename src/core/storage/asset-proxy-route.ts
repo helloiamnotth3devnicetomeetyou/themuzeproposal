@@ -40,12 +40,17 @@ export async function GET(request: NextRequest) {
   const contentType =
     upstream.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() ||
     "";
+  const expectedContentType = asset.path.toLowerCase().endsWith(".svg")
+    ? "image/svg+xml"
+    : /\.(?:jpe?g)$/i.test(asset.path)
+      ? "image/jpeg"
+      : asset.path.toLowerCase().endsWith(".png")
+        ? "image/png"
+        : "image/webp";
   const contentLengthHeader = upstream.headers.get("content-length");
   const contentLength = contentLengthHeader ? Number(contentLengthHeader) : null;
   if (
-    !["image/svg+xml", "image/jpeg", "image/png", "image/webp"].includes(
-      contentType,
-    ) ||
+    contentType !== expectedContentType ||
     (contentLength !== null &&
       Number.isFinite(contentLength) &&
       (contentLength < 1 || contentLength > MAX_PROXY_BYTES))

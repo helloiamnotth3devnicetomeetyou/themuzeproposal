@@ -21,21 +21,32 @@ const cacheTag = z.enum([
 const revalidateSchema = z.object({ tags: z.array(cacheTag).min(1).max(8) });
 const MAX_BODY_BYTES = 4 * 1024;
 
+function jsonError(code: string, status: number) {
+  return Response.json(
+    { code },
+    {
+      status,
+      headers: {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
+}
+
 export async function POST(request: NextRequest) {
-  if (!isSameOriginRequest(request))
-    return Response.json({ error: "invalid request" }, { status: 400 });
+  if (!isSameOriginRequest(request)) return jsonError("INVALID_REQUEST", 400);
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await isAdmin(supabase, user.id)))
-    return Response.json({ error: "forbidden" }, { status: 403 });
+    return jsonError("FORBIDDEN", 403);
 
   const parsed = revalidateSchema.safeParse(
     await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(() => null),
   );
-  if (!parsed.success)
-    return Response.json({ error: "invalid tag" }, { status: 400 });
+  if (!parsed.success) return jsonError("INVALID_TAG", 400);
   parsed.data.tags.forEach((tag) => revalidateTag(tag, { expire: 0 }));
   return Response.json({ revalidated: true });
 }
