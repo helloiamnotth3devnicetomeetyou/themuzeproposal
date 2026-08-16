@@ -10,6 +10,7 @@ describe("isLocalDevelopmentRequest", () => {
 
   it("only allows the fallback on a local development request", () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CI", "");
     expect(isLocalDevelopmentRequest(request("http://localhost/api"))).toBe(
       true,
     );

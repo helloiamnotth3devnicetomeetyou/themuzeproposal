@@ -161,7 +161,7 @@ begin
   end if;
 
   v_table_name := case p_kind when 'contact_inquiry' then 'contact_inquiries' else 'protect_reports' end;
-  -- Existing sensitive audit triggers omit message/content/evidence. The
+  -- Existing sensitive audit triggers omit submitted payloads. The
   -- explicit row below is the retention audit contract: only metadata.
   perform set_config('app.retention_purge', 'true', true);
   if p_kind = 'contact_inquiry' then
