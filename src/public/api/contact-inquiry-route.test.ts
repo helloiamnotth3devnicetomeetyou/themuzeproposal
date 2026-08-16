@@ -126,7 +126,7 @@ describe("POST /api/contact-inquiries", () => {
   it("stores the received byte length and canonical MIME type", async () => {
     const file = new File(
       [
-        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n29\n%%EOF\n",
       ],
       "proposal.pdf",
       {
@@ -152,7 +152,7 @@ describe("POST /api/contact-inquiries", () => {
   it("bounds the persisted attachment filename", async () => {
     const file = new File(
       [
-        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n29\n%%EOF\n",
       ],
       `${"a".repeat(300)}.pdf`,
       { type: "application/pdf" },
@@ -239,7 +239,7 @@ describe("POST /api/contact-inquiries", () => {
         validForm(
           new File(
             [
-              "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+              "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n29\n%%EOF\n",
             ],
             "proposal.pdf",
             { type: "application/pdf" },

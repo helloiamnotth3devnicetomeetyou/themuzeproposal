@@ -12,7 +12,10 @@ export function createMockFile(
 
   switch (type) {
     case "pdf":
-      buffer.write("%PDF-1.4\n%EOF\n", 0);
+      buffer.write(
+        "%PDF-1.4\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n29\n%%EOF\n",
+        0,
+      );
       break;
     case "jpg":
       buffer[0] = 0xff;

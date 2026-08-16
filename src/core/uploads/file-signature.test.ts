@@ -15,6 +15,44 @@ function blob(bytes: number[] | string) {
   ]);
 }
 
+const MINIMAL_PDF =
+  "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n29\n%%EOF\n";
+
+function validZip() {
+  const bytes = new Uint8Array(109);
+  const view = new DataView(bytes.buffer);
+  const encoder = new TextEncoder();
+  const write = (offset: number, value: string) =>
+    bytes.set(encoder.encode(value), offset);
+  const crc32 = 0xe8b7be43;
+  write(0, "PK\x03\x04");
+  view.setUint16(4, 20, true);
+  view.setUint32(14, crc32, true);
+  view.setUint32(18, 1, true);
+  view.setUint32(22, 1, true);
+  view.setUint16(26, 5, true);
+  view.setUint16(28, 0, true);
+  write(30, "a.txt");
+  write(35, "a");
+  const central = 36;
+  write(central, "PK\x01\x02");
+  view.setUint16(central + 4, 20, true);
+  view.setUint16(central + 6, 20, true);
+  view.setUint32(central + 16, crc32, true);
+  view.setUint32(central + 20, 1, true);
+  view.setUint32(central + 24, 1, true);
+  view.setUint16(central + 28, 5, true);
+  view.setUint32(central + 42, 0, true);
+  write(central + 46, "a.txt");
+  const eocd = 87;
+  write(eocd, "PK\x05\x06");
+  view.setUint16(eocd + 8, 1, true);
+  view.setUint16(eocd + 10, 1, true);
+  view.setUint32(eocd + 12, 51, true);
+  view.setUint32(eocd + 16, central, true);
+  return bytes;
+}
+
 describe("validateFileSignature", () => {
   it("recognizes raster images from bytes instead of the declared MIME type", async () => {
     const png = new Blob([
@@ -70,7 +108,7 @@ describe("validateFileSignature", () => {
   });
 
   it("does not accept a valid file type in a profile that forbids it", async () => {
-    const pdf = blob("%PDF-1.7\nbody");
+    const pdf = blob(MINIMAL_PDF);
     await expect(
       validateFileSignature(pdf, "protect-evidence"),
     ).resolves.toEqual({
@@ -82,9 +120,9 @@ describe("validateFileSignature", () => {
     ).resolves.toBeNull();
   });
 
-  it("accepts only ZIP and PDF business assets without inspecting ZIP contents", async () => {
-    const zip = blob("PK\u0003\u0004opaque archive payload");
-    const pdf = blob("%PDF-1.7\nbody");
+  it("accepts structurally valid ZIP and PDF business assets", async () => {
+    const zip = new Blob([validZip()]);
+    const pdf = blob(MINIMAL_PDF);
 
     await expect(validateFileSignature(zip, "business-asset")).resolves.toEqual(
       {
@@ -98,6 +136,33 @@ describe("validateFileSignature", () => {
         extension: "pdf",
       },
     );
+  });
+
+  it("rejects malformed and PDF/ZIP polyglot documents", async () => {
+    const malformed = blob("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n");
+    const polyglot = blob(`${MINIMAL_PDF}PK\u0003\u0004payload`);
+
+    await expect(
+      validateFileSignature(malformed, "contact-attachment"),
+    ).resolves.toBeNull();
+    await expect(
+      validateFileSignature(polyglot, "contact-attachment"),
+    ).resolves.toBeNull();
+  });
+
+  it("rejects truncated ZIPs and ZIP entries outside safe bounds", async () => {
+    const malformed = new Blob([validZip().slice(0, -1)]);
+    const bomb = validZip();
+    const view = new DataView(bomb.buffer);
+    view.setUint32(22, 100_000_000, true);
+    view.setUint32(36 + 24, 100_000_000, true);
+
+    await expect(
+      validateFileSignature(malformed, "business-asset"),
+    ).resolves.toBeNull();
+    await expect(
+      validateFileSignature(new Blob([bomb]), "business-asset"),
+    ).resolves.toBeNull();
   });
 
   it("recognizes audition audio and MP4 containers by signature", async () => {
