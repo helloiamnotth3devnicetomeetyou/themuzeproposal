@@ -63,10 +63,10 @@ select is(
   'the first reservation remains active after a rejected contender'
 );
 
-perform public.release_submission_rate_limit(
+select public.release_submission_rate_limit(
   (select reservation_id from quota_reservation_result)
 );
-perform public.release_submission_rate_limit(
+select public.release_submission_rate_limit(
   (select reservation_id from quota_reservation_result)
 );
 select is(
@@ -77,15 +77,15 @@ select is(
   'release is idempotent and restores the reserved user slot'
 );
 
-perform public.reserve_submission_rate_limit(
+select public.reserve_submission_rate_limit(
   'contact_inquiry', repeat('2', 64), repeat('c', 64), 1, 5, 86400
 );
-perform public.finalize_submission_rate_limit(
+select public.finalize_submission_rate_limit(
   (select reservation_id from private.submission_rate_limit_reservations
    where scope = 'contact_inquiry' and user_key_hash = repeat('2', 64)
    order by reserved_at desc limit 1)
 );
-perform public.finalize_submission_rate_limit(
+select public.finalize_submission_rate_limit(
   (select reservation_id from private.submission_rate_limit_reservations
    where scope = 'contact_inquiry' and user_key_hash = repeat('2', 64)
    order by reserved_at desc limit 1)
@@ -96,7 +96,7 @@ select is(
   1,
   'finalize is idempotent and consumes exactly one user slot'
 );
-perform public.release_submission_rate_limit(
+select public.release_submission_rate_limit(
   (select reservation_id from private.submission_rate_limit_reservations
    where scope = 'contact_inquiry' and user_key_hash = repeat('2', 64)
    order by reserved_at desc limit 1)
