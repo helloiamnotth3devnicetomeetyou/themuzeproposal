@@ -1,0 +1,63 @@
+begin;
+
+select plan(5);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)',
+    'execute'
+  ),
+  'manual submission reservation is server-only'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)'::regprocedure
+  ) !~ $$30 days$$,
+  'manual deletion does not weaken the scheduled 30-day cutoff'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)'::regprocedure
+  ) ~ $$role in \('super_admin', 'editor'\)$$
+  and pg_get_functiondef(
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)'::regprocedure
+  ) ~ $$contact-attachments$$
+  and pg_get_functiondef(
+    'public.reserve_submission_deletion(text,uuid,uuid,uuid)'::regprocedure
+  ) ~ $$protect-evidence$$,
+  'manual deletion validates admins and only private submission buckets'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.get_admin_protect_reports(text,text,text)'::regprocedure
+  ) ~ $$order by report.created_at desc, report.id desc;$$
+  and pg_get_functiondef(
+    'public.get_admin_protect_reports(text,text,text)'::regprocedure
+  ) !~ $$order by report.severity_rank desc$$,
+  'protect reports are returned newest first'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure
+  ) ~ $$object_count$$
+  and pg_get_functiondef(
+    'public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure
+  ) !~ $$message$$
+  and pg_get_functiondef(
+    'public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure
+  ) !~ $$content$$,
+  'manual finalization keeps audit metadata free of submitted content'
+);
+
+select * from finish();
+rollback;

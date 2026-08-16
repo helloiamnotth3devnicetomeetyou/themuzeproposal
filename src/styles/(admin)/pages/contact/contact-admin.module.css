@@ -7,6 +7,175 @@
   max-width: none;
 }
 
+.selectionControls {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface) 58%, var(--bg-card));
+  transition:
+    background var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.selectionControlsActive {
+  background: color-mix(in srgb, var(--color-brand-pink) 7%, var(--bg-surface));
+  box-shadow: inset 3px 0 0 var(--color-brand-pink);
+}
+
+.selectAll,
+.selectionCell {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.selectAll {
+  min-height: 36px;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.selectAll input,
+.selectionCell input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-brand-pink);
+  color-scheme: dark;
+  background-color: var(--bg-subtle);
+}
+
+.selectionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selectionCount {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-pink) 42%, var(--border-default));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand-pink) 8%, var(--bg-surface));
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 720;
+  font-variant-numeric: tabular-nums;
+}
+
+.deleteSelected {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-status-danger) 60%, var(--border-default));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-status-danger) 8%, transparent);
+  color: var(--color-status-danger);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.deleteSelected svg {
+  width: 14px;
+  height: 14px;
+}
+
+.deleteSelected:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.deleteSelected:hover:not(:disabled) {
+  background: var(--color-status-danger);
+  color: var(--bg-card);
+}
+
+.paginationPages {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageNumber {
+  width: 32px;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.pageNumberActive {
+  border-color: var(--color-brand-pink) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-brand-pink) 10%,
+    var(--bg-card)
+  ) !important;
+  color: var(--text-primary) !important;
+}
+
+.paginationGap {
+  width: 18px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.fullPage .mailRow {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 0;
+  padding: 7px 14px 7px 12px;
+  cursor: default;
+}
+
+.selectionCell {
+  grid-column: 1;
+  justify-content: center;
+}
+
+.rowOpen {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  grid-column: 2;
+  grid-template-columns:
+    minmax(126px, 0.8fr) minmax(280px, 2.4fr) minmax(130px, 0.8fr)
+    220px 88px;
+  align-items: center;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowOpen:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--color-brand-pink);
+  outline-offset: -2px;
+}
+
+.fullPage .selectedRow,
+.fullPage .selectedRow:hover {
+  background: color-mix(in srgb, var(--color-brand-pink) 8%, var(--bg-card));
+}
+
 .fullPage .inbox {
   width: 100%;
   max-width: none;
@@ -76,6 +245,12 @@
   opacity: 0.45;
 }
 
+@media (max-width: 1100px) {
+  .rowOpen {
+    grid-template-columns: minmax(120px, 0.8fr) minmax(240px, 2fr) 220px 86px;
+  }
+}
+
 @media (max-width: 768px) {
   .fullPage {
     padding-inline: 12px;
@@ -93,5 +268,47 @@
   .answerRecord {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .selectionControls {
+    padding-inline: 10px;
+  }
+
+  .selectionActions {
+    gap: 6px;
+  }
+
+  .selectionCount {
+    display: none;
+  }
+
+  .paginationPages {
+    gap: 2px;
+  }
+
+  .pageNumber:not(.pageNumberActive) {
+    display: none;
+  }
+
+  .fullPage .mailRow {
+    min-height: 82px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 0 11px 0 8px;
+  }
+
+  .selectionCell {
+    align-items: flex-start;
+    padding-top: 11px;
+  }
+
+  .rowOpen {
+    min-height: 82px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "sender date"
+      "subject badges"
+      "meta meta";
+    gap: 3px 10px;
+    padding: 9px 0;
   }
 }

@@ -246,7 +246,9 @@
   font-weight: 760;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--duration-fast), color var(--duration-fast);
+  transition:
+    background var(--duration-fast),
+    color var(--duration-fast);
 }
 
 .classifyButton svg {
@@ -260,6 +262,100 @@
 }
 
 .classifyButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.selectionBar {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface) 58%, var(--bg-card));
+  transition:
+    background var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.selectionBarActive {
+  background: color-mix(in srgb, var(--color-brand-pink) 7%, var(--bg-surface));
+  box-shadow: inset 3px 0 0 var(--color-brand-pink);
+}
+
+.selectAll {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.selectAll input,
+.mailSelect input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-brand-pink);
+  color-scheme: dark;
+  background-color: var(--bg-subtle);
+  cursor: pointer;
+}
+
+.selectAll input:disabled,
+.mailSelect input:disabled {
+  cursor: default;
+}
+
+.selectionCount {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-pink) 42%, var(--border-default));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand-pink) 8%, var(--bg-surface));
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 720;
+  font-variant-numeric: tabular-nums;
+}
+
+.deleteSelectedButton {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-pink) 72%, var(--border-default));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-brand-pink) 8%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.deleteSelectedButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.deleteSelectedButton:hover:not(:disabled) {
+  border-color: var(--color-status-danger);
+  background: var(--color-status-danger);
+  color: var(--bg-card);
+}
+
+.deleteSelectedButton:disabled {
   cursor: default;
   opacity: 0.45;
 }
@@ -287,9 +383,26 @@
   list-style: none;
 }
 
+.mailListItem {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: stretch;
+}
+
 .mailListItem + .mailListItem,
 .mailRow + .mailRow {
   border-top: 1px solid var(--border-subtle);
+}
+
+.mailListItemSelected {
+  background: color-mix(in srgb, var(--color-brand-pink) 4%, var(--bg-card));
+}
+
+.mailSelect {
+  display: grid;
+  min-height: 52px;
+  place-items: center;
+  background: inherit;
 }
 
 .mailRow {
@@ -297,7 +410,9 @@
   display: grid;
   width: 100%;
   min-height: 52px;
-  grid-template-columns: minmax(126px, 0.8fr) minmax(280px, 2.4fr) minmax(130px, 0.8fr) 220px 88px;
+  grid-template-columns:
+    minmax(126px, 0.8fr) minmax(280px, 2.4fr) minmax(130px, 0.8fr)
+    220px 88px;
   align-items: center;
   gap: 14px;
   padding: 7px 14px 7px 17px;
@@ -524,6 +639,36 @@
 .pagination button:disabled {
   cursor: default;
   opacity: 0.4;
+}
+
+.paginationPages {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageNumber {
+  width: 32px;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.pageNumberActive {
+  border-color: var(--color-brand-pink) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-brand-pink) 10%,
+    var(--bg-card)
+  ) !important;
+  color: var(--text-primary) !important;
+}
+
+.paginationGap {
+  width: 18px;
+  color: var(--text-faint);
+  text-align: center;
 }
 
 .detailPage {
@@ -759,14 +904,30 @@
 }
 
 .valueBadgeWarning {
-  border-color: color-mix(in srgb, var(--color-status-warning) 30%, var(--border-default));
-  background: color-mix(in srgb, var(--color-status-warning) 8%, var(--bg-card));
+  border-color: color-mix(
+    in srgb,
+    var(--color-status-warning) 30%,
+    var(--border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-status-warning) 8%,
+    var(--bg-card)
+  );
   color: var(--color-status-warning);
 }
 
 .valueBadgeSuccess {
-  border-color: color-mix(in srgb, var(--color-status-success) 30%, var(--border-default));
-  background: color-mix(in srgb, var(--color-status-success) 8%, var(--bg-card));
+  border-color: color-mix(
+    in srgb,
+    var(--color-status-success) 30%,
+    var(--border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-status-success) 8%,
+    var(--bg-card)
+  );
   color: var(--color-status-success);
 }
 
@@ -960,8 +1121,12 @@
 }
 
 @keyframes inbox-refresh {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(280%); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(280%);
+  }
 }
 
 @media (max-width: 1100px) {
@@ -1022,6 +1187,23 @@
   .filters {
     grid-template-columns: 1fr 1fr;
     padding: 10px;
+  }
+
+  .selectionBar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .selectionCount {
+    display: none;
+  }
+
+  .paginationPages {
+    gap: 2px;
+  }
+
+  .pageNumber:not(.pageNumberActive) {
+    display: none;
   }
   .search,
   .classifyButton {

@@ -87,8 +87,8 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
         await Promise.all([
           request
             .abortSignal(controller.signal)
-            .order("urgency_rank", { ascending: false, nullsFirst: false })
             .order("created_at", { ascending: false })
+            .order("id", { ascending: false })
             .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
             .overrideTypes<ContactInquiry[], { merge: false }>(),
           supabase

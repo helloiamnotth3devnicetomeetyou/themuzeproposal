@@ -55,6 +55,7 @@ const formatDate = (value: string, detail = false) =>
 const isImage = (name: string) => /.(?:jpe?g|png|webp|gif)$/i.test(name);
 const PAGE_SIZE = 20;
 const searchTerm = (value: string) => value.trim().replace(/[%,_()]/g, " ");
+type SubmissionDeleteEntry = { id?: unknown } | string;
 
 export default function ProtectAdminPage() {
   const confirm = useAdminConfirm();
@@ -98,6 +99,8 @@ export default function ProtectAdminPage() {
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const [undoStatus, setUndoStatus] = useState<ReportStatus | null>(null);
   const [toast, setToast] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!undoStatus) return;
@@ -195,12 +198,28 @@ export default function ProtectAdminPage() {
             { name: artist.name },
           ]),
         );
-        const nextReports = reportRows.map((report) => ({
-          ...report,
-          artists: artistsById.get(report.artist_id) ?? null,
-          protect_report_attachments: attachmentsByReport.get(report.id) ?? [],
-        }));
+        const nextReports = reportRows
+          .map((report) => ({
+            ...report,
+            artists: artistsById.get(report.artist_id) ?? null,
+            protect_report_attachments:
+              attachmentsByReport.get(report.id) ?? [],
+          }))
+          .sort((left, right) => {
+            const leftTime = Date.parse(left.created_at);
+            const rightTime = Date.parse(right.created_at);
+            if (!Number.isFinite(leftTime))
+              return Number.isFinite(rightTime) ? 1 : 0;
+            if (!Number.isFinite(rightTime)) return -1;
+            return rightTime - leftTime;
+          });
         setReports(nextReports);
+        setSelectedIds((current) => {
+          const visibleIds = new Set(nextReports.map((report) => report.id));
+          return new Set(
+            [...current].filter((selectedId) => visibleIds.has(selectedId)),
+          );
+        });
         setTotal(count ?? 0);
         setStatusCounts({
           pending: pending.count ?? 0,
@@ -343,6 +362,115 @@ export default function ProtectAdminPage() {
     } finally {
       setClassifying(false);
       void fetchReports(true);
+    }
+  };
+
+  const toggleReportSelection = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllReports = () => {
+    setSelectedIds((current) => {
+      const visibleIds = reports.map((report) => report.id);
+      const allSelected =
+        visibleIds.length > 0 && visibleIds.every((id) => current.has(id));
+      if (allSelected) {
+        return new Set([...current].filter((id) => !visibleIds.includes(id)));
+      }
+      return new Set([...current, ...visibleIds]);
+    });
+  };
+
+  const deleteSelectedReports = async () => {
+    const ids = [...selectedIds];
+    if (!ids.length || deleting) return;
+    if (
+      !(await confirm({
+        title: `${ids.length}건의 제보를 삭제할까요?`,
+        description:
+          "선택한 문의·제보와 연결된 파일이 함께 삭제됩니다. 삭제 후에는 복구할 수 없습니다.",
+        confirmLabel: "제보 삭제",
+        cancelLabel: "취소",
+        tone: "danger",
+      }))
+    )
+      return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/submissions/delete", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: ids.map((id) => ({ kind: "protect_report", id })),
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        deleted?: Array<{ id?: unknown } | string>;
+        failed?: Array<{ id?: unknown } | string>;
+        message?: unknown;
+        error?: unknown;
+      } | null;
+      const idsFrom = (items: SubmissionDeleteEntry[] | undefined) =>
+        new Set(
+          (items ?? [])
+            .map((item) =>
+              typeof item === "string"
+                ? item
+                : item && typeof item.id === "string"
+                  ? item.id
+                  : null,
+            )
+            .filter((id): id is string => Boolean(id)),
+        );
+      const deletedIds = idsFrom(body?.deleted);
+      const failedIds = idsFrom(body?.failed);
+      if (!response.ok && !deletedIds.size) {
+        const detail =
+          typeof body?.message === "string"
+            ? body.message
+            : typeof body?.error === "string"
+              ? body.error
+              : "선택한 제보를 삭제하지 못했습니다.";
+        throw new Error(detail);
+      }
+
+      const removedIds = deletedIds.size
+        ? deletedIds
+        : new Set(ids.filter((id) => !failedIds.has(id)));
+      if (!removedIds.size) throw new Error("선택한 제보를 삭제하지 못했습니다.");
+      setReports((current) =>
+        current.filter((report) => !removedIds.has(report.id)),
+      );
+      setTotal((current) => Math.max(0, current - removedIds.size));
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        for (const id of removedIds) next.delete(id);
+        return next;
+      });
+      if (viewing && removedIds.has(viewing.id)) setViewing(null);
+      if (failedIds.size) {
+        setError(
+          `${removedIds.size}건을 삭제했고 ${failedIds.size}건은 삭제하지 못했습니다.`,
+        );
+      }
+      window.dispatchEvent(new Event("admin-inbox-changed"));
+      void fetchReports(true);
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "선택한 제보를 삭제하지 못했습니다.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -511,6 +639,11 @@ export default function ProtectAdminPage() {
       onOpenReport={openReport}
       onClearError={() => setError("")}
       onClassifyPending={() => void classifyPending()}
+      selectedIds={selectedIds}
+      deleting={deleting}
+      onToggleSelection={toggleReportSelection}
+      onToggleAll={toggleAllReports}
+      onDeleteSelected={() => void deleteSelectedReports()}
     />
   );
 }

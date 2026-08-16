@@ -1,6 +1,6 @@
 "use client";
 
-import { BrainCircuit, Inbox, Search } from "lucide-react";
+import { BrainCircuit, Inbox, Search, Trash2 } from "lucide-react";
 import CustomSelect from "@/core/components/form/CustomSelect";
 import styles from "@/styles/(admin)/pages/protect/protect-admin.module.css";
 import {
@@ -12,6 +12,18 @@ import {
 import { severityClass, severityLabel } from "./protect-types";
 
 type StatusOption = { value: ReportStatus; label: string };
+
+function pageItems(page: number, totalPages: number) {
+  const pages = [1, page - 1, page, page + 1, totalPages]
+    .filter((value) => value >= 1 && value <= totalPages)
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .sort((left, right) => left - right);
+  return pages.flatMap((value, index) =>
+    index && value - pages[index - 1] > 1
+      ? ([`gap-${value}`, value] as const)
+      : ([value] as const),
+  );
+}
 
 type ProtectReportListProps = {
   reports: ProtectReport[];
@@ -38,6 +50,11 @@ type ProtectReportListProps = {
   onOpenReport: (report: ProtectReport) => void;
   onClearError: () => void;
   onClassifyPending: () => void;
+  selectedIds: ReadonlySet<string>;
+  deleting: boolean;
+  onToggleSelection: (id: string) => void;
+  onToggleAll: () => void;
+  onDeleteSelected: () => void;
 };
 
 export default function ProtectReportList({
@@ -65,8 +82,25 @@ export default function ProtectReportList({
   onOpenReport,
   onClearError,
   onClassifyPending,
+  selectedIds,
+  deleting,
+  onToggleSelection,
+  onToggleAll,
+  onDeleteSelected,
 }: ProtectReportListProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const paginationItems = pageItems(page, totalPages);
+  const orderedReports = [...reports].sort((left, right) => {
+    const leftTime = Date.parse(left.created_at);
+    const rightTime = Date.parse(right.created_at);
+    if (!Number.isFinite(leftTime)) return Number.isFinite(rightTime) ? 1 : 0;
+    if (!Number.isFinite(rightTime)) return -1;
+    return rightTime - leftTime;
+  });
+  const selectedCount = selectedIds.size;
+  const allSelected =
+    orderedReports.length > 0 &&
+    orderedReports.every((report) => selectedIds.has(report.id));
 
   return (
     <div className={styles.page}>
@@ -125,25 +159,76 @@ export default function ProtectReportList({
                 ]}
               />
             </span>
-            <button
-              type="button"
-              className={styles.classifyButton}
-              disabled={classifying || unclassifiedCount < 1}
-              onClick={onClassifyPending}
-            >
-              <BrainCircuit aria-hidden="true" />
-              {classifying
-                ? "분류 중"
-                : `전체 미분류 ${unclassifiedCount}건 분류`}
-            </button>
+            {unclassifiedCount > 0 && (
+              <button
+                type="button"
+                className={styles.classifyButton}
+                disabled={classifying}
+                onClick={onClassifyPending}
+              >
+                <BrainCircuit aria-hidden="true" />
+                {classifying
+                  ? "분류 중"
+                  : `전체 미분류 ${unclassifiedCount}건 분류`}
+              </button>
+            )}
           </div>
+
+          {orderedReports.length > 0 && (
+            <div
+              className={`${styles.selectionBar} ${selectedCount ? styles.selectionBarActive : ""}`}
+            >
+              <label className={styles.selectAll}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={onToggleAll}
+                  disabled={deleting}
+                  aria-label="현재 페이지 제보 전체 선택"
+                />
+                <span>전체 선택</span>
+              </label>
+              {selectedCount > 0 && (
+                <>
+                  <span className={styles.selectionCount} aria-live="polite">
+                    {selectedCount}건 선택
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.deleteSelectedButton}
+                    onClick={onDeleteSelected}
+                    disabled={deleting}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    {deleting ? "삭제 중" : "선택 삭제"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </header>
 
         <div className={styles.tableWrap} aria-busy={refreshing}>
-          {refreshing && <span className={styles.refreshBar} aria-hidden="true" />}
+          {refreshing && (
+            <span className={styles.refreshBar} aria-hidden="true" />
+          )}
           <ul className={styles.mailList} aria-label="권익 보호 신고">
-            {reports.map((report) => (
-              <li key={report.id} className={styles.mailListItem}>
+            {orderedReports.map((report) => (
+              <li
+                key={report.id}
+                className={`${styles.mailListItem} ${
+                  selectedIds.has(report.id) ? styles.mailListItemSelected : ""
+                }`}
+              >
+                <label className={styles.mailSelect}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(report.id)}
+                    onChange={() => onToggleSelection(report.id)}
+                    disabled={deleting}
+                    aria-label={`${report.title} 제보 선택`}
+                  />
+                </label>
                 <button
                   type="button"
                   className={`${styles.mailRow} ${
@@ -162,7 +247,8 @@ export default function ProtectReportList({
                     <small>{report.content}</small>
                   </span>
                   <span className={`${styles.mailCell} ${styles.mailPlatform}`}>
-                    {reportTypeLabels[report.report_type] || "기타"} / {report.platform}
+                    {reportTypeLabels[report.report_type] || "기타"} /{" "}
+                    {report.platform}
                   </span>
                   <span className={`${styles.mailCell} ${styles.mailBadges}`}>
                     <span
@@ -193,7 +279,10 @@ export default function ProtectReportList({
                       {statusLabel(report.status)}
                     </span>
                   </span>
-                  <time className={styles.mailDate} dateTime={report.created_at}>
+                  <time
+                    className={styles.mailDate}
+                    dateTime={report.created_at}
+                  >
                     {formatDate(report.created_at)}
                   </time>
                 </button>
@@ -225,8 +314,28 @@ export default function ProtectReportList({
             >
               이전
             </button>
-            <span>
-              {page} / {totalPages}
+            <span className={styles.paginationPages}>
+              {paginationItems.map((item) =>
+                typeof item === "number" ? (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`${styles.pageNumber} ${item === page ? styles.pageNumberActive : ""}`}
+                    aria-current={item === page ? "page" : undefined}
+                    onClick={() => onPageChange(() => item)}
+                  >
+                    {item}
+                  </button>
+                ) : (
+                  <span
+                    key={item}
+                    className={styles.paginationGap}
+                    aria-hidden="true"
+                  >
+                    …
+                  </span>
+                ),
+              )}
             </span>
             <button
               type="button"

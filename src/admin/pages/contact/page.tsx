@@ -22,6 +22,8 @@ export default function ContactAdminPage() {
   const [viewing, setViewing] = useState<ContactInquiry | null>(null);
   const [readerName, setReaderName] = useState<string | null>(null);
   const [classifying, setClassifying] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
   const requestedFilter = statuses.some((status) => status.value === searchParams.get("status"))
     ? (searchParams.get("status") as ContactStatus)
     : "all";
@@ -68,6 +70,7 @@ export default function ContactAdminPage() {
   }, [undo]);
 
   const changeCategory = (nextCategory: ContactCategory) => {
+    setSelectedIds([]);
     setCategory(nextCategory);
     setQuery("");
     setFilter("all");
@@ -77,11 +80,13 @@ export default function ContactAdminPage() {
   };
 
   const changeFilter = (nextFilter: ContactStatus | "all") => {
+    setSelectedIds([]);
     setFilter(nextFilter);
     setPage(1);
   };
 
   const openInquiry = (inquiry: ContactInquiry) => {
+    setSelectedIds([]);
     setNote(inquiry.admin_note || "");
     setAttachmentUrl("");
     setAttachmentStatus(inquiry.attachment_path ? "loading" : "idle");
@@ -202,6 +207,77 @@ export default function ContactAdminPage() {
     }
   };
 
+  const toggleSelected = (id: string, selected: boolean) => {
+    setSelectedIds((current) =>
+      selected
+        ? current.includes(id)
+          ? current
+          : [...current, id]
+        : current.filter((selectedId) => selectedId !== id),
+    );
+  };
+
+  const toggleAllSelected = (selected: boolean) => {
+    setSelectedIds((current) => {
+      if (!selected) {
+        const visibleIds = new Set(inquiries.map((inquiry) => inquiry.id));
+        return current.filter((id) => !visibleIds.has(id));
+      }
+      return Array.from(new Set([...current, ...inquiries.map((inquiry) => inquiry.id)]));
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (!selectedIds.length || deletingSelected) return;
+    const ids = [...selectedIds];
+    if (!(await confirm({
+      title: `선택한 문의 ${ids.length}건을 삭제할까요?`,
+      description: "문의 내용과 첨부 파일이 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+      confirmLabel: "삭제",
+    }))) return;
+
+    setDeletingSelected(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/submissions/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          items: ids.map((id) => ({ kind: "contact_inquiry", id })),
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        deleted?: Array<{ kind?: string; id?: string }>;
+        failed?: Array<{ kind?: string; id?: string; code?: string }>;
+        error?: string;
+      } | null;
+      const deletedIds = Array.isArray(body?.deleted)
+        ? body.deleted
+            .filter((item) => item.kind === "contact_inquiry" && typeof item.id === "string")
+            .map((item) => item.id as string)
+        : !body?.failed?.length && response.ok
+          ? ids
+          : [];
+      const failedCount = body?.failed?.length ?? 0;
+      if (!response.ok && !deletedIds.length) {
+        throw new Error(body?.error || "선택한 문의를 삭제하지 못했습니다.");
+      }
+      if (deletedIds.length) {
+        setInquiries((current) => current.filter((inquiry) => !deletedIds.includes(inquiry.id)));
+        setSelectedIds((current) => current.filter((id) => !deletedIds.includes(id)));
+        await fetchInquiries();
+      }
+      if (failedCount) {
+        setError(`${deletedIds.length}건 삭제, ${failedCount}건은 재시도 대기로 남겼습니다.`);
+      }
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "선택한 문의를 삭제하지 못했습니다.");
+    } finally {
+      setDeletingSelected(false);
+    }
+  };
+
   if (loading) return <AdminSkeleton variant="inbox" className="min-h-[320px]" rows={5} />;
 
   if (viewing) {
@@ -251,17 +327,30 @@ export default function ContactAdminPage() {
       onClearError={() => setError("")}
       onFilterChange={changeFilter}
       onUrgencyFilterChange={(next) => {
+        setSelectedIds([]);
         setUrgencyFilter(next);
         setPage(1);
       }}
       onSpamFilterChange={(next) => {
+        setSelectedIds([]);
         setSpamFilter(next);
         setPage(1);
       }}
       onClassifyPending={() => void classifyPending()}
+      selectedIds={selectedIds}
+      deleting={deletingSelected}
+      onToggleSelection={toggleSelected}
+      onToggleAll={toggleAllSelected}
+      onDeleteSelected={() => void deleteSelected()}
       onOpenInquiry={openInquiry}
-      onPageChange={setPage}
-      onQueryChange={setQuery}
+      onPageChange={(nextPage) => {
+        setSelectedIds([]);
+        setPage(nextPage);
+      }}
+      onQueryChange={(nextQuery) => {
+        setSelectedIds([]);
+        setQuery(nextQuery);
+      }}
     />
   );
 }
