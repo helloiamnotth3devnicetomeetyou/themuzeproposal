@@ -1,7 +1,27 @@
-export function readSessionDraft<T>(key: string): T | null {
+type SessionDraftValidator<T> = (value: unknown) => value is T;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+export function readSessionDraft<T>(
+  key: string,
+  validate?: SessionDraftValidator<T>,
+): T | null {
   try {
     const value = window.sessionStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : null;
+    if (!value) return null;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    if (!isRecord(parsed) || (validate && !validate(parsed))) {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed as T;
   } catch {
     return null;
   }

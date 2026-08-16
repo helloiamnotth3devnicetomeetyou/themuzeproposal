@@ -20,22 +20,40 @@ const ABANDONED_ASSET_AGE_MS = 30 * 60 * 1000;
 
 type RegisteredDraftAsset = UploadedImageAsset & { createdAt: number };
 
+function isRegisteredDraftAsset(
+  value: unknown,
+): value is RegisteredDraftAsset {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const asset = value as Record<string, unknown>;
+  return (
+    asset.bucket === "artist-assets" &&
+    typeof asset.path === "string" &&
+    asset.path.length > 0 &&
+    typeof asset.url === "string" &&
+    asset.url.length > 0 &&
+    typeof asset.createdAt === "number" &&
+    Number.isFinite(asset.createdAt) &&
+    asset.createdAt >= 0
+  );
+}
+
 function readRegistry(): RegisteredDraftAsset[] {
   if (typeof window === "undefined") return [];
   try {
-    const parsed: unknown = JSON.parse(
-      window.localStorage.getItem(DRAFT_ASSET_REGISTRY_KEY) || "[]",
-    );
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is RegisteredDraftAsset =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        (item as RegisteredDraftAsset).bucket === "artist-assets" &&
-        typeof (item as RegisteredDraftAsset).path === "string" &&
-        typeof (item as RegisteredDraftAsset).url === "string" &&
-        typeof (item as RegisteredDraftAsset).createdAt === "number",
-    );
+    const stored = window.localStorage.getItem(DRAFT_ASSET_REGISTRY_KEY);
+    if (!stored) return [];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      window.localStorage.removeItem(DRAFT_ASSET_REGISTRY_KEY);
+      return [];
+    }
+    if (!Array.isArray(parsed) || !parsed.every(isRegisteredDraftAsset)) {
+      window.localStorage.removeItem(DRAFT_ASSET_REGISTRY_KEY);
+      return [];
+    }
+    return parsed;
   } catch {
     return [];
   }

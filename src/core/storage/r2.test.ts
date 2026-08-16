@@ -23,7 +23,7 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
   getSignedUrl: vi.fn(),
 }));
 
-import { deleteObjects } from "./r2";
+import { contentDispositionForDownload, deleteObjects } from "./r2";
 
 describe("deleteObjects", () => {
   beforeEach(() => {
@@ -51,5 +51,14 @@ describe("deleteObjects", () => {
       error: true,
     });
     expect(mocks.send).not.toHaveBeenCalled();
+  });
+
+});
+
+describe("contentDispositionForDownload", () => {
+  it("adds an ASCII fallback and RFC 5987 filename for private downloads", () => {
+    expect(contentDispositionForDownload("계약서, 최종\r\n본.pdf")).toBe(
+      "attachment; filename=\"___, ___.pdf\"; filename*=UTF-8''%EA%B3%84%EC%95%BD%EC%84%9C%2C%20%EC%B5%9C%EC%A2%85%EB%B3%B8.pdf",
+    );
   });
 });

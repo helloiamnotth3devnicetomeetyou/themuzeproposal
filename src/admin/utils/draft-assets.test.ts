@@ -80,4 +80,24 @@ describe("draft image asset lifecycle", () => {
     ]);
     expect(localStorage.getItem("themuze:admin-draft-assets")).toBe("[]");
   });
+
+  it.each([
+    "not-json",
+    JSON.stringify({ path: "artist/image.jpg" }),
+    JSON.stringify([
+      {
+        bucket: "artist-assets",
+        path: "artist/image.jpg",
+        url: "https://storage.example/artist/image.jpg",
+        createdAt: -1,
+      },
+    ]),
+  ])("clears an invalid asset registry: %s", async (stored) => {
+    localStorage.setItem("themuze:admin-draft-assets", stored);
+
+    await cleanupAbandonedDraftImageAssets(client as never);
+
+    expect(localStorage.getItem("themuze:admin-draft-assets")).toBeNull();
+    expect(deleteAdminAssets).not.toHaveBeenCalled();
+  });
 });

@@ -17,8 +17,29 @@ const PRIVATE_BUCKETS = new Set([
 ]);
 const KNOWN_BUCKETS = new Set([...PUBLIC_BUCKETS, ...PRIVATE_BUCKETS]);
 const DELETE_CHUNK_SIZE = 1000;
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
 
 let client: S3Client | null = null;
+
+export function contentDispositionForDownload(fileName: string) {
+  const sanitized = fileName
+    .normalize("NFC")
+    .replace(CONTROL_CHARACTERS, "")
+    .replace(/[\\/]/g, "_");
+  const fallback =
+    Array.from(sanitized)
+      .map((character) =>
+        /[\x20-\x7e]/.test(character) && !/["\\]/.test(character)
+          ? character
+          : "_",
+      )
+      .join("") || "attachment";
+  const encoded = encodeURIComponent(sanitized).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
+}
 
 function getClient() {
   if (client) return client;
@@ -187,7 +208,7 @@ export async function createSignedDownloadUrl(
       Bucket: location.r2Bucket,
       Key: location.key,
       ResponseContentDisposition: downloadFileName
-        ? `attachment; filename="${downloadFileName.replace(/["\\]/g, "_")}"`
+        ? contentDispositionForDownload(downloadFileName)
         : undefined,
     });
     return await getSignedUrl(s3, command, { expiresIn });

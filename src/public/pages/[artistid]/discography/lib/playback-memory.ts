@@ -4,10 +4,38 @@ function storageKey(artistSlug: string) {
   return `themuze:discography:${artistSlug}`;
 }
 
+function isPlaybackMemory(value: unknown): value is PlaybackMemory {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const memory = value as Record<string, unknown>;
+  return (
+    typeof memory.albumId === "string" &&
+    memory.albumId.length > 0 &&
+    typeof memory.trackIndex === "number" &&
+    Number.isInteger(memory.trackIndex) &&
+    memory.trackIndex >= 0 &&
+    typeof memory.currentTime === "number" &&
+    Number.isFinite(memory.currentTime) &&
+    memory.currentTime >= 0
+  );
+}
+
 export function readPlaybackMemory(artistSlug: string): PlaybackMemory | null {
   try {
-    const stored = localStorage.getItem(storageKey(artistSlug));
-    return stored ? (JSON.parse(stored) as PlaybackMemory) : null;
+    const key = storageKey(artistSlug);
+    const stored = localStorage.getItem(key);
+    if (!stored) return null;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(key);
+      return null;
+    }
+    if (!isPlaybackMemory(parsed)) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }

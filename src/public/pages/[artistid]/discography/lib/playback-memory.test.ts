@@ -45,6 +45,20 @@ describe("playback-memory", () => {
   it("returns null when stored value is corrupted JSON", () => {
     localStorage.setItem("themuze:discography:rescene", "not-valid-json{{{");
     expect(readPlaybackMemory("rescene")).toBeNull();
+    expect(localStorage.getItem("themuze:discography:rescene")).toBeNull();
+  });
+
+  it.each([
+    null,
+    [],
+    { albumId: "album-1", trackIndex: 1.5, currentTime: 0 },
+    { albumId: "album-1", trackIndex: -1, currentTime: 0 },
+    { albumId: "album-1", trackIndex: 0, currentTime: -1 },
+    { albumId: "album-1", trackIndex: 0, currentTime: "10" },
+  ])("clears a stored value with an invalid shape: %j", (value) => {
+    localStorage.setItem("themuze:discography:rescene", JSON.stringify(value));
+    expect(readPlaybackMemory("rescene")).toBeNull();
+    expect(localStorage.getItem("themuze:discography:rescene")).toBeNull();
   });
 
   it("handles localStorage failure gracefully on save", () => {
