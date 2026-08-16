@@ -9,8 +9,11 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
-  consumeRateLimit: vi.fn(),
-  consumeAttemptRateLimit: vi.fn(),
+  reserveRateLimit: vi.fn(),
+  finalizeRateLimit: vi.fn(),
+  releaseRateLimit: vi.fn(),
+  consumeIpAttemptRateLimit: vi.fn(),
+  consumeUserAttemptRateLimit: vi.fn(),
   verifyTurnstileToken: vi.fn(),
   classify: vi.fn(),
 }));
@@ -42,8 +45,11 @@ vi.mock("@/core/uploads/service-storage", () => ({
   createServiceRoleClient: mocks.createServiceClient,
 }));
 vi.mock("@/core/http/submission-rate-limit", () => ({
-  consumeSubmissionRateLimit: mocks.consumeRateLimit,
-  consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
+  reserveSubmissionRateLimit: mocks.reserveRateLimit,
+  finalizeSubmissionRateLimit: mocks.finalizeRateLimit,
+  releaseSubmissionRateLimit: mocks.releaseRateLimit,
+  consumeSubmissionIpAttemptRateLimit: mocks.consumeIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit: mocks.consumeUserAttemptRateLimit,
 }));
 vi.mock("@/core/http/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
@@ -90,13 +96,21 @@ describe("POST /api/contact-inquiries", () => {
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 4,
       retryAfter: 0,
+      reservationId: "reservation-1",
     });
-    mocks.consumeAttemptRateLimit.mockResolvedValue({
+    mocks.finalizeRateLimit.mockResolvedValue({ error: false });
+    mocks.releaseRateLimit.mockResolvedValue({ error: false });
+    mocks.consumeIpAttemptRateLimit.mockResolvedValue({
+      error: false,
+      allowed: true,
+      retryAfter: 0,
+    });
+    mocks.consumeUserAttemptRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 29,
@@ -166,11 +180,12 @@ describe("POST /api/contact-inquiries", () => {
   });
 
   it("stops rate-limited submissions before uploading or inserting", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: false,
       remaining: 0,
       retryAfter: 90,
+      reservationId: null,
     });
     const nextRequest = request(validForm());
     const response = await POST(nextRequest);
@@ -182,10 +197,9 @@ describe("POST /api/contact-inquiries", () => {
   });
 
   it("rejects exhausted attempt budgets before validating captcha", async () => {
-    mocks.consumeAttemptRateLimit.mockResolvedValueOnce({
+    mocks.consumeIpAttemptRateLimit.mockResolvedValueOnce({
       error: false,
       allowed: false,
-      remaining: 0,
       retryAfter: 30,
     });
     const response = await POST(
@@ -194,7 +208,7 @@ describe("POST /api/contact-inquiries", () => {
     expect(response.status).toBe(429);
     expect(mocks.createSessionClient).not.toHaveBeenCalled();
     expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
-    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.reserveRateLimit).not.toHaveBeenCalled();
   });
 
   it("rejects a failed captcha before consuming the daily rate limit", async () => {
@@ -202,8 +216,48 @@ describe("POST /api/contact-inquiries", () => {
     const response = await POST(request(validForm()));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
-    expect(mocks.createSessionClient).toHaveBeenCalledOnce();
-    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
+    expect(mocks.reserveRateLimit).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when the attachment upload fails", async () => {
+    mocks.upload.mockResolvedValueOnce({ error: new Error("upload failed") });
+
+    const response = await POST(
+      request(
+        validForm(
+          new File(["%PDF-1.7\ncontent"], "proposal.pdf", {
+            type: "application/pdf",
+          }),
+        ),
+      ),
+    );
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when the inquiry insert fails", async () => {
+    mocks.insert.mockResolvedValueOnce({ error: new Error("insert failed") });
+
+    const response = await POST(request(validForm()));
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("charges the IP attempt budget once and the user attempt budget once", async () => {
+    const response = await POST(request(validForm()));
+
+    expect(response.status).toBe(200);
+    expect(mocks.consumeIpAttemptRateLimit).toHaveBeenCalledOnce();
+    expect(mocks.consumeUserAttemptRateLimit).toHaveBeenCalledWith(
+      "contact_inquiry",
+      "user-1",
+    );
+    expect(mocks.finalizeRateLimit).toHaveBeenCalledWith("reservation-1");
   });
 });

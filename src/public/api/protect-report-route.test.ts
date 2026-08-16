@@ -6,8 +6,11 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
-  consumeRateLimit: vi.fn(),
-  consumeAttemptRateLimit: vi.fn(),
+  reserveRateLimit: vi.fn(),
+  finalizeRateLimit: vi.fn(),
+  releaseRateLimit: vi.fn(),
+  consumeIpAttemptRateLimit: vi.fn(),
+  consumeUserAttemptRateLimit: vi.fn(),
   artistSelect: vi.fn(),
   artistIdEq: vi.fn(),
   artistActiveEq: vi.fn(),
@@ -49,8 +52,11 @@ vi.mock("@/core/uploads/service-storage", () => ({
   createServiceRoleClient: mocks.createServiceClient,
 }));
 vi.mock("@/core/http/submission-rate-limit", () => ({
-  consumeSubmissionRateLimit: mocks.consumeRateLimit,
-  consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
+  reserveSubmissionRateLimit: mocks.reserveRateLimit,
+  finalizeSubmissionRateLimit: mocks.finalizeRateLimit,
+  releaseSubmissionRateLimit: mocks.releaseRateLimit,
+  consumeSubmissionIpAttemptRateLimit: mocks.consumeIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit: mocks.consumeUserAttemptRateLimit,
 }));
 vi.mock("@/core/http/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
@@ -107,13 +113,21 @@ describe("POST /api/protect-reports", () => {
     mocks.createSessionClient.mockResolvedValue({
       auth: { getUser: mocks.getUser },
     });
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 4,
       retryAfter: 0,
+      reservationId: "reservation-1",
     });
-    mocks.consumeAttemptRateLimit.mockResolvedValue({
+    mocks.finalizeRateLimit.mockResolvedValue({ error: false });
+    mocks.releaseRateLimit.mockResolvedValue({ error: false });
+    mocks.consumeIpAttemptRateLimit.mockResolvedValue({
+      error: false,
+      allowed: true,
+      retryAfter: 0,
+    });
+    mocks.consumeUserAttemptRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 29,
@@ -150,7 +164,7 @@ describe("POST /api/protect-reports", () => {
   it("creates the report and its validated evidence on the server", async () => {
     const response = await POST(validRequest());
     expect(response.status).toBe(200);
-    expect(mocks.consumeRateLimit).toHaveBeenCalledWith(
+    expect(mocks.reserveRateLimit).toHaveBeenCalledWith(
       expect.anything(),
       "protect_report",
       "user-1",
@@ -210,7 +224,7 @@ describe("POST /api/protect-reports", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.artistSelect).not.toHaveBeenCalled();
-    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.reserveRateLimit).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
   });
 
@@ -221,7 +235,7 @@ describe("POST /api/protect-reports", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.artistActiveEq).toHaveBeenCalledWith("is_active", true);
-    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.reserveRateLimit).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
   });
 
@@ -256,11 +270,12 @@ describe("POST /api/protect-reports", () => {
   });
 
   it("stops a rate-limited report before writing", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: false,
       remaining: 0,
       retryAfter: 75,
+      reservationId: null,
     });
     const nextRequest = validRequest();
     const response = await POST(nextRequest);
@@ -275,7 +290,39 @@ describe("POST /api/protect-reports", () => {
     const response = await POST(validRequest());
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ code: "CAPTCHA_FAILED" });
-    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.reserveRateLimit).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when evidence upload fails", async () => {
+    mocks.upload.mockResolvedValueOnce({ error: new Error("upload failed") });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when report persistence fails", async () => {
+    mocks.insert.mockResolvedValueOnce({ error: new Error("insert failed") });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("uses one IP and one user attempt limiter for a valid report", async () => {
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.consumeIpAttemptRateLimit).toHaveBeenCalledOnce();
+    expect(mocks.consumeUserAttemptRateLimit).toHaveBeenCalledWith(
+      "protect_report",
+      "user-1",
+    );
+    expect(mocks.finalizeRateLimit).toHaveBeenCalledWith("reservation-1");
   });
 });

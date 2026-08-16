@@ -111,13 +111,28 @@ GET에서 상태를 변경하지 않는다. API 성공·실패 응답은 민감 
 
 ### 제출
 
-`SUBMISSION_RATE_LIMIT_SECRET`과 scope별 설정을 사용한다.
+`SUBMISSION_RATE_LIMIT_SECRET`과 모든 제출 scope에 공유되는 설정을 사용한다. 제한은
+서로 다른 두 단계로 나뉜다.
 
-| scope                 | 제한                    |
-| --------------------- | ----------------------- |
-| `contact_inquiry`     | IP당 15분 5회           |
-| `protect_report`      | IP 및 user당 15분 5회   |
-| `audition_submission` | IP 및 user당 24시간 3회 |
+1. **edge attempt 방어**: body를 파싱하기 전에 client IP를 15분 동안 최대 100회
+   허용한다. 이 제한은 요청 폭주를 막는 안전망이며 일일 제출 quota를 차감하지 않는다.
+2. **검증 후 user attempt**: 인증·CAPTCHA·기본 schema 검증을 통과한 제출 시도는
+   user key를 15분 동안 최대 30회 허용한다. IP key도 같은 15분 100회 안전망으로
+   확인한다.
+3. **일일 제출 quota**: 실제 제출 scope의 user key는 24시간 동안 최대 5회다. IP
+   key에는 24시간 500회의 별도 abuse 안전망을 적용한다.
+
+| 단계                 | key  | 기간   | 제한      | 적용 시점                         |
+| -------------------- | ---- | ------ | --------- | -------------------------------- |
+| edge attempt         | IP   | 15분   | 100회     | body 파싱 전                     |
+| user attempt         | user | 15분   | 30회      | 검증을 통과한 제출 시도          |
+| attempt 안전망       | IP   | 15분   | 100회     | user attempt와 함께              |
+| 일일 제출 quota      | user | 24시간 | 5회       | 제출 scope 소비 시               |
+| 일일 abuse 안전망    | IP   | 24시간 | 500회     | 일일 quota와 함께                |
+
+세 scope(`contact_inquiry`, `protect_report`, `audition_submission`)는 같은 수치를
+공유하며, UI에 표시하는 사용자 quota는 `user` 기준 하루 5회다. IP 제한은 공유
+환경에서의 abuse 방어용이므로 사용자에게 제출 가능 횟수로 표시하지 않는다.
 
 rate-limit 저장소나 secret이 없으면 fail-open하지 않고 503으로 실패한다.
 

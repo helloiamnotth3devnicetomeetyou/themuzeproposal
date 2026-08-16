@@ -10,8 +10,11 @@ import type {
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import {
-  consumeSubmissionAttemptRateLimit,
-  consumeSubmissionRateLimit,
+  consumeSubmissionIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit,
+  finalizeSubmissionRateLimit,
+  releaseSubmissionRateLimit,
+  reserveSubmissionRateLimit,
 } from "@/core/http/submission-rate-limit";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
@@ -84,20 +87,14 @@ function storedFile(
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
-  const session = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await session.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  const attempt = await consumeSubmissionAttemptRateLimit(
+  const preParseAttempt = await consumeSubmissionIpAttemptRateLimit(
     request,
     "audition_submission",
-    user.id,
   );
-  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!attempt.allowed)
-    return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+  if (preParseAttempt.error)
+    return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!preParseAttempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, preParseAttempt.retryAfter);
   let formData: FormData;
   try {
     const parsed = await parseFormDataWithinLimit(request, MAX_BODY_BYTES);
@@ -115,6 +112,13 @@ export async function POST(request: NextRequest) {
     action: "audition_submission",
   });
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
+
+  const session = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await session.auth.getUser();
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
 
   const campaignId =
     typeof formData.get("campaignId") === "string"
@@ -310,13 +314,23 @@ export async function POST(request: NextRequest) {
   if (duplicateError) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (count) return errorResponse("ALREADY_SUBMITTED", 409);
 
-  const rate = await consumeSubmissionRateLimit(
+  const attempt = await consumeSubmissionUserAttemptRateLimit(
+    "audition_submission",
+    user.id,
+  );
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+
+  const rate = await reserveSubmissionRateLimit(
     request,
     "audition_submission",
     user.id,
   );
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+  const reservationId = rate.reservationId;
+  if (!reservationId) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const submissionId = requestedSubmissionId || crypto.randomUUID();
   const uploaded: string[] = [];
@@ -358,23 +372,15 @@ export async function POST(request: NextRequest) {
       : writeResult.data;
     if (!persisted) throw new SubmissionConflictError();
     persistedSubmission = persisted;
-    if (existing) {
-      const retained = new Set(
-        Object.values(answers)
-          .filter(storedFile)
-          .map((file) => file.path),
-      );
-      const replaced = Object.values(
-        existing.answers as Record<string, AuditionAnswer>,
-      )
-        .filter(storedFile)
-        .map((file) => file.path)
-        .filter((path) => !retained.has(path));
-      if (replaced.length)
-        await deleteObjects("audition-attachments", replaced);
-    }
   } catch (error) {
-    if (uploaded.length) await deleteObjects("audition-attachments", uploaded);
+    try {
+      if (uploaded.length)
+        await deleteObjects("audition-attachments", uploaded);
+    } catch {
+      // Keep the original submission failure; cleanup is best effort.
+    } finally {
+      await releaseSubmissionRateLimit(reservationId).catch(() => undefined);
+    }
     if (error instanceof SubmissionConflictError)
       return errorResponse("SUBMISSION_CONFLICT", 409);
     const dbError = databaseError(error);
@@ -385,6 +391,29 @@ export async function POST(request: NextRequest) {
     if (dbError.code === "23505")
       return errorResponse("ALREADY_SUBMITTED", 409);
     return errorResponse("SUBMISSION_FAILED", 503);
+  }
+
+  await finalizeSubmissionRateLimit(reservationId);
+
+  if (existing) {
+    const retained = new Set(
+      Object.values(answers)
+        .filter(storedFile)
+        .map((file) => file.path),
+    );
+    const replaced = Object.values(
+      existing.answers as Record<string, AuditionAnswer>,
+    )
+      .filter(storedFile)
+      .map((file) => file.path)
+      .filter((path) => !retained.has(path));
+    if (replaced.length) {
+      try {
+        await deleteObjects("audition-attachments", replaced);
+      } catch {
+        // Replaced files are garbage-collection work after the committed save.
+      }
+    }
   }
 
   const timestamp = new Date().toISOString();

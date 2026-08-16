@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
-  consumeRateLimit: vi.fn(),
-  consumeAttemptRateLimit: vi.fn(),
+  reserveRateLimit: vi.fn(),
+  finalizeRateLimit: vi.fn(),
+  releaseRateLimit: vi.fn(),
+  consumeIpAttemptRateLimit: vi.fn(),
+  consumeUserAttemptRateLimit: vi.fn(),
   getUser: vi.fn(),
   rpc: vi.fn(),
   upload: vi.fn(),
@@ -13,8 +16,11 @@ const mocks = vi.hoisted(() => ({
   existing: null as Record<string, unknown> | null,
 }));
 vi.mock("@/core/http/submission-rate-limit", () => ({
-  consumeSubmissionRateLimit: mocks.consumeRateLimit,
-  consumeSubmissionAttemptRateLimit: mocks.consumeAttemptRateLimit,
+  reserveSubmissionRateLimit: mocks.reserveRateLimit,
+  finalizeSubmissionRateLimit: mocks.finalizeRateLimit,
+  releaseSubmissionRateLimit: mocks.releaseRateLimit,
+  consumeSubmissionIpAttemptRateLimit: mocks.consumeIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit: mocks.consumeUserAttemptRateLimit,
 }));
 vi.mock("@/core/http/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
@@ -198,13 +204,21 @@ describe("POST /api/audition/submit", () => {
       },
       error: null,
     });
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 4,
       retryAfter: 0,
+      reservationId: "reservation-1",
     });
-    mocks.consumeAttemptRateLimit.mockResolvedValue({
+    mocks.finalizeRateLimit.mockResolvedValue({ error: false });
+    mocks.releaseRateLimit.mockResolvedValue({ error: false });
+    mocks.consumeIpAttemptRateLimit.mockResolvedValue({
+      error: false,
+      allowed: true,
+      retryAfter: 0,
+    });
+    mocks.consumeUserAttemptRateLimit.mockResolvedValue({
       error: false,
       allowed: true,
       remaining: 29,
@@ -264,7 +278,7 @@ describe("POST /api/audition/submit", () => {
   it("builds the snapshot server-side and ties the service-role write to the signed-in user", async () => {
     const response = await POST(request());
     expect(response.status).toBe(201);
-    expect(mocks.consumeRateLimit).toHaveBeenCalledWith(
+    expect(mocks.reserveRateLimit).toHaveBeenCalledWith(
       expect.anything(),
       "audition_submission",
       "user-1",
@@ -456,16 +470,62 @@ describe("POST /api/audition/submit", () => {
   });
 
   it("rate-limits a validated application before storing it", async () => {
-    mocks.consumeRateLimit.mockResolvedValue({
+    mocks.reserveRateLimit.mockResolvedValue({
       error: false,
       allowed: false,
       remaining: 0,
       retryAfter: 60,
+      reservationId: null,
     });
     const response = await POST(request());
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("60");
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when an attachment upload fails", async () => {
+    mocks.upload.mockResolvedValueOnce({ error: new Error("upload failed") });
+    const original = request();
+    const form = await original.formData();
+    form.set(
+      "answers[portfolio]",
+      new File(["%PDF-1.7\ncontent"], "portfolio.pdf", {
+        type: "application/pdf",
+      }),
+    );
+
+    const response = await POST(
+      new NextRequest(original.url, {
+        method: "POST",
+        headers: { origin: "http://localhost" },
+        body: form,
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("releases a reserved quota when the submission RPC fails", async () => {
+    mocks.rpc.mockResolvedValueOnce({ error: new Error("write failed") });
+    const response = await POST(request());
+
+    expect(response.status).toBe(503);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("uses one IP and one user attempt limiter for a valid application", async () => {
+    const response = await POST(request());
+
+    expect(response.status).toBe(201);
+    expect(mocks.consumeIpAttemptRateLimit).toHaveBeenCalledOnce();
+    expect(mocks.consumeUserAttemptRateLimit).toHaveBeenCalledWith(
+      "audition_submission",
+      "user-1",
+    );
+    expect(mocks.finalizeRateLimit).toHaveBeenCalledWith("reservation-1");
   });
 });

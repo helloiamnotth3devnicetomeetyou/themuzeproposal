@@ -14,8 +14,11 @@ import {
 } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import {
-  consumeSubmissionAttemptRateLimit,
-  consumeSubmissionRateLimit,
+  consumeSubmissionIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit,
+  finalizeSubmissionRateLimit,
+  releaseSubmissionRateLimit,
+  reserveSubmissionRateLimit,
 } from "@/core/http/submission-rate-limit";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { verifyTurnstileToken } from "@/core/http/turnstile";
@@ -98,10 +101,9 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
-  const preParseAttempt = await consumeSubmissionAttemptRateLimit(
+  const preParseAttempt = await consumeSubmissionIpAttemptRateLimit(
     request,
     "contact_inquiry",
-    `preparse:${clientIp(request) ?? "unknown"}`,
   );
   if (preParseAttempt.error)
     return errorResponse("SERVICE_UNAVAILABLE", 503);
@@ -123,25 +125,15 @@ export async function POST(request: NextRequest) {
   const turnstileToken = textField(formData, "turnstileToken");
   if (!turnstileToken) return errorResponse("CAPTCHA_FAILED", 400);
 
-  const sessionClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await sessionClient.auth.getUser();
-  if (user) {
-    const attempt = await consumeSubmissionAttemptRateLimit(
-      request,
-      "contact_inquiry",
-      user.id,
-    );
-    if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-    if (!attempt.allowed)
-      return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
-  }
-
   const captchaOk = await verifyTurnstileToken(turnstileToken, request, {
     action: "contact_inquiry",
   });
   if (!captchaOk) return errorResponse("CAPTCHA_FAILED", 400);
+
+  const sessionClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
 
   const category = textField(formData, "category");
   const inquiryType = textField(formData, "inquiryType");
@@ -194,13 +186,25 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
 
-  const rate = await consumeSubmissionRateLimit(
+  if (user) {
+    const attempt = await consumeSubmissionUserAttemptRateLimit(
+      "contact_inquiry",
+      user.id,
+    );
+    if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+    if (!attempt.allowed)
+      return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+  }
+
+  const rate = await reserveSubmissionRateLimit(
     request,
     "contact_inquiry",
     rateLimitId,
   );
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+  const reservationId = rate.reservationId;
+  if (!reservationId) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
@@ -211,43 +215,50 @@ export async function POST(request: NextRequest) {
       ? `${inquiryId}/${crypto.randomUUID()}.${validated.extension}`
       : null;
 
-  if (file && validated && attachmentPath) {
-    const { error: uploadError } = await uploadObject({
-      bucket: "contact-attachments",
-      path: attachmentPath,
-      body: file,
-      contentType: validated.mimeType,
-    });
-    if (uploadError) {
-      await deleteObjects("contact-attachments", [attachmentPath]);
-      return errorResponse("UPLOAD_FAILED", 503);
+  let failureCode = "SUBMISSION_FAILED";
+  try {
+    if (file && validated && attachmentPath) {
+      failureCode = "UPLOAD_FAILED";
+      const { error: uploadError } = await uploadObject({
+        bucket: "contact-attachments",
+        path: attachmentPath,
+        body: file,
+        contentType: validated.mimeType,
+      });
+      if (uploadError) throw new Error("UPLOAD_FAILED");
+      failureCode = "SUBMISSION_FAILED";
     }
+
+    const { error: insertError } = await serviceClient
+      .from("contact_inquiries")
+      .insert({
+        id: inquiryId,
+        user_id: user?.id ?? null,
+        category,
+        inquiry_type: inquiryType,
+        company_name: category === "business" ? companyName : null,
+        contact_name: contactName,
+        phone: phone || null,
+        email: accountEmail ?? email,
+        message,
+        attachment_path: attachmentPath,
+        attachment_name: file ? boundedFileName(file.name) : null,
+        attachment_size: file?.size ?? null,
+        privacy_consent: true,
+      });
+    if (insertError) throw new Error("SUBMISSION_FAILED");
+  } catch {
+    try {
+      if (attachmentPath)
+        await deleteObjects("contact-attachments", [attachmentPath]);
+    } catch {
+      // Keep the original submission failure; cleanup is best effort.
+    }
+    await releaseSubmissionRateLimit(reservationId).catch(() => undefined);
+    return errorResponse(failureCode, 503);
   }
 
-  const { error: insertError } = await serviceClient
-    .from("contact_inquiries")
-    .insert({
-      id: inquiryId,
-      user_id: user?.id ?? null,
-      category,
-      inquiry_type: inquiryType,
-      company_name: category === "business" ? companyName : null,
-      contact_name: contactName,
-      phone: phone || null,
-      email: accountEmail ?? email,
-      message,
-      attachment_path: attachmentPath,
-      attachment_name: file ? boundedFileName(file.name) : null,
-      attachment_size: file?.size ?? null,
-      privacy_consent: true,
-    });
-
-  if (insertError) {
-    if (attachmentPath) {
-      await deleteObjects("contact-attachments", [attachmentPath]);
-    }
-    return errorResponse("SUBMISSION_FAILED", 503);
-  }
+  await finalizeSubmissionRateLimit(reservationId);
 
   scheduleClassification(
     serviceClient,

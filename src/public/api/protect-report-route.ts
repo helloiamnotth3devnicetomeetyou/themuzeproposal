@@ -5,8 +5,11 @@ import {
 } from "@/core/ai/classify-inquiry";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import {
-  consumeSubmissionAttemptRateLimit,
-  consumeSubmissionRateLimit,
+  consumeSubmissionIpAttemptRateLimit,
+  consumeSubmissionUserAttemptRateLimit,
+  finalizeSubmissionRateLimit,
+  releaseSubmissionRateLimit,
+  reserveSubmissionRateLimit,
 } from "@/core/http/submission-rate-limit";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
 import { createSupabaseServerClient } from "@/core/supabase/server";
@@ -107,21 +110,14 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
-  const sessionClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await sessionClient.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-
-  const attempt = await consumeSubmissionAttemptRateLimit(
+  const preParseAttempt = await consumeSubmissionIpAttemptRateLimit(
     request,
     "protect_report",
-    user.id,
   );
-  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
-  if (!attempt.allowed)
-    return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+  if (preParseAttempt.error)
+    return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!preParseAttempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, preParseAttempt.retryAfter);
 
   let formData: FormData;
   try {
@@ -177,6 +173,21 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_REQUEST", 400);
   }
 
+  const sessionClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await sessionClient.auth.getUser();
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+
+  const attempt = await consumeSubmissionUserAttemptRateLimit(
+    "protect_report",
+    user.id,
+  );
+  if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (!attempt.allowed)
+    return errorResponse("RATE_LIMITED", 429, attempt.retryAfter);
+
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
@@ -206,13 +217,15 @@ export async function POST(request: NextRequest) {
     return errorResponse("INVALID_FILE_TYPE", 400);
   }
 
-  const rate = await consumeSubmissionRateLimit(
+  const rate = await reserveSubmissionRateLimit(
     request,
     "protect_report",
     user.id,
   );
   if (rate.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!rate.allowed) return errorResponse("RATE_LIMITED", 429, rate.retryAfter);
+  const reservationId = rate.reservationId;
+  if (!reservationId) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const reportId = crypto.randomUUID();
   const paths: string[] = [];
@@ -262,11 +275,27 @@ export async function POST(request: NextRequest) {
       );
     if (attachmentError) throw new Error("SUBMISSION_FAILED");
   } catch {
-    if (paths.length) await deleteObjects("protect-evidence", paths);
-    if (reportCreated)
-      await serviceClient.from("protect_reports").delete().eq("id", reportId);
+    try {
+      if (paths.length) await deleteObjects("protect-evidence", paths);
+    } catch {
+      // Keep the original submission failure; cleanup is best effort.
+    } finally {
+      if (reportCreated) {
+        try {
+          await serviceClient
+            .from("protect_reports")
+            .delete()
+            .eq("id", reportId);
+        } catch {
+          // Keep the original submission failure; cleanup is best effort.
+        }
+      }
+      await releaseSubmissionRateLimit(reservationId).catch(() => undefined);
+    }
     return errorResponse("SUBMISSION_FAILED", 503);
   }
+
+  await finalizeSubmissionRateLimit(reservationId);
 
   const classifyAfterInsert = () =>
     classifyProtectReport(
