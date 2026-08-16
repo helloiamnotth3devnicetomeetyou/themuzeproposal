@@ -1,9 +1,8 @@
 import "server-only";
 
 import { z } from "zod";
+import { requestJsonCompletion } from "@/core/ai/text-completion-provider";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-3.1-flash-lite";
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_INPUT_CHARS = 6_000;
 const MAX_REASONING_CHARS = 280;
@@ -59,22 +58,6 @@ const protectResultSchema = z
     reasoning: z.string().trim().min(1).max(MAX_REASONING_CHARS),
   })
   .strict();
-
-const outerResponseSchema = z
-  .object({
-    choices: z
-      .array(
-        z
-          .object({
-            message: z
-              .object({ content: z.string().min(1) })
-              .passthrough(),
-          })
-          .passthrough(),
-      )
-      .min(1),
-  })
-  .passthrough();
 
 const EMAIL_PATTERN =
   /\b[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+\b/gi;
@@ -187,13 +170,10 @@ function userPrompt(input: ClassifyInput): string {
 
 function requestBody(input: ClassifyInput) {
   return {
-    model: MODEL,
     messages: [
       { role: "system", content: systemPrompt(input.domain) },
       { role: "user", content: userPrompt(input) },
     ],
-    temperature: 0,
-    max_tokens: 256,
     response_format: {
       type: "json_schema",
       json_schema: {
@@ -201,11 +181,6 @@ function requestBody(input: ClassifyInput) {
         strict: true,
         schema: schemaFor(input.domain),
       },
-    },
-    provider: {
-      data_collection: "deny",
-      zdr: true,
-      require_parameters: true,
     },
   };
 }
@@ -240,54 +215,30 @@ export async function classify(
       return null;
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
     const text = input.text.trim();
     const type = input.type.trim();
-    if (!apiKey || !text || !type) return null;
+    if (!text || !type) return null;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody({ ...input, text, type })),
-        signal: controller.signal,
-      });
-      if (!response.ok) return null;
+    const request = requestBody({ ...input, text, type });
+    const decoded = await requestJsonCompletion({
+      messages: request.messages,
+      maxTokens: 256,
+      responseFormat: request.response_format,
+      timeoutMs: REQUEST_TIMEOUT_MS,
+    });
+    if (!decoded) return null;
 
-      const outer = outerResponseSchema.safeParse(await response.json());
-      if (!outer.success) return null;
-
-      const content = outer.data.choices[0]?.message.content;
-      if (!content) return null;
-
-      let decoded: unknown;
-      try {
-        decoded = JSON.parse(content) as unknown;
-      } catch {
-        return null;
-      }
-
-      if (input.domain === "contact") {
-        const parsed = contactResultSchema.safeParse(decoded);
-        if (!parsed.success) return null;
-        const reasoning = cleanedReasoning(parsed.data.reasoning);
-        return reasoning
-          ? { ...parsed.data, reasoning }
-          : null;
-      }
-
-      const parsed = protectResultSchema.safeParse(decoded);
+    if (input.domain === "contact") {
+      const parsed = contactResultSchema.safeParse(decoded);
       if (!parsed.success) return null;
       const reasoning = cleanedReasoning(parsed.data.reasoning);
       return reasoning ? { ...parsed.data, reasoning } : null;
-    } finally {
-      clearTimeout(timeout);
     }
+
+    const parsed = protectResultSchema.safeParse(decoded);
+    if (!parsed.success) return null;
+    const reasoning = cleanedReasoning(parsed.data.reasoning);
+    return reasoning ? { ...parsed.data, reasoning } : null;
   } catch {
     return null;
   }
