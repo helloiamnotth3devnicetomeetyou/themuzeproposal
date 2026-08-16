@@ -1,3 +1,5 @@
+import { isUuid } from "@/core/utils/uuid";
+
 export const PREVIEW_VERSION = 1 as const;
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
 export const PREVIEW_SESSION_COOKIE = "themuze-preview-session";
@@ -387,9 +389,7 @@ export function clearPreviewStorage() {
 }
 
 export function isPreviewToken(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return isUuid(value);
 }
 
 export function parsePreviewEnvelope(

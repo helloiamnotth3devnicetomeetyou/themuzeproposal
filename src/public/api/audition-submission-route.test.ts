@@ -467,6 +467,7 @@ describe("POST /api/audition/submit", () => {
     expect(mocks.remove).toHaveBeenCalledWith([
       expect.stringMatching(/\.pdf$/),
     ]);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
   });
 
   it("rate-limits a validated application before storing it", async () => {
@@ -504,6 +505,9 @@ describe("POST /api/audition/submit", () => {
     );
 
     expect(response.status).toBe(503);
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/\.pdf$/),
+    ]);
     expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
     expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
   });

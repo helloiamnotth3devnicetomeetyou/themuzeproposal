@@ -540,6 +540,39 @@ describe("POST /api/uploads/admin-asset", () => {
     );
   });
 
+  it("releases a reservation when R2 deletion fails before DB finalization", async () => {
+    const path = "pending/123e4567-e89b-12d3-a456-426614174000.mp4";
+    mocks.remove.mockResolvedValueOnce({ error: true });
+
+    const response = await DELETE(
+      new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
+        method: "DELETE",
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ bucket: "hero-videos", paths: [path] }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(mocks.remove).toHaveBeenCalledWith([path]);
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      "release_r2_asset_deletions",
+      expect.objectContaining({
+        p_bucket: "hero-videos",
+        p_paths: [path],
+        p_actor_id: "admin-1",
+        p_reservation_id: mocks.rpc.mock.calls[0][1].p_reservation_id,
+      }),
+    );
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      "complete_r2_asset_deletions",
+      expect.anything(),
+    );
+  });
+
   it("rate-limits deletion attempts before touching storage", async () => {
     mocks.consumeUploadAttempt.mockResolvedValueOnce({
       error: false,

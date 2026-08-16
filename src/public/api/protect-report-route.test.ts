@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   remove: vi.fn(),
   insert: vi.fn(),
+  reportDelete: vi.fn(),
+  reportDeleteEq: vi.fn(),
   verifyTurnstileToken: vi.fn(),
   classify: vi.fn(),
   update: vi.fn(),
@@ -152,11 +154,17 @@ describe("POST /api/protect-reports", () => {
     mocks.upload.mockResolvedValue({ error: false });
     mocks.remove.mockResolvedValue({ error: false });
     mocks.insert.mockResolvedValue({ error: null });
+    mocks.reportDelete.mockReturnValue({ eq: mocks.reportDeleteEq });
+    mocks.reportDeleteEq.mockResolvedValue({ error: null });
     mocks.createServiceClient.mockReturnValue({
       from: vi.fn((table: string) =>
         table === "artists"
           ? { select: mocks.artistSelect }
-          : { insert: mocks.insert, update: mocks.update },
+          : {
+              insert: mocks.insert,
+              update: mocks.update,
+              delete: mocks.reportDelete,
+            },
       ),
     });
   });
@@ -300,6 +308,9 @@ describe("POST /api/protect-reports", () => {
     const response = await POST(validRequest());
 
     expect(response.status).toBe(503);
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^user-1\/.+\.png$/),
+    ]);
     expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
     expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
   });
@@ -310,6 +321,30 @@ describe("POST /api/protect-reports", () => {
     const response = await POST(validRequest());
 
     expect(response.status).toBe(503);
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^user-1\/.+\.png$/),
+    ]);
+    expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
+    expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("rolls back the report row when attachment metadata persistence fails", async () => {
+    mocks.insert
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: new Error("attachment insert failed") });
+    mocks.remove.mockResolvedValueOnce({ error: true });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(503);
+    expect(mocks.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^user-1\/.+\.png$/),
+    ]);
+    expect(mocks.reportDelete).toHaveBeenCalledOnce();
+    expect(mocks.reportDeleteEq).toHaveBeenCalledWith(
+      "id",
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
+    );
     expect(mocks.releaseRateLimit).toHaveBeenCalledWith("reservation-1");
     expect(mocks.finalizeRateLimit).not.toHaveBeenCalled();
   });

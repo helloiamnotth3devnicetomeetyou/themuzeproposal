@@ -21,12 +21,11 @@ import {
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { verifyTurnstileToken } from "@/core/http/turnstile";
+import { isUuid } from "@/core/utils/uuid";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 3;
 const MAX_POST_URL_LENGTH = 2048;
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REPORT_TYPES = new Set([
   "defamation",
   "harassment",
@@ -114,8 +113,7 @@ export async function POST(request: NextRequest) {
     request,
     "protect_report",
   );
-  if (preParseAttempt.error)
-    return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (preParseAttempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!preParseAttempt.allowed)
     return errorResponse("RATE_LIMITED", 429, preParseAttempt.retryAfter);
 
@@ -153,7 +151,7 @@ export async function POST(request: NextRequest) {
 
   if (
     !artistId ||
-    !UUID_PATTERN.test(artistId) ||
+    !isUuid(artistId) ||
     !REPORT_TYPES.has(reportType) ||
     title.length < 1 ||
     title.length > 120 ||

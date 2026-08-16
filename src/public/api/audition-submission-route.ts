@@ -24,10 +24,10 @@ import {
   validateFileSignature,
 } from "@/core/uploads/file-signature";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
+import { isUuid } from "@/core/utils/uuid";
 
 const MAX_BODY_BYTES = 30 * 1024 * 1024 + 256 * 1024;
 const EMAIL_KEYS = new Set(["email", "applicant_email"]);
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 class SubmissionConflictError extends Error {}
 
 function databaseError(error: unknown) {
@@ -91,8 +91,7 @@ export async function POST(request: NextRequest) {
     request,
     "audition_submission",
   );
-  if (preParseAttempt.error)
-    return errorResponse("SERVICE_UNAVAILABLE", 503);
+  if (preParseAttempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!preParseAttempt.allowed)
     return errorResponse("RATE_LIMITED", 429, preParseAttempt.retryAfter);
   let formData: FormData;
@@ -129,13 +128,12 @@ export async function POST(request: NextRequest) {
       ? String(formData.get("submissionId")).trim()
       : "";
   const service = createServiceRoleClient();
-  if (!UUID_RE.test(campaignId) || (requestedSubmissionId && !UUID_RE.test(requestedSubmissionId)))
+  if (
+    !isUuid(campaignId) ||
+    (requestedSubmissionId && !isUuid(requestedSubmissionId))
+  )
     return errorResponse("INVALID_REQUEST", 400);
-  if (!service)
-    return errorResponse(
-      "SERVICE_UNAVAILABLE",
-      503,
-    );
+  if (!service) return errorResponse("SERVICE_UNAVAILABLE", 503);
 
   const now = new Date().toISOString();
   const [campaignResult, fieldResult] = await Promise.all([

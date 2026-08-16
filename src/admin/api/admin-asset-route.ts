@@ -22,6 +22,7 @@ import {
   createServiceRoleClient,
   isSafeStoragePath,
 } from "@/core/uploads/service-storage";
+import { UUID_PATTERN_SOURCE } from "@/core/utils/uuid";
 
 const BUCKETS = {
   "artist-assets": { maxBytes: 30 * 1024 * 1024, profile: "public-image" },
@@ -40,12 +41,12 @@ const ADMIN_DELETE_BUCKETS = new Set([
   ...Object.keys(BUCKETS),
   "audition-attachments",
 ]);
-const AVATAR_PATH =
-  /^([0-9a-f-]{36})\/avatars\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif)$/i;
-const UUID_PATH =
-  "[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+const AVATAR_PATH = new RegExp(
+  `^(${UUID_PATTERN_SOURCE})\\/avatars\\/${UUID_PATTERN_SOURCE}\\.(?:jpg|png|webp|gif)$`,
+  "i",
+);
 const AUDITION_ATTACHMENT_PATH = new RegExp(
-  `^${UUID_PATH}\/${UUID_PATH}\/${UUID_PATH}\/${UUID_PATH}\\.[a-z0-9]+$`,
+  `^${UUID_PATTERN_SOURCE}\\/${UUID_PATTERN_SOURCE}\\/${UUID_PATTERN_SOURCE}\\/${UUID_PATTERN_SOURCE}\\.[a-z0-9]+$`,
   "i",
 );
 
