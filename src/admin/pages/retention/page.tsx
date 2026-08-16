@@ -67,7 +67,13 @@ function parsePayload(value: unknown): RetentionPayload {
     expiresAt: candidate.expires_at,
     attachmentCount: candidate.attachment_count,
     retryable: candidate.retryable,
-  }));
+  })).sort((left, right) => {
+    const leftTime = Date.parse(left.createdAt);
+    const rightTime = Date.parse(right.createdAt);
+    if (!Number.isFinite(leftTime)) return Number.isFinite(rightTime) ? 1 : 0;
+    if (!Number.isFinite(rightTime)) return -1;
+    return leftTime - rightTime;
+  });
   return {
     candidates,
     policyDays: Number(root.policy.days),
@@ -79,7 +85,7 @@ function errorMessage(value: unknown, fallback: string) {
   const code = (value as { code?: unknown }).code;
   if (typeof code !== "string") return fallback;
   const messages: Record<string, string> = {
-    FORBIDDEN: "super_admin 권한이 필요합니다.",
+    FORBIDDEN: "관리자 권한이 필요합니다.",
     UNAUTHORIZED: "로그인이 필요합니다.",
     INVALID_REQUEST: "요청을 확인해 주세요.",
     SERVICE_UNAVAILABLE: "보존 대기열을 잠시 사용할 수 없습니다.",
@@ -280,13 +286,8 @@ export default function RetentionAdminPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>RETENTION / 30D</p>
           <h1>보존 대기열</h1>
           <p className={styles.lede}>생성일로부터 30일이 지난 문의와 제보를 검토하고 정리합니다.</p>
-        </div>
-        <div className={styles.accessBadge}>
-          <Icon name="lock" />
-          <span>SUPER ADMIN ONLY</span>
         </div>
       </header>
 
@@ -321,7 +322,6 @@ export default function RetentionAdminPage() {
       <div className={styles.layout}>
         <aside className={styles.ruleCard} aria-labelledby="retention-rule-title">
           <div className={styles.ruleMarker} aria-hidden="true">30</div>
-          <p className={styles.cardEyebrow}>POLICY WINDOW</p>
           <h2 id="retention-rule-title">생성일 + 30일</h2>
           <p className={styles.ruleCopy}>
             접수된 시점을 기준으로 보존 기간을 계산합니다. 삭제 작업은 이 화면에서 선택한 항목에만 적용됩니다.
@@ -335,10 +335,6 @@ export default function RetentionAdminPage() {
               <dt>제보</dt>
               <dd>{candidateSummary.protects}</dd>
             </div>
-            <div>
-              <dt>권한</dt>
-              <dd>super_admin</dd>
-            </div>
           </dl>
           <p className={styles.ruleNote}>
             <Icon name="lock" /> 본문과 증거 내용은 감사 로그에 복사되지 않습니다.
@@ -348,7 +344,6 @@ export default function RetentionAdminPage() {
         <section className={styles.queue} aria-labelledby="retention-queue-title">
           <div className={styles.queueHeader}>
             <div>
-              <p className={styles.cardEyebrow}>DELETE CANDIDATES</p>
               <h2 id="retention-queue-title">삭제 후보</h2>
               <p>{payload ? `${payload.candidates.length}건 · 생성일 기준 오래된 순` : "대기열을 확인하는 중"}</p>
             </div>

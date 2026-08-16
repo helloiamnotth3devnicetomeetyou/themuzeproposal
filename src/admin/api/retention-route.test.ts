@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  isSuperAdmin: vi.fn(),
+  isAdmin: vi.fn(),
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
   rpc: vi.fn(),
@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({
-  isSuperAdmin: mocks.isSuperAdmin,
+  isAdmin: mocks.isAdmin,
 }));
 vi.mock("@/core/storage/r2", () => ({
   deleteObjects: mocks.deleteObjects,
@@ -62,7 +62,7 @@ describe("/api/admin/retention", () => {
       data: { user: { id: actorId, email: "admin@themuze.kr" } },
       error: null,
     });
-    mocks.isSuperAdmin.mockResolvedValue(true);
+    mocks.isAdmin.mockResolvedValue(true);
     mocks.createSessionClient.mockResolvedValue({
       auth: { getUser: mocks.getUser },
     });
@@ -88,7 +88,7 @@ describe("/api/admin/retention", () => {
     expect(mocks.createSessionClient).not.toHaveBeenCalled();
   });
 
-  it("blocks unauthenticated and editor requests before touching retention data", async () => {
+  it("blocks unauthenticated and non-admin requests before touching retention data", async () => {
     mocks.getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
     const unauthenticated = await POST(
       request("POST", {
@@ -98,14 +98,14 @@ describe("/api/admin/retention", () => {
     if (!unauthenticated) throw new Error("missing response");
 
     expect(unauthenticated.status).toBe(401);
-    expect(mocks.isSuperAdmin).not.toHaveBeenCalled();
+    expect(mocks.isAdmin).not.toHaveBeenCalled();
     expect(mocks.createServiceClient).not.toHaveBeenCalled();
 
     mocks.getUser.mockResolvedValue({
       data: { user: { id: actorId } },
       error: null,
     });
-    mocks.isSuperAdmin.mockResolvedValueOnce(false);
+    mocks.isAdmin.mockResolvedValueOnce(false);
     const editor = await POST(
       request("POST", {
         candidates: [{ kind: "contact_inquiry", id: contactId }],
@@ -118,7 +118,7 @@ describe("/api/admin/retention", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("returns only safe metadata for super-admin retention candidates", async () => {
+  it("returns only safe metadata for admin retention candidates", async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: [
         {

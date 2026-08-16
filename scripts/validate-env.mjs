@@ -66,6 +66,16 @@ const strict =
   process.env.STRICT_ENV_VALIDATION === "1";
 const missing = required.filter((name) => !process.env[name]?.trim());
 const problems = [];
+const vercelEnvironment = process.env.VERCEL_ENV?.trim().toLowerCase();
+if (
+  hasValue(process.env.VERCEL) &&
+  (vercelEnvironment === "production" || vercelEnvironment === "preview") &&
+  !hasValue(process.env.CRON_SECRET)
+) {
+  problems.push(
+    "CRON_SECRET is required for Vercel production and preview deployments.",
+  );
+}
 const trustedClientIpHeader =
   process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase();
 
@@ -142,6 +152,10 @@ if (
   problems.push(
     "SUBMISSION_RATE_LIMIT_SECRET must contain at least 32 characters.",
   );
+}
+
+if (process.env.CRON_SECRET && process.env.CRON_SECRET.length < 32) {
+  problems.push("CRON_SECRET must contain at least 32 characters.");
 }
 
 const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();

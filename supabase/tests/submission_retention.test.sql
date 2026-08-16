@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(9);
 
 select ok(
   to_regclass('public.retention_deletion_jobs') is not null,
@@ -46,6 +46,16 @@ select ok(
     and pg_get_functiondef('public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure)
       !~ $$content$$,
   'retention audit writes metadata without submitted body fields'
+);
+
+select ok(
+  pg_get_functiondef('public.reserve_retention_deletion(text,uuid,uuid,uuid)'::regprocedure)
+    ~ $$role in \('super_admin', 'editor'\)$$
+    and pg_get_functiondef('public.retry_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure)
+      ~ $$role in \('super_admin', 'editor'\)$$
+    and pg_get_functiondef('public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure)
+      ~ $$role in \('super_admin', 'editor'\)$$,
+  'both configured admin roles may finalize retention deletions'
 );
 
 select ok(

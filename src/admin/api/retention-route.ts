@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { isSuperAdmin } from "@/core/auth/admin-auth";
+import { isAdmin } from "@/core/auth/admin-auth";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { deleteObjects } from "@/core/storage/r2";
@@ -52,14 +52,14 @@ function sameOriginRead(request: Request) {
   );
 }
 
-async function requireSuperAdmin() {
+async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
   if (error || !user) return { error: response({ code: "UNAUTHORIZED" }, 401) };
-  if (!(await isSuperAdmin(supabase, user.id)))
+  if (!(await isAdmin(supabase, user.id)))
     return { error: response({ code: "FORBIDDEN" }, 403) };
   return { user };
 }
@@ -136,7 +136,7 @@ function rpcCode(error: unknown) {
 async function retryReservation(
   service: ServiceClient,
   item: z.infer<typeof candidateSchema>,
-  actorId: string,
+  actorId: string | null,
   reservationId: string,
   objectsDeleted: boolean,
 ) {
@@ -155,7 +155,7 @@ async function retryReservation(
 async function purgeOne(
   service: ServiceClient,
   item: z.infer<typeof candidateSchema>,
-  actorId: string,
+  actorId: string | null,
 ) {
   const reservationId = crypto.randomUUID();
   const reservation = await service.rpc("reserve_retention_deletion", {
@@ -205,9 +205,42 @@ async function purgeOne(
   return { item, deleted: true } as const;
 }
 
+export async function purgeRetentionCandidates(
+  service: ServiceClient,
+  candidates: Array<z.infer<typeof candidateSchema>>,
+  actorId: string | null,
+) {
+  const results = [];
+  for (const item of candidates) {
+    try {
+      results.push(await purgeOne(service, item, actorId));
+    } catch {
+      results.push({ item, code: "SERVICE_UNAVAILABLE", deleted: false });
+    }
+  }
+  return results;
+}
+
+export async function listRetentionCandidates(
+  service: ServiceClient,
+  limit: number,
+) {
+  const { data, error } = await service.rpc("get_retention_candidates", {
+    p_limit: limit,
+  });
+  if (error) return { error: true as const, candidates: [] as Candidate[] };
+  const candidates = Array.isArray(data)
+    ? data.flatMap((row) => {
+        const mapped = mapCandidate(row);
+        return mapped ? [mapped] : [];
+      })
+    : [];
+  return { error: false as const, candidates };
+}
+
 export async function GET(request: NextRequest) {
   if (!sameOriginRead(request)) return response({ code: "INVALID_REQUEST" }, 400);
-  const auth = await requireSuperAdmin();
+  const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
   const service = createServiceRoleClient();
   if (!service) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
@@ -216,27 +249,18 @@ export async function GET(request: NextRequest) {
   const limit = Number.isSafeInteger(rawLimit)
     ? Math.min(Math.max(rawLimit, 1), MAX_CANDIDATES * 2)
     : 100;
-  const { data, error } = await service.rpc("get_retention_candidates", {
-    p_limit: limit,
-  });
-  if (error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
-
-  const candidates = Array.isArray(data)
-    ? data.flatMap((row) => {
-        const mapped = mapCandidate(row);
-        return mapped ? [mapped] : [];
-      })
-    : [];
+  const listed = await listRetentionCandidates(service, limit);
+  if (listed.error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
   return response({
     policy: { days: 30, basis: "created_at" },
-    candidates,
+    candidates: listed.candidates,
   });
 }
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return response({ code: "INVALID_REQUEST" }, 400);
-  const auth = await requireSuperAdmin();
+  const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
   const body = await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(
     () => null,
@@ -254,14 +278,7 @@ export async function POST(request: NextRequest) {
       ]),
     ).values(),
   ];
-  const results = [];
-  for (const item of unique) {
-    try {
-      results.push(await purgeOne(service, item, auth.user.id));
-    } catch {
-      results.push({ item, code: "SERVICE_UNAVAILABLE", deleted: false });
-    }
-  }
+  const results = await purgeRetentionCandidates(service, unique, auth.user.id);
   const deleted = results.filter((result) => result.deleted).map((result) => result.item);
   const failed = results
     .filter((result) => !result.deleted)
