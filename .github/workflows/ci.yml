@@ -63,7 +63,15 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run test
+      - run: npm run test:ci
+
+      - name: Upload Vitest warning report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vitest-warnings
+          path: test-results/vitest-warnings.txt
+          if-no-files-found: ignore
 
   build:
     name: Build
