@@ -123,6 +123,32 @@ describe("submission rate limit", () => {
     );
   });
 
+  it("lets a failed reservation release be retried with the same id", async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: null,
+        error: new Error("temporary failure"),
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+
+    await expect(releaseSubmissionRateLimit("reservation-1")).resolves.toEqual({
+      error: true,
+    });
+    await expect(releaseSubmissionRateLimit("reservation-1")).resolves.toEqual({
+      error: false,
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      "release_submission_rate_limit",
+      { p_reservation_id: "reservation-1" },
+    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      "release_submission_rate_limit",
+      { p_reservation_id: "reservation-1" },
+    );
+  });
+
   it("uses one IP-only RPC for pre-parse abuse protection", async () => {
     mocks.rpc.mockResolvedValue({
       data: [{ is_allowed: true, retry_after_seconds: 0, remaining: 99 }],

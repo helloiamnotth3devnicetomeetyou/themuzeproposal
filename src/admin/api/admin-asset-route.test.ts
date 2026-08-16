@@ -177,7 +177,15 @@ describe("POST /api/uploads/admin-asset", () => {
     const form = new FormData();
     form.set("bucket", "business-assets");
     form.set("path", "profile.pdf");
-    form.set("file", new File(["%PDF-1.7\ncontent"], "profile.pdf"));
+    form.set(
+      "file",
+      new File(
+        [
+          "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        ],
+        "profile.pdf",
+      ),
+    );
 
     const response = await POST(
       new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
@@ -432,20 +440,27 @@ describe("POST /api/uploads/admin-asset", () => {
 
   it("refuses to delete an album hero asset still referenced by content", async () => {
     mocks.select.mockResolvedValueOnce({
-      data: [{ hero_image_url: "https://storage.example/album-covers/live.png" }],
+      data: [
+        { hero_image_url: "https://storage.example/album-covers/live.png" },
+      ],
       error: null,
     });
 
     const response = await DELETE(
       new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
         method: "DELETE",
-        headers: { origin: "https://themuze.kr", "content-type": "application/json" },
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
         body: JSON.stringify({ bucket: "album-covers", paths: ["live.png"] }),
       }),
     );
 
     expect(response.status).toBe(403);
-    expect(mocks.select).toHaveBeenCalledWith("cover_url,hero_image_url,typo_logo_url");
+    expect(mocks.select).toHaveBeenCalledWith(
+      "cover_url,hero_image_url,typo_logo_url",
+    );
     expect(mocks.remove).not.toHaveBeenCalled();
   });
 
@@ -517,13 +532,19 @@ describe("POST /api/uploads/admin-asset", () => {
     const path = "pending/123e4567-e89b-12d3-a456-426614174000.mp4";
     mocks.rpc
       .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: null, error: new Error("temporary db failure") })
+      .mockResolvedValueOnce({
+        data: null,
+        error: new Error("temporary db failure"),
+      })
       .mockResolvedValueOnce({ data: null, error: null });
 
     const response = await DELETE(
       new NextRequest("https://themuze.kr/api/uploads/admin-asset", {
         method: "DELETE",
-        headers: { origin: "https://themuze.kr", "content-type": "application/json" },
+        headers: {
+          origin: "https://themuze.kr",
+          "content-type": "application/json",
+        },
         body: JSON.stringify({ bucket: "hero-videos", paths: [path] }),
       }),
     );

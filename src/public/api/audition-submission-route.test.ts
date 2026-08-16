@@ -384,9 +384,15 @@ describe("POST /api/audition/submit", () => {
     form.set("submissionId", "22222222-2222-4222-8222-222222222222");
     form.set(
       "answers[portfolio]",
-      new File(["%PDF-1.7\ncontent"], "portfolio.pdf", {
-        type: "application/pdf",
-      }),
+      new File(
+        [
+          "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        ],
+        "portfolio.pdf",
+        {
+          type: "application/pdf",
+        },
+      ),
     );
 
     const response = await POST(
@@ -451,9 +457,15 @@ describe("POST /api/audition/submit", () => {
     const form = await invalid.formData();
     form.set(
       "answers[portfolio]",
-      new File(["%PDF-1.7\ncontent"], "portfolio.pdf", {
-        type: "application/pdf",
-      }),
+      new File(
+        [
+          "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        ],
+        "portfolio.pdf",
+        {
+          type: "application/pdf",
+        },
+      ),
     );
     const response = await POST(
       new NextRequest(invalid.url, {
@@ -491,9 +503,15 @@ describe("POST /api/audition/submit", () => {
     const form = await original.formData();
     form.set(
       "answers[portfolio]",
-      new File(["%PDF-1.7\ncontent"], "portfolio.pdf", {
-        type: "application/pdf",
-      }),
+      new File(
+        [
+          "%PDF-1.7\n1 0 obj\n<<>>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 >>\nstartxref\n33\n%%EOF\n",
+        ],
+        "portfolio.pdf",
+        {
+          type: "application/pdf",
+        },
+      ),
     );
 
     const response = await POST(

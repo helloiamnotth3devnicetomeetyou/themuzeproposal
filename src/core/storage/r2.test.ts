@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => {
     client: vi.fn(function () {
       return { send };
     }),
-    command: vi.fn((input: unknown) => ({ input })),
+    command: vi.fn(function (input: unknown) {
+      return { input };
+    }),
   };
 });
 
@@ -23,7 +25,11 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
   getSignedUrl: vi.fn(),
 }));
 
-import { contentDispositionForDownload, deleteObjects } from "./r2";
+import {
+  contentDispositionForDownload,
+  deleteObjects,
+  uploadObject,
+} from "./r2";
 
 describe("deleteObjects", () => {
   beforeEach(() => {
@@ -46,13 +52,35 @@ describe("deleteObjects", () => {
     });
   });
 
+  it("retries a transient delete failure before reporting success", async () => {
+    mocks.send
+      .mockRejectedValueOnce(new Error("temporary R2 failure"))
+      .mockResolvedValueOnce({ Errors: [] });
+
+    const result = await deleteObjects("artist-assets", ["asset.png"]);
+    expect(result).toEqual({ error: false });
+    expect(mocks.send).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports an upload failure without claiming the object was stored", async () => {
+    mocks.send.mockRejectedValueOnce(new Error("R2 unavailable"));
+
+    await expect(
+      uploadObject({
+        bucket: "artist-assets",
+        path: "asset.png",
+        body: Buffer.from("not really an image"),
+        contentType: "image/png",
+      }),
+    ).resolves.toEqual({ error: true });
+  });
+
   it("rejects unknown buckets before issuing an S3 request", async () => {
     await expect(deleteObjects("unknown", ["asset.png"])).resolves.toEqual({
       error: true,
     });
     expect(mocks.send).not.toHaveBeenCalled();
   });
-
 });
 
 describe("contentDispositionForDownload", () => {
