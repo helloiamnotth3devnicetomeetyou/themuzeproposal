@@ -109,6 +109,13 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
+  const sessionClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await sessionClient.auth.getUser();
+  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
+
   const preParseAttempt = await consumeSubmissionIpAttemptRateLimit(
     request,
     "protect_report",
@@ -170,13 +177,6 @@ export async function POST(request: NextRequest) {
   ) {
     return errorResponse("INVALID_REQUEST", 400);
   }
-
-  const sessionClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await sessionClient.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
 
   const attempt = await consumeSubmissionUserAttemptRateLimit(
     "protect_report",

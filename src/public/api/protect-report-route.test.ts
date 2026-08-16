@@ -302,6 +302,25 @@ describe("POST /api/protect-reports", () => {
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 
+  it("rejects an unauthenticated request before validating its captcha", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const request = validRequest();
+    const form = await request.formData();
+    form.delete("turnstileToken");
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/protect-reports", {
+        method: "POST",
+        headers: { origin: "http://localhost" },
+        body: form,
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ code: "UNAUTHORIZED" });
+    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
+  });
+
   it("releases a reserved quota when evidence upload fails", async () => {
     mocks.upload.mockResolvedValueOnce({ error: new Error("upload failed") });
 
