@@ -118,6 +118,12 @@ Node 22와 `npm ci`를 사용한다. build/E2E job은 형태가 유효한 placeh
 
 lockfile이나 dependency를 바꾸면 두 workflow 비용과 `postinstall`의 `patch-package` 적용을 확인한다. `patches/minimatch+3.1.5.patch`를 제거하려면 upstream package graph에서 patch가 정말 불필요해졌는지 먼저 검증한다.
 
+## 의존성 업데이트 정책
+
+Dependabot은 npm과 GitHub Actions의 일반 버전 업데이트를 7일간 유예한다. 이 기간에는 릴리스 회귀와 upstream 공지를 확인한 뒤 CI, lockfile, `patch-package` 적용을 검토하고 merge한다. Dependabot의 보안 업데이트는 cooldown 대상이 아니다.
+
+High/Critical 취약점이나 실제 악용이 확인된 긴급 보안 업데이트는 7일을 기다리지 않고 수동으로 즉시 올릴 수 있다. 이 경우 advisory와 예외 사유를 PR에 남기고 가능한 CI와 `npm audit --audit-level=high`를 실행한 뒤 merge하며, 완료하지 못한 검증과 후속 작업을 기록한다.
+
 ## 환경과 빌드
 
 `.env.example`을 복사하되 실제 값은 `.env.local`에만 둔다. `scripts/validate-env.mjs`는 production Vercel, `STRICT_ENV_VALIDATION=1`, production CI에서 엄격 모드다.

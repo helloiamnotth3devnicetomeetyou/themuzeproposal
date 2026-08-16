@@ -6,6 +6,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Give normal releases seven days to settle; security updates bypass this.
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "ci"
     labels:
@@ -16,6 +19,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Give normal releases seven days to settle; security updates bypass this.
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
     labels:
