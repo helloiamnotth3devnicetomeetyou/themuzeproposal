@@ -21,11 +21,49 @@ const required = [
   "NEXT_PUBLIC_R2_PUBLIC_URL",
 ];
 
+function hasValue(value) {
+  return Boolean(value?.trim());
+}
+
+function isLocalHostname(hostname) {
+  const normalized = hostname.trim().toLowerCase().replace(/\.$/, "");
+  return (
+    normalized === "localhost" ||
+    normalized.endsWith(".localhost") ||
+    normalized === "127.0.0.1" ||
+    normalized === "::1"
+  );
+}
+
+function isLocalDevelopmentEnvironment(env = process.env) {
+  if (env.NODE_ENV !== "development") return false;
+  if (
+    hasValue(env.CI) ||
+    hasValue(env.GITHUB_ACTIONS) ||
+    hasValue(env.VERCEL) ||
+    hasValue(env.VERCEL_ENV) ||
+    env.STRICT_ENV_VALIDATION === "1"
+  )
+    return false;
+
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!siteUrl) return true;
+  try {
+    return isLocalHostname(new URL(siteUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
+const localDevelopment = isLocalDevelopmentEnvironment();
 const strict =
   process.env.NODE_ENV === "production" ||
-  process.env.VERCEL_ENV === "production" ||
-  process.env.STRICT_ENV_VALIDATION === "1" ||
-  (process.env.CI === "true" && process.env.NODE_ENV === "production");
+  hasValue(process.env.VERCEL) ||
+  hasValue(process.env.VERCEL_ENV) ||
+  hasValue(process.env.CI) ||
+  hasValue(process.env.GITHUB_ACTIONS) ||
+  (process.env.NODE_ENV === "development" && !localDevelopment) ||
+  process.env.STRICT_ENV_VALIDATION === "1";
 const missing = required.filter((name) => !process.env[name]?.trim());
 const problems = [];
 const trustedClientIpHeader =
@@ -34,7 +72,7 @@ const trustedClientIpHeader =
 if (trustedClientIpHeader && !/^[a-z0-9-]+$/.test(trustedClientIpHeader)) {
   problems.push("TRUSTED_CLIENT_IP_HEADER must be a valid HTTP header name.");
 }
-if (strict && process.env.VERCEL !== "1" && !trustedClientIpHeader) {
+if (strict && !hasValue(process.env.VERCEL) && !trustedClientIpHeader) {
   problems.push(
     "Non-Vercel production requires TRUSTED_CLIENT_IP_HEADER from a trusted reverse proxy.",
   );
@@ -44,7 +82,7 @@ if (!missing.includes("NEXT_PUBLIC_SUPABASE_URL")) {
   try {
     const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
     const isCiLocalSupabase =
-      process.env.CI === "true" && supabaseUrl.hostname === "127.0.0.1";
+      hasValue(process.env.CI) && supabaseUrl.hostname === "127.0.0.1";
     if (strict && supabaseUrl.protocol !== "https:" && !isCiLocalSupabase)
       problems.push("NEXT_PUBLIC_SUPABASE_URL must use HTTPS in production.");
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF?.trim();
@@ -115,7 +153,7 @@ if (Boolean(turnstileSiteKey) !== Boolean(turnstileSecretKey)) {
 }
 
 if (strict && (missing.length || problems.length)) {
-  console.error("Production environment validation failed.");
+  console.error("Deployment environment validation failed.");
   if (missing.length) console.error(`Missing variables: ${missing.join(", ")}`);
   problems.forEach((problem) => console.error(problem));
   process.exit(1);

@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getPublicSupabaseConfig } from "@/core/config/public-env";
+import { isLocalDevelopmentRequest } from "@/core/config/local-development";
 import { clientIp } from "@/core/http/client-ip";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   const limiterSecret =
     process.env.AUTH_RATE_LIMIT_SECRET?.trim() ||
-    (process.env.NODE_ENV === "development" ? anonKey : "");
+    (isLocalDevelopmentRequest(request) ? anonKey : "");
   if (!limiterSecret) return jsonError("SERVICE_UNAVAILABLE", 503);
 
   const requestIp = clientIp(request);
