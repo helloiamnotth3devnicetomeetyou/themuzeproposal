@@ -74,6 +74,12 @@ export function buildSearchItems(
       url: "/admin/audit-logs",
     },
     {
+      id: "retention",
+      categoryLabel: "시스템",
+      title: "30일 보존 관리",
+      url: "/admin/retention",
+    },
+    {
       id: "protect",
       categoryLabel: "워크스페이스",
       title: "권익 보호 신고",

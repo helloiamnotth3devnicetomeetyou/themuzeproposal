@@ -2,6 +2,7 @@ import type { MouseEventHandler } from "react";
 import Link from "next/link";
 import {
   BarChart3,
+  Archive,
   ChevronDown,
   FileText,
   History,
@@ -26,6 +27,7 @@ type NavigationLink = {
   label: string;
   href: string;
   icon: LucideIcon;
+  superAdminOnly?: boolean;
 };
 
 type InboxLink = NavigationLink & {
@@ -70,6 +72,12 @@ const inboxLinks: InboxLink[] = [
 ];
 
 const systemLinks: NavigationLink[] = [
+  {
+    label: "보존 관리",
+    href: "/admin/retention",
+    icon: Archive,
+    superAdminOnly: true,
+  },
   { label: "변경 이력", href: "/admin/audit-logs", icon: History },
   { label: "사이트 설정", href: "/admin/settings", icon: Settings },
 ];
@@ -87,6 +95,7 @@ type SidebarNavigationProps = {
   artistsLoading: boolean;
   pathname: string;
   isCollapsed: boolean;
+  isSuperAdmin: boolean;
   unreadCounts: SidebarUnreadCounts;
   collapsedGroups: Record<string, boolean>;
   toggleGroup: (groupKey: string) => void;
@@ -100,6 +109,7 @@ export default function SidebarNavigation({
   artistsLoading,
   pathname,
   isCollapsed,
+  isSuperAdmin,
   unreadCounts,
   collapsedGroups,
   toggleGroup,
@@ -111,7 +121,7 @@ export default function SidebarNavigation({
     href === "/admin" ? pathname === href : pathname.startsWith(href);
 
   const renderLinks = (links: NavigationLink[]) =>
-    links.map((item) => {
+    links.filter((item) => !item.superAdminOnly || isSuperAdmin).map((item) => {
       const Icon = item.icon;
       return (
         <Link

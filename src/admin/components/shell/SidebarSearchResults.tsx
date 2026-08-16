@@ -8,6 +8,7 @@ import {
   CalendarDays,
   FileText,
   History,
+  Archive,
   Image,
   Inbox,
   LayoutDashboard,
@@ -50,6 +51,7 @@ const getSearchIcon = (id: string): LucideIcon => {
   if (id === "hero") return Image;
   if (id === "notices" || id.endsWith("-notices")) return FileText;
   if (id === "audit-logs" || id === "history") return History;
+  if (id === "retention") return Archive;
   if (id === "protect") return ShieldCheck;
   if (id === "contact") return Mail;
   if (id === "auditions") return Inbox;

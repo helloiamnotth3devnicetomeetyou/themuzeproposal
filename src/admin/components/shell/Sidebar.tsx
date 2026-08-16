@@ -274,6 +274,7 @@ export default function Sidebar({
         artistsLoading={artistsLoading}
         pathname={pathname}
         isCollapsed={isCollapsed}
+        isSuperAdmin={profile?.role === "super_admin"}
         unreadCounts={unreadCounts}
         collapsedGroups={collapsedGroups}
         toggleGroup={toggleGroup}
