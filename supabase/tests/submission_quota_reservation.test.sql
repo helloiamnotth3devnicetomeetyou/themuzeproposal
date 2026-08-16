@@ -2,8 +2,6 @@ begin;
 
 select plan(10);
 
-set local role service_role;
-
 delete from private.submission_rate_limit_reservations
 where scope in ('contact_inquiry', 'protect_report', 'audition_submission')
   and (user_key_hash in (repeat('1', 64), repeat('2', 64), repeat('3', 64))

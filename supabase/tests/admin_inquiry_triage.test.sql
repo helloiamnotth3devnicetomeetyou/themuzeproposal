@@ -146,8 +146,8 @@ begin
   select report.id into v_first_id
   from public.get_admin_protect_reports(null, null, null) as report
   limit 1;
-  if v_first_id is distinct from v_protect_id then
-    raise exception 'admin protect reports are not severity-ranked';
+  if v_first_id is distinct from v_low_protect_id then
+    raise exception 'admin protect reports are not newest-first';
   end if;
   if (select count(*) from public.get_admin_protect_reports(null, null, 'low')) <> 1 then
     raise exception 'admin protect severity filter is incorrect';
