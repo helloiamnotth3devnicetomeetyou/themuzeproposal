@@ -26,8 +26,8 @@ select ok(
 
 select ok(
   pg_get_functiondef('public.get_retention_candidates(integer)'::regprocedure)
-    ~ $$created_at <= now\(\) - interval '30 days'$$,
-  'candidates use the creation timestamp and a 30-day cutoff'
+    ~ $$deleted_at is not null$$,
+  'candidates use the trash timestamp and a 30-day cutoff'
 );
 
 select ok(

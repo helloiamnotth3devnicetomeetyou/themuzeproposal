@@ -30,9 +30,9 @@ begin
     raise exception 'invalid retention deletion request' using errcode = '22023';
   end if;
   if p_actor_id is not null and not exists (
-    select 1 from public.profiles where id = p_actor_id and role = 'super_admin'
+    select 1 from public.profiles where id = p_actor_id and role in ('super_admin', 'editor')
   ) then
-    raise exception 'super administrator access required' using errcode = '42501';
+    raise exception 'administrator access required' using errcode = '42501';
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended('retention' || chr(31) || p_kind || chr(31) || p_id::text, 0));
