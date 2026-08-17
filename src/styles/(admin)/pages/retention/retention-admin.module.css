@@ -29,8 +29,8 @@
 }
 
 .header h1 {
-  font-size: clamp(28px, 4vw, 42px);
-  line-height: 1;
+  font-size: clamp(22px, 2.6vw, 28px);
+  line-height: 1.2;
 }
 
 .lede {
@@ -59,76 +59,32 @@
 }
 
 .horizon {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(220px, 1.5fr) minmax(200px, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 22px;
-  min-height: 84px;
-  padding: 14px 18px;
-  border-block: 1px solid var(--border-default);
-  background: color-mix(in srgb, var(--bg-surface) 74%, var(--bg-base));
+  gap: 8px 22px;
+  min-height: 52px;
+  padding: 12px 18px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
 }
 
 .horizonLabel {
-  display: grid;
-  gap: 4px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .horizonLabel span {
   color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.13em;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .horizonLabel strong {
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
-}
-
-.horizonTrack {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 30px;
-  border-bottom: 1px solid var(--border-strong);
-}
-
-.horizonTrack::before {
-  position: absolute;
-  right: 0;
-  bottom: -2px;
-  left: 0;
-  height: 3px;
-  background: var(--color-brand-pink);
-  content: "";
-  opacity: 0.72;
-}
-
-.horizonTrack i {
-  z-index: 1;
-  width: 7px;
-  height: 7px;
-  border: 1px solid var(--color-brand-pink);
-  border-radius: 50%;
-  background: var(--bg-surface);
-}
-
-.horizonTrack b {
-  z-index: 1;
-  display: inline-flex;
-  min-width: 38px;
-  min-height: 24px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-brand-pink);
-  border-radius: 4px;
-  background: var(--bg-surface);
-  color: var(--color-brand-pink);
-  font: 800 10px/1 var(--font-display);
-  letter-spacing: 0.08em;
 }
 
 .horizon > p {
@@ -192,13 +148,6 @@
   position: sticky;
   top: 18px;
   padding: 22px;
-}
-
-.ruleMarker {
-  margin-bottom: 16px;
-  color: var(--text-primary);
-  font: 700 clamp(56px, 8vw, 86px)/0.78 var(--font-display);
-  letter-spacing: -0.08em;
 }
 
 .ruleCard h2 {
@@ -355,19 +304,19 @@
   gap: 7px;
   margin-left: auto;
   padding: 0 11px;
-  border: 1px solid color-mix(in srgb, var(--color-brand-pink) 72%, var(--border-default));
+  border: 1px solid color-mix(in srgb, var(--color-status-danger) 60%, var(--border-default));
   border-radius: 6px;
-  background: color-mix(in srgb, var(--color-brand-pink) 8%, transparent);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--color-status-danger) 8%, transparent);
+  color: var(--color-status-danger);
   font: inherit;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .deleteButton:hover:not(:disabled) {
-  background: var(--color-brand-pink);
-  color: var(--palette-121212);
+  background: var(--color-status-danger);
+  color: var(--bg-card);
 }
 
 .candidateList {
@@ -489,7 +438,7 @@
   height: 28px;
   margin-bottom: 4px;
   fill: none;
-  stroke: var(--color-brand-pink);
+  stroke: var(--text-faint);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.5;

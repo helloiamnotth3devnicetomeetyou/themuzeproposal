@@ -30,7 +30,7 @@ export default function ScheduleEditorSections({
   return (
     <div className="content-editor-stack">
       {tab === "details" && (
-        <div ref={detailsRef}>
+        <div ref={detailsRef} className={styles.tabStack}>
           <div className="content-section-heading">
             <h3>일정 기본 정보</h3>
             <span>
@@ -180,7 +180,7 @@ export default function ScheduleEditorSections({
         </div>
       )}
       {tab === "publish" && (
-        <>
+        <div className={styles.tabStack}>
           <div className="content-section-heading">
             <h3>공개 설정</h3>
             <span>
@@ -232,7 +232,7 @@ export default function ScheduleEditorSections({
               </span>
             </label>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

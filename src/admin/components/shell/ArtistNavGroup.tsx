@@ -48,6 +48,18 @@ export default function ArtistNavGroup({
     left: number;
   } | null>(null);
   const headingRef = useRef<HTMLButtonElement>(null);
+  const closeTimerRef = useRef<number | undefined>(undefined);
+
+  const cancelClose = useCallback(() => {
+    window.clearTimeout(closeTimerRef.current);
+  }, []);
+
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    closeTimerRef.current = window.setTimeout(() => setIsHovered(false), 200);
+  }, [cancelClose]);
+
+  useEffect(() => cancelClose, [cancelClose]);
 
   const updatePosition = useCallback(() => {
     if (headingRef.current) {
@@ -69,8 +81,11 @@ export default function ArtistNavGroup({
   return (
     <div
       className={`cms-artist-group ${isExpanded ? "is-expanded" : ""}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        cancelClose();
+        setIsHovered(true);
+      }}
+      onMouseLeave={scheduleClose}
       onFocusCapture={() => setHasFocus(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget))
@@ -146,6 +161,8 @@ export default function ArtistNavGroup({
             left: popupPos.left,
             zIndex: 9999,
           }}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
         >
           <div className="cms-artist-collapsed-popup-header">{artist.name}</div>
           <div className="cms-artist-collapsed-popup-links">

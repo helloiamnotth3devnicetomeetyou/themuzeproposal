@@ -345,14 +345,8 @@ export default function RetentionAdminPage() {
 
       <section className={styles.horizon} aria-labelledby="retention-horizon-title">
         <div className={styles.horizonLabel}>
-          <span id="retention-horizon-title">RETENTION HORIZON</span>
+          <span id="retention-horizon-title">보존 기준일</span>
           <strong>{formatDate(cutoff)}</strong>
-        </div>
-        <div className={styles.horizonTrack} aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <b>30D</b>
         </div>
         <p>오늘 기준 {formatDate(cutoff)} 이전에 휴지통으로 옮긴 항목이 삭제 대상입니다.</p>
       </section>
@@ -373,7 +367,6 @@ export default function RetentionAdminPage() {
 
       <div className={styles.layout}>
         <aside className={styles.ruleCard} aria-labelledby="retention-rule-title">
-          <div className={styles.ruleMarker} aria-hidden="true">30</div>
           <h2 id="retention-rule-title">삭제일 + 30일</h2>
           <p className={styles.ruleCopy}>
             휴지통으로 옮긴 항목만 대상이며, 옮긴 시점을 기준으로 보존 기간을 계산합니다. 휴지통에 넣지 않은 항목은 자동 삭제되지 않습니다.
@@ -475,7 +468,7 @@ export default function RetentionAdminPage() {
                       {candidate.retryable
                         ? "재시도 대기"
                         : candidate.deletedAt
-                          ? `휴지통 · ${formatDate(candidate.deletedAt)}`
+                          ? "휴지통"
                           : "보존 만료"}
                     </small>
                   </span>
