@@ -17,6 +17,7 @@ import {
   writeSessionDraft,
 } from "@/core/browser/session-draft";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { formatRetryAfterCountdown } from "@/core/utils/rate-limit-countdown";
 import type { TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidget";
 import type { Artist, MyReport } from "../ProtectClient";
 import ReportFormFields, { type ReportFormValues } from "./ReportFormFields";
@@ -70,7 +71,7 @@ export default function ReportForm({
   setError,
   error,
 }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const router = useRouter();
   const [savedDraft] = useState(() =>
     readSessionDraft<SavedDraft>(DRAFT_STORAGE_KEY),
@@ -327,8 +328,15 @@ export default function ReportForm({
         return;
       }
       const reportId = result.id;
-      if (!response.ok || !reportId)
-        throw new Error(result.code || "SUBMISSION_FAILED");
+      if (!response.ok || !reportId) {
+        const code = result.code || "SUBMISSION_FAILED";
+        if (code === "RATE_LIMITED") {
+          const retryAfter = Number(response.headers.get("Retry-After"));
+          const countdown = formatRetryAfterCountdown(retryAfter, locale);
+          throw new Error(code, { cause: countdown });
+        }
+        throw new Error(code);
+      }
       if (!mounted.current) return;
       if (typeof result.remaining === "number") setRemaining(result.remaining);
 
@@ -369,7 +377,12 @@ export default function ReportForm({
         SUBMISSION_FAILED: t.protect.errors.SUBMISSION_FAILED,
         CAPTCHA_FAILED: t.protect.errors.CAPTCHA_FAILED,
       };
-      setError(apiErrorMessages[code] || t.protect.errors.submitFailed);
+      const baseMessage = apiErrorMessages[code] || t.protect.errors.submitFailed;
+      const countdown =
+        submitError instanceof Error && typeof submitError.cause === "string"
+          ? submitError.cause
+          : "";
+      setError(countdown ? `${baseMessage} ${countdown}` : baseMessage);
       setTurnstileToken("");
       turnstileRef.current?.reset();
     } finally {

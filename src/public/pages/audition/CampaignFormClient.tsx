@@ -13,6 +13,7 @@ import {
   type AuditionSubmission,
 } from "@/core/auditions/types";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { formatRetryAfterCountdown } from "@/core/utils/rate-limit-countdown";
 import {
   readSessionDraft,
   removeSessionDraft,
@@ -202,7 +203,15 @@ export default function CampaignFormClient({
         body: formData,
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(m.errors[body.code] || m.submitFailed);
+      if (!response.ok) {
+        const baseMessage = m.errors[body.code] || m.submitFailed;
+        if (body.code === "RATE_LIMITED") {
+          const retryAfter = Number(response.headers.get("Retry-After"));
+          const countdown = formatRetryAfterCountdown(retryAfter, locale);
+          throw new Error(countdown ? `${baseMessage} ${countdown}` : baseMessage);
+        }
+        throw new Error(baseMessage);
+      }
       onSaved(
         body.submission as AuditionSubmission,
         Number(body.remaining) || 0,

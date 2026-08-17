@@ -13,6 +13,7 @@ import {
   writeSessionDraft,
 } from "@/core/browser/session-draft";
 import { useLocale } from "@/core/providers/LocaleContext";
+import { formatRetryAfterCountdown } from "@/core/utils/rate-limit-countdown";
 import {
   ALLOWED_EXTENSIONS,
   EMPTY_ERROR,
@@ -269,8 +270,15 @@ export function useContactForm({
         code?: string;
       };
       if (requestId !== submissionId.current) return;
-      if (!response.ok || !result.id)
-        throw new Error(result.code || "SUBMISSION_FAILED");
+      if (!response.ok || !result.id) {
+        const code = result.code || "SUBMISSION_FAILED";
+        if (code === "RATE_LIMITED") {
+          const retryAfter = Number(response.headers.get("Retry-After"));
+          const countdown = formatRetryAfterCountdown(retryAfter, locale);
+          throw new Error(code, { cause: countdown });
+        }
+        throw new Error(code);
+      }
       if (typeof result.remaining === "number") setRemaining(result.remaining);
       removeSessionDraft(DRAFT_STORAGE_KEY);
       setSubmittedId(result.id);
@@ -281,10 +289,14 @@ export function useContactForm({
         submitError instanceof Error
           ? submitError.message
           : "SUBMISSION_FAILED";
-      setError(
+      const baseMessage =
         messages.errors[code as keyof typeof messages.errors] ||
-          messages.errors.SUBMISSION_FAILED,
-      );
+          messages.errors.SUBMISSION_FAILED;
+      const countdown =
+        submitError instanceof Error && typeof submitError.cause === "string"
+          ? submitError.cause
+          : "";
+      setError(countdown ? `${baseMessage} ${countdown}` : baseMessage);
       setTurnstileToken("");
       resetTurnstile?.();
     } finally {
