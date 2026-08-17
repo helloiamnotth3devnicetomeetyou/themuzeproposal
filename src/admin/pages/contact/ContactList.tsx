@@ -251,7 +251,7 @@ export default function ContactList({
                     onClick={onDeleteSelected}
                   >
                     <Trash2 aria-hidden="true" />
-                    {deleting ? "삭제 중" : `${selectedCount}건 삭제`}
+                    {deleting ? "이동 중" : `${selectedCount}건 휴지통으로`}
                   </button>
                 </div>
               )}

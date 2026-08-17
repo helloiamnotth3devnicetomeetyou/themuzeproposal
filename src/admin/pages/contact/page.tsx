@@ -231,15 +231,16 @@ export default function ContactAdminPage() {
     if (!selectedIds.length || deletingSelected) return;
     const ids = [...selectedIds];
     if (!(await confirm({
-      title: `선택한 문의 ${ids.length}건을 삭제할까요?`,
-      description: "문의 내용과 첨부 파일이 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
-      confirmLabel: "삭제",
+      title: `선택한 문의 ${ids.length}건을 휴지통으로 옮길까요?`,
+      description:
+        "문의 내용과 첨부 파일은 보존 관리 화면의 휴지통에 남고, 거기에서 되돌리거나 영구 삭제할 수 있습니다.",
+      confirmLabel: "휴지통으로 이동",
     }))) return;
 
     setDeletingSelected(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/submissions/delete", {
+      const response = await fetch("/api/admin/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -261,7 +262,7 @@ export default function ContactAdminPage() {
           : [];
       const failedCount = body?.failed?.length ?? 0;
       if (!response.ok && !deletedIds.length) {
-        throw new Error(body?.error || "선택한 문의를 삭제하지 못했습니다.");
+        throw new Error(body?.error || "선택한 문의를 휴지통으로 옮기지 못했습니다.");
       }
       if (deletedIds.length) {
         setInquiries((current) => current.filter((inquiry) => !deletedIds.includes(inquiry.id)));
@@ -269,10 +270,14 @@ export default function ContactAdminPage() {
         await fetchInquiries();
       }
       if (failedCount) {
-        setError(`${deletedIds.length}건 삭제, ${failedCount}건은 재시도 대기로 남겼습니다.`);
+        setError(`${deletedIds.length}건 휴지통으로 이동, ${failedCount}건은 남아 있습니다.`);
       }
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "선택한 문의를 삭제하지 못했습니다.");
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "선택한 문의를 휴지통으로 옮기지 못했습니다.",
+      );
     } finally {
       setDeletingSelected(false);
     }

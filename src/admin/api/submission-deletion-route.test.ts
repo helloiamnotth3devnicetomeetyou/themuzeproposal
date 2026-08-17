@@ -8,11 +8,9 @@ const mocks = vi.hoisted(() => ({
   createSessionClient: vi.fn(),
   createServiceClient: vi.fn(),
   rpc: vi.fn(),
-  deleteObjects: vi.fn(),
 }));
 
 vi.mock("@/core/auth/admin-auth", () => ({ isAdmin: mocks.isAdmin }));
-vi.mock("@/core/storage/r2", () => ({ deleteObjects: mocks.deleteObjects }));
 vi.mock("@/core/supabase/server", () => ({
   createSupabaseServerClient: mocks.createSessionClient,
 }));
@@ -46,8 +44,7 @@ describe("/api/admin/submissions", () => {
       auth: { getUser: mocks.getUser },
     });
     mocks.createServiceClient.mockReturnValue({ rpc: mocks.rpc });
-    mocks.rpc.mockResolvedValue({ data: null, error: null });
-    mocks.deleteObjects.mockResolvedValue({ error: false });
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
   });
 
   it("rejects cross-origin requests before reading the session", async () => {
@@ -91,25 +88,17 @@ describe("/api/admin/submissions", () => {
     expect(mocks.createServiceClient).not.toHaveBeenCalled();
   });
 
-  it("deletes contact and protect attachments before finalizing each row", async () => {
+  it("moves both kinds to the trash without touching stored files", async () => {
     mocks.rpc.mockImplementation(
-      async (name: string, args: Record<string, unknown>) => {
-        if (name === "reserve_submission_deletion") {
-          return {
-            data:
-              args.p_kind === "contact_inquiry"
-                ? [{ bucket: "contact-attachments", path: "contact/file.pdf" }]
-                : [{ bucket: "protect-evidence", path: "protect/file.png" }],
-            error: null,
-          };
-        }
-        return { data: null, error: null };
-      },
+      async (_name: string, args: Record<string, unknown>) => ({
+        data: args.p_ids,
+        error: null,
+      }),
     );
 
     const response = await POST(
       request({
-        candidates: [
+        items: [
           { kind: "contact_inquiry", id: contactId },
           { kind: "protect_report", id: protectId },
         ],
@@ -119,69 +108,58 @@ describe("/api/admin/submissions", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      action: "trash",
       deleted_count: 2,
       failed: [],
     });
-    expect(mocks.deleteObjects).toHaveBeenNthCalledWith(
-      1,
-      "contact-attachments",
-      ["contact/file.pdf"],
-    );
-    expect(mocks.deleteObjects).toHaveBeenNthCalledWith(2, "protect-evidence", [
-      "protect/file.png",
-    ]);
+    expect(mocks.rpc).toHaveBeenCalledWith("set_submission_trash", {
+      p_kind: "contact_inquiry",
+      p_ids: [contactId],
+      p_actor_id: actorId,
+      p_trashed: true,
+    });
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finalize_retention_deletion",
-      expect.objectContaining({
-        p_actor_id: actorId,
-        p_objects_deleted: true,
-      }),
+      "set_submission_trash",
+      expect.objectContaining({ p_kind: "protect_report", p_trashed: true }),
     );
   });
 
-  it("keeps a retryable job when R2 or database deletion fails", async () => {
-    mocks.rpc.mockImplementation(async (name: string) => {
-      if (name === "reserve_submission_deletion") {
-        return {
-          data: [{ bucket: "contact-attachments", path: "contact/file.pdf" }],
-          error: null,
-        };
-      }
-      if (name === "finalize_retention_deletion")
-        return { data: null, error: new Error("database unavailable") };
-      return { data: null, error: null };
-    });
-    mocks.deleteObjects.mockResolvedValueOnce({ error: true });
+  it("restores trashed submissions when asked", async () => {
+    mocks.rpc.mockResolvedValue({ data: [contactId], error: null });
 
-    const r2Response = await POST(
-      request({ candidates: [{ kind: "contact_inquiry", id: contactId }] }),
+    const response = await POST(
+      request({
+        action: "restore",
+        items: [{ kind: "contact_inquiry", id: contactId }],
+      }),
     );
-    if (!r2Response) throw new Error("missing response");
-    expect(r2Response.status).toBe(503);
-    await expect(r2Response.json()).resolves.toMatchObject({
-      failed: [
-        { kind: "contact_inquiry", id: contactId, code: "DELETE_FAILED" },
-      ],
+    if (!response) throw new Error("missing response");
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      action: "restore",
+      deleted_count: 1,
     });
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "retry_retention_deletion",
-      expect.objectContaining({ p_objects_deleted: false }),
+      "set_submission_trash",
+      expect.objectContaining({ p_trashed: false }),
     );
+  });
 
-    mocks.deleteObjects.mockResolvedValue({ error: false });
-    const databaseResponse = await POST(
-      request({ candidates: [{ kind: "contact_inquiry", id: contactId }] }),
-    );
-    if (!databaseResponse) throw new Error("missing response");
-    expect(databaseResponse.status).toBe(503);
-    await expect(databaseResponse.json()).resolves.toMatchObject({
-      failed: [
-        { kind: "contact_inquiry", id: contactId, code: "RETRY_REQUIRED" },
-      ],
+  it("reports rows the database refused", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: "42501", message: "administrator access required" },
     });
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      "retry_retention_deletion",
-      expect.objectContaining({ p_objects_deleted: true }),
+
+    const response = await POST(
+      request({ items: [{ kind: "contact_inquiry", id: contactId }] }),
     );
+    if (!response) throw new Error("missing response");
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: [{ kind: "contact_inquiry", id: contactId, code: "FORBIDDEN" }],
+    });
   });
 });

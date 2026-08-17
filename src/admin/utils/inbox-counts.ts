@@ -17,10 +17,12 @@ export async function getAdminInboxCounts(
     client
       .from("contact_inquiries")
       .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
       .eq("status", "pending"),
     client
       .from("protect_reports")
       .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
       .eq("status", "pending"),
   ]);
   const error = auditions.error || contacts.error || reports.error;

@@ -33,7 +33,7 @@ function getPageLabel(pathname: string) {
   if (pathname.includes("/hero")) return "메인 앨범";
   if (pathname.includes("/notices")) return "공지";
   if (pathname.includes("/audit-logs")) return "변경 이력";
-  if (pathname.includes("/retention")) return "보존 관리";
+  if (pathname.includes("/retention")) return "휴지통 · 보존";
   if (pathname.includes("/auditions")) return "오디션";
   if (pathname.includes("/protect")) return "권익 보호";
   if (pathname.includes("/contact")) return "문의";

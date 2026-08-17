@@ -34,6 +34,7 @@ export type ContactInquiry = {
   ai_classified_at: string | null;
   read_at: string | null;
   read_by: string | null;
+  deleted_at: string | null;
 };
 
 export const PAGE_SIZE = 20;
@@ -71,6 +72,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
     let request = supabase
       .from("contact_inquiries")
       .select("*", { count: "exact" })
+      .is("deleted_at", null)
       .eq("category", category);
     if (filter !== "all") request = request.eq("status", filter);
     if (urgencyFilter === "urgent") request = request.in("urgency", ["high", "urgent"]);
@@ -94,16 +96,19 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
           supabase
             .from("contact_inquiries")
             .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
             .eq("category", "general")
             .abortSignal(controller.signal),
           supabase
             .from("contact_inquiries")
             .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
             .eq("category", "business")
             .abortSignal(controller.signal),
           supabase
             .from("contact_inquiries")
             .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
             .is("ai_classified_at", null)
             .abortSignal(controller.signal),
         ]);
@@ -171,6 +176,7 @@ export function useContactInquiries(requestedFilter: ContactStatus | "all") {
       supabase
         .from("contact_inquiries")
         .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
         .is("ai_classified_at", null),
     ]);
     if (fetchError || countResult.error) return;

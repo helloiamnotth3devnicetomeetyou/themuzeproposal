@@ -13,6 +13,7 @@ type RetentionCandidate = {
   expiresAt: string;
   attachmentCount: number;
   retryable: boolean;
+  deletedAt: string | null;
 };
 
 type ApiRetentionCandidate = {
@@ -22,6 +23,7 @@ type ApiRetentionCandidate = {
   expires_at: string;
   attachment_count: number;
   retryable: boolean;
+  deleted_at?: string | null;
 };
 
 type RetentionPayload = {
@@ -67,6 +69,8 @@ function parsePayload(value: unknown): RetentionPayload {
     expiresAt: candidate.expires_at,
     attachmentCount: candidate.attachment_count,
     retryable: candidate.retryable,
+    deletedAt:
+      typeof candidate.deleted_at === "string" ? candidate.deleted_at : null,
   })).sort((left, right) => {
     const leftTime = Date.parse(left.createdAt);
     const rightTime = Date.parse(right.createdAt);
@@ -205,6 +209,9 @@ export default function RetentionAdminPage() {
   const someSelected = selectedCount > 0 && !allSelected;
   const policyDays = payload?.policyDays || POLICY_DAYS;
   const cutoff = new Date(now - policyDays * 86_400_000).toISOString();
+  const restorableCount = candidates.filter(
+    (candidate) => candidate.deletedAt && selected.has(candidateKey(candidate)),
+  ).length;
   const candidateSummary = useMemo(() => {
     const contacts = candidates.filter((candidate) => candidate.kind === "contact_inquiry").length;
     const protects = candidates.length - contacts;
@@ -231,6 +238,42 @@ export default function RetentionAdminPage() {
       allSelected ? new Set() : new Set(candidates.map((candidate) => candidateKey(candidate))),
     );
     setNotice("");
+  };
+
+  const selectedCandidates = () =>
+    candidates.filter((candidate) => selected.has(candidateKey(candidate)));
+
+  const restoreSelected = async () => {
+    const items = selectedCandidates().filter((candidate) => candidate.deletedAt);
+    if (!items.length || deleting) return;
+    setDeleting(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/submissions", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "restore",
+          items: items.map(({ kind, id }) => ({ kind, id })),
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      const restored = (body as { deleted_count?: unknown } | null)?.deleted_count;
+      if (typeof restored !== "number")
+        throw new Error(errorMessage(body, "선택한 항목을 되돌리지 못했습니다."));
+      setNotice(`${restored}건을 메일함으로 되돌렸습니다.`);
+      await load(true);
+    } catch (restoreError) {
+      setError(
+        restoreError instanceof Error
+          ? restoreError.message
+          : "선택한 항목을 되돌리지 못했습니다.",
+      );
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const deleteSelected = async () => {
@@ -286,8 +329,10 @@ export default function RetentionAdminPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>보존 대기열</h1>
-          <p className={styles.lede}>생성일로부터 30일이 지난 문의와 제보를 검토하고 정리합니다.</p>
+          <h1>보존 대기열 · 휴지통</h1>
+          <p className={styles.lede}>
+            휴지통으로 옮긴 문의·제보와 생성일로부터 30일이 지난 항목을 되돌리거나 영구 삭제합니다.
+          </p>
         </div>
       </header>
 
@@ -375,6 +420,17 @@ export default function RetentionAdminPage() {
               {selectedCount ? `${selectedCount}건 선택됨` : "선택된 항목 없음"}
             </span>
             <button
+              className={styles.refresh}
+              type="button"
+              onClick={() => void restoreSelected()}
+              disabled={!restorableCount || deleting}
+            >
+              <Icon name="refresh" />
+              <span>
+                {restorableCount ? `${restorableCount}건 되돌리기` : "되돌리기"}
+              </span>
+            </button>
+            <button
               className={styles.deleteButton}
               type="button"
               onClick={() => void deleteSelected()}
@@ -408,7 +464,13 @@ export default function RetentionAdminPage() {
                   </span>
                   <span className={styles.candidateIdentity}>
                     <strong>{shortId(candidate.id)}</strong>
-                    <small>{candidate.retryable ? "재시도 대기" : "보존 만료"}</small>
+                    <small>
+                      {candidate.retryable
+                        ? "재시도 대기"
+                        : candidate.deletedAt
+                          ? `휴지통 · ${formatDate(candidate.deletedAt)}`
+                          : "보존 만료"}
+                    </small>
                   </span>
                   <span className={styles.candidateDate}>
                     <strong>{formatDate(candidate.createdAt, true)}</strong>
@@ -426,7 +488,7 @@ export default function RetentionAdminPage() {
             <div className={styles.empty} role="status">
               <Icon name="archive" />
               <strong>지금 정리할 항목이 없습니다.</strong>
-              <span>생성일 기준 30일이 지난 문의·제보가 여기에 표시됩니다.</span>
+              <span>휴지통으로 옮긴 항목과 생성일 기준 30일이 지난 문의·제보가 여기에 표시됩니다.</span>
             </div>
           )}
 

@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(7);
 
 select ok(
   has_function_privilege(
@@ -57,6 +57,30 @@ select ok(
     'public.finalize_retention_deletion(text,uuid,uuid,uuid,boolean)'::regprocedure
   ) !~ $$content$$,
   'manual finalization keeps audit metadata free of submitted content'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.set_submission_trash(text,uuid[],uuid,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.set_submission_trash(text,uuid[],uuid,boolean)',
+    'execute'
+  ),
+  'trashing a submission is server-only'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.get_admin_protect_reports(text,text,text)'::regprocedure
+  ) ~ $$report.deleted_at is null$$
+  and pg_get_functiondef(
+    'public.get_retention_candidates(integer)'::regprocedure
+  ) ~ $$deleted_at is not null$$,
+  'trashed reports leave the inbox and appear in the retention queue'
 );
 
 select * from finish();

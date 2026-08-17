@@ -200,7 +200,7 @@ export default function ProtectReportList({
                     disabled={deleting}
                   >
                     <Trash2 aria-hidden="true" />
-                    {deleting ? "삭제 중" : "선택 삭제"}
+                    {deleting ? "이동 중" : "휴지통으로 이동"}
                   </button>
                 </>
               )}

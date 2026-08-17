@@ -39,6 +39,7 @@ const inquiry: ContactInquiry = {
   ai_classified_at: null,
   read_at: null,
   read_by: null,
+  deleted_at: null,
 };
 
 describe("ContactList", () => {

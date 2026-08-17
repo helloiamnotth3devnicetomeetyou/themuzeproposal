@@ -3,31 +3,27 @@ import { z } from "zod";
 import { requireAdmin } from "@/core/auth/require-admin";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { deleteObjects } from "@/core/storage/r2";
 import { createServiceRoleClient } from "@/core/supabase/service";
-import { isSafeStoragePath } from "@/core/uploads/service-storage";
 
 export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_CANDIDATES = 50;
-const MAX_ATTACHMENTS_PER_CANDIDATE = 100;
 const KINDS = ["contact_inquiry", "protect_report"] as const;
 const candidateSchema = z.object({
   kind: z.enum(KINDS),
   id: z.string().uuid(),
 });
+const itemsSchema = z.array(candidateSchema).min(1).max(MAX_CANDIDATES);
+const action = z.enum(["trash", "restore"]).default("trash");
 const deletionSchema = z.union([
   z
-    .object({ items: z.array(candidateSchema).min(1).max(MAX_CANDIDATES) })
-    .transform(({ items }) => ({ candidates: items })),
-  z.object({ candidates: z.array(candidateSchema).min(1).max(MAX_CANDIDATES) }),
+    .object({ items: itemsSchema, action })
+    .transform(({ items, action: mode }) => ({ candidates: items, action: mode })),
+  z.object({ candidates: itemsSchema, action }),
 ]);
 
-type ServiceClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
 type Candidate = z.infer<typeof candidateSchema>;
-type PrivateBucket = "contact-attachments" | "protect-evidence";
-type ReservedAttachment = { bucket: PrivateBucket; path: string };
 
 function response(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -50,97 +46,6 @@ function rpcCode(error: unknown) {
   if (code === "P0002" || /not found|already deleted/i.test(message))
     return "NOT_FOUND";
   return "SERVICE_UNAVAILABLE";
-}
-
-function mapReservedAttachments(data: unknown): ReservedAttachment[] | null {
-  if (!Array.isArray(data) || data.length > MAX_ATTACHMENTS_PER_CANDIDATE)
-    return null;
-  const attachments: ReservedAttachment[] = [];
-  for (const row of data) {
-    if (!row || typeof row !== "object") return null;
-    const value = row as Record<string, unknown>;
-    const bucket = value.bucket;
-    const path = value.path;
-    if (
-      (bucket !== "contact-attachments" && bucket !== "protect-evidence") ||
-      typeof path !== "string" ||
-      !isSafeStoragePath(path)
-    )
-      return null;
-    attachments.push({ bucket, path });
-  }
-  return attachments;
-}
-
-async function markRetry(
-  service: ServiceClient,
-  item: Candidate,
-  actorId: string,
-  reservationId: string,
-  objectsDeleted: boolean,
-) {
-  return service.rpc("retry_retention_deletion", {
-    p_kind: item.kind,
-    p_id: item.id,
-    p_actor_id: actorId,
-    p_reservation_id: reservationId,
-    p_objects_deleted: objectsDeleted,
-  });
-}
-
-async function deleteOne(
-  service: ServiceClient,
-  item: Candidate,
-  actorId: string,
-) {
-  const reservationId = crypto.randomUUID();
-  const reservation = await service.rpc("reserve_submission_deletion", {
-    p_kind: item.kind,
-    p_id: item.id,
-    p_actor_id: actorId,
-    p_reservation_id: reservationId,
-  });
-  if (reservation.error)
-    return { item, deleted: false, code: rpcCode(reservation.error) } as const;
-
-  const attachments = mapReservedAttachments(reservation.data);
-  if (!attachments) {
-    await markRetry(service, item, actorId, reservationId, false);
-    return { item, deleted: false, code: "SERVICE_UNAVAILABLE" } as const;
-  }
-
-  const byBucket = new Map<PrivateBucket, string[]>();
-  for (const attachment of attachments) {
-    const paths = byBucket.get(attachment.bucket) ?? [];
-    paths.push(attachment.path);
-    byBucket.set(attachment.bucket, paths);
-  }
-  for (const [bucket, paths] of byBucket) {
-    const result = await deleteObjects(bucket, [...new Set(paths)]);
-    if (result.error) {
-      await markRetry(service, item, actorId, reservationId, false);
-      return { item, deleted: false, code: "DELETE_FAILED" } as const;
-    }
-  }
-
-  // Keep the reservation in objects_deleted before touching the database row.
-  // A retry can then finalize without issuing another R2 delete.
-  const marked = await markRetry(service, item, actorId, reservationId, true);
-  if (marked.error)
-    return { item, deleted: false, code: "RETRY_REQUIRED" } as const;
-
-  const finalized = await service.rpc("finalize_retention_deletion", {
-    p_kind: item.kind,
-    p_id: item.id,
-    p_actor_id: actorId,
-    p_reservation_id: reservationId,
-    p_objects_deleted: true,
-  });
-  if (finalized.error) {
-    await markRetry(service, item, actorId, reservationId, true);
-    return { item, deleted: false, code: "RETRY_REQUIRED" } as const;
-  }
-  return { item, deleted: true } as const;
 }
 
 export async function POST(request: NextRequest) {
@@ -168,29 +73,47 @@ export async function POST(request: NextRequest) {
       ]),
     ).values(),
   ];
-  const results = [];
-  for (const candidate of candidates) {
-    try {
-      results.push(await deleteOne(service, candidate, auth.user.id));
-    } catch {
-      results.push({
-        item: candidate,
-        deleted: false,
-        code: "SERVICE_UNAVAILABLE",
-      });
+  const trashed = parsed.data.action === "trash";
+
+  // The row and its files stay put: the retention screen is the only place that
+  // erases them, so a mistaken deletion is recoverable for 30 days.
+  const moved = new Set<string>();
+  let failureCode = "";
+  for (const kind of KINDS) {
+    const ids = candidates
+      .filter((candidate) => candidate.kind === kind)
+      .map((candidate) => candidate.id);
+    if (!ids.length) continue;
+    const { data, error } = await service.rpc("set_submission_trash", {
+      p_kind: kind,
+      p_ids: ids,
+      p_actor_id: auth.user.id,
+      p_trashed: trashed,
+    });
+    if (error) {
+      failureCode = rpcCode(error);
+      continue;
+    }
+    for (const row of Array.isArray(data) ? data : []) {
+      const id = typeof row === "string" ? row : (row as { id?: unknown })?.id;
+      if (typeof id === "string") moved.add(`${kind}:${id}`);
     }
   }
 
-  const deleted = results
-    .filter((result) => result.deleted)
-    .map((result) => result.item);
-  const failed = results
-    .filter((result) => !result.deleted)
-    .map((result) => ({ ...result.item, code: result.code }));
+  const isMoved = (candidate: Candidate) =>
+    moved.has(`${candidate.kind}:${candidate.id}`);
+  const deleted = candidates.filter(isMoved);
+  const failed = candidates
+    .filter((candidate) => !isMoved(candidate))
+    .map((candidate) => ({
+      ...candidate,
+      code: failureCode || "NOT_FOUND",
+    }));
   return response(
     {
       deleted,
       failed,
+      action: parsed.data.action,
       deleted_count: deleted.length,
       failed_count: failed.length,
     },

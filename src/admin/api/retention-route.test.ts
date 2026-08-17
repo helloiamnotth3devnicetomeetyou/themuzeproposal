@@ -52,6 +52,7 @@ function retentionCandidate(id: string, kind: "contact_inquiry" | "protect_repor
     expires_at: "2026-07-31T00:00:00.000Z",
     attachment_count: 1,
     retryable: false,
+    deleted_at: null,
   };
 }
 
@@ -151,7 +152,7 @@ describe("/api/admin/retention", () => {
 
   it("deletes contact and protect objects before finalizing each database record", async () => {
     mocks.rpc.mockImplementation(async (name: string, args: Record<string, unknown>) => {
-      if (name === "reserve_retention_deletion") {
+      if (name === "reserve_submission_deletion") {
         return {
           data:
             args.p_kind === "contact_inquiry"
@@ -225,7 +226,7 @@ describe("/api/admin/retention", () => {
 
   it("records a retryable reservation when R2 deletion fails", async () => {
     mocks.rpc.mockImplementation(async (name: string) => {
-      if (name === "reserve_retention_deletion") {
+      if (name === "reserve_submission_deletion") {
         return {
           data: [
             { bucket: "contact-attachments", path: "contact/attachment.pdf" },
@@ -268,7 +269,7 @@ describe("/api/admin/retention", () => {
 
   it("preserves an objects-deleted retry state when database finalization fails", async () => {
     mocks.rpc.mockImplementation(async (name: string) => {
-      if (name === "reserve_retention_deletion") {
+      if (name === "reserve_submission_deletion") {
         return {
           data: [
             { bucket: "protect-evidence", path: "protect/evidence.png" },

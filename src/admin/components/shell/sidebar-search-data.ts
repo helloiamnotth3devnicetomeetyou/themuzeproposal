@@ -76,7 +76,7 @@ export function buildSearchItems(
     {
       id: "retention",
       categoryLabel: "시스템",
-      title: "30일 보존 관리",
+      title: "휴지통 · 30일 보존 관리",
       url: "/admin/retention",
     },
     {

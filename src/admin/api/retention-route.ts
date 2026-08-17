@@ -28,6 +28,7 @@ type Candidate = z.infer<typeof candidateSchema> & {
   expires_at: string;
   attachment_count: number;
   retryable: boolean;
+  deleted_at: string | null;
 };
 type ReservedAttachment = {
   bucket: "contact-attachments" | "protect-evidence";
@@ -78,6 +79,7 @@ function mapCandidate(row: unknown): Candidate | null {
     expires_at: expiresAt,
     attachment_count: attachmentCount,
     retryable: value.retryable === true || value.status === "retryable",
+    deleted_at: typeof value.deleted_at === "string" ? value.deleted_at : null,
   };
 }
 
@@ -143,9 +145,12 @@ async function purgeOne(
   service: ServiceClient,
   item: z.infer<typeof candidateSchema>,
   actorId: string | null,
+  // The scheduled purge keeps the 30-day cutoff; an admin emptying the trash
+  // erases what they already moved there, whatever its age.
+  reserveRpc: "reserve_retention_deletion" | "reserve_submission_deletion",
 ) {
   const reservationId = crypto.randomUUID();
-  const reservation = await service.rpc("reserve_retention_deletion", {
+  const reservation = await service.rpc(reserveRpc, {
     p_kind: item.kind,
     p_id: item.id,
     p_actor_id: actorId,
@@ -196,11 +201,14 @@ export async function purgeRetentionCandidates(
   service: ServiceClient,
   candidates: Array<z.infer<typeof candidateSchema>>,
   actorId: string | null,
+  reserveRpc:
+    | "reserve_retention_deletion"
+    | "reserve_submission_deletion" = "reserve_retention_deletion",
 ) {
   const results = [];
   for (const item of candidates) {
     try {
-      results.push(await purgeOne(service, item, actorId));
+      results.push(await purgeOne(service, item, actorId, reserveRpc));
     } catch {
       results.push({ item, code: "SERVICE_UNAVAILABLE", deleted: false });
     }
@@ -268,7 +276,12 @@ export async function POST(request: NextRequest) {
       ]),
     ).values(),
   ];
-  const results = await purgeRetentionCandidates(service, unique, auth.user.id);
+  const results = await purgeRetentionCandidates(
+    service,
+    unique,
+    auth.user.id,
+    "reserve_submission_deletion",
+  );
   const deleted = results
     .filter((result) => result.deleted)
     .map((result) => result.item);

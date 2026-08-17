@@ -147,10 +147,12 @@ export default function ProtectAdminPage() {
         supabase
           .from("protect_reports")
           .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
           .eq("status", "pending"),
         supabase
           .from("protect_reports")
           .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
           .eq("status", "reviewing"),
         supabase.rpc("get_admin_unclassified_counts"),
       ]);
@@ -391,12 +393,11 @@ export default function ProtectAdminPage() {
     if (!ids.length || deleting) return;
     if (
       !(await confirm({
-        title: `${ids.length}건의 제보를 삭제할까요?`,
+        title: `${ids.length}건의 제보를 휴지통으로 옮길까요?`,
         description:
-          "선택한 문의·제보와 연결된 파일이 함께 삭제됩니다. 삭제 후에는 복구할 수 없습니다.",
-        confirmLabel: "제보 삭제",
+          "제보와 증거 파일은 보존 관리 화면의 휴지통에 남고, 거기에서 되돌리거나 영구 삭제할 수 있습니다.",
+        confirmLabel: "휴지통으로 이동",
         cancelLabel: "취소",
-        tone: "danger",
       }))
     )
       return;
@@ -404,7 +405,7 @@ export default function ProtectAdminPage() {
     setDeleting(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/submissions/delete", {
+      const response = await fetch("/api/admin/submissions", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
@@ -438,14 +439,14 @@ export default function ProtectAdminPage() {
             ? body.message
             : typeof body?.error === "string"
               ? body.error
-              : "선택한 제보를 삭제하지 못했습니다.";
+              : "선택한 제보를 휴지통으로 옮기지 못했습니다.";
         throw new Error(detail);
       }
 
       const removedIds = deletedIds.size
         ? deletedIds
         : new Set(ids.filter((id) => !failedIds.has(id)));
-      if (!removedIds.size) throw new Error("선택한 제보를 삭제하지 못했습니다.");
+      if (!removedIds.size) throw new Error("선택한 제보를 휴지통으로 옮기지 못했습니다.");
       setReports((current) =>
         current.filter((report) => !removedIds.has(report.id)),
       );
@@ -458,7 +459,7 @@ export default function ProtectAdminPage() {
       if (viewing && removedIds.has(viewing.id)) setViewing(null);
       if (failedIds.size) {
         setError(
-          `${removedIds.size}건을 삭제했고 ${failedIds.size}건은 삭제하지 못했습니다.`,
+          `${removedIds.size}건을 휴지통으로 옮겼고 ${failedIds.size}건은 남아 있습니다.`,
         );
       }
       window.dispatchEvent(new Event("admin-inbox-changed"));
@@ -467,7 +468,7 @@ export default function ProtectAdminPage() {
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "선택한 제보를 삭제하지 못했습니다.",
+          : "선택한 제보를 휴지통으로 옮기지 못했습니다.",
       );
     } finally {
       setDeleting(false);

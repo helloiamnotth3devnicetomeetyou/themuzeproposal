@@ -72,7 +72,7 @@ const inboxLinks: InboxLink[] = [
 
 const systemLinks: NavigationLink[] = [
   {
-    label: "보존 관리",
+    label: "휴지통 · 보존",
     href: "/admin/retention",
     icon: Archive,
   },
