@@ -142,7 +142,7 @@ describe("/api/admin/retention", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      policy: { days: 30, basis: "created_at" },
+      policy: { days: 30, basis: "deleted_at" },
       candidates: [retentionCandidate(contactId, "contact_inquiry")],
     });
     expect(mocks.rpc).toHaveBeenCalledWith("get_retention_candidates", {

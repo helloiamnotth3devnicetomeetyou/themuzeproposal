@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
   const listed = await listRetentionCandidates(service, limit);
   if (listed.error) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
   return response({
-    policy: { days: 30, basis: "created_at" },
+    policy: { days: 30, basis: "deleted_at" },
     candidates: listed.candidates,
   });
 }

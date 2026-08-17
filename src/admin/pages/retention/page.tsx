@@ -41,7 +41,7 @@ function parsePayload(value: unknown): RetentionPayload {
   };
   if (
     !root.policy ||
-    root.policy.basis !== "created_at" ||
+    root.policy.basis !== "deleted_at" ||
     !Number.isSafeInteger(root.policy.days) ||
     Number(root.policy.days) < 1 ||
     !Array.isArray(root.candidates)
@@ -72,6 +72,13 @@ function parsePayload(value: unknown): RetentionPayload {
     deletedAt:
       typeof candidate.deleted_at === "string" ? candidate.deleted_at : null,
   })).sort((left, right) => {
+    const leftDeleted = left.deletedAt ? Date.parse(left.deletedAt) : NaN;
+    const rightDeleted = right.deletedAt ? Date.parse(right.deletedAt) : NaN;
+    if (Number.isFinite(leftDeleted) || Number.isFinite(rightDeleted)) {
+      if (!Number.isFinite(leftDeleted)) return 1;
+      if (!Number.isFinite(rightDeleted)) return -1;
+      return rightDeleted - leftDeleted;
+    }
     const leftTime = Date.parse(left.createdAt);
     const rightTime = Date.parse(right.createdAt);
     if (!Number.isFinite(leftTime)) return Number.isFinite(rightTime) ? 1 : 0;
@@ -281,7 +288,7 @@ export default function RetentionAdminPage() {
     const confirmed = await confirm({
       title: `${selectedCount}건을 영구 삭제할까요?`,
       description:
-        "생성일 기준 30일이 지난 문의·제보와 연결 파일이 삭제됩니다. 삭제 후에는 복구할 수 없습니다.",
+        "선택한 문의·제보와 연결 파일이 즉시 영구 삭제됩니다. 삭제 후에는 복구할 수 없습니다.",
       confirmLabel: "영구 삭제",
       cancelLabel: "취소",
       tone: "danger",
@@ -331,7 +338,7 @@ export default function RetentionAdminPage() {
         <div>
           <h1>보존 대기열 · 휴지통</h1>
           <p className={styles.lede}>
-            휴지통으로 옮긴 문의·제보와 생성일로부터 30일이 지난 항목을 되돌리거나 영구 삭제합니다.
+            휴지통으로 옮긴 문의·제보는 삭제일 기준 30일 후 자동 삭제됩니다. 여기서 되돌리거나 즉시 영구 삭제할 수 있습니다.
           </p>
         </div>
       </header>
@@ -347,7 +354,7 @@ export default function RetentionAdminPage() {
           <i />
           <b>30D</b>
         </div>
-        <p>오늘 기준 {formatDate(cutoff)} 이전 생성분이 삭제 대상입니다.</p>
+        <p>오늘 기준 {formatDate(cutoff)} 이전에 휴지통으로 옮긴 항목이 삭제 대상입니다.</p>
       </section>
 
       {error && (
@@ -367,9 +374,9 @@ export default function RetentionAdminPage() {
       <div className={styles.layout}>
         <aside className={styles.ruleCard} aria-labelledby="retention-rule-title">
           <div className={styles.ruleMarker} aria-hidden="true">30</div>
-          <h2 id="retention-rule-title">생성일 + 30일</h2>
+          <h2 id="retention-rule-title">삭제일 + 30일</h2>
           <p className={styles.ruleCopy}>
-            접수된 시점을 기준으로 보존 기간을 계산합니다. 삭제 작업은 이 화면에서 선택한 항목에만 적용됩니다.
+            휴지통으로 옮긴 항목만 대상이며, 옮긴 시점을 기준으로 보존 기간을 계산합니다. 휴지통에 넣지 않은 항목은 자동 삭제되지 않습니다.
           </p>
           <dl className={styles.ruleFacts}>
             <div>
@@ -390,7 +397,7 @@ export default function RetentionAdminPage() {
           <div className={styles.queueHeader}>
             <div>
               <h2 id="retention-queue-title">삭제 후보</h2>
-              <p>{payload ? `${payload.candidates.length}건 · 생성일 기준 오래된 순` : "대기열을 확인하는 중"}</p>
+              <p>{payload ? `${payload.candidates.length}건 · 삭제일 기준 최신 순` : "대기열을 확인하는 중"}</p>
             </div>
             <button
               className={styles.refresh}
@@ -473,8 +480,8 @@ export default function RetentionAdminPage() {
                     </small>
                   </span>
                   <span className={styles.candidateDate}>
-                    <strong>{formatDate(candidate.createdAt, true)}</strong>
-                    <small>{daysOld(candidate.createdAt)} · 만료 {formatDate(candidate.expiresAt)}</small>
+                    <strong>{formatDate(candidate.deletedAt ?? candidate.createdAt, true)}</strong>
+                    <small>{daysOld(candidate.deletedAt ?? candidate.createdAt)} · 만료 {formatDate(candidate.expiresAt)}</small>
                   </span>
                   <span className={styles.candidateObjects}>
                     <strong>{candidate.attachmentCount}</strong>
@@ -488,7 +495,7 @@ export default function RetentionAdminPage() {
             <div className={styles.empty} role="status">
               <Icon name="archive" />
               <strong>지금 정리할 항목이 없습니다.</strong>
-              <span>휴지통으로 옮긴 항목과 생성일 기준 30일이 지난 문의·제보가 여기에 표시됩니다.</span>
+              <span>휴지통으로 옮긴 문의·제보가 여기에 표시됩니다.</span>
             </div>
           )}
 
