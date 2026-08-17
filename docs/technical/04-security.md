@@ -181,22 +181,17 @@ preview 진입은 다음을 모두 요구한다.
 
 ## 환경과 secret
 
-| 변수                                                        | 공개 가능 | 용도                                 |
-| ----------------------------------------------------------- | --------- | ------------------------------------ |
-| `NEXT_PUBLIC_SITE_URL`                                      | 예        | canonical site origin                |
-| `NEXT_PUBLIC_SUPABASE_URL`                                  | 예        | Supabase origin                      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                             | 예        | RLS 적용 공개 key                    |
-| `NEXT_PUBLIC_SUPABASE_PROJECT_REF`                          | 예        | URL 일치 검증                        |
-| `SUPABASE_SERVICE_ROLE_KEY`                                 | 아니오    | 서버 RLS 우회 작업                   |
-| `AUTH_RATE_LIMIT_SECRET`                                    | 아니오    | 로그인 identifier HMAC               |
-| `SUBMISSION_RATE_LIMIT_SECRET`                              | 아니오    | 제출 identifier HMAC                 |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | 아니오    | R2 S3 API 접근                       |
-| `R2_PUBLIC_BUCKET`, `R2_PRIVATE_BUCKET`                     | 아니오    | 물리 R2 bucket 이름                  |
-| `NEXT_PUBLIC_R2_PUBLIC_URL`                                 | 예        | 공개 R2 CDN base                     |
-| `VERCEL_TOKEN`                                              | 아니오    | 서버의 Vercel Web Analytics API 인증 |
-| `VERCEL_PROJECT_ID`                                         | 아니오    | 조회할 Vercel 프로젝트 식별자        |
-| `VERCEL_TEAM_ID`                                            | 아니오    | 팀 소속 프로젝트일 때의 선택 식별자  |
-| `STRICT_ENV_VALIDATION`                                     | 설정      | 비 Vercel production의 엄격 검증     |
+가장 보안에 민감한 변수만 요약한다. 전체 변수 목록, 환경별(Local/Preview/Production) 필수 여부, 회전 절차는 [reference/environment-variables.md](../reference/environment-variables.md)가 정본이다 — 이 표는 그 문서와 별개로 갱신하지 않는다.
+
+| 변수                            | 공개 가능 | 용도                                  |
+| ------------------------------- | --------- | ------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY`     | 아니오    | 서버 RLS 우회 작업                    |
+| `AUTH_RATE_LIMIT_SECRET`        | 아니오    | 로그인 identifier HMAC                |
+| `SUBMISSION_RATE_LIMIT_SECRET`  | 아니오    | 제출 identifier HMAC                  |
+| `TURNSTILE_SECRET_KEY`          | 아니오    | CAPTCHA 서버 검증                     |
+| `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` | 아니오 | R2 S3 API 접근                    |
+| `VERCEL_TOKEN`                  | 아니오    | 서버의 Vercel Web Analytics API 인증  |
+| `CRON_SECRET`                   | 아니오    | retention cron 인증                   |
 
 production/Vercel build는 누락, URL/project 불일치, 32자 미만 rate-limit secret을 실패시킨다. secret은 코드·문서·브라우저·CI 로그에 실제 값을 쓰지 않는다.
 

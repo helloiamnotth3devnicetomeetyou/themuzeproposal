@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "validate:env": "node scripts/validate-env.mjs",
+    "docs:check-links": "node scripts/check-doc-links.mjs",
     "verify:content": "node scripts/verify-themuze-content.mjs",
     "db:status": "node scripts/db.mjs migration list",
     "db:push": "node scripts/db.mjs db push",

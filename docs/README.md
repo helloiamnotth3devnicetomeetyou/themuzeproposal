@@ -45,7 +45,6 @@ DB나 RLS를 바꿨다면 Docker가 실행된 상태에서 `npm run db:test`도 
 | [reference/design-system.md](./reference/design-system.md) | 브랜드·컴포넌트 디자인 원칙 |
 | [reference/design-system.html](./reference/design-system.html) | 브라우저에서 보는 인터랙티브 디자인 시스템 |
 | [reference/design-tokens.json](./reference/design-tokens.json) | 디자인 토큰 참고값 |
-| [archive/rebuild01-build-cost-estimate-2026-08-02.md](./archive/rebuild01-build-cost-estimate-2026-08-02.md) | 날짜가 있는 과거 산정 자료 |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | 변경 시 문서를 어디까지 갱신해야 하는지(DoD) |
 
 ## 기준 우선순위

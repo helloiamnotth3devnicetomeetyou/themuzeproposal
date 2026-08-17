@@ -1,6 +1,6 @@
 # THE MUZE 데이터베이스 스키마와 구조
 
-> 기준일: 2026-08-10  
+> 기준일: 2026-08-17  
 > 기준: `supabase/migrations/` 전체와 `supabase/schema.remote.sql` 스냅샷
 
 이 문서는 현재 애플리케이션이 사용하는 데이터 경계를 빠르게 이해하기 위한 지도다. 정확한 DDL과 제약조건은 migration을 기준으로 확인한다.
@@ -115,6 +115,18 @@ flowchart LR
 
 `site_settings`는 `key text + value jsonb` 구조다. social 값은 배열이어야 하며, 설정 key의 의미와 JSON shape는 [설정 editor model](../../src/admin/pages/settings/settings-editor-model.ts)을 기준으로 한다.
 
+### 7. 시스템/운영 테이블
+
+애플리케이션 도메인 데이터가 아니라 동시성 제어와 정리 작업을 위한 내부 테이블이다. 사람이 직접 읽거나 쓰지 않고 RPC와 서버 route만 접근한다.
+
+| 테이블 | 역할 | 접근 |
+| --- | --- | --- |
+| `asset_registry` | R2 객체 삭제 예약(soft-delete reservation), `(bucket, path)`가 PK | `public`/`anon`/`authenticated` 권한 없음(`revoke all`), service role만 |
+| `home_hero_slide_revisions` | 홈 hero slide 저장의 낙관적 동시성(optimistic concurrency) 잠금용 단일 row(`id boolean primary key`) | `save_home_hero_slides_checked()`/`get_home_hero_slide_revision()`을 통해서만 접근, admin 권한 필요 |
+| `retention_deletion_jobs` | 30일 retention 삭제의 2단계(R2 객체 삭제 → DB row 삭제) 진행 상태, `(kind, record_id)`가 PK | `public`/`anon`/`authenticated` 권한 없음(`revoke all`), service role만. 자세한 흐름은 [09-retention-operations.md](../technical/09-retention-operations.md), 권한은 [permissions-matrix.md](./permissions-matrix.md#retention-삭제-retention_deletion_jobs-contact_inquiriesprotect_reports의-30일-자동-삭제) |
+
+앨범/아티스트 gallery/scenes/audition campaign 저장에도 같은 낙관적 동시성 패턴(`*_checked()` RPC + `expected_updated_at`)이 쓰인다. `home_hero_slide_revisions`는 그 중 대상 테이블에 자체 `updated_at`이 없는 hero slide 저장을 위한 별도 잠금 테이블이다.
+
 ## 인증·권한 구조
 
 ```text
@@ -182,4 +194,4 @@ npm run db:test
 4. public 노출이나 민감 데이터 변경이면 `supabase/tests/`에 권한 경계 테스트를 추가한다.
 5. 앱이 기대하는 column/함수보다 migration을 먼저 적용하고, 제거는 호환 기간 뒤에 별도 migration으로 한다.
 
-현재 migration 최신 파일은 `20260810050000_allow_admin_delete_audition_submissions.sql`이다. 원격 적용 여부는 파일명만으로 추정하지 말고 `npm run db:status`로 확인한다.
+현재 migration 최신 파일은 `20260818010000_add_manual_submission_deletion.sql`이다. 원격 적용 여부는 파일명만으로 추정하지 말고 `npm run db:status`로 확인한다.
