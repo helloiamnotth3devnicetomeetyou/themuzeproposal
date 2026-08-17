@@ -35,13 +35,18 @@ DB나 RLS를 바꿨다면 Docker가 실행된 상태에서 `npm run db:test`도 
 | [technical/07-testing-and-operations.md](./technical/07-testing-and-operations.md) | 테스트, CI, 배포, 장애 확인 |
 | [technical/08-admin-analytics.md](./technical/08-admin-analytics.md) | 관리자 통계 설정, 권한, API, 장애 처리 |
 | [technical/09-retention-operations.md](./technical/09-retention-operations.md) | 데이터 보존·정리 운영 절차 |
+| [technical/10-incident-runbook.md](./technical/10-incident-runbook.md) | 장애 시 확인할 화면과 escalation 기준 |
 | [qa/README.md](./qa/README.md) | 분리형 QA 케이스 인덱스와 실행 순서 |
+| [qa/checksheet.md](./qa/checksheet.md) | QA 실행 요약표(누가 언제 어디까지 돌렸는지) |
 | [reference/content-data-model.md](./reference/content-data-model.md) | 콘텐츠 도메인과 테이블 관계 참고 |
 | [reference/database-schema.md](./reference/database-schema.md) | 실제 DB 스키마, 관계도, RLS, Storage, migration |
+| [reference/environment-variables.md](./reference/environment-variables.md) | 환경 변수·외부 서비스 매트릭스(값 제외) |
+| [reference/permissions-matrix.md](./reference/permissions-matrix.md) | 역할별 리소스 권한 매트릭스 |
 | [reference/design-system.md](./reference/design-system.md) | 브랜드·컴포넌트 디자인 원칙 |
 | [reference/design-system.html](./reference/design-system.html) | 브라우저에서 보는 인터랙티브 디자인 시스템 |
 | [reference/design-tokens.json](./reference/design-tokens.json) | 디자인 토큰 참고값 |
 | [archive/rebuild01-build-cost-estimate-2026-08-02.md](./archive/rebuild01-build-cost-estimate-2026-08-02.md) | 날짜가 있는 과거 산정 자료 |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | 변경 시 문서를 어디까지 갱신해야 하는지(DoD) |
 
 ## 기준 우선순위
 

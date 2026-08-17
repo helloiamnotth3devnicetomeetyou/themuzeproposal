@@ -95,6 +95,8 @@ production과 preview 각각에 대해 다음을 확인한다.
 | [06-code-style-and-workflows.md](./06-code-style-and-workflows.md) | 코드 스타일과 기능별 구현 절차는 무엇인가?                       |
 | [07-testing-and-operations.md](./07-testing-and-operations.md)     | 테스트, CI, 배포, 장애 확인은 어떻게 하는가?                     |
 | [08-admin-analytics.md](./08-admin-analytics.md)                   | 관리자 페이지 통계의 설정, 권한, API, 장애 처리는 어떻게 하는가? |
+| [09-retention-operations.md](./09-retention-operations.md)         | 30일 데이터 보존·삭제는 어떻게 동작하는가?                       |
+| [10-incident-runbook.md](./10-incident-runbook.md)                 | 장애 시 어느 화면에서 무엇을 보고 누구에게 escalation하는가?     |
 
 `docs/reference/`는 참고 문서다. 구현 판단은 실제 코드와 migration을 우선한다. 전체 문서 목록은 [../README.md](../README.md)를 본다.
 
