@@ -133,11 +133,14 @@ Vercel 설정이 없으면 endpoint는 빈 통계와 `configured: false`를 반�
 | `storage/`   | R2 S3 client, 공개 URL, 서명 URL, 객체 삭제, asset proxy          |
 | `i18n/`      | locale 판별·fallback·메시지·서버 cookie                           |
 | `preview/`   | draft preview token/envelope/entry/exit/provider                  |
+| `ai/`        | `text-completion-provider`(OpenRouter 호출 단일 seam), 문의 분류(`classify-inquiry`), 관리자 콘텐츠 번역(`translate-admin-content`) |
 | `providers/` | theme와 locale context                                            |
 | `seo/`       | 공통 metadata                                                     |
 | `utils/`     | rich text, SVG, redirect, 음악/scene/schedule 순수 로직           |
 
 `server-only` import가 있는 파일을 Client Component에서 import하면 안 된다. 브라우저와 서버 양쪽에서 필요한 순수 함수는 별도 파일로 분리한다.
+
+AI 텍스트 작업(문의 분류, 관리자 콘텐츠 번역)은 모두 `src/core/ai/text-completion-provider.ts`를 통해 OpenRouter를 호출한다. 새 AI 기능을 추가할 때도 이 provider를 재사용하고, 별도 client를 만들지 않는다. `OPENROUTER_API_KEY`가 없으면 호출은 `null`을 반환하며 호출부는 이를 실패로 취급해 기존 흐름(제출, 저장)을 계속 진행해야 한다. 모델은 `AI_TEXT_MODEL` 환경 변수로 override한다(기본값 `google/gemini-3.1-flash-lite`).
 
 ## 요청 생명주기
 

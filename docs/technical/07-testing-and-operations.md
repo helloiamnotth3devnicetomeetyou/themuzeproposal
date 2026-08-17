@@ -168,7 +168,7 @@ High/Critical 취약점이나 실제 악용이 확인된 긴급 보안 업데이
 
 ## 관측과 장애 확인
 
-현재 코드에 Vercel Analytics와 Speed Insights가 포함돼 있지만 전용 error tracking/log aggregation은 확인되지 않는다. 장애 시 다음 순서로 범위를 줄인다.
+현재 코드에 Vercel Analytics, Speed Insights, Sentry(`sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`)가 포함돼 있다. 장애 시 다음 순서로 범위를 줄인다.
 
 ### 관리자 페이지 통계가 비어 있음
 

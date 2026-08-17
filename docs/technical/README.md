@@ -115,6 +115,7 @@ production과 preview 각각에 대해 다음을 확인한다.
 - 문서는 UTF-8로 유지한다. PowerShell 구버전 콘솔에서 한글이 깨져 보일 수 있으므로 파일 자체의 인코딩 문제로 단정하지 말고 UTF-8 지원 편집기에서 재확인한다.
 - `supabase/schema.remote.sql`은 `audition_campaigns`, `avatar_assets`, `admin_onboarding_progress`는 포함하지만 2026-08-10의 최신 migration 일부보다 뒤처져 있다. 스냅샷만 보고 현재 스키마라고 판단하지 말고 `npm run db:status`와 migration 전체를 확인한다.
 - 감사 로그에는 자동 보존 기간이 없다. 개인정보·운영 정책이 정해지면 DB 보존 작업을 별도로 추가해야 한다.
+- Sentry가 server/edge/client 전 구간에 구성돼 있다(`sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`, `src/app/global-error.tsx`). DSN·환경별 sample rate는 secret store와 Vercel 환경 변수를 확인한다.
 - 요청 IP 신뢰 모델은 Vercel 배포를 전제로 한다. 비 Vercel 호스팅에서는 IP가 `unknown`으로 묶이므로 프록시 신뢰 정책을 먼저 설계해야 한다.
 
 ## 운영 책임 경계
@@ -186,5 +187,5 @@ production과 preview 각각에 대해 다음을 확인한다.
 - 최소 한 명의 super_admin과 그 복구 절차를 확인했다.
 - migration 적용 상태, pending 작업, schema snapshot의 한계를 이해했다.
 - 공개 저장 후 cache invalidation, private upload의 거부 사례, 로그인·관리자 보호 경계를 수동으로 확인했다.
-- 감사 로그와 private attachment의 보존 정책, 비 Vercel IP 신뢰 정책, 전용 error tracking의 부재를 운영 위험으로 인지하고 담당자를 정했다.
+- 감사 로그와 private attachment의 보존 정책, 비 Vercel IP 신뢰 정책을 운영 위험으로 인지하고 담당자를 정했다. Sentry alert 수신자도 확인했다.
 - 최근 변경 또는 배포 한 건에 대해 위 변경 기록 템플릿을 작성할 수 있다.

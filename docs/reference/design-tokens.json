@@ -1,0 +1,161 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "color": {
+    "$type": "color",
+    "brand": {
+      "pink": { "$value": "#FC6FCF" },
+      "green": { "$value": "#2C4B43" },
+      "ink": { "$value": "#121212" }
+    },
+    "dark": {
+      "background": {
+        "canvas": { "$value": "#0A0A0A" },
+        "surface": { "$value": "#121212" },
+        "elevated": { "$value": "#1A1A1A" },
+        "overlay": { "$value": "rgba(10, 10, 10, 0.90)" }
+      },
+      "text": {
+        "primary": { "$value": "#FFFFFF" },
+        "secondary": { "$value": "#D4D4D4" },
+        "muted": { "$value": "#6B7280" },
+        "faint": { "$value": "#4B5563" }
+      },
+      "border": {
+        "subtle": { "$value": "rgba(255, 255, 255, 0.05)" },
+        "default": { "$value": "rgba(255, 255, 255, 0.10)" },
+        "strong": { "$value": "rgba(255, 255, 255, 0.20)" }
+      }
+    },
+    "light": {
+      "background": {
+        "canvas": { "$value": "#F7F8FA" },
+        "surface": { "$value": "#F0F2F5" },
+        "elevated": { "$value": "#FFFFFF" },
+        "overlay": { "$value": "rgba(247, 248, 250, 0.92)" }
+      },
+      "text": {
+        "primary": { "$value": "#15171A" },
+        "secondary": { "$value": "#34383F" },
+        "muted": { "$value": "#6B7280" },
+        "faint": { "$value": "#9CA3AF" }
+      },
+      "border": {
+        "subtle": { "$value": "rgba(15, 23, 42, 0.06)" },
+        "default": { "$value": "rgba(15, 23, 42, 0.12)" },
+        "strong": { "$value": "rgba(15, 23, 42, 0.24)" }
+      }
+    },
+    "static": {
+      "white": { "$value": "#FFFFFF" },
+      "black": { "$value": "#000000" }
+    },
+    "status": {
+      "success": { "$value": "#35A963" },
+      "warning": { "$value": "#D69A35" },
+      "danger": { "$value": "#E46B6B" }
+    },
+    "platform": {
+      "youtube": { "$value": "#FF0033" },
+      "spotify": { "$value": "#1DB954" }
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "hero": {
+        "$value": [
+          "Monument Extended",
+          "Montserrat",
+          "sans-serif"
+        ]
+      },
+      "sans": {
+        "$value": [
+          "Pretendard Variable",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "sans-serif"
+        ]
+      },
+      "display": {
+        "$value": [
+          "Montserrat",
+          "Pretendard Variable",
+          "sans-serif"
+        ]
+      },
+      "wordmark": {
+        "$value": [
+          "Montserrat",
+          "Pretendard Variable",
+          "sans-serif"
+        ]
+      }
+    },
+    "size": {
+      "$type": "dimension",
+      "micro": { "$value": "0.625rem" },
+      "caption": { "$value": "0.75rem" },
+      "body-sm": { "$value": "0.8125rem" },
+      "body": { "$value": "0.875rem" },
+      "body-lg": { "$value": "1rem" },
+      "heading-sm": { "$value": "1.125rem" },
+      "heading-md": { "$value": "2rem" },
+      "display-md": { "$value": "4.5rem" },
+      "display-lg": { "$value": "7rem" }
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "0": { "$value": "0px" },
+    "0-5": { "$value": "2px" },
+    "1": { "$value": "4px" },
+    "1-5": { "$value": "6px" },
+    "2": { "$value": "8px" },
+    "2-5": { "$value": "10px" },
+    "3": { "$value": "12px" },
+    "4": { "$value": "16px" },
+    "5": { "$value": "20px" },
+    "6": { "$value": "24px" },
+    "7": { "$value": "28px" },
+    "8": { "$value": "32px" },
+    "10": { "$value": "40px" },
+    "12": { "$value": "48px" },
+    "14": { "$value": "56px" },
+    "16": { "$value": "64px" },
+    "20": { "$value": "80px" },
+    "24": { "$value": "96px" }
+  },
+  "radius": {
+    "$type": "dimension",
+    "sharp": { "$value": "2px" },
+    "control": { "$value": "8px" },
+    "panel": { "$value": "10px" },
+    "card": { "$value": "12px" },
+    "pill": { "$value": "999px" }
+  },
+  "layout": {
+    "$type": "dimension",
+    "copy": { "$value": "760px" },
+    "content": { "$value": "1280px" },
+    "wide": { "$value": "1600px" },
+    "target-min": { "$value": "44px" }
+  },
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "fast": { "$value": "160ms" },
+      "base": { "$value": "180ms" },
+      "medium": { "$value": "300ms" },
+      "slow": { "$value": "500ms" },
+      "scene": { "$value": "1100ms" }
+    },
+    "easing": {
+      "$type": "cubicBezier",
+      "standard": { "$value": [0.4, 0, 0.2, 1] },
+      "enter": { "$value": [0.16, 1, 0.3, 1] },
+      "scene": { "$value": [0.76, 0, 0.24, 1] }
+    }
+  }
+}

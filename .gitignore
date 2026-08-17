@@ -50,12 +50,6 @@ output/
 /e2e-results/
 /e2e/admin/
 
-/docs/*
-!/docs/tech/
-!/docs/tech/**
-!/docs/technical/
-!/docs/technical/**
-
 # temp files
 /tmp/*
 /graphify-out/

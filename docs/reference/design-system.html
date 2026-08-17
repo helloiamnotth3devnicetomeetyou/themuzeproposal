@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE MUZE — Design System</title>
+  <style>
+    :root {
+      --pink: #fc6fcf; --ink: #0a0a0a; --surface: #121212; --elevated: #1a1a1a;
+      --white: #fff; --secondary: #d4d4d4; --muted: #6b7280; --faint: #4b5563;
+      --line: rgb(255 255 255 / .1); --soft-line: rgb(255 255 255 / .05);
+      --success: #35a963; --warning: #d69a35; --danger: #e46b6b;
+      --gutter: clamp(20px, 4vw, 68px); --max: 1440px;
+      --sans: "Pretendard", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --display: "Clash Display", "Montserrat", var(--sans);
+    }
+    [data-theme="light"] {
+      --ink: #f7f8fa; --surface: #f0f2f5; --elevated: #fff; --white: #15171a;
+      --secondary: #34383f; --muted: #6b7280; --faint: #9ca3af;
+      --line: rgb(15 23 42 / .12); --soft-line: rgb(15 23 42 / .06);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--ink); color: var(--white); font-family: var(--sans); line-height: 1.6; transition: background .25s, color .25s; }
+    ::selection { background: var(--pink); color: #000; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    :focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
+    .shell { width: min(100% - 2 * var(--gutter), var(--max)); margin: auto; }
+    .topbar { position: sticky; top: 0; z-index: 3; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--ink) 90%, transparent); backdrop-filter: blur(18px); }
+    .topbar-inner { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .wordmark { font: 800 15px/1 var(--display); letter-spacing: .16em; }
+    .wordmark i { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--pink); }
+    nav { display: flex; align-items: center; gap: clamp(12px, 2.4vw, 32px); color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    nav a:hover { color: var(--white); }
+    .theme-toggle { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; color: var(--white); background: var(--surface); cursor: pointer; font-size: 11px; letter-spacing: .08em; }
+    .hero { position: relative; overflow: hidden; padding: clamp(88px, 15vw, 190px) 0 clamp(80px, 11vw, 150px); border-bottom: 1px solid var(--line); }
+    .hero::after { content: ""; position: absolute; width: 38vw; height: 38vw; right: -10vw; top: 4vw; border-radius: 50%; background: radial-gradient(circle, rgb(252 111 207 / .22), transparent 64%); pointer-events: none; }
+    .eyebrow, .kicker { color: var(--pink); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { max-width: 900px; margin-top: 22px; font: 700 clamp(56px, 10vw, 154px)/.82 var(--display); letter-spacing: -.075em; text-transform: uppercase; }
+    .hero-copy { max-width: 570px; margin-top: 36px; color: var(--secondary); font-size: clamp(16px, 1.5vw, 21px); line-height: 1.55; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 52px; color: var(--muted); font: 11px/1.4 var(--display); letter-spacing: .1em; text-transform: uppercase; }
+    .hero-meta strong { color: var(--white); font-weight: 600; }
+    main { padding: 24px 0 120px; }
+    section { scroll-margin-top: 90px; padding: clamp(64px, 9vw, 112px) 0; border-bottom: 1px solid var(--line); }
+    .section-head { display: grid; grid-template-columns: minmax(190px, 1fr) minmax(300px, 2fr); gap: 32px; align-items: start; margin-bottom: 42px; }
+    h2 { font: 700 clamp(30px, 4vw, 58px)/.95 var(--display); letter-spacing: -.055em; text-transform: uppercase; }
+    .section-intro { max-width: 570px; color: var(--secondary); font-size: 15px; }
+    .mode-grid, .swatches, .component-grid, .type-grid { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+    .mode-grid { grid-template-columns: repeat(3, 1fr); }
+    .mode { min-height: 220px; padding: 26px; background: var(--surface); display: flex; flex-direction: column; justify-content: space-between; }
+    .mode:nth-child(2) { background: linear-gradient(140deg, var(--surface), #18202b); }
+    .mode:nth-child(3) { background: linear-gradient(140deg, var(--surface), #17241b); }
+    .mode h3 { font: 700 28px/.95 var(--display); text-transform: uppercase; }
+    .mode p { max-width: 230px; color: var(--secondary); font-size: 13px; }
+    .mode small { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .swatches { grid-template-columns: repeat(7, 1fr); }
+    .swatch { min-height: 156px; padding: 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; background: var(--color); color: var(--label, #fff); }
+    .swatch b { font-size: 12px; } .swatch span { opacity: .72; font: 10px var(--display); letter-spacing: .08em; }
+    .type-grid { grid-template-columns: 1fr 1fr; }
+    .type-sample { padding: 28px; background: var(--surface); border-bottom: 1px solid var(--line); }
+    .type-sample:nth-last-child(-n+2) { border-bottom: 0; }
+    .type-label { color: var(--pink); font: 10px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+    .type-display { margin-top: 18px; font: 700 clamp(34px, 5vw, 70px)/.88 var(--display); letter-spacing: -.06em; text-transform: uppercase; }
+    .type-body { margin-top: 18px; color: var(--secondary); font-size: 16px; }
+    .scale { margin-top: 32px; display: grid; gap: 12px; }
+    .scale-row { display: grid; grid-template-columns: 100px 1fr 80px; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--soft-line); padding-bottom: 12px; }
+    .scale-row label { color: var(--muted); font: 10px var(--display); letter-spacing: .1em; text-transform: uppercase; }
+    .scale-row span { color: var(--secondary); font-size: var(--size); line-height: 1; }
+    .scale-row code { color: var(--faint); font-size: 11px; text-align: right; }
+    .component-grid { grid-template-columns: repeat(3, 1fr); }
+    .component { min-height: 250px; padding: 28px; background: var(--surface); }
+    .component h3 { margin-bottom: 26px; font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn { min-height: 44px; border: 1px solid transparent; border-radius: 999px; padding: 0 18px; cursor: pointer; font-size: 12px; font-weight: 700; transition: transform .16s, background .16s, border-color .16s; }
+    .btn:hover { transform: translateY(-1px); } .btn-primary { background: var(--pink); color: #000; } .btn-secondary { border-color: var(--line); background: var(--elevated); color: var(--white); } .btn-danger { border-color: var(--danger); background: transparent; color: var(--danger); }
+    .field { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 13px 14px; background: var(--elevated); color: var(--white); font: inherit; }
+    .field::placeholder { color: var(--muted); } .field:focus { border-color: var(--pink); outline: 3px solid rgb(252 111 207 / .14); }
+    .status-list { display: grid; gap: 12px; }
+    .status { display: flex; align-items: center; gap: 10px; color: var(--secondary); font-size: 13px; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--status); box-shadow: 0 0 0 4px color-mix(in srgb, var(--status) 16%, transparent); }
+    .layout-demo { display: grid; grid-template-columns: 190px 1fr; min-height: 240px; border: 1px solid var(--line); background: var(--surface); }
+    .rail { border-right: 1px solid var(--line); padding: 24px; } .rail span { display: block; margin-bottom: 16px; color: var(--muted); font: 10px var(--display); letter-spacing: .12em; text-transform: uppercase; } .rail span:first-child { color: var(--pink); }
+    .stage { position: relative; padding: 24px; background: linear-gradient(135deg, #141414, #2c4b43); overflow: hidden; } .stage::after { content: "THE MUZE"; position: absolute; right: -10px; bottom: -26px; color: rgb(255 255 255 / .08); font: 900 100px/.8 var(--display); letter-spacing: -.09em; }
+    .stage h3 { position: relative; z-index: 1; max-width: 380px; font: 700 clamp(32px, 6vw, 78px)/.82 var(--display); letter-spacing: -.07em; text-transform: uppercase; }
+    .motion { display: flex; align-items: center; gap: 18px; min-height: 92px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .motion-bar { width: min(360px, 70%); height: 2px; background: var(--line); overflow: hidden; } .motion-bar::after { content: ""; display: block; width: 42%; height: 100%; background: var(--pink); animation: sweep 2.2s cubic-bezier(.16,1,.3,1) infinite; }
+    .motion code { color: var(--muted); font-size: 11px; } @keyframes sweep { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(240%); } }
+    footer { padding: 32px 0; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; gap: 20px; }
+    @media (max-width: 760px) { nav a { display: none; } .section-head, .type-grid { grid-template-columns: 1fr; } .mode-grid, .component-grid { grid-template-columns: 1fr; } .swatches { grid-template-columns: repeat(4, 1fr); } .swatch { min-height: 110px; } .type-sample:nth-last-child(-n+2) { border-bottom: 1px solid var(--line); } .type-sample:last-child { border-bottom: 0; } .layout-demo { grid-template-columns: 1fr; } .rail { border-right: 0; border-bottom: 1px solid var(--line); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="shell topbar-inner">
+    <a class="wordmark" href="#top">THE MUZE<i aria-hidden="true"></i></a>
+    <nav aria-label="Design system sections"><a href="#modes">Modes</a><a href="#color">Color</a><a href="#type">Type</a><a href="#components">Components</a><button class="theme-toggle" type="button" aria-pressed="false">LIGHT MODE</button></nav>
+  </div></header>
+  <div id="top" class="hero"><div class="shell">
+    <div class="eyebrow">Design system / v2026.08</div>
+    <h1>Artwork<br>leads.</h1>
+    <p class="hero-copy">A cinematic music label interface with an editorial control layer. Black exhibition space, compressed typography, and hot pink used only when the interface needs attention.</p>
+    <div class="hero-meta"><span>Runtime source <strong>src/styles/(core)</strong></span><span>Primary accent <strong>#FC6FCF</strong></span><span>Updated <strong>2026.08.10</strong></span></div>
+  </div></div>
+  <main class="shell">
+    <section id="modes"><div class="section-head"><h2>Three<br>modes</h2><p class="section-intro">One visual language, three densities. Public surfaces give the artwork room; editorial pages make structure visible; admin is a precise workbench.</p></div><div class="mode-grid"><article class="mode"><small>01 / public</small><h3>Cinematic</h3><p>Full-bleed artwork, oversized titles, contextual accent color.</p></article><article class="mode"><small>02 / content</small><h3>Editorial</h3><p>Split columns, hairlines, compact labels, reading width.</p></article><article class="mode"><small>03 / admin</small><h3>Control</h3><p>Workbench grids, small metadata, explicit states.</p></article></div></section>
+    <section id="color"><div class="section-head"><h2>Color<br>as cue</h2><p class="section-intro">Pink means attention. Content colors may tint an experience, but never replace semantic success, warning, or danger.</p></div><div class="swatches"><div class="swatch" style="--color:#fc6fcf;--label:#000"><b>Muze Pink</b><span>#FC6FCF</span></div><div class="swatch" style="--color:#0a0a0a"><b>Canvas</b><span>#0A0A0A</span></div><div class="swatch" style="--color:#121212"><b>Surface</b><span>#121212</span></div><div class="swatch" style="--color:#1a1a1a"><b>Elevated</b><span>#1A1A1A</span></div><div class="swatch" style="--color:#d4d4d4;--label:#15171a"><b>Secondary</b><span>#D4D4D4</span></div><div class="swatch" style="--color:#35a963"><b>Success</b><span>#35A963</span></div><div class="swatch" style="--color:#e46b6b"><b>Danger</b><span>#E46B6B</span></div></div></section>
+    <section id="type"><div class="section-head"><h2>Type is<br>the voice</h2><p class="section-intro">Clash Display carries the compressed, album-sleeve energy. Pretendard keeps multilingual reading and controls calm. Display is scarce; utility labels are tracked, not loud.</p></div><div class="type-grid"><div class="type-sample"><div class="type-label">Hero / Clash Display</div><div class="type-display">New<br>signal</div></div><div class="type-sample"><div class="type-label">Body / Pretendard</div><p class="type-body">아티스트와 릴리즈의 이미지를 먼저 보여 주고, 인터페이스는 필요한 순간에만 개입합니다. Music stays in focus.</p></div></div><div class="scale"><div class="scale-row"><label>Display lg</label><span style="--size:clamp(3rem,7vw,7rem)">THE MUZE</span><code>7rem / .80</code></div><div class="scale-row"><label>Heading md</label><span style="--size:clamp(1.5rem,2.3vw,2rem)">A release in context</span><code>2rem / 1.05</code></div><div class="scale-row"><label>Body</label><span style="--size:.875rem">Readable product copy</span><code>.875rem / 1.7</code></div></div></section>
+    <section id="components"><div class="section-head"><h2>Quiet<br>controls</h2><p class="section-intro">Components use surface contrast and hairlines before shadows. Every action remains readable in both themes and at keyboard focus.</p></div><div class="component-grid"><article class="component"><h3>Buttons / 44px target</h3><div class="button-row"><button class="btn btn-primary" type="button">Publish release</button><button class="btn btn-secondary" type="button">Preview</button><button class="btn btn-danger" type="button">Delete</button></div></article><article class="component"><h3>Field / visible label</h3><label class="type-label" for="sample-field">Release title</label><input class="field" id="sample-field" placeholder="Enter a title" style="margin-top:10px"></article><article class="component"><h3>Status / never color only</h3><div class="status-list"><div class="status" style="--status:var(--success)">Published and visible</div><div class="status" style="--status:var(--warning)">Needs attention</div><div class="status" style="--status:var(--danger)">Action failed</div></div></article></div></section>
+    <section><div class="section-head"><h2>Spatial<br>logic</h2><p class="section-intro">The system is built from a 4px base, responsive gutters, and intentional empty space. Reading stays narrow; workbenches widen only when information earns it.</p></div><div class="layout-demo"><aside class="rail"><span>Artist</span><span>Profile</span><span>Members</span><span>Discography</span><span>Schedule</span></aside><div class="stage"><h3>Full frame<br>first read</h3></div></div></section>
+    <section><div class="section-head"><h2>Motion<br>with purpose</h2><p class="section-intro">One composed reveal beats a page of restless effects. Hover and focus pauses auto-motion; reduced motion removes ambient animation.</p></div><div class="motion"><div class="motion-bar" aria-hidden="true"></div><code>ease.enter / 500ms / reduced-motion aware</code></div></section>
+  </main>
+  <footer class="shell"><span>THE MUZE / DESIGN SYSTEM</span><span>Built from the current implementation</span></footer>
+  <script>
+    const root = document.documentElement;
+    const toggle = document.querySelector('.theme-toggle');
+    toggle.addEventListener('click', () => {
+      const light = root.dataset.theme !== 'light';
+      root.dataset.theme = light ? 'light' : 'dark';
+      toggle.textContent = light ? 'DARK MODE' : 'LIGHT MODE';
+      toggle.setAttribute('aria-pressed', String(light));
+    });
+  </script>
+</body>
+</html>
