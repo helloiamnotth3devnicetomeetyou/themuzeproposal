@@ -94,7 +94,7 @@ export default function HomeSlide({
             }}
             className="home-hero-video absolute inset-0 z-[1] h-full w-full object-cover"
             src={slide.videoUrl}
-            poster={slide.imageUrl || undefined}
+            poster={slide.imageUrl ? optimizedPosterUrl(slide.imageUrl) : undefined}
             data-slide-index={index}
             data-start-time={videoStartTime(slide.videoUrl)}
             muted
@@ -299,6 +299,12 @@ function StreamingLink({
       <span>{children}</span>
     </a>
   );
+}
+
+// <video poster> can't use next/image's responsive srcset, so route it through
+// the same optimizer at a fixed width instead of shipping the raw source file.
+function optimizedPosterUrl(src: string) {
+  return `/_next/image?url=${encodeURIComponent(src)}&w=1920&q=75`;
 }
 
 function videoStartTime(videoUrl: string) {
