@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { getAdminInboxCounts } from "./inbox-counts";
 
-const countQuery = (count: number) => ({
-  eq: vi.fn().mockResolvedValue({ count, error: null }),
-});
+const countQuery = (count: number) => {
+  const query = {
+    eq: vi.fn().mockResolvedValue({ count, error: null }),
+    is: vi.fn(),
+  };
+  query.is.mockReturnValue(query);
+  return query;
+};
 
 describe("getAdminInboxCounts", () => {
   it("uses pending counts for every inbox surface", async () => {

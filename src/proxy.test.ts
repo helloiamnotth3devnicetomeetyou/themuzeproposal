@@ -33,8 +33,9 @@ describe("proxy security headers", () => {
     );
     expect(policy).toMatch(/script-src 'self' 'nonce-[^']+'/);
     expect(policy).toContain(
-      "connect-src 'self' https://project.supabase.co;",
+      "connect-src 'self' https://project.supabase.co https://*.ingest.us.sentry.io;",
     );
+    expect(policy).toContain("worker-src 'self' blob:");
     expect(policy).not.toMatch(/connect-src 'self' https:(?:\s|;)/);
     expect(policy).not.toContain("wss://ws-us3.pusher.com");
   });
@@ -48,7 +49,7 @@ describe("proxy security headers", () => {
     const policy = response.headers.get("content-security-policy") ?? "";
 
     expect(policy).toContain(
-      "connect-src 'self' https://project.supabase.co wss://ws-us3.pusher.com;",
+      "connect-src 'self' https://project.supabase.co https://*.ingest.us.sentry.io wss://ws-us3.pusher.com;",
     );
   });
 

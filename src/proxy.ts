@@ -10,7 +10,7 @@ export async function proxy(request: NextRequest) {
   const supabaseOrigin = isDev ? "" : getPublicSupabaseConfig().url;
   const cspHeader = isDev
     ? undefined
-    : `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://challenges.cloudflare.com${vercelToolbar}; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data: https:; style-src 'self'${vercelToolbar}; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com${vercelToolbar}; connect-src 'self' ${supabaseOrigin}${vercelToolbar ? " wss://ws-us3.pusher.com" : ""}; form-action 'self'`;
+    : `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://challenges.cloudflare.com${vercelToolbar}; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data: https:; style-src 'self'${vercelToolbar}; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com${vercelToolbar}; worker-src 'self' blob:; connect-src 'self' ${supabaseOrigin} https://*.ingest.us.sentry.io${vercelToolbar ? " wss://ws-us3.pusher.com" : ""}; form-action 'self'`;
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =

@@ -77,39 +77,8 @@ const nextConfig: NextConfig = {
               "max-age=31536000; includeSubDomains; preload",
           },
 
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-
-              // Sentry + Supabase API/WebSocket connections
-              "connect-src 'self' https://knbingxnnkutnukjyucw.supabase.co https://*.ingest.us.sentry.io",
-
-              // Scripts
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-
-              // Styles
-              "style-src 'self' 'unsafe-inline'",
-
-              // Images
-              "img-src 'self' data: blob: https:",
-
-              // Fonts
-              "font-src 'self' data: https:",
-
-              // Frames
-              "frame-src 'self'",
-
-              // Form submissions
-              "form-action 'self'",
-
-              // Base URL
-              "base-uri 'self'",
-
-              // Prevent clickjacking
-              "frame-ancestors 'none'",
-            ].join("; "),
-          },
+          // CSP is set in src/proxy.ts (nonce-based). A second header here
+          // would be intersected with it and silently block things.
         ],
       },
     ];
