@@ -67,7 +67,7 @@ export default function DesktopNav({
       </Link>
       <nav
         aria-label={t.common.mainMenu}
-        className="ml-8 flex items-center gap-6"
+        className="ml-8 flex flex-1 items-center gap-6"
       >
         <Link href="/about" prefetch={false} className={linkClass("/about")}>
           {t.nav.about}
