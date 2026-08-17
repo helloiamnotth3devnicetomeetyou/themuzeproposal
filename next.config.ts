@@ -3,8 +3,10 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/+$/, "");
+
 const imageRemotePatterns = [r2PublicUrl].filter(Boolean).map((value) => {
   const url = new URL(value as string);
+
   return {
     protocol: url.protocol.slice(0, -1) as "http" | "https",
     hostname: url.hostname,
@@ -16,8 +18,13 @@ const imageRemotePatterns = [r2PublicUrl].filter(Boolean).map((value) => {
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   poweredByHeader: false,
-  experimental: { cssChunking: false },
+
+  experimental: {
+    cssChunking: false,
+  },
+
   outputFileTracingIncludes: {},
+
   async headers() {
     return [
       {
@@ -29,6 +36,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+
       {
         source: "/fonts/:path*",
         headers: [
@@ -38,45 +46,98 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+
           {
             key: "Permissions-Policy",
             value:
               "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
           },
-          { key: "X-Content-Type-Options", value: "nosniff" },
+
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+
           {
             key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains; preload",
+            value:
+              "max-age=31536000; includeSubDomains; preload",
+          },
+
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+
+              // Sentry + Supabase API/WebSocket connections
+              "connect-src 'self' https://knbingxnnkutnukjyucw.supabase.co https://*.ingest.us.sentry.io",
+
+              // Scripts
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+
+              // Styles
+              "style-src 'self' 'unsafe-inline'",
+
+              // Images
+              "img-src 'self' data: blob: https:",
+
+              // Fonts
+              "font-src 'self' data: https:",
+
+              // Frames
+              "frame-src 'self'",
+
+              // Form submissions
+              "form-action 'self'",
+
+              // Base URL
+              "base-uri 'self'",
+
+              // Prevent clickjacking
+              "frame-ancestors 'none'",
+            ].join("; "),
           },
         ],
       },
     ];
   },
+
   images: {
     // Keep the built-in optimizer active for R2-hosted media.
     unoptimized: false,
+
     minimumCacheTTL: 604800,
+
     formats: ["image/avif", "image/webp"],
+
     qualities: [60, 75, 80, 85, 90],
+
     remotePatterns: imageRemotePatterns,
   },
+
   webpack: (config) => {
-    // ponytail: proxy.ts / root error.tsx / not-found don't reliably inherit
-    // tsconfig `paths` on `next build --webpack` (Next 16, vercel/next.js#85513).
+    // proxy.ts / root error.tsx / not-found don't reliably inherit
+    // tsconfig `paths` on `next build --webpack` (Next 16).
     config.resolve.alias["@"] = path.resolve(__dirname, "src");
+
     return config;
   },
 };
 
 export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
   org: "notth3dev",
 
   project: "javascript-nextjs",
@@ -84,28 +145,18 @@ export default withSentryConfig(nextConfig, {
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  // Upload a larger set of source maps for prettier stack traces.
   widenClientFileUpload: true,
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
+  // Browser -> Sentry direct connection.
   // tunnelRoute: "/monitoring",
 
   webpack: {
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
+    // Enables automatic instrumentation of Vercel Cron Monitors.
     automaticVercelMonitors: true,
 
-    // Tree-shaking options for reducing bundle size
+    // Tree-shaking options for reducing bundle size.
     treeshake: {
-      // Automatically tree-shake Sentry logger statements to reduce bundle size
       removeDebugLogging: true,
     },
   },

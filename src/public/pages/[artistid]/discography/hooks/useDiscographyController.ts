@@ -16,14 +16,14 @@ import {
   type PlayerTrack,
 } from "@/public/features/player/PlayerProvider";
 
-import { savePlaybackMemory, syncAlbumQuery } from "../lib/playback-memory";
+import { savePlaybackMemory, syncAlbumQuery } from "@/public/features/discography/playback-memory";
 import type {
   AlbumSort,
   DiscographyData,
   DiscographyTab,
   RailPhase,
   SlideDirection,
-} from "../lib/types";
+} from "@/public/features/discography/types";
 import { previewToAlbum } from "./discography-controller-utils";
 import { useDiscographyData } from "./useDiscographyData";
 import { useDiscographyRailSort } from "./useDiscographyRailSort";

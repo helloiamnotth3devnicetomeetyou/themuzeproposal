@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useMemo, type CSSProperties } from "react";
 import { outlineToPath, type ArtistScene } from "@/core/utils/artist-scenes";
-import type { Member } from "./artist-scene-types";
+import type { Member } from "@/public/features/artists/types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 type Props = {

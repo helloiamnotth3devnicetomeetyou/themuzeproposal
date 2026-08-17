@@ -2,7 +2,7 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import type { DiscographyGalleryItem, DiscographyMember } from "../lib/types";
+import type { DiscographyGalleryItem, DiscographyMember } from "@/public/features/discography/types";
 
 type Props = {
   albumColor: string;

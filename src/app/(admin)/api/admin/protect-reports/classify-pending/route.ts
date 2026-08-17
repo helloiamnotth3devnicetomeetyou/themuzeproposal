@@ -1,10 +1,9 @@
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import {
   classify,
   type ProtectClassification,
 } from "@/core/ai/classify-inquiry";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 export const runtime = "nodejs";
@@ -59,14 +58,9 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request))
     return response({ code: "FORBIDDEN" }, 403);
 
-  const sessionClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await sessionClient.auth.getUser();
-  if (userError || !user) return response({ code: "UNAUTHORIZED" }, 401);
-  if (!(await isAdmin(sessionClient, user.id)))
-    return response({ code: "FORBIDDEN" }, 403);
+  const auth = await requireAdmin();
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
 
   const service = createServiceRoleClient();
   if (!service) return response({ code: "SERVICE_UNAVAILABLE" }, 503);

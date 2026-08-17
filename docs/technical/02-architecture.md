@@ -52,6 +52,10 @@ Route Handler 어댑터는 feature route 함수를 그대로 export한다. 파�
 
 Repository가 client를 인자로 받으므로 실제 Supabase 없이 단위 테스트할 수 있다. DB row type과 UI DTO를 분리하고 snake_case를 컴포넌트 전역으로 퍼뜨리지 않는다.
 
+`features/<feature>`는 `home`, `layout`, `notices`, `seo`, `settings`, `player`, `artists`, `discography`, `schedule`을 포함한다. query·DTO·도메인 규칙은 여기 있고 `pages/**`는 화면만 갖는다. 새 데이터 조회를 `pages/` 안에 두지 않는다.
+
+같은 query를 Server Component와 Client Component가 모두 필요로 하면 repository 함수 하나를 양쪽에서 호출한다(예: `features/schedule/repository.ts`는 cache된 `server.ts`와 `pages/[artistid]/schedule/page.tsx`가 공유한다). 클라이언트에서 query를 다시 작성하면 schema fallback 같은 분기가 조용히 갈라진다.
+
 공개 캐시는 대체로 300초다.
 
 | tag                                                                 | 소비자                 |

@@ -1,6 +1,5 @@
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 
 type Range = "7d" | "30d" | "12w" | "12m";
 type Granularity = "day" | "week" | "month";
@@ -90,8 +89,7 @@ export async function GET(request: Request) {
   const sameOrigin =
     isSameOriginRequest(request) ||
     request.headers.get("sec-fetch-site") === "same-origin";
-  if (!sameOrigin)
-    return jsonNoStore({ error: "forbidden" }, { status: 403 });
+  if (!sameOrigin) return jsonNoStore({ error: "forbidden" }, { status: 403 });
   const searchParams = new URL(request.url).searchParams;
   const requestedRange = searchParams.get("range") || "7d";
   if (!Object.hasOwn(ranges, requestedRange))
@@ -99,11 +97,7 @@ export async function GET(request: Request) {
   const range = requestedRange as Range;
   const summaryOnly = searchParams.get("summary") === "1";
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || !(await isAdmin(supabase, user.id)))
+  if ((await requireAdmin()).denied)
     return jsonNoStore({ error: "forbidden" }, { status: 403 });
 
   const token = process.env.VERCEL_TOKEN;

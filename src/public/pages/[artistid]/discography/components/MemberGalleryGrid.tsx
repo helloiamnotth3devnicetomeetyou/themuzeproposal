@@ -4,12 +4,12 @@ import Image from "next/image";
 import { Image as LucideImage, Maximize2 } from "lucide-react";
 import { useState } from "react";
 import { useLocale } from "@/core/providers/LocaleContext";
-import { DISCOGRAPHY_GALLERY_SIZES } from "../lib/cover-preload";
+import { DISCOGRAPHY_GALLERY_SIZES } from "@/public/features/discography/cover-preload";
 import type {
   DiscographyAlbum,
   DiscographyGalleryItem,
   DiscographyMember,
-} from "../lib/types";
+} from "@/public/features/discography/types";
 
 function bentoSpan(index: number, total: number) {
   if (total === 1) return "col-span-2 row-span-2";

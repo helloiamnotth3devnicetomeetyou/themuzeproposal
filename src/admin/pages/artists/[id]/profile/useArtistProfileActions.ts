@@ -13,7 +13,7 @@ import {
 } from "@/admin/utils/draft-assets";
 import { adminDbError } from "@/admin/utils/admin-db-error";
 import { supabase } from "@/core/supabase/client";
-import { notifyArtistsChanged } from "@/core/utils/artist-events";
+import { notifyArtistsChanged } from "@/admin/utils/artist-events";
 import type { ProfileDraft } from "./profile-editor-model";
 import { toArtistProfilePayload } from "./profile-payload";
 

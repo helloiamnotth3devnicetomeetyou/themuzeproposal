@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { parseFormDataWithinLimit } from "@/core/http/request-body";
 import { consumeAdminUploadAttemptRateLimit } from "@/core/http/submission-rate-limit";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { deleteObjects, uploadObject } from "@/core/storage/r2";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/uploads/service-storage";
 import {
   sanitizeSvg,
@@ -36,14 +35,9 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  if (!(await isAdmin(supabase, user.id)))
-    return errorResponse("FORBIDDEN", 403);
+  const auth = await requireAdmin();
+  if (auth.denied) return errorResponse(auth.denied.code, auth.denied.status);
+  const { user } = auth;
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
   if (attempt.error) return errorResponse("SERVICE_UNAVAILABLE", 503);
   if (!attempt.allowed) return errorResponse("RATE_LIMITED", 429);

@@ -2,8 +2,8 @@ import Image from "next/image";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { sanitizeRichText } from "@/core/utils/rich-text";
 import type { ArtistScene } from "@/core/utils/artist-scenes";
-import type { Member, SceneCopy } from "./artist-scene-types";
-import { getEnglishFirstMemberName } from "./artist-scene-types";
+import type { Member, SceneCopy } from "@/public/features/artists/types";
+import { getEnglishFirstMemberName } from "@/public/features/artists/types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 import inlineMemberStyles from "@/styles/(public)/pages/artist-scene-inline-member.module.css";
 

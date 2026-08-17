@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Image as LucideImage } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
-import type { DiscographyMember } from "../lib/types";
+import type { DiscographyMember } from "@/public/features/discography/types";
 
 type Props = {
   albumColor: string;

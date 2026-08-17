@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import { getUserProfile, signOut } from "@/core/auth/auth";
 import { getPublicAssetUrl } from "@/core/storage/public-url";
 import { supabase } from "@/core/supabase/client";
-import { ARTISTS_CHANGED_EVENT } from "@/core/utils/artist-events";
+import { ARTISTS_CHANGED_EVENT } from "@/admin/utils/artist-events";
 import { getAdminInboxCounts } from "@/admin/utils/inbox-counts";
 import SidebarSearch, { type SidebarSearchContent } from "./SidebarSearch";
 import SidebarNavigation, { type SidebarArtist } from "./SidebarNavigation";

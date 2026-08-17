@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ArtistSchedulePage from "@/public/pages/[artistid]/schedule/page";
-import { loadPublicArtistSchedule } from "@/public/pages/[artistid]/schedule/schedule-server";
+import { loadPublicArtistSchedule } from "@/public/features/schedule/server";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { getServerLocale } from "@/core/i18n/server";
 import {

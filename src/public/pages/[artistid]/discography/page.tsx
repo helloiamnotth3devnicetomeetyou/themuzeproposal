@@ -1,5 +1,5 @@
 import { DiscographyExperience } from "./components/DiscographyExperience";
-import { loadDiscography } from "./discography-server";
+import { loadDiscography } from "@/public/features/discography/server";
 
 export default async function DiscographyPage({
   params,

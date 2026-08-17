@@ -6,7 +6,7 @@ import { useMemo, type CSSProperties } from "react";
 import { Disc3, ExternalLink } from "lucide-react";
 import { normalizeSceneLink, type ArtistScene } from "@/core/utils/artist-scenes";
 import type { Locale } from "@/core/i18n/translations";
-import type { Artist, Member, SceneCopy } from "./artist-scene-types";
+import type { Artist, Member, SceneCopy } from "@/public/features/artists/types";
 import MobileSceneControls from "./MobileSceneControls";
 import MobileSceneRail from "./MobileSceneRail";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";

@@ -13,8 +13,8 @@ import {
 import { safeHref } from "@/core/http/safe-href";
 import type { PublicMessages } from "@/core/i18n/public-messages";
 import styles from "@/styles/(public)/pages/artist-schedule.module.css";
-import type { Category, ScheduleRow } from "./schedule-types";
-import { dateAtLocalMidnight, daysUntil } from "./schedule-utils";
+import type { Category, ScheduleRow } from "@/public/features/schedule/types";
+import { dateAtLocalMidnight, daysUntil } from "@/public/features/schedule/date";
 
 const CATEGORIES: Record<Category, { icon: IconType; color: string }> = {
   show: { icon: Radio, color: SCHEDULE_CATEGORY_COLORS.show },

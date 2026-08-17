@@ -1,6 +1,6 @@
 "use client";
 
-import type { DiscographyAlbum, DiscographyTrack } from "../lib/types";
+import type { DiscographyAlbum, DiscographyTrack } from "@/public/features/discography/types";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";
 

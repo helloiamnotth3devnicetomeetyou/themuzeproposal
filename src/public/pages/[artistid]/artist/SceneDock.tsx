@@ -6,7 +6,7 @@ import {
   type Artist,
   type Member,
   type SceneCopy,
-} from "./artist-scene-types";
+} from "@/public/features/artists/types";
 import {
   normalizeSceneLink,
   type ArtistScene,

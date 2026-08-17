@@ -3,7 +3,7 @@ import {
   getEnglishFirstMemberName,
   type Member,
   type SceneCopy,
-} from "./artist-scene-types";
+} from "@/public/features/artists/types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 export default function MemberDetailOverlay({

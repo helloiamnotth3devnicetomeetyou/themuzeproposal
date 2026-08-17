@@ -12,7 +12,7 @@ import type {
   DiscographyAlbum,
   DiscographyGalleryItem,
   DiscographyMember,
-} from "../lib/types";
+} from "@/public/features/discography/types";
 import { MemberGallery } from "./MemberGallery";
 
 interface MobileAlbumViewProps {

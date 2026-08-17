@@ -1,4 +1,4 @@
-import type { DiscographyAlbum } from "../lib/types";
+import type { DiscographyAlbum } from "@/public/features/discography/types";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
 import { memo } from "react";

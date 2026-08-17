@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { deleteObjects } from "@/core/storage/r2";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/supabase/service";
 import { isSafeStoragePath } from "@/core/uploads/service-storage";
 
@@ -38,18 +37,6 @@ function response(body: unknown, status = 200) {
       "X-Content-Type-Options": "nosniff",
     },
   });
-}
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return { error: response({ code: "UNAUTHORIZED" }, 401) };
-  if (!(await isAdmin(supabase, user.id)))
-    return { error: response({ code: "FORBIDDEN" }, 403) };
-  return { user };
 }
 
 function rpcCode(error: unknown) {
@@ -161,7 +148,8 @@ export async function POST(request: NextRequest) {
     return response({ code: "INVALID_REQUEST" }, 400);
 
   const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
 
   const body = await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(
     () => null,

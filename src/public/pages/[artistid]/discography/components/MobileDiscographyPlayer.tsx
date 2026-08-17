@@ -6,7 +6,7 @@ import type {
   DiscographyAlbum,
   DiscographyGalleryItem,
   DiscographyMember,
-} from "../lib/types";
+} from "@/public/features/discography/types";
 import { MobileAlbumView } from "./MobileAlbumView";
 import { MobileTracksView } from "./MobileTracksView";
 

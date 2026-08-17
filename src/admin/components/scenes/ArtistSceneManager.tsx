@@ -11,7 +11,7 @@ import { useDraftBackup } from "@/admin/hooks/useDraftBackup";
 import { finalizeDraftImageAssets } from "@/admin/utils/draft-assets";
 import type { UploadedImageAsset } from "@/admin/components/assets/ImageAssetField";
 import { supabase } from "@/core/supabase/client";
-import { revalidateArtistSceneData } from "@/core/utils/artist-events";
+import { revalidateArtistSceneData } from "@/admin/utils/artist-events";
 import type { MemberLookup } from "./artist-scene-editor-model";
 import { useArtistSceneLoader } from "./useArtistSceneLoader";
 import { useArtistSceneActions } from "./useArtistSceneActions";

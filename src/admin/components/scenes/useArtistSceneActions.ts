@@ -4,7 +4,7 @@ import { useCallback, type Dispatch, type MutableRefObject, type RefObject, type
 import { supabase } from "@/core/supabase/client";
 import { toWebP } from "@/admin/utils/image-convert";
 import { uploadAdminAsset } from "@/admin/utils/upload-admin-asset";
-import { revalidateArtistSceneData } from "@/core/utils/artist-events";
+import { revalidateArtistSceneData } from "@/admin/utils/artist-events";
 import {
   type ArtistScene,
   type ScenePoint,

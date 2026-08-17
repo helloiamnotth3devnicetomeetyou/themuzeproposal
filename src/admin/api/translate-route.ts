@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { translateAdminContent } from "@/core/ai/translate-admin-content";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_SOURCE_CHARS = 12_000;
@@ -63,14 +62,9 @@ export async function POST(request: Request) {
   );
   if (!parsed.success) return response({ code: "INVALID_REQUEST" }, 400);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return response({ code: "UNAUTHORIZED" }, 401);
-  if (!(await isAdmin(supabase, user.id)))
-    return response({ code: "FORBIDDEN" }, 403);
+  const auth = await requireAdmin();
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
 
   const translations = await translateAdminContent(
     parsed.data.documentKind,

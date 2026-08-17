@@ -7,8 +7,8 @@ import {
   type ArtistScene,
 } from "@/core/utils/artist-scenes";
 import type { Locale } from "@/core/i18n/translations";
-import type { Member, SceneCopy } from "./artist-scene-types";
-import { getEnglishFirstMemberName } from "./artist-scene-types";
+import type { Member, SceneCopy } from "@/public/features/artists/types";
+import { getEnglishFirstMemberName } from "@/public/features/artists/types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 type Props = {

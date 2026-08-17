@@ -15,8 +15,8 @@ import {
   coverPreloadQueue,
   discographyCoverCandidate,
   galleryPreloadQueue,
-} from "../lib/cover-preload";
-import type { DiscographyData } from "../lib/types";
+} from "@/public/features/discography/cover-preload";
+import type { DiscographyData } from "@/public/features/discography/types";
 import { AlbumArtwork } from "./AlbumArtwork";
 import { AlbumDetails } from "./AlbumDetails";
 import { AlbumDock } from "./AlbumDock";

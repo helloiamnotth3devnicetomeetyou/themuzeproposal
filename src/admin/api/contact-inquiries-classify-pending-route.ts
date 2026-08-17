@@ -3,9 +3,8 @@ import {
   classify,
   type ContactClassification,
 } from "@/core/ai/classify-inquiry";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { isSameOriginRequest } from "@/core/http/same-origin";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/supabase/service";
 
 const BATCH_SIZE = 10;
@@ -56,14 +55,9 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request))
     return response({ code: "FORBIDDEN" }, 403);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user) return response({ code: "UNAUTHORIZED" }, 401);
-  if (!(await isAdmin(supabase, user.id)))
-    return response({ code: "FORBIDDEN" }, 403);
+  const auth = await requireAdmin();
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
 
   const serviceClient = createServiceRoleClient();
   if (!serviceClient) return response({ code: "SERVICE_UNAVAILABLE" }, 503);

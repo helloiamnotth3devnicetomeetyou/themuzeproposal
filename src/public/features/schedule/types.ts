@@ -22,3 +22,13 @@ export type PublicScheduleData = {
   artistColor: string | null;
   events: ScheduleRow[];
 };
+
+/** Why a schedule fetch produced no data. Callers decide how to surface each one:
+ * the cached server loader throws on anything but `not-found`, the client page
+ * maps them to copy. */
+export type ScheduleFetchFailure =
+  "not-found" | "artist-not-found" | "table-missing" | "failed";
+
+export type ScheduleFetchResult =
+  | { data: PublicScheduleData; failure?: undefined }
+  | { data: null; failure: ScheduleFetchFailure };

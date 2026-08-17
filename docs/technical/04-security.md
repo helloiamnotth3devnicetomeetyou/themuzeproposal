@@ -25,7 +25,8 @@ Supabase Auth는 모든 환경에서 이메일 확인을 요구하고, 12자 이
 
 - 보호 페이지의 proxy는 `getClaims()`로 JWT 서명을 검증하고 session cookie를 refresh한다.
 - 관리자 layout도 다시 claims와 DB role을 확인한다.
-- 민감 Route Handler는 필요에 따라 `getUser()`로 Supabase Auth 서버 확인을 수행한다.
+- 관리자 Route Handler는 `requireAdmin()`(`src/core/auth/require-admin.ts`) 하나로 session과 role을 확인한다. `getUser()` + `isAdmin()`을 route마다 다시 쓰지 않는다.
+- `requireAdmin()`은 Response 대신 `denied: { code, status }`를 돌려주므로 각 route가 자기 header 규약(`no-store` 등)을 유지한다.
 - `getSession()`의 cookie 값만으로 권한을 결정하지 않는다.
 
 보호 URL은 현재 `/admin/**`, `/account`, `/protect`다. 새 사용자 전용 page를 추가하면 proxy의 `isAuthRoute` 범위와 redirect query를 갱신한다.

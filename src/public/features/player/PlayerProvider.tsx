@@ -14,7 +14,7 @@ import {
 import {
   readPlaybackMemory,
   savePlaybackMemory,
-} from "@/public/pages/[artistid]/discography/lib/playback-memory";
+} from "@/public/features/discography/playback-memory";
 
 export interface PlayerTrack {
   id: string;

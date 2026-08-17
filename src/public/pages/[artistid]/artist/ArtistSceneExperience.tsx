@@ -19,7 +19,7 @@ import { useArtistSceneData } from "./useArtistSceneData";
 import DesktopArtistScene from "./DesktopArtistScene";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
-import type { ArtistSceneData, Member } from "./artist-scene-types";
+import type { ArtistSceneData, Member } from "@/public/features/artists/types";
 import type { ArtistScene } from "@/core/utils/artist-scenes";
 
 const EMPTY_MEMBERS: Member[] = [];

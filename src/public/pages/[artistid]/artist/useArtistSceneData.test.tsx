@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ArtistSceneData } from "./artist-scene-types";
+import type { ArtistSceneData } from "@/public/features/artists/types";
 
 vi.mock("@/core/supabase/client", () => ({ supabase: {} }));
 

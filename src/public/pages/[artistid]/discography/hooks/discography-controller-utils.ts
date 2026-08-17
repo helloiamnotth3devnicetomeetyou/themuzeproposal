@@ -1,7 +1,7 @@
 import type { AlbumPreviewPayload } from "@/core/preview/types";
 import { safeHref } from "@/core/http/safe-href";
 import { spotifyAlbumHref } from "@/core/http/spotify";
-import type { DiscographyAlbum } from "../lib/types";
+import type { DiscographyAlbum } from "@/public/features/discography/types";
 
 export function previewToAlbum(
   preview: AlbumPreviewPayload | null,

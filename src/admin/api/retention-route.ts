@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import { parseJsonWithinLimit } from "@/core/http/request-body";
 import { isSameOriginRequest } from "@/core/http/same-origin";
 import { deleteObjects } from "@/core/storage/r2";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createServiceRoleClient } from "@/core/supabase/service";
 import { isSafeStoragePath } from "@/core/uploads/service-storage";
 
@@ -50,18 +49,6 @@ function sameOriginRead(request: Request) {
     isSameOriginRequest(request) ||
     request.headers.get("sec-fetch-site") === "same-origin"
   );
-}
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return { error: response({ code: "UNAUTHORIZED" }, 401) };
-  if (!(await isAdmin(supabase, user.id)))
-    return { error: response({ code: "FORBIDDEN" }, 403) };
-  return { user };
 }
 
 function mapCandidate(row: unknown): Candidate | null {
@@ -239,9 +226,11 @@ export async function listRetentionCandidates(
 }
 
 export async function GET(request: NextRequest) {
-  if (!sameOriginRead(request)) return response({ code: "INVALID_REQUEST" }, 400);
+  if (!sameOriginRead(request))
+    return response({ code: "INVALID_REQUEST" }, 400);
   const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
   const service = createServiceRoleClient();
   if (!service) return response({ code: "SERVICE_UNAVAILABLE" }, 503);
 
@@ -261,7 +250,8 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return response({ code: "INVALID_REQUEST" }, 400);
   const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  if (auth.denied)
+    return response({ code: auth.denied.code }, auth.denied.status);
   const body = await parseJsonWithinLimit(request, MAX_BODY_BYTES).catch(
     () => null,
   );
@@ -279,12 +269,19 @@ export async function POST(request: NextRequest) {
     ).values(),
   ];
   const results = await purgeRetentionCandidates(service, unique, auth.user.id);
-  const deleted = results.filter((result) => result.deleted).map((result) => result.item);
+  const deleted = results
+    .filter((result) => result.deleted)
+    .map((result) => result.item);
   const failed = results
     .filter((result) => !result.deleted)
     .map((result) => ({ ...result.item, code: result.code }));
   return response(
-    { deleted, failed, deleted_count: deleted.length, failed_count: failed.length },
+    {
+      deleted,
+      failed,
+      deleted_count: deleted.length,
+      failed_count: failed.length,
+    },
     failed.length ? (deleted.length ? 207 : 503) : 200,
   );
 }

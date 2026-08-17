@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/core/supabase/client";
 import { normalizeOutline, type ArtistScene } from "@/core/utils/artist-scenes";
-import type { Artist, ArtistSceneData, Member } from "./artist-scene-types";
+import type { Artist, ArtistSceneData, Member } from "@/public/features/artists/types";
 
 const memberSelect =
   "id,slug,name,eng_name,name_ko,name_en,name_ja,role_ko,role_en,role_ja,image_url,color,bio_ko,bio_en,bio_ja,sort_order";

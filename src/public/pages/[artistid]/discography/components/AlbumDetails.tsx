@@ -10,7 +10,7 @@ import type {
   DiscographyGalleryItem,
   DiscographyMember,
   DiscographyTab,
-} from "../lib/types";
+} from "@/public/features/discography/types";
 import { MemberGallery } from "./MemberGallery";
 import { TrackList } from "./TrackList";
 import { TrackPlayer } from "./TrackPlayer";

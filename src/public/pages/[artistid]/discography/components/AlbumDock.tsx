@@ -3,7 +3,7 @@ import { memo, type RefObject } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale } from "@/core/providers/LocaleContext";
 
-import type { AlbumSort, DiscographyAlbum, RailPhase } from "../lib/types";
+import type { AlbumSort, DiscographyAlbum, RailPhase } from "@/public/features/discography/types";
 
 interface AlbumDockProps {
   albumIndex: number;

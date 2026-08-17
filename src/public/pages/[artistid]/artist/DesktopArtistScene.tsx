@@ -8,7 +8,7 @@ import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import type { ArtistScene } from "@/core/utils/artist-scenes";
 import SceneCanvas from "./SceneCanvas";
 import SceneDock from "./SceneDock";
-import type { Artist, Member, SceneCopy } from "./artist-scene-types";
+import type { Artist, Member, SceneCopy } from "@/public/features/artists/types";
 import styles from "@/styles/(public)/pages/artist-scene.module.css";
 
 const MemberDetailOverlay = dynamic(() => import("./MemberDetailOverlay"));

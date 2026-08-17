@@ -14,14 +14,20 @@ vi.mock("@/core/config/public-env", () => ({
   }),
 }));
 
-import { loadDiscography } from "./discography-server";
+import { loadDiscography } from "@/public/features/discography/server";
 
 function query(result: unknown) {
   const builder = {
-    select: vi.fn(), eq: vi.fn(), lte: vi.fn(), order: vi.fn(),
-    maybeSingle: vi.fn(), overrideTypes: vi.fn(),
-    then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
-      Promise.resolve(result).then(resolve, reject),
+    select: vi.fn(),
+    eq: vi.fn(),
+    lte: vi.fn(),
+    order: vi.fn(),
+    maybeSingle: vi.fn(),
+    overrideTypes: vi.fn(),
+    then: (
+      resolve: (value: unknown) => unknown,
+      reject: (reason: unknown) => unknown,
+    ) => Promise.resolve(result).then(resolve, reject),
   };
   builder.select.mockReturnValue(builder);
   builder.eq.mockReturnValue(builder);

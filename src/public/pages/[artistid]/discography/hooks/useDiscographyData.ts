@@ -6,14 +6,14 @@ import {
   readPlaybackMemory,
   requestedAlbumId,
   syncAlbumQuery,
-} from "../lib/playback-memory";
+} from "@/public/features/discography/playback-memory";
 import type {
   DiscographyAlbum,
   DiscographyData,
   DiscographyGalleryItem,
   DiscographyMember,
-} from "../lib/types";
-import { newestAlbumsFirst } from "../lib/album-order";
+} from "@/public/features/discography/types";
+import { newestAlbumsFirst } from "@/public/features/discography/album-order";
 
 export function useDiscographyData(
   artistSlug: string,

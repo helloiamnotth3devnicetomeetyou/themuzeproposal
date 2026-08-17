@@ -3,7 +3,7 @@ import { SiYoutube } from "react-icons/si";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { safeHref } from "@/core/http/safe-href";
 
-import type { DiscographyTrack } from "../lib/types";
+import type { DiscographyTrack } from "@/public/features/discography/types";
 
 interface TrackPlayerProps {
   albumColor: string;

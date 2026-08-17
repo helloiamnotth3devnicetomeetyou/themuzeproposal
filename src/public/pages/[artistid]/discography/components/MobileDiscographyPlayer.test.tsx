@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { DiscographyAlbum } from "../lib/types";
+import type { DiscographyAlbum } from "@/public/features/discography/types";
 
 vi.mock("@/core/providers/LocaleContext", () => ({
   useLocale: () => ({

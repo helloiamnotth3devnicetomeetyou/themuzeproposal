@@ -14,7 +14,7 @@ vi.mock("@/core/config/public-env", () => ({
   }),
 }));
 
-import { getArtistSceneData } from "./artist-scene-server";
+import { getArtistSceneData } from "@/public/features/artists/server";
 
 function failedQuery(error: Error) {
   const query = {

@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { memo, type CSSProperties } from "react";
 
-import type { DiscographyAlbum } from "../lib/types";
-import { DISCOGRAPHY_COVER_SIZES } from "../lib/cover-preload";
+import type { DiscographyAlbum } from "@/public/features/discography/types";
+import { DISCOGRAPHY_COVER_SIZES } from "@/public/features/discography/cover-preload";
 
 interface DiscographyBackgroundProps {
   album: DiscographyAlbum;

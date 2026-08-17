@@ -4,7 +4,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import type { AlbumSort, RailPhase } from "../lib/types";
+import type { AlbumSort, RailPhase } from "@/public/features/discography/types";
 
 export function useDiscographyRailSort({
   railPhase,

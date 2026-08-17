@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ArtistSceneExperience from "@/public/pages/[artistid]/artist/ArtistSceneExperience";
-import { getArtistSceneData } from "@/public/pages/[artistid]/artist/artist-scene-server";
+import { getArtistSceneData } from "@/public/features/artists/server";
 import { createPageMetadata } from "@/core/seo/metadata";
 import { getServerLocale } from "@/core/i18n/server";
 import {

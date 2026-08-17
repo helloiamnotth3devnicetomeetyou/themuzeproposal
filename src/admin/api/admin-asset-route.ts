@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAdmin } from "@/core/auth/admin-auth";
+import { requireAdmin } from "@/core/auth/require-admin";
 import {
   parseFormDataWithinLimit,
   parseJsonWithinLimit,
@@ -13,7 +13,6 @@ import {
   getObjectForValidation,
   uploadObject,
 } from "@/core/storage/r2";
-import { createSupabaseServerClient } from "@/core/supabase/server";
 import {
   validateFileSignature,
   type FileValidationProfile,
@@ -159,21 +158,14 @@ export async function POST(request: NextRequest) {
       origin: request.headers.get("origin"),
     });
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user)
-    return errorResponse("UNAUTHORIZED", 401, {
-      reason: "user_auth_failed",
-      userError: userError?.message,
+  const auth = await requireAdmin();
+  if (auth.denied)
+    return errorResponse(auth.denied.code, auth.denied.status, {
+      reason:
+        auth.denied.code === "UNAUTHORIZED" ? "user_auth_failed" : "not_admin",
+      userError: auth.denied.message,
     });
-  if (!(await isAdmin(supabase, user.id)))
-    return errorResponse("FORBIDDEN", 403, {
-      reason: "not_admin",
-      userId: user.id,
-    });
+  const { user } = auth;
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
   if (attempt.error)
     return errorResponse("SERVICE_UNAVAILABLE", 503, {
@@ -447,14 +439,9 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   if (!isSameOriginRequest(request))
     return errorResponse("INVALID_REQUEST", 400);
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) return errorResponse("UNAUTHORIZED", 401);
-  if (!(await isAdmin(supabase, user.id)))
-    return errorResponse("FORBIDDEN", 403);
+  const auth = await requireAdmin();
+  if (auth.denied) return errorResponse(auth.denied.code, auth.denied.status);
+  const { user } = auth;
   const attempt = await consumeAdminUploadAttemptRateLimit(request, user.id);
   if (attempt.error)
     return errorResponse("SERVICE_UNAVAILABLE", 503, {
