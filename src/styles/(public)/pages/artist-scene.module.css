@@ -214,7 +214,9 @@
   background: radial-gradient(
     ellipse at left bottom,
     var(--alpha-000000-48) 0%,
+    var(--alpha-000000-42) 22%,
     var(--alpha-000000-28) 42%,
+    var(--alpha-000000-12) 58%,
     transparent 74%
   );
   opacity: 0.78;

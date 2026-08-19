@@ -80,7 +80,7 @@ export default async function RootLayout({
         <ThemeProvider initialTheme={initialTheme}>
           <LocaleProvider initialLocale={initialLocale}>
             <SkipLink />
-            {false && <DisclaimerBanner />}
+            <DisclaimerBanner />
             {children}
             <Analytics />
             <SpeedInsights />
