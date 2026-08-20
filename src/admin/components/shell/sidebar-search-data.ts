@@ -104,6 +104,12 @@ export function buildSearchItems(
       url: "/admin/settings",
     },
     {
+      id: "login-slides",
+      categoryLabel: "사이트 설정",
+      title: "로그인 슬라이드",
+      url: "/admin/settings?tab=login-slides",
+    },
+    {
       id: "new-artist",
       categoryLabel: "워크스페이스",
       title: "새 아티스트 추가",
@@ -180,6 +186,13 @@ export function buildSearchItems(
         categoryLabel: "아티스트",
         artistName: artist.name,
         title: "프로필 - 인터랙티브 장면",
+        url: `/admin/artists/${artist.id}/profile?tab=scenes`,
+      },
+      {
+        id: `${artist.id}-scene-order`,
+        categoryLabel: "아티스트",
+        artistName: artist.name,
+        title: "인터랙티브 장면 - 씬 순서",
         url: `/admin/artists/${artist.id}/profile?tab=scenes`,
       },
       {
