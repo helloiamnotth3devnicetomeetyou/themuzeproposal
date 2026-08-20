@@ -5,7 +5,7 @@ import type { Artist, ArtistSceneData, Member } from "./types";
 const MEMBER_COLUMNS =
   "id,slug,name,eng_name,name_ko,name_en,name_ja,role_ko,role_en,role_ja,image_url,color,bio_ko,bio_en,bio_ja,sort_order";
 const SCENE_COLUMNS =
-  "id,artist_id,title,title_ko,title_en,title_ja,link_url,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(member_id)";
+  "id,artist_id,title,title_ko,title_en,title_ja,link_url,image_url,image_width,image_height,is_hero,is_published,sort_order,artist_scene_members(member_id,sort_order)";
 
 type ArtistWithRelations = Artist & {
   artist_members: Member[];
@@ -32,6 +32,7 @@ function legacyHeroScene(artist: Artist): ArtistScene[] {
       is_published: true,
       sort_order: 0,
       member_ids: [],
+      member_scene_orders: {},
       artist_scene_members: [],
     },
   ];
@@ -64,6 +65,12 @@ export async function fetchArtistSceneData(
       ...scene,
       member_ids:
         scene.artist_scene_members?.map((region) => region.member_id) ?? [],
+      member_scene_orders: Object.fromEntries(
+        (scene.artist_scene_members ?? []).map((region) => [
+          region.member_id,
+          region.sort_order,
+        ]),
+      ),
       artist_scene_members: [],
     }))
     .sort(

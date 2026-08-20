@@ -107,6 +107,63 @@
   padding: 2px 2px 7px;
   scrollbar-width: thin;
 }
+.sceneOrderSelect {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+.toolbar > .sceneOrderSelect { flex: 0 0 auto; }
+.sceneOrderSelect > div { min-width: 180px; }
+.sceneTab {
+  position: relative;
+  width: 142px;
+  min-width: 142px;
+}
+.sceneTab > button:first-child {
+  width: 100%;
+}
+.sceneTabs .sceneDragHandle {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+  display: flex;
+  width: auto !important;
+  min-width: auto !important;
+  height: 29px;
+  min-height: 29px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  grid-template-rows: none;
+  overflow: visible;
+  border-radius: 6px;
+  border-color: var(--alpha-ffffff-24) !important;
+  background: var(--alpha-050505-68) !important;
+  color: var(--alpha-ffffff-78) !important;
+  cursor: grab;
+  font-size: 6px;
+  font-weight: 750;
+  text-align: center;
+  touch-action: none;
+  user-select: none;
+}
+.sceneTabs .sceneDragHandle svg {
+  width: 11px;
+  height: 11px;
+  color: var(--color-brand-pink);
+}
+.sceneTabs .sceneDragHandle:hover {
+  border-color: var(--color-brand-pink) !important;
+  background: var(--alpha-160c13-84) !important;
+  color: var(--color-static-white) !important;
+}
+.sceneDragHandle:active { cursor: grabbing; }
+.noMemberScenes {
+  padding: 20px 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
 .sceneTabs button {
   position: relative;
   display: grid;

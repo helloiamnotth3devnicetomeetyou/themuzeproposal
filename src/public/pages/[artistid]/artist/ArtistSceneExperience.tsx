@@ -11,7 +11,7 @@ import { getImageProps } from "next/image";
 import Link from "next/link";
 import { localizeText } from "@/core/i18n/localized";
 import { preloadImages } from "@/core/utils/image-preload";
-import { outlineCentroid } from "@/core/utils/artist-scenes";
+import { outlineCentroid, scenesForMember } from "@/core/utils/artist-scenes";
 import LoadingIndicator from "@/core/components/feedback/LoadingIndicator";
 import { useLocale } from "@/core/providers/LocaleContext";
 import { usePreviewPayload } from "@/core/preview/PreviewProvider";
@@ -164,13 +164,7 @@ export default function ArtistSceneExperience({
   const memberScenes = useMemo(
     () =>
       selectedMemberId
-        ? scenes.filter(
-            (scene) =>
-              scene.member_ids?.includes(selectedMemberId) ||
-              scene.artist_scene_members.some(
-                (region) => region.member_id === selectedMemberId,
-              ),
-          )
+        ? scenesForMember(scenes, selectedMemberId)
         : scenes,
     [scenes, selectedMemberId],
   );

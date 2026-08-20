@@ -6,11 +6,29 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import { ImagePlus, RefreshCcw, Save, Trash2, Upload } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, ImagePlus, RefreshCcw, Save, Trash2, Upload } from "lucide-react";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
 import FormField from "@/admin/components/content/FormField";
+import CustomSelect from "@/core/components/form/CustomSelect";
 import type { AdminLanguage } from "@/admin/components/content/AdminLanguageTabs";
 import {
   simplifyOutline,
@@ -23,16 +41,66 @@ import type { MemberLookup } from "./artist-scene-editor-model";
 
 type SceneRegion = ArtistScene["artist_scene_members"][number];
 
+function SortableSceneTab({
+  scene,
+  selected,
+  sortable,
+  onSelect,
+}: {
+  scene: ArtistScene;
+  selected: boolean;
+  sortable: boolean;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: scene.id,
+    disabled: !sortable,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={styles.sceneTab}
+    >
+      <button
+        type="button"
+        className={selected ? styles.isSelected : ""}
+        onClick={onSelect}
+      >
+        <AdminAssetImage src={scene.image_url} alt="" sizes="120px" />
+        <span>{scene.title || "Untitled scene"}</span>
+        {scene.is_hero && <i>HERO</i>}
+      </button>
+      {sortable && (
+        <button
+          type="button"
+          className={styles.sceneDragHandle}
+          aria-label={`${scene.title || "Scene"} order`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 type Props = {
   heroUrl: string;
   language: AdminLanguage;
   scenes: ArtistScene[];
+  visibleScenes: ArtistScene[];
   selectedSceneId: string | null;
   setSelectedSceneId: Dispatch<SetStateAction<string | null>>;
   selectedScene: ArtistScene | null;
   selectedRegion: SceneRegion | null;
   selectedMemberId: string | null;
   setSelectedMemberId: Dispatch<SetStateAction<string | null>>;
+  orderMemberId: string | null;
+  setOrderMemberId: Dispatch<SetStateAction<string | null>>;
+  onReorderScenes: (orderedSceneIds: string[]) => void;
+  onReorderMemberScenes: (orderedSceneIds: string[]) => void;
   selectedMember: MemberLookup | null;
   members: MemberLookup[];
   draftOutline: ScenePoint[];
@@ -60,12 +128,17 @@ export default function ArtistSceneWorkspace({
   heroUrl,
   language,
   scenes,
+  visibleScenes,
   selectedSceneId,
   setSelectedSceneId,
   selectedScene,
   selectedRegion,
   selectedMemberId,
   setSelectedMemberId,
+  orderMemberId,
+  setOrderMemberId,
+  onReorderScenes,
+  onReorderMemberScenes,
   selectedMember,
   members,
   draftOutline,
@@ -88,6 +161,20 @@ export default function ArtistSceneWorkspace({
   onDeleteScene,
   onCloseDelete,
 }: Props) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleSceneDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const orderedScenes = orderMemberId ? visibleScenes : scenes;
+    const from = orderedScenes.findIndex((scene) => scene.id === active.id);
+    const to = orderedScenes.findIndex((scene) => scene.id === over.id);
+    if (from >= 0 && to >= 0)
+      (orderMemberId ? onReorderMemberScenes : onReorderScenes)(
+        arrayMove(orderedScenes, from, to).map((scene) => scene.id),
+      );
+  };
   return (
     <>
       <div
@@ -103,6 +190,20 @@ export default function ArtistSceneWorkspace({
           <span>
             장면마다 멤버 외곽선을 직접 그리고 정밀 마스크를 연결합니다.
           </span>
+        </div>
+        <div className={styles.sceneOrderSelect}>
+          <CustomSelect
+            value={orderMemberId || ""}
+            ariaLabel="씬 순서를 정렬할 멤버"
+            onChange={(value) => setOrderMemberId(value || null)}
+            options={[
+              { value: "", label: "전체 씬" },
+              ...members.map((member) => ({
+                value: member.id,
+                label: member.eng_name || member.name,
+              })),
+            ]}
+          />
         </div>
         {heroUrl && (
           <button
@@ -144,22 +245,35 @@ export default function ArtistSceneWorkspace({
         </div>
       ) : (
         <>
-          <div className={styles.sceneTabs}>
-            {scenes.map((scene) => (
-              <button
-                type="button"
-                key={scene.id}
-                className={
-                  scene.id === selectedSceneId ? styles.isSelected : ""
-                }
-                onClick={() => setSelectedSceneId(scene.id)}
+          <>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSceneDragEnd}
+            >
+              <SortableContext
+                items={(orderMemberId ? visibleScenes : scenes).map((scene) => scene.id)}
+                strategy={horizontalListSortingStrategy}
               >
-                <AdminAssetImage src={scene.image_url} alt="" sizes="120px" />
-                <span>{scene.title || "이름 없는 장면"}</span>
-                {scene.is_hero && <i>HERO</i>}
-              </button>
-            ))}
-          </div>
+                <div className={styles.sceneTabs}>
+                  {(orderMemberId ? visibleScenes : scenes).map((scene) => (
+                    <SortableSceneTab
+                      key={scene.id}
+                      scene={scene}
+                      selected={scene.id === selectedSceneId}
+                      sortable
+                      onSelect={() => setSelectedSceneId(scene.id)}
+                    />
+                  ))}
+                  {orderMemberId && !visibleScenes.length && (
+                    <span className={styles.noMemberScenes}>
+                      No scenes for this member.
+                    </span>
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </>
 
           {selectedScene && (
             <div className={styles.sceneSettings} data-tour-id="scene-settings">
@@ -233,8 +347,8 @@ export default function ArtistSceneWorkspace({
             <div className={styles.editor}>
               <div className={styles.memberPicker}>
                 <span>외곽선을 그릴 멤버</span>
-                <div>
-                  {members.map((member) => {
+              <div>
+                {members.map((member) => {
                     const hasRegion = selectedScene.artist_scene_members.some(
                       (region) => region.member_id === member.id,
                     );

@@ -26,6 +26,7 @@ export type ArtistScene = {
   is_published: boolean;
   sort_order: number;
   member_ids?: string[];
+  member_scene_orders?: Record<string, number>;
   artist_scene_members: ArtistSceneRegion[];
 };
 
@@ -42,6 +43,21 @@ export function normalizeSceneLink(value: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+export function scenesForMember(scenes: ArtistScene[], memberId: string) {
+  return scenes
+    .filter(
+      (scene) =>
+        scene.member_ids?.includes(memberId) ||
+        scene.artist_scene_members.some((region) => region.member_id === memberId),
+    )
+    .sort(
+      (left, right) =>
+        (left.member_scene_orders?.[memberId] ?? left.sort_order) -
+          (right.member_scene_orders?.[memberId] ?? right.sort_order) ||
+        left.sort_order - right.sort_order,
+    );
 }
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));

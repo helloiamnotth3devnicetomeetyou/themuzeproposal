@@ -42,6 +42,7 @@ export default function ArtistSceneManager({
   const [members, setMembers] = useState<MemberLookup[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [orderMemberId, setOrderMemberId] = useState<string | null>(null);
   const [draftOutline, setDraftOutline] = useState<ScenePoint[]>([]);
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -63,6 +64,22 @@ export default function ArtistSceneManager({
     ) ?? null;
   const selectedMember =
     members.find((member) => member.id === selectedMemberId) ?? null;
+  const visibleScenes = orderMemberId
+    ? scenes.filter((scene) =>
+        scene.artist_scene_members.some(
+          (region) => region.member_id === orderMemberId,
+        ),
+      ).sort(
+        (left, right) =>
+          (left.artist_scene_members.find(
+            (region) => region.member_id === orderMemberId,
+          )?.sort_order ?? left.sort_order) -
+            (right.artist_scene_members.find(
+              (region) => region.member_id === orderMemberId,
+            )?.sort_order ?? right.sort_order) ||
+          left.sort_order - right.sort_order,
+      )
+    : scenes;
   const sceneRatio =
     selectedScene?.image_width && selectedScene.image_height
       ? selectedScene.image_width / selectedScene.image_height
@@ -88,9 +105,49 @@ export default function ArtistSceneManager({
   }, [selectedRegion]);
 
   useEffect(() => {
+    if (
+      orderMemberId &&
+      !visibleScenes.some((scene) => scene.id === selectedSceneId)
+    )
+      void Promise.resolve().then(() =>
+        setSelectedSceneId(visibleScenes[0]?.id ?? null),
+      );
+  }, [orderMemberId, selectedSceneId, visibleScenes]);
+
+  useEffect(() => {
     if (!selectedMemberId && members[0])
       void Promise.resolve().then(() => setSelectedMemberId(members[0].id));
   }, [members, selectedMemberId]);
+
+  const reorderMemberScenes = (orderedSceneIds: string[]) => {
+    if (!orderMemberId) return;
+    const orderBySceneId = new Map(
+      orderedSceneIds.map((sceneId, index) => [sceneId, index]),
+    );
+    setScenes((current) =>
+      current.map((scene) => {
+        const sortOrder = orderBySceneId.get(scene.id);
+        if (sortOrder === undefined) return scene;
+        return {
+          ...scene,
+          artist_scene_members: scene.artist_scene_members.map((region) =>
+            region.member_id === orderMemberId
+              ? { ...region, sort_order: sortOrder }
+              : region,
+          ),
+        };
+      }),
+    );
+  };
+  const reorderScenes = (orderedSceneIds: string[]) => {
+    const byId = new Map(scenes.map((scene) => [scene.id, scene]));
+    setScenes(
+      orderedSceneIds.flatMap((sceneId, sort_order) => {
+        const scene = byId.get(sceneId);
+        return scene ? [{ ...scene, sort_order }] : [];
+      }),
+    );
+  };
 
   const {
     patchScene,
@@ -281,12 +338,17 @@ export default function ArtistSceneManager({
         heroUrl={heroUrl}
         language={language}
         scenes={scenes}
+        visibleScenes={visibleScenes}
         selectedSceneId={selectedSceneId}
         setSelectedSceneId={setSelectedSceneId}
         selectedScene={selectedScene}
         selectedRegion={selectedRegion}
         selectedMemberId={selectedMemberId}
         setSelectedMemberId={setSelectedMemberId}
+        orderMemberId={orderMemberId}
+        setOrderMemberId={setOrderMemberId}
+        onReorderScenes={reorderScenes}
+        onReorderMemberScenes={reorderMemberScenes}
         selectedMember={selectedMember}
         members={members}
         draftOutline={draftOutline}
