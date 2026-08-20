@@ -245,16 +245,6 @@ export default function HeroAdminPage() {
   if (loading)
     return <AdminSkeleton variant="cards" className="min-h-[420px]" rows={4} />;
 
-  const activeSlide = draggingId
-    ? slides.find((slide) => slide.id === draggingId)
-    : undefined;
-  const activeAlbum = activeSlide
-    ? albumById.get(activeSlide.album_id)
-    : undefined;
-  const activeArtist = activeAlbum
-    ? artistById.get(activeAlbum.artist_id)
-    : undefined;
-
   return (
     <div className="hero-admin-page">
       <HeroSlideEditor
@@ -270,8 +260,6 @@ export default function HeroAdminPage() {
         deleteSlideItem={deleteSlideItem}
         albumById={albumById}
         artistById={artistById}
-        activeAlbum={activeAlbum}
-        activeArtist={activeArtist}
         isLiveAlbum={isLiveAlbum}
         onSave={saveSlides}
         onRestoreBackup={restoreBackup}

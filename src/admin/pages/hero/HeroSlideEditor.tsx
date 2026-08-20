@@ -3,7 +3,6 @@
 import {
   closestCenter,
   DndContext,
-  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
@@ -11,12 +10,11 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
-  type Modifier,
 } from "@dnd-kit/core";
 import {
+  horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
   SortableContext,
-  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Image as ImageIcon } from "lucide-react";
 import DeleteConfirmDialog from "@/admin/components/shell/DeleteConfirmDialog";
@@ -24,35 +22,11 @@ import DraftSaveButton from "@/admin/components/content/DraftSaveButton";
 import { AdminToast } from "@/admin/components/feedback/AdminFeedback";
 import { BRAND_PINK_HEX } from "@/core/utils/design-tokens";
 import {
-  SlideDragOverlay,
   SortableSlideCard,
   type HeroAlbum as Album,
   type HeroArtist as Artist,
   type HeroSlide,
 } from "./HeroSlideCard";
-
-const snapOverlayToCursor: Modifier = ({
-  activatorEvent,
-  draggingNodeRect,
-  transform,
-}) => {
-  if (!(activatorEvent instanceof PointerEvent) || !draggingNodeRect)
-    return transform;
-
-  return {
-    ...transform,
-    x:
-      transform.x +
-      activatorEvent.clientX -
-      draggingNodeRect.left -
-      draggingNodeRect.width / 2,
-    y:
-      transform.y +
-      activatorEvent.clientY -
-      draggingNodeRect.top -
-      draggingNodeRect.height / 2,
-  };
-};
 
 type HeroRecovery = { updatedAt: number } | null;
 
@@ -69,8 +43,6 @@ type HeroSlideEditorProps = {
   deleteSlideItem: HeroSlide | null;
   albumById: Map<string, Album>;
   artistById: Map<string, Artist>;
-  activeAlbum?: Album;
-  activeArtist?: Artist;
   isLiveAlbum: (album: Album) => boolean;
   onSave: () => Promise<void>;
   onRestoreBackup: () => void;
@@ -100,8 +72,6 @@ export default function HeroSlideEditor({
   deleteSlideItem,
   albumById,
   artistById,
-  activeAlbum,
-  activeArtist,
   isLiveAlbum,
   onSave,
   onRestoreBackup,
@@ -126,10 +96,6 @@ export default function HeroSlideEditor({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-  const activeSlide = draggingId
-    ? slides.find((slide) => slide.id === draggingId)
-    : undefined;
-
   return (
     <>
       <section className="hero-admin-summary">
@@ -215,14 +181,13 @@ export default function HeroSlideEditor({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          modifiers={[snapOverlayToCursor]}
           onDragStart={onDragStart}
           onDragCancel={onDragCancel}
           onDragEnd={onDragEnd}
         >
           <SortableContext
             items={slides.map((slide) => slide.id)}
-            strategy={verticalListSortingStrategy}
+            strategy={horizontalListSortingStrategy}
           >
             <div
               className={`hero-slide-strip ${draggingId ? "is-sorting" : ""}`}
@@ -265,25 +230,6 @@ export default function HeroSlideEditor({
               )}
             </div>
           </SortableContext>
-          <DragOverlay
-            adjustScale={false}
-            dropAnimation={{
-              duration: 220,
-              easing: "cubic-bezier(.18,.86,.28,1)",
-            }}
-          >
-            {activeSlide ? (
-              <SlideDragOverlay
-                index={slides.findIndex((slide) => slide.id === activeSlide.id)}
-                album={activeAlbum}
-                artist={activeArtist}
-                accent={
-                  activeAlbum?.color || activeArtist?.color || BRAND_PINK_HEX
-                }
-                videoUrl={activeSlide.video_url}
-              />
-            ) : null}
-          </DragOverlay>
         </DndContext>
       </section>
 
