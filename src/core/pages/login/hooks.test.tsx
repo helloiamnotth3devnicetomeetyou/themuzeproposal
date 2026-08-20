@@ -65,6 +65,21 @@ describe("useLoginForm", () => {
     expect(result.current.error).toBe(result.current.t.captchaRequired);
   });
 
+  it("cycles using the configured login slide count", () => {
+    const { result } = renderHook(() =>
+      useLoginForm({
+        redirectTo: "/",
+        oauthFailed: false,
+        locale: "ko",
+        slideCount: 2,
+      }),
+    );
+    act(() => {
+      vi.advanceTimersByTime(9000);
+    });
+    expect(result.current.currentSlide).toBe(0);
+  });
+
   it("shows the remaining rate-limit wait in minutes", async () => {
     auth.signIn.mockRejectedValue(new AuthUserError("RATE_LIMITED", 125));
     const { result } = renderHook(() =>

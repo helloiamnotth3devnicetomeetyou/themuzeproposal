@@ -31,6 +31,7 @@ import {
   type SettingsDraft,
   type SettingsTab,
 } from "./settings-editor-model";
+import type { LoginSlide } from "@/core/content/login-slides";
 
 export function useSettingsEditor(canManageAdminAccounts = false) {
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,9 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
   const [footer, setFooter] = useState<FooterSettings>(EMPTY_FOOTER);
   const [social, setSocial] = useState<SocialLink[]>(EMPTY_SOCIAL);
   const [business, setBusiness] = useState<BusinessAssets>(EMPTY_BUSINESS);
+  const [loginSlides, setLoginSlides] = useState<LoginSlide[]>(
+    EMPTY_DRAFT.loginSlides,
+  );
   const [avatarDirty, setAvatarDirty] = useState(false);
   const [snapshot, setSnapshot] = useState(JSON.stringify(EMPTY_DRAFT));
   const [error, setError] = useState("");
@@ -54,8 +58,8 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
     window.setTimeout(() => setToast(""), 2600);
   }, []);
   const draft: SettingsDraft = useMemo(
-    () => ({ company, history, footer, social, business }),
-    [business, company, footer, history, social],
+    () => ({ company, history, footer, social, business, loginSlides }),
+    [business, company, footer, history, loginSlides, social],
   );
   const serializedDraft = useMemo(() => JSON.stringify(draft), [draft]);
   const settingsDirty = serializedDraft !== snapshot;
@@ -66,6 +70,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
     setFooter(saved.footer);
     setSocial(saved.social);
     setBusiness(saved.business);
+    setLoginSlides(saved.loginSlides);
   }, []);
   const { recovery, restoreBackup, discardBackup } = useDraftBackup({
     key: "admin-draft:settings",
@@ -116,6 +121,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       setFooter(nextDraft.footer);
       setSocial(nextDraft.social);
       setBusiness(nextDraft.business);
+      setLoginSlides(nextDraft.loginSlides);
       setSnapshot(JSON.stringify(nextDraft));
       setLoading(false);
     };
@@ -132,6 +138,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       "footer",
       "social",
       "business",
+      "login-slides",
       "avatars",
       ...(isSuperAdmin ? ["admins"] : []),
     ];
@@ -235,6 +242,7 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
       { key: "footer", value: footer },
       { key: "social", value: social },
       { key: "business_assets", value: business },
+      { key: "login_slides", value: loginSlides },
     ];
     const { data: saved, error: saveError } = await supabase.rpc(
       "save_site_settings_checked",
@@ -269,6 +277,8 @@ export function useSettingsEditor(canManageAdminAccounts = false) {
     setSocial,
     business,
     setBusiness,
+    loginSlides,
+    setLoginSlides,
     avatarDirty,
     setAvatarDirty,
     snapshot,

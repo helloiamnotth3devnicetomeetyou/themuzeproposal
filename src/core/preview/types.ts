@@ -1,4 +1,5 @@
 import { isUuid } from "@/core/utils/uuid";
+import type { LoginSlide } from "@/core/content/login-slides";
 
 export const PREVIEW_VERSION = 1 as const;
 export const PREVIEW_TTL_MS = 30 * 60 * 1000;
@@ -152,6 +153,7 @@ type SchedulePreviewPayload = {
 };
 
 export type SiteSettingsPreviewPayload = {
+  loginSlides: LoginSlide[];
   company: {
     name_ko: string;
     name_en: string;
@@ -350,6 +352,7 @@ function isPayloadForKind(kind: PreviewKind, payload: unknown): boolean {
   const history = payload.history;
   const footer = payload.footer;
   return (
+    Array.isArray(payload.loginSlides) &&
     isRecord(company) &&
     hasStrings(company, [
       "name_ko",

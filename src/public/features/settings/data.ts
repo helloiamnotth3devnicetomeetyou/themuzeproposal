@@ -1,8 +1,13 @@
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
 import { DEFAULT_HISTORY, normalizeHistory } from "@/core/content/site-content";
 import { detectSocialPlatform } from "@/core/content/social-icons";
+import {
+  DEFAULT_LOGIN_SLIDES,
+  normalizeLoginSlides,
+} from "@/core/content/login-slides";
 
 export const EMPTY_SETTINGS: SiteSettingsPreviewPayload = {
+  loginSlides: DEFAULT_LOGIN_SLIDES,
   company: {
     name_ko: "",
     name_en: "",
@@ -72,6 +77,8 @@ export function normalizeSiteSettings(
   const next = structuredClone(EMPTY_SETTINGS);
 
   rows?.forEach((item) => {
+    if (item.key === "login_slides")
+      next.loginSlides = normalizeLoginSlides(item.value);
     if (
       item.key === "company" &&
       item.value &&

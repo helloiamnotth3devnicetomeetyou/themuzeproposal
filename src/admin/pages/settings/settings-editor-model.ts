@@ -8,6 +8,11 @@ import {
   normalizeHistory,
   type HistoryEntry,
 } from "@/core/content/site-content";
+import {
+  DEFAULT_LOGIN_SLIDES,
+  normalizeLoginSlides,
+  type LoginSlide,
+} from "@/core/content/login-slides";
 
 export type SettingsTab =
   | "company"
@@ -15,6 +20,7 @@ export type SettingsTab =
   | "footer"
   | "social"
   | "business"
+  | "login-slides"
   | "avatars"
   | "admins";
 export type HistoryLanguage = "ko" | "en" | "ja";
@@ -33,6 +39,7 @@ export type FooterSettings = { copyright: string };
 export type BusinessAssets = { pressKitUrl: string; profilePdfUrl: string };
 
 export type SettingsDraft = {
+  loginSlides: LoginSlide[];
   company: CompanySettings;
   history: HistoryEntry[];
   footer: FooterSettings;
@@ -57,6 +64,7 @@ export const EMPTY_BUSINESS: BusinessAssets = {
   profilePdfUrl: "",
 };
 export const EMPTY_DRAFT: SettingsDraft = {
+  loginSlides: DEFAULT_LOGIN_SLIDES,
   company: EMPTY_COMPANY,
   history: DEFAULT_HISTORY,
   footer: EMPTY_FOOTER,
@@ -75,6 +83,7 @@ const baseSettingsTabs: WorkbenchTab<SettingsTab>[] = [
 
 export const settingsTabs: WorkbenchTab<SettingsTab>[] = [
   ...baseSettingsTabs,
+  { id: "login-slides", label: "LOGIN SLIDES" },
   { id: "admins", label: "관리자 계정" },
 ];
 
@@ -105,6 +114,7 @@ export function parseSettingsRows(
   let footer = EMPTY_FOOTER;
   let social = EMPTY_SOCIAL;
   let business = EMPTY_BUSINESS;
+  let loginSlides = DEFAULT_LOGIN_SLIDES;
   rows?.forEach((item) => {
     if (item.key === "company")
       company = {
@@ -115,6 +125,7 @@ export function parseSettingsRows(
     if (item.key === "footer")
       footer = { ...EMPTY_FOOTER, ...(item.value as Partial<FooterSettings>) };
     if (item.key === "social") social = normalizeSiteSocial(item.value);
+    if (item.key === "login_slides") loginSlides = normalizeLoginSlides(item.value);
     if (
       item.key === "business_assets" &&
       item.value &&
@@ -125,5 +136,5 @@ export function parseSettingsRows(
         ...(item.value as Partial<BusinessAssets>),
       };
   });
-  return { company, history, footer, social, business };
+  return { company, history, footer, social, business, loginSlides };
 }

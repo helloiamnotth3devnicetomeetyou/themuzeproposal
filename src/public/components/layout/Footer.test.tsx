@@ -43,10 +43,12 @@ vi.mock("@/public/features/settings/useSiteSettings", () => ({
 
 import Footer from "./Footer";
 import type { SiteSettingsPreviewPayload } from "@/core/preview/types";
+import { DEFAULT_LOGIN_SLIDES } from "@/core/content/login-slides";
 
 const makeSettings = (
   overrides: Partial<SiteSettingsPreviewPayload> = {},
 ): SiteSettingsPreviewPayload => ({
+  loginSlides: DEFAULT_LOGIN_SLIDES,
   company: {
     name_ko: "더뮤즈",
     name_en: "THE MUZE",

@@ -3,6 +3,7 @@ import LoginClient from "./LoginClient";
 import { createSupabaseServerClient } from "@/core/supabase/server";
 import { createPrivatePageMetadata } from "@/core/seo/metadata";
 import { safeRedirect } from "@/core/utils/redirect";
+import { getCachedSiteSettings } from "@/public/features/layout/server";
 
 export const metadata = createPrivatePageMetadata("Login");
 
@@ -24,8 +25,9 @@ export default async function LoginPage({
     data: { user },
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (user) redirect(redirectTo);
+  const settings = await getCachedSiteSettings();
 
   return (
-    <LoginClient redirectTo={redirectTo} oauthFailed={authError === "oauth"} />
+    <LoginClient redirectTo={redirectTo} oauthFailed={authError === "oauth"} slides={settings.loginSlides} />
   );
 }

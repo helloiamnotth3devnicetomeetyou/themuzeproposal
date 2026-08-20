@@ -14,6 +14,7 @@ import {
 import AdminAccountsPanel from "./AdminAccountsPanel";
 import AvatarAssetManager from "./AvatarAssetManager";
 import BusinessAssetField from "./BusinessAssetField";
+import LoginSlidesField from "./LoginSlidesField";
 import FormField from "@/admin/components/content/FormField";
 import SocialLinksField from "@/admin/components/content/SocialLinksField";
 import { SocialIcon } from "@/core/content/SocialIcon";
@@ -45,6 +46,8 @@ export default function SettingsEditorContent({
     social,
     setSocial,
     business,
+    loginSlides,
+    setLoginSlides,
     saving,
     uploadBusinessAsset,
     setAvatarDirty,
@@ -305,6 +308,10 @@ export default function SettingsEditorContent({
             />
           </section>
         </>
+      )}
+
+      {tab === "login-slides" && (
+        <LoginSlidesField value={loginSlides} onChange={setLoginSlides} />
       )}
 
       <AvatarAssetManager

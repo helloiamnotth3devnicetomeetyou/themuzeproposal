@@ -29,6 +29,7 @@ export default function SettingsAdmin({
     footer,
     social,
     business,
+    loginSlides,
     avatarDirty,
     snapshot,
     error,
@@ -66,6 +67,7 @@ export default function SettingsAdmin({
     footer: footerReady,
     social: social.length > 0,
     business: businessReady,
+    "login-slides": loginSlides.length > 0,
     avatars: !avatarDirty,
     admins: true,
   };
@@ -86,6 +88,7 @@ export default function SettingsAdmin({
           socialCount={social.length}
           businessReady={businessReady}
           businessComplete={businessComplete}
+          loginSlidesCount={loginSlides.length}
           avatarDirty={avatarDirty}
           isSuperAdmin={isSuperAdmin}
         />

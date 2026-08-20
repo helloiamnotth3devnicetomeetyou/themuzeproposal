@@ -8,7 +8,7 @@ import {
   signInWithGoogle,
   signUp,
 } from "@/core/auth/auth";
-import { SLIDES } from "./constants";
+import { DEFAULT_LOGIN_SLIDES } from "@/core/content/login-slides";
 import { localT, type LocaleKey, type LoginTranslations } from "./locales";
 
 type Mode = "login" | "signup";
@@ -52,6 +52,7 @@ interface UseLoginFormOptions {
   oauthFailed: boolean;
   locale: LocaleKey;
   resetTurnstile?: () => void;
+  slideCount?: number;
 }
 
 export interface LoginFormState {
@@ -82,6 +83,7 @@ export function useLoginForm({
   oauthFailed,
   locale,
   resetTurnstile,
+  slideCount = DEFAULT_LOGIN_SLIDES.length,
 }: UseLoginFormOptions): LoginFormState {
   const router = useRouter();
   const t = localT[locale] ?? localT.ko;
@@ -102,10 +104,10 @@ export function useLoginForm({
   // Autoplay slideshow
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % Math.max(1, slideCount));
     }, 4500);
     return () => clearInterval(interval);
-  }, []);
+  }, [slideCount]);
 
   const resetForm = () => {
     setEmail("");

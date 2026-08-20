@@ -7,15 +7,18 @@ import type { TurnstileWidgetHandle } from "@/core/components/form/TurnstileWidg
 import { useLoginForm } from "./hooks";
 import LoginFormPanel from "./components/LoginFormPanel";
 import SlideshowPanel from "./components/SlideshowPanel";
+import type { LoginSlide } from "@/core/content/login-slides";
 
 interface LoginClientProps {
   redirectTo: string;
   oauthFailed: boolean;
+  slides: LoginSlide[];
 }
 
 export default function LoginClient({
   redirectTo,
   oauthFailed,
+  slides,
 }: LoginClientProps) {
   const { theme } = useTheme();
   const { locale } = useLocale();
@@ -24,6 +27,7 @@ export default function LoginClient({
     redirectTo,
     oauthFailed,
     locale,
+    slideCount: slides.length,
     resetTurnstile: () => turnstileRef.current?.reset(),
   });
 
@@ -38,7 +42,7 @@ export default function LoginClient({
         showLoginRequired={redirectTo !== "/"}
         turnstileRef={turnstileRef}
       />
-      <SlideshowPanel currentSlide={formState.currentSlide} />
+      <SlideshowPanel currentSlide={formState.currentSlide} slides={slides} />
     </div>
   );
 }

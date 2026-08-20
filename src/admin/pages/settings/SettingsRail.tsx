@@ -24,6 +24,7 @@ type SettingsRailProps = {
   socialCount: number;
   businessReady: boolean;
   businessComplete: boolean;
+  loginSlidesCount: number;
   avatarDirty: boolean;
   isSuperAdmin: boolean;
 };
@@ -38,6 +39,7 @@ export default function SettingsRail({
   socialCount,
   businessReady,
   businessComplete,
+  loginSlidesCount,
   avatarDirty,
   isSuperAdmin,
 }: SettingsRailProps) {
@@ -96,6 +98,14 @@ export default function SettingsRail({
       icon: UserRound,
       ready: !avatarDirty,
       meta: avatarDirty ? "저장 필요" : "목록 관리",
+    },
+    {
+      id: "login-slides",
+      label: "LOGIN SLIDES",
+      copy: "로그인 배경 이미지",
+      icon: Settings2,
+      ready: loginSlidesCount > 0,
+      meta: `${loginSlidesCount}장`,
     },
     ...(isSuperAdmin
       ? [

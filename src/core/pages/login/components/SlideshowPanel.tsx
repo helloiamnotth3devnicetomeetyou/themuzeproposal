@@ -1,16 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { SLIDES } from "../constants";
+import type { LoginSlide } from "@/core/content/login-slides";
 
 interface SlideshowPanelProps {
   currentSlide: number;
+  slides: LoginSlide[];
 }
 
-export default function SlideshowPanel({ currentSlide }: SlideshowPanelProps) {
+export default function SlideshowPanel({ currentSlide, slides }: SlideshowPanelProps) {
   return (
     <div className="hidden md:block md:w-[55%] relative overflow-hidden h-screen bg-[var(--color-static-black)]">
-      {SLIDES.map((slide, index) => {
+      {slides.map((slide, index) => {
         const isActive = index === currentSlide;
         return (
           <div
@@ -20,7 +21,7 @@ export default function SlideshowPanel({ currentSlide }: SlideshowPanelProps) {
             }`}
           >
             <Image
-              src={slide.img}
+              src={slide.imageUrl}
               alt={slide.title}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
