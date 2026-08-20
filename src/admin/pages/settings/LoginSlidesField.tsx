@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -12,14 +12,15 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, ImagePlus, Plus, Search, Trash2 } from "lucide-react";
 import AdminAssetImage from "@/admin/components/assets/AdminAssetImage";
+import CustomSelect from "@/core/components/form/CustomSelect";
 import {
   MAX_LOGIN_SLIDES,
   type LoginSlide,
@@ -30,31 +31,90 @@ import { supabase } from "@/core/supabase/client";
 type Candidate = Omit<LoginSlide, "id">;
 
 const sourceLabel: Record<LoginSlideSource, string> = {
-  legacy: "기존 슬라이드",
+  legacy: "기존",
   "album-cover": "앨범 커버",
+  "album-hero": "앨범 히어로",
   "scene-hero": "장면 히어로",
   "member-gallery": "멤버 사진첩",
 };
 
-function SortableSlide({ slide, onRemove }: { slide: LoginSlide; onRemove: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: slide.id });
+const artist = (value: unknown) =>
+  (Array.isArray(value) ? value[0] : value) as {
+    name?: string;
+    is_active?: boolean;
+  } | null;
+
+function LoginSlideCard({
+  slide,
+  index,
+  selected,
+  onSelect,
+  onRemove,
+}: {
+  slide: LoginSlide;
+  index: number;
+  selected: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: slide.id });
+
   return (
     <article
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="flex items-center gap-3 rounded border border-white/10 bg-black/20 p-2"
+      className={`hero-slide-card ${isDragging ? "is-dragging" : ""}`}
     >
-      <button type="button" className="cursor-grab text-white/60" aria-label="슬라이드 순서 변경" {...attributes} {...listeners}>
-        <GripVertical aria-hidden="true" />
-      </button>
-      <AdminAssetImage src={slide.imageUrl} alt="" width={96} height={64} sizes="96px" className="h-16 w-24 rounded object-cover" />
-      <div className="min-w-0 flex-1">
-        <b className="block truncate text-sm">{slide.title}</b>
-        <small className="text-white/55">{sourceLabel[slide.source]}</small>
+      <div
+        className="hero-slide-frame"
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
+      >
+        <AdminAssetImage src={slide.imageUrl} alt="" sizes="420px" />
+        <span className="hero-slide-shade" />
+        <span className="hero-slide-position">
+          <small>SLIDE</small>
+          <b>{String(index + 1).padStart(2, "0")}</b>
+        </span>
+        <button
+          type="button"
+          className="hero-slide-grab"
+          aria-label={`${slide.title} 순서 변경`}
+          title="드래그해 순서 변경"
+          onClick={(event) => event.stopPropagation()}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical aria-hidden="true" />
+          <span>순서 이동</span>
+        </button>
+        <div className="hero-slide-copy">
+          <small>{sourceLabel[slide.source]}</small>
+          <b>{slide.title}</b>
+        </div>
       </div>
-      <button type="button" className="is-danger" aria-label={`${slide.title} 삭제`} onClick={onRemove}>
-        <Trash2 aria-hidden="true" />
-      </button>
+      <footer className="hero-slide-footer">
+        <span>{selected ? "이미지 풀에서 교체할 이미지를 고르세요" : "카드를 눌러 이미지 교체"}</span>
+        <div>
+          <button
+            type="button"
+            className="is-danger"
+            aria-label={`${slide.title} 삭제`}
+            title="삭제"
+            onClick={onRemove}
+          >
+            <Trash2 aria-hidden="true" />
+          </button>
+        </div>
+      </footer>
     </article>
   );
 }
@@ -68,76 +128,237 @@ export default function LoginSlidesField({
 }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [open, setOpen] = useState(false);
+  const [replaceId, setReplaceId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState<"all" | LoginSlideSource>("all");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   useEffect(() => {
-    let active = true;
+    let alive = true;
     async function load() {
       const [albums, scenes, gallery] = await Promise.all([
-        supabase.from("albums").select("id,title,cover_url,is_published,published_at,artist:artists!inner(name,is_active)").eq("is_published", true).not("cover_url", "is", null),
-        supabase.from("artist_scenes").select("id,title,image_url,is_hero,is_published,artist:artists!inner(name,is_active)").eq("is_hero", true).eq("is_published", true),
-        supabase.from("artist_gallery").select("id,caption,image_url,member_id,is_published,artist:artists!inner(name,is_active)").not("member_id", "is", null).eq("is_published", true),
+        supabase
+          .from("albums")
+          .select("title,cover_url,hero_image_url,artist:artists!inner(name,is_active)")
+          .eq("is_published", true),
+        supabase
+          .from("artist_scenes")
+          .select("title,image_url,artist:artists!inner(name,is_active)")
+          .eq("is_hero", true)
+          .eq("is_published", true),
+        supabase
+          .from("artist_gallery")
+          .select("caption,image_url,artist:artists!inner(name,is_active)")
+          .not("member_id", "is", null)
+          .eq("is_published", true),
       ]);
-      if (!active) return;
-      const published = (item: { artist?: Array<{ is_active?: boolean }> | null }) =>
-        item.artist?.[0]?.is_active;
-      const next: Candidate[] = [
-        ...((albums.data ?? []) as unknown as Array<{ id: string; title: string; cover_url: string | null; artist: Array<{ name: string; is_active: boolean }> | null }>)
-          .filter((item) => item.cover_url && published(item))
-          .map((item) => ({ imageUrl: item.cover_url!, title: `${item.artist?.[0]?.name ?? ""} · ${item.title}`, source: "album-cover" as const })),
-        ...((scenes.data ?? []) as unknown as Array<{ id: string; title: string; image_url: string; artist: Array<{ name: string; is_active: boolean }> | null }>)
-          .filter(published)
-          .map((item) => ({ imageUrl: item.image_url, title: `${item.artist?.[0]?.name ?? ""} · ${item.title || "Hero"}`, source: "scene-hero" as const })),
-        ...((gallery.data ?? []) as unknown as Array<{ id: string; caption: string; image_url: string; artist: Array<{ name: string; is_active: boolean }> | null }>)
-          .filter(published)
-          .map((item) => ({ imageUrl: item.image_url, title: `${item.artist?.[0]?.name ?? ""} · ${item.caption || "Gallery"}`, source: "member-gallery" as const })),
-      ];
-      setCandidates(next);
+      if (!alive) return;
+
+      const live = (row: { artist?: unknown }) =>
+        artist(row.artist)?.is_active === true;
+      setCandidates([
+        ...((albums.data ?? []) as Array<{
+          title: string;
+          cover_url: string | null;
+          hero_image_url: string | null;
+          artist?: unknown;
+        }>)
+          .filter(live)
+          .flatMap((row) => [
+            ...(row.cover_url
+              ? [{
+                  imageUrl: row.cover_url,
+                  title: `${artist(row.artist)?.name || "Artist"} · ${row.title}`,
+                  source: "album-cover" as const,
+                }]
+              : []),
+            ...(row.hero_image_url
+              ? [{
+                  imageUrl: row.hero_image_url,
+                  title: `${artist(row.artist)?.name || "Artist"} · ${row.title}`,
+                  source: "album-hero" as const,
+                }]
+              : []),
+          ]),
+        ...((scenes.data ?? []) as Array<{
+          title: string;
+          image_url: string;
+          artist?: unknown;
+        }>)
+          .filter(live)
+          .map((row) => ({
+            imageUrl: row.image_url,
+            title: `${artist(row.artist)?.name || "Artist"} · ${row.title || "Hero"}`,
+            source: "scene-hero" as const,
+          })),
+        ...((gallery.data ?? []) as Array<{
+          caption: string;
+          image_url: string;
+          artist?: unknown;
+        }>)
+          .filter(live)
+          .map((row) => ({
+            imageUrl: row.image_url,
+            title: `${artist(row.artist)?.name || "Artist"} · ${row.caption || "Gallery"}`,
+            source: "member-gallery" as const,
+          })),
+      ]);
     }
     void load();
-    return () => { active = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const selected = new Set(value.map((slide) => slide.imageUrl));
-  const add = (candidate: Candidate) => {
-    if (value.length >= MAX_LOGIN_SLIDES || selected.has(candidate.imageUrl)) return;
-    onChange([...value, { ...candidate, id: crypto.randomUUID() }]);
+  const used = new Set(value.map((slide) => slide.imageUrl));
+  const visibleCandidates = useMemo(() => {
+    const terms = query.trim().toLocaleLowerCase("ko");
+    return candidates.filter(
+      (candidate) =>
+        (source === "all" || candidate.source === source) &&
+        (!terms ||
+          `${candidate.title} ${sourceLabel[candidate.source]}`
+            .toLocaleLowerCase("ko")
+            .includes(terms)),
+    );
+  }, [candidates, query, source]);
+  const showPicker = (id: string | null) => {
+    setReplaceId(id);
+    setOpen(true);
+  };
+  const choose = (candidate: Candidate) => {
+    const replacing = value.find((slide) => slide.id === replaceId);
+    if (used.has(candidate.imageUrl) && replacing?.imageUrl !== candidate.imageUrl)
+      return;
+    if (replacing) {
+      onChange(
+        value.map((slide) =>
+          slide.id === replacing.id ? { ...candidate, id: slide.id } : slide,
+        ),
+      );
+    } else if (value.length < MAX_LOGIN_SLIDES) {
+      onChange([...value, { ...candidate, id: crypto.randomUUID() }]);
+    }
     setOpen(false);
+    setReplaceId(null);
   };
   const onDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return;
     const from = value.findIndex((slide) => slide.id === active.id);
-    const to = value.findIndex((slide) => slide.id === over.id);
-    if (from >= 0 && to >= 0) onChange(arrayMove(value, from, to));
+    const to = value.findIndex((slide) => slide.id === over?.id);
+    if (over && from >= 0 && to >= 0 && from !== to)
+      onChange(arrayMove(value, from, to));
   };
+  const replacing = value.find((slide) => slide.id === replaceId);
 
   return (
-    <section className="settings-panel space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div><h3>LOGIN SLIDES</h3><p className="text-sm text-white/60">공개된 앨범 커버, 장면 히어로, 멤버 사진첩에서 고릅니다.</p></div>
-        <button type="button" className="admin-btn admin-btn-secondary" disabled={value.length >= MAX_LOGIN_SLIDES} onClick={() => setOpen((current) => !current)}><Plus aria-hidden="true" /> 이미지 추가</button>
+    <section className="login-slides-editor">
+      <div className="hero-admin-panel-heading">
+        <div>
+          <h3>LOGIN SLIDES</h3>
+          <p>카드를 드래그해 노출 순서를 바꿉니다.</p>
+        </div>
+        <button
+          type="button"
+          className="admin-btn admin-btn-secondary"
+          onClick={() =>
+            showPicker(value.length >= MAX_LOGIN_SLIDES ? value[0]?.id ?? null : null)
+          }
+        >
+          <ImagePlus aria-hidden="true" />
+          {value.length >= MAX_LOGIN_SLIDES ? "첫 슬라이드 교체" : "이미지 추가"}
+        </button>
       </div>
-      <p className="text-sm text-white/60">{value.length} / {MAX_LOGIN_SLIDES}장 · 같은 이미지는 한 번만 사용할 수 있습니다.</p>
+      <div className="login-slide-rail">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={value.map((slide) => slide.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2">
-            {value.map((slide) => <SortableSlide key={slide.id} slide={slide} onRemove={() => onChange(value.filter((item) => item.id !== slide.id))} />)}
+        <SortableContext items={value.map((slide) => slide.id)} strategy={rectSortingStrategy}>
+          <div className="hero-slide-strip login-slide-strip">
+            {value.map((slide, index) => (
+              <LoginSlideCard
+                key={slide.id}
+                slide={slide}
+                index={index}
+                selected={replaceId === slide.id}
+                onSelect={() => showPicker(slide.id)}
+                onRemove={() => onChange(value.filter((item) => item.id !== slide.id))}
+              />
+            ))}
           </div>
         </SortableContext>
       </DndContext>
+      </div>
+
       {open && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {candidates.map((candidate) => {
-            const unavailable = selected.has(candidate.imageUrl) || value.length >= MAX_LOGIN_SLIDES;
-            return <button key={`${candidate.source}-${candidate.imageUrl}`} type="button" disabled={unavailable} onClick={() => add(candidate)} className="flex items-center gap-3 rounded border border-white/10 p-2 text-left disabled:opacity-40">
-              <AdminAssetImage src={candidate.imageUrl} alt="" width={96} height={64} sizes="96px" className="h-16 w-24 rounded object-cover" />
-              <span className="min-w-0"><b className="block truncate text-sm">{candidate.title}</b><small className="text-white/55">{sourceLabel[candidate.source]}</small></span>
-            </button>;
-          })}
-        </div>
+        <section className="hero-admin-panel hero-admin-catalog login-image-pool">
+          <div className="hero-admin-panel-heading">
+            <div>
+              <h3>IMAGE POOL</h3>
+              <p>
+                {replacing
+                  ? `“${replacing.title}” 슬라이드를 교체합니다.`
+                  : "추가할 이미지를 고르세요."}
+              </p>
+            </div>
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setOpen(false)}>
+              닫기
+            </button>
+          </div>
+          <div className="hero-admin-filters">
+            <label className="hero-admin-search">
+              <Search aria-hidden="true" />
+              <span className="sr-only">이미지 검색</span>
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="앨범, 아티스트, 장면 검색"
+              />
+            </label>
+            <CustomSelect
+              value={source}
+              ariaLabel="이미지 출처 필터"
+              onChange={(value) => setSource(value as "all" | LoginSlideSource)}
+              options={[
+                { value: "all", label: "모든 이미지" },
+                { value: "album-cover", label: "앨범 커버" },
+                { value: "album-hero", label: "앨범 히어로" },
+                { value: "scene-hero", label: "장면 히어로" },
+                { value: "member-gallery", label: "멤버 사진첩" },
+              ]}
+            />
+          </div>
+          {visibleCandidates.length ? (
+            <div className="hero-admin-catalog-grid">
+              {visibleCandidates.map((candidate) => {
+                const disabled =
+                  used.has(candidate.imageUrl) &&
+                  replacing?.imageUrl !== candidate.imageUrl;
+                return (
+                  <article key={`${candidate.source}-${candidate.imageUrl}`} className="hero-admin-catalog-item">
+                    <span className="hero-admin-catalog-cover">
+                      <AdminAssetImage src={candidate.imageUrl} alt="" sizes="64px" />
+                    </span>
+                    <div>
+                      <b>{candidate.title}</b>
+                      <small>{sourceLabel[candidate.source]}</small>
+                    </div>
+                    <button type="button" disabled={disabled} onClick={() => choose(candidate)}>
+                      <Plus aria-hidden="true" />
+                      <span>{disabled ? "사용 중" : "선택"}</span>
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="hero-admin-empty is-compact">
+              <ImagePlus aria-hidden="true" />
+              <b>{candidates.length ? "검색 조건과 일치하는 이미지가 없습니다." : "공개된 이미지를 찾지 못했습니다."}</b>
+              <span>앨범 커버·히어로, 장면 히어로, 멤버 사진첩에서 고를 수 있습니다.</span>
+            </div>
+          )}
+        </section>
       )}
     </section>
   );

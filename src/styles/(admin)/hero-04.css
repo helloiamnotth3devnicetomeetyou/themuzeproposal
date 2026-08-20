@@ -22,6 +22,37 @@
 .hero-slide-frame {
   aspect-ratio: 4 / 1;
 }
+.hero-slide-strip.login-slide-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 0;
+  gap: 10px;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+.hero-slide-strip.login-slide-strip .hero-slide-card {
+  width: 100%;
+  min-width: 0;
+}
+.hero-slide-strip.login-slide-strip .hero-slide-frame {
+  aspect-ratio: 16 / 9;
+}
+.login-slides-editor > .hero-admin-panel-heading {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+}
+.login-slides-editor {
+  display: grid;
+  gap: 18px;
+}
+.login-slide-rail {
+  padding: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: 11px;
+  background: var(--bg-card);
+}
 .hero-slide-footer > div {
   display: flex;
   gap: 6px;

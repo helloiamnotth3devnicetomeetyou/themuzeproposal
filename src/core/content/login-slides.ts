@@ -3,6 +3,7 @@ export const MAX_LOGIN_SLIDES = 5;
 export type LoginSlideSource =
   | "legacy"
   | "album-cover"
+  | "album-hero"
   | "scene-hero"
   | "member-gallery";
 
@@ -24,6 +25,7 @@ export const DEFAULT_LOGIN_SLIDES: LoginSlide[] = [
 const SOURCES = new Set<LoginSlideSource>([
   "legacy",
   "album-cover",
+  "album-hero",
   "scene-hero",
   "member-gallery",
 ]);
