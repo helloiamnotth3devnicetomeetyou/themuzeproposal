@@ -86,7 +86,7 @@ export default function About({
       label: t.about.valueLabel,
       conclusion: t.about.valueConclusion,
       content: (
-        <div className="flex flex-col gap-8 pt-4">
+        <div className="flex flex-col gap-8 md:pt-4">
           <div className="flex flex-col gap-6 items-start">
             <div className="relative w-64 h-20 transition-transform duration-slow hover:scale-102">
               <Image
@@ -138,7 +138,7 @@ export default function About({
             {visionList.map((val, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-2xl border transition-all duration-slow hover:-translate-y-1"
+                className="rounded-xl border p-5 transition-transform duration-slow hover:-translate-y-1 md:rounded-2xl md:p-6"
                 style={{
                   backgroundColor: "var(--bg-card)",
                   borderColor: "var(--border-subtle)",
@@ -171,15 +171,11 @@ export default function About({
       conclusion: t.about.historyConclusion,
       content: (
         <div
-          className="pl-6 md:pl-16 border-l py-4"
+          className="border-l py-1 pl-5 md:pl-16 md:py-4"
           style={{ borderColor: "var(--border-default)" }}
         >
           {historyList.map((item, idx) => (
-            <div key={idx} className="mb-10 relative last:mb-0 group">
-              <span
-                className="absolute -left-[31px] md:-left-[21px] top-1.5 w-3.5 h-3.5 border-2 border-brand-pink rounded-full bg-base shadow-[0_0_8px_var(--alpha-fc6fcf-4)] group-hover:bg-brand-pink transition-colors duration-slow"
-                style={{ backgroundColor: "var(--bg-base)" }}
-              />
+            <div key={idx} className="mb-9 last:mb-0">
               <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-6">
                 <span className="text-brand-pink font-display font-black text-base sm:w-28 shrink-0">
                   {item.year}
@@ -320,9 +316,8 @@ export default function About({
         color: "var(--text-primary)",
       }}
     >
-      <div className="max-w-4xl mx-auto px-6 pt-16">
-        {/* Interactive Question Stack */}
-        <section className="flex flex-col gap-6 font-sans">
+      <div className="mx-auto max-w-4xl px-6 pt-10 md:pt-16">
+        <section className="font-sans">
           {stackItems.map((item, idx) => {
             const isActive = activeTab === item.id;
             return (
@@ -335,20 +330,24 @@ export default function About({
                       ? "about-company"
                       : undefined
                 }
-                className="flex flex-col reveal reveal-delay-100"
+                className="flex flex-col border-b py-10 last:border-b-0 md:border-b-0 md:py-0"
+                style={{ borderColor: "var(--border-subtle)" }}
                 ref={(el) => {
                   itemRefs.current[idx] = el;
                 }}
               >
-                {/* Clickable Stack Line */}
+                <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-brand-pink md:hidden">
+                  {item.conclusion}
+                </h2>
                 <button
                   onClick={() => {
                     hasChangedTab.current = true;
                     setActiveTab(item.id);
                   }}
-                  className="w-full text-left flex items-start gap-3 py-1.5 focus:outline-none cursor-pointer group"
+                  aria-controls={`about-panel-${item.id}`}
+                  aria-expanded={isActive}
+                  className="hidden w-full cursor-pointer items-start gap-3 py-1.5 text-left focus:outline-none md:flex group"
                 >
-                  {/* Arrow prefix (only visible on active) */}
                   <span
                     className={`text-2xl md:text-4xl font-extrabold tracking-tight shrink-0 transition-all duration-slow ${
                       isActive
@@ -361,7 +360,6 @@ export default function About({
 
                   <div className="flex-1">
                     {isActive ? (
-                      /* Active State: Highlight background, bold text, no strike-through */
                       <span
                         className="inline-block text-2xl md:text-4xl font-extrabold tracking-tight px-3.5 py-1 rounded-xl transition-all duration-slow transform scale-102"
                         style={{
@@ -372,7 +370,6 @@ export default function About({
                         {item.conclusion}
                       </span>
                     ) : (
-                      /* Inactive State: Gray color, strike-through (line-through), regular weight */
                       <span
                         className="inline-block text-2xl md:text-4xl font-semibold tracking-tight line-through opacity-25 group-hover:opacity-45 transition-all duration-slow"
                         style={{ color: "var(--text-primary)" }}
@@ -383,20 +380,26 @@ export default function About({
                   </div>
                 </button>
 
-                {/* Content Panel with smooth height transition */}
                 <div
-                  className="overflow-hidden transition-all duration-500 ease-in-out pl-8 md:pl-11 pr-2"
-                  style={{
-                    maxHeight: isActive ? "800px" : "0px",
-                    opacity: isActive ? 1 : 0,
-                    borderBottom: isActive
-                      ? "1px solid var(--border-subtle)"
-                      : "1px solid transparent",
-                    paddingBottom: isActive ? "2rem" : "0rem",
-                    marginTop: isActive ? "1rem" : "0rem",
-                  }}
+                  id={`about-panel-${item.id}`}
+                  className={`mt-5 block opacity-100 transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out md:mt-0 md:grid ${
+                    isActive
+                      ? "md:mt-4 md:grid-rows-[1fr] md:opacity-100"
+                      : "md:grid-rows-[0fr] md:opacity-0"
+                  }`}
                 >
-                  {item.content}
+                  <div className="min-h-0 overflow-hidden">
+                    <div
+                      className={`pb-0 md:pl-11 md:pr-2 ${
+                        isActive
+                          ? "md:border-b md:pb-8"
+                          : "md:border-b-transparent"
+                      }`}
+                      style={{ borderColor: "var(--border-subtle)" }}
+                    >
+                      {item.content}
+                    </div>
+                  </div>
                 </div>
               </div>
             );

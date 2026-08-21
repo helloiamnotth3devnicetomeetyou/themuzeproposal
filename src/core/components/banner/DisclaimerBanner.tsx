@@ -32,13 +32,23 @@ export default function DisclaimerBanner() {
   );
 
   useEffect(() => {
-    if (!isDismissed) {
-      document.documentElement.style.setProperty("--banner-height", "42px");
-    } else {
+    if (isDismissed) {
       document.documentElement.style.setProperty("--banner-height", "0px");
+      return;
     }
 
+    const media = window.matchMedia("(min-width: 640px)");
+    const updateBannerHeight = () => {
+      document.documentElement.style.setProperty(
+        "--banner-height",
+        media.matches ? "42px" : "64px",
+      );
+    };
+
+    updateBannerHeight();
+    media.addEventListener("change", updateBannerHeight);
     return () => {
+      media.removeEventListener("change", updateBannerHeight);
       document.documentElement.style.setProperty("--banner-height", "0px");
     };
   }, [isDismissed]);
@@ -56,18 +66,29 @@ export default function DisclaimerBanner() {
     <aside
       role="region"
       aria-label="Official Website Disclaimer"
-      className="fixed top-0 left-0 right-0 z-[100] flex h-[42px] select-none items-center justify-between border-b border-[#fde68a] bg-[#fef3c7] px-4 text-xs text-[#78350f] shadow-xs backdrop-blur-md transition-all duration-300 sm:px-6"
+      className="fixed top-0 left-0 right-0 z-[100] flex min-h-[64px] select-none items-center justify-between border-b border-[#fde68a] bg-[#fef3c7] px-4 py-2 text-xs text-[#78350f] shadow-xs backdrop-blur-md transition-all duration-300 sm:h-[42px] sm:min-h-0 sm:px-6 sm:py-0"
     >
       <div className="mx-auto flex max-w-7xl flex-1 items-center gap-2.5 overflow-hidden">
         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#78350f] text-[10px] font-bold leading-none">
           !
         </span>
-        <p className="truncate font-sans text-xs font-semibold tracking-tight text-[#78350f]">
-          <span>본 사이트는 공식 웹사이트가 아닙니다.</span>
-          <span className="ml-1.5 opacity-80 font-normal hidden sm:inline">
-            (This is not an official website)
-          </span>
-        </p>
+        <div className="min-w-0 font-sans text-[#78350f] sm:flex sm:items-center sm:gap-3">
+          <p className="truncate text-xs font-semibold tracking-tight">
+            <span>본 사이트는 공식 웹사이트가 아닙니다.</span>
+            <span className="ml-1.5 opacity-80 font-normal hidden sm:inline">
+              (This is not an official website)
+            </span>
+          </p>
+          <p className="whitespace-nowrap text-[10px] font-medium tracking-tight sm:text-xs">
+            <a href="mailto:notth3dev@gmail.com" className="hover:underline">
+              notth3dev@gmail.com
+            </a>
+            <span aria-hidden="true"> / </span>
+            <a href="tel:01095108597" className="hover:underline">
+              010-9510-8597
+            </a>
+          </p>
+        </div>
       </div>
 
       <button
