@@ -1,6 +1,6 @@
 # THE MUZE
 
-Themuzeproposal
+Themuzeproposal(themuzeproposal.notth3.dev)
 
 ## 포함 기능
 
